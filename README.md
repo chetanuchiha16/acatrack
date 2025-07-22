@@ -13,13 +13,77 @@ Each subfolder represents a different project completed by our team.
 - Dhanush Singh G  
 
 ---
-### 🛠️ How to Clone and Set Up
+````md
+## 🤝 Collaboration Workflow
 
-```bash
-git clone https://github.com/chetanuchiha16/Group-Projects.git
-cd Group-Projects
-pip install -r requirements.txt
-```
+To contribute to this project, please follow this simple and clean Git workflow:
+
+1. **Clone the Repository**  
+   (If you haven't already)  
+   ```bash
+   git clone https://github.com/chetanuchiha16/Group-Projects.git
+   cd Group-Projects
+   pip install -r requirements.txt
+````
+
+2. **Create a New Branch**
+   Always create a new branch before making changes!
+
+   ```bash
+   git checkout -b your-branch-name
+   ```
+
+3. **Make Changes & Commit**
+
+   ```bash
+   git add .
+   git commit -m "Your detailed commit message"
+   ```
+
+4. **Push Your Branch to GitHub**
+
+   ```bash
+   git push origin your-branch-name
+   ```
+
+5. **Create a Pull Request (PR)**
+
+   * Go to the repo on GitHub
+   * You'll see a prompt to “Compare & pull request”
+   * Add a description and submit the PR
+     (Let the group review before merging 💙)
+
+6. **Sync with `main` Regularly**
+   Keep your branch updated to avoid conflicts:
+
+   ```bash
+   git checkout main
+   git pull origin main
+   git checkout your-branch-name
+   git merge main
+   ```
+
+---
+
+### 🧸 Branch Naming Suggestions
+
+| Type        | Naming Convention    | Example                     |
+| ----------- | -------------------- | --------------------------- |
+| Feature     | `feature/short-desc` | `feature/add-login-form`    |
+| Bug Fix     | `bugfix/short-desc`  | `bugfix/fix-score-mismatch` |
+| UI Update   | `ui/short-desc`      | `ui/update-dashboard-style` |
+| Docs Update | `docs/short-desc`    | `docs/update-readme`        |
+
+---
+
+### 🫶 Golden Rules for Peaceful Collaboration
+
+* Don’t push to `main` directly 🥺
+* Always pull the latest `main` before branching
+* Write clear commit messages (so future-you says thank you)
+* Talk in the group if there's confusion 🌼
+
+---
 
 ---
 ## 🗂️ Repository Structure
