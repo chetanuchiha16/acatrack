@@ -10,8 +10,8 @@ A collaborative student management system project integrating a Tkinter-based fr
 
 * Abhishek R
 * Adithya V
-* Dhanush Singh G
 * Chetan Kishor C G
+* Dhanush Singh G
 ---
 
 ### 📦 Tech Stack
@@ -42,13 +42,15 @@ pip install -r requirements.txt
 1. Run the backend server:
 
    ```bash
-   python backend/app.py
+   cd backend #or open terminal inside backend folder
+   python app.py
    ```
 
-2. Launch the frontend GUI (adjust if needed):
+2. Launch the frontend:
 
    ```bash
-   python frontend/main.py
+   cd frontend #or open terminal inside frontend folder
+   npm run dev
    ```
 
 ---
