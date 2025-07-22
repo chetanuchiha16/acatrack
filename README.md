@@ -13,7 +13,7 @@ Each subfolder represents a different project completed by our team.
 - Dhanush Singh G  
 
 ---
-````md
+
 ## 🤝 Collaboration Workflow
 
 To contribute to this project, please follow this simple and clean Git workflow:
@@ -24,7 +24,7 @@ To contribute to this project, please follow this simple and clean Git workflow:
    git clone https://github.com/chetanuchiha16/Group-Projects.git
    cd Group-Projects
    pip install -r requirements.txt
-````
+
 
 2. **Create a New Branch**
    Always create a new branch before making changes!
