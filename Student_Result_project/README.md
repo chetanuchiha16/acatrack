@@ -1,4 +1,4 @@
-# 💻 Group-Projects
+# 📊💻 Student_Result_Project
 
 A collaborative student management system project integrating a Tkinter-based frontend with a Flask-powered backend. Built with modularity, teamwork, and practicality in mind.
 
@@ -46,7 +46,7 @@ A collaborative student management system project integrating a Tkinter-based fr
 ### 📂 Project Structure
 
 ```bash
-Group-Projects/
+Student_Result_project/
 ├── README.md
 ├── requirements.txt
 ├── backend/
