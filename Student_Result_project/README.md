@@ -1,5 +1,3 @@
----
-
 # 💻 Group-Projects
 
 A collaborative student management system project integrating a Tkinter-based frontend with a Flask-powered backend. Built with modularity, teamwork, and practicality in mind.
