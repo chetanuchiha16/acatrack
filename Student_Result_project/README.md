@@ -27,16 +27,6 @@ A collaborative student management system project integrating a Tkinter-based fr
 
 ---
 
-### 🛠️ How to Clone and Set Up
-
-```bash
-git clone https://github.com/chetanuchiha16/Group-Projects.git
-cd Group-Projects
-pip install -r requirements.txt
-```
-
----
-
 ### 🚀 How to Run
 
 1. Run the backend server:
@@ -57,7 +47,7 @@ pip install -r requirements.txt
 
 ### 📂 Project Structure
 
-```sql
+```bash
 Group-Projects/
 ├── README.md
 ├── requirements.txt

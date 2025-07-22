@@ -13,10 +13,18 @@ Each subfolder represents a different project completed by our team.
 - Dhanush Singh G  
 
 ---
+### 🛠️ How to Clone and Set Up
 
-## 📁 Repository Structure
-
+```bash
+git clone https://github.com/chetanuchiha16/Group-Projects.git
+cd Group-Projects
+pip install -r requirements.txt
 ```
+
+---
+## 🗂️ Repository Structure
+Each subfolder is a self-contained project.
+```bash
 
 Group-Projects/
 │
@@ -25,7 +33,7 @@ Group-Projects/
 │   ├── backend/
 │   └── README.md
 │
-├── Project\_2\_Name/
+├── Project_2_Name/
 │   └── ...
 │
 └── README.md  <-- (this file)
