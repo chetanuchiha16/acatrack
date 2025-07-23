@@ -23,7 +23,6 @@ To contribute to this project, please follow this simple and clean Git workflow:
    ```bash
    git clone https://github.com/chetanuchiha16/Group-Projects.git
    cd Group-Projects
-   pip install -r requirements.txt
 
 
 2. **Create a New Branch**
