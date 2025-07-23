@@ -31,6 +31,7 @@ A collaborative student management system project integrating a Tkinter-based fr
 
    ```bash
    cd backend #or open terminal inside backend folder
+   pip install -r requirements.txt #to install all required dependencies
    python app.py
    ```
 
