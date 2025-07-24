@@ -128,5 +128,3 @@ To demonstrate collaborative development, proper version control, and full-stack
 ## 📌 Note
 
 More group projects may be added here in the future, depending on academic requirements.
-
-
