@@ -49,8 +49,8 @@ A collaborative student management system project integrating a Tkinter-based fr
 ```bash
 Student_Result_project/
 ├── README.md
-├── requirements.txt
 ├── backend/
+│   ├── requirements.txt  
 │   ├── app.py
 │   ├── gui/
 │   │   ├── events.py
