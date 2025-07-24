@@ -1,6 +1,6 @@
 # 📊💻 Student_Result_Project
 
-A collaborative student management system project integrating a Tkinter-based frontend with a Flask-powered backend. Built with modularity, teamwork, and practicality in mind.
+A collaborative student management system project integrating a React-based frontend with a Flask-powered backend. Built with modularity, teamwork, and practicality in mind.
 
 ---
 
@@ -93,6 +93,16 @@ Student_Result_project/
 │       ├── sem_pdf.py
 │       └── university_report.py
 ├── frontend/
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── public/
+│   │   └── ...
+│   └── src/
+│       ├── App.css
+│       ├── App.jsx
+│       ├── main.jsx
+│       └── assets/
 └── structure.txt
 
 ```
