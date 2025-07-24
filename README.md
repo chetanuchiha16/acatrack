@@ -24,7 +24,6 @@ To contribute to this project, please follow this simple and clean Git workflow:
    git clone https://github.com/chetanuchiha16/Group-Projects.git
    cd Group-Projects
 
-
 2. **Create a New Branch**
    Always create a new branch before making changes!
 
