@@ -25,6 +25,14 @@
 import models.data_prep
 from gui import build_app
     
-widgets = build_app()
-# Run the GUI
-widgets["root"].mainloop()
+# widgets = build_app()
+# # Run the GUI
+# widgets["root"].mainloop()
+
+
+from flask import Flask, request, jsonify
+from models.user import db
+app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///user.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATEION"] = False
+db.init_app(app)

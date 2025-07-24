@@ -1,4 +1,6 @@
 from pathlib import Path
+from flask_sqlalchemy import SQLAlchemy
+
 
 base_dir = Path(__file__).resolve().parent.parent
 # print("../Inputs")
@@ -7,7 +9,7 @@ logo_path = str(base_dir / "Inputs" / "Images" / "logo.png")
 db_path = str(base_dir / "Outputs" / "student_data.db")
 pdf_dir = str(base_dir / "Outputs" / "PDFs")
 img_dir = str(base_dir / "Outputs" / "Images")
-
+db = SQLAlchemy()
 print(excel_path)
 # print(logo_path)
 # print(base_dir)
