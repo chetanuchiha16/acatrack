@@ -83,6 +83,8 @@ Student_Result_project/
 │   │   │   └── result list project.xlsx
 │   │   └── Images/
 │   │       └── logo.png
+│   ├── instance/
+│   │   └── user.db
 │   ├── logic/
 │   │   ├── sem_result.py
 │   │   ├── student_info.py
@@ -95,6 +97,7 @@ Student_Result_project/
 │   │   ├── student.py
 │   │   ├── subject_results.py
 │   │   └── university.py
+│   │   └── users.py
 │   ├── Outputs/
 │   │   ├── student_data.db
 │   │   ├── Images/
@@ -102,6 +105,8 @@ Student_Result_project/
 │   ├── tests/
 │   │   ├── test_sql.py
 │   │   └── print_students.py
+│   ├── utils/
+│   │   └── genpass.py
 │   └── visuals/
 │       ├── plot_results.py
 │       ├── sem_pdf.py

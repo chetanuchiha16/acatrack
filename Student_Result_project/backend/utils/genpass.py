@@ -1,7 +1,7 @@
 import sqlite3
 from models.config import db_path
 from flask_bcrypt import Bcrypt
-from models.user import db, User
+from backend.models.users import db, User
 from app import app
 
 

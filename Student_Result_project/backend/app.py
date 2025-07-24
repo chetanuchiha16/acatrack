@@ -31,7 +31,7 @@ from gui import build_app
 
 
 from flask import Flask, request, jsonify
-from models.user import db
+from backend.models.users import db
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///user.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATEION"] = False
