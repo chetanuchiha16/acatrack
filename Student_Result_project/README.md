@@ -14,17 +14,31 @@ A collaborative student management system project integrating a React-based fron
 
 ### 📦 Tech Stack
 
-* `customtkinter` — for modern UI components
+#### 🖼️ **Frontend**
+
+* `React` — component-based UI library
+* `Vite` — fast frontend tooling and development server
+* `Tailwind CSS` — utility-first CSS framework for styling
+* `Axios` — for making API requests to the backend
+
+#### 🔧 **Backend**
+
 * `Flask` — backend framework
 * `Flask-Bcrypt`, `Flask-Session`, `flask-cors` — authentication, sessions, and API support
 * `Flask-SQLAlchemy` — ORM integration
+
+#### 📊 **Data Handling & Visuals**
+
 * `matplotlib` — data visualizations
 * `pandas` — data processing
 * `reportlab` — PDF report generation
-* `SQLAlchemy` — DB management
+
+#### 🗃️ **Database**
+
+* `SQLAlchemy` — database management (SQLite)
 
 ---
-## ✨ Prerequisites
+### ✨ Prerequisites
 
 Make sure the following are installed on your system:
 
