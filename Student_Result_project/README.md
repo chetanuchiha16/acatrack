@@ -32,6 +32,7 @@ Make sure the following are installed on your system:
 - **Node.js (v18 or above)** – [Download here](https://nodejs.org/en/download)  
   > 💡 This includes `npm`, which is used to install frontend dependencies
 
+---
 ### 🚀 How to Run
 
 1. Run the backend server:
