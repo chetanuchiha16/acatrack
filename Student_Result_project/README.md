@@ -24,21 +24,29 @@ A collaborative student management system project integrating a Tkinter-based fr
 * `SQLAlchemy` — DB management
 
 ---
+## ✨ Prerequisites
+
+Make sure the following are installed on your system:
+
+- **Python 3.10+** – [Download here](https://www.python.org/downloads/)
+- **Node.js (v18 or above)** – [Download here](https://nodejs.org/en/download)  
+  > 💡 This includes `npm`, which is used to install frontend dependencies
 
 ### 🚀 How to Run
 
 1. Run the backend server:
 
    ```bash
-   cd backend #or open terminal inside backend folder
-   pip install -r requirements.txt #to install all required dependencies
+   cd backend  # or open terminal inside backend folder
+   pip install -r requirements.txt           #to install all required dependencies
    python app.py
    ```
 
 2. Launch the frontend:
 
    ```bash
-   cd frontend #or open terminal inside frontend folder
+   cd frontend         # or open terminal inside frontend folder
+   npm install         # install frontend dependencies (only needed once)
    npm run dev
    ```
 
