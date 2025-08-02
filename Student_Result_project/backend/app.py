@@ -22,17 +22,19 @@
 # from logic import display_subjectwise_result
 # from logic import display_semesterwise_results
 
-import models.data_prep
+from models.data_prep import prepare_data
+
+prepare_data()
 from gui import build_app
     
-# widgets = build_app()
-# # Run the GUI
-# widgets["root"].mainloop()
+widgets = build_app()
+# Run the GUI
+widgets["root"].mainloop()
 
 
-from flask import Flask, request, jsonify
-from backend.models.users import db
-app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///user.db"
-app.config["SQLALCHEMY_TRACK_MODIFICATEION"] = False
-db.init_app(app)
+# from flask import Flask, request, jsonify
+# from backend.models.users import db
+# app = Flask(__name__)
+# app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///user.db"
+# app.config["SQLALCHEMY_TRACK_MODIFICATEION"] = False
+# db.init_app(app)

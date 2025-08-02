@@ -42,7 +42,8 @@ def convert_excel_to_sql(excel_path, db_path):
     print("All sheets processed and saved.")
 
 #Usage
-convert_excel_to_sql(
-    excel_path=excel_path,
-    db_path=db_path
-)
+def prepare_data():
+    convert_excel_to_sql(
+        excel_path=excel_path,
+        db_path=db_path
+    )
