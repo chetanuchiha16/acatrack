@@ -34,12 +34,12 @@ widgets["root"].mainloop()
 
 from flask import Flask, request, jsonify
 from routes import register_routes
-from models.config import db
+from app_init import db
 # from backend.models.users import db
 app = Flask(__name__)
 db.init_app(app)
 with app.app_context():
-    db.create_all
+    db.create_allY
 register_routes(app)
 
 # db.init_app(app)

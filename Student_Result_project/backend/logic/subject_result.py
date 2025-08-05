@@ -3,7 +3,7 @@ import customtkinter as ctk
 from models import University
 from models import SubjectResult
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from models.config import pdf_dir,db_path,img_dir
+from models.paths import pdf_dir,db_path,img_dir
 # Function to handle subject-wise results
 def display_subjectwise_result(subjectwise_semester_dropdown, subjectwise_subject_dropdown, subjectwise_result_graph, subjectwise_result_text):
     try:

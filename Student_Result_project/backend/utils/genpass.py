@@ -1,6 +1,6 @@
 import sqlite3
 from models.config import db_path
-from models.config import db, User
+from models.users import db, User
 
 
 conn = sqlite3.connect(db_path)
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     from app import app
     from models.config import Bcrypt
     bcrypt = Bcrypt(app)
-    
+
     with app.app_context():
         db.create_all()
         with open("password.txt", "w") as f:

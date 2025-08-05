@@ -2,7 +2,7 @@ from models import University
 from visuals import create_toppers_list_pdf, create_university_report
 import customtkinter as ctk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from models.config import db_path, pdf_dir, img_dir
+from models.paths import db_path, pdf_dir, img_dir
 
 def test_university_class(selected_semester, overall_result_text, overall_result_graph, tabview,  show_toppers=False, show_failed=False ):
     try:
