@@ -18,12 +18,12 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
         with open("password.txt", "w") as f:
-            for usn, name in stus:
-                password = name[0:4] + usn[-3:]
+            for username, name in stus:
+                password = name[0:4] + username[-3:]
                 pw_hash = bcrypt.generate_password_hash(password=password).decode("utf-8")
-                if not User.query.filter_by(usn = usn).first():
-                    db.session.add(User(usn = usn, name = name, password = pw_hash))
-                    f.write(f"{usn}          {name}           {password}          {pw_hash}\n")
+                if not User.query.filter_by(username = username).first():
+                    db.session.add(User(username = username, name = name, password = pw_hash))
+                    f.write(f"{username}          {name}           {password}          {pw_hash}\n")
 
         db.session.commit()
 
