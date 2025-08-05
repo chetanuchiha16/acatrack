@@ -1,4 +1,4 @@
-from models.config import db
+from app_init import db
 
 class User(db.Model):
     usn = db.Column(db.String(10),primary_key = True, unique = True)
