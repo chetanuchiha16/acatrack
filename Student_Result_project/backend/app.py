@@ -32,9 +32,14 @@ widgets = build_app()
 widgets["root"].mainloop()
 
 
-# from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify
+from routes import register_routes
+from models.config import db
 # from backend.models.users import db
-# app = Flask(__name__)
-# app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///user.db"
-# app.config["SQLALCHEMY_TRACK_MODIFICATEION"] = False
+app = Flask(__name__)
+db.init_app(app)
+with app.app_context():
+    db.create_all
+register_routes(app)
+
 # db.init_app(app)

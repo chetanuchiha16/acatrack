@@ -1,7 +1,7 @@
 import sqlite3
 import matplotlib.pyplot as plt
 from models import Student
-from models.config import db_path,img_dir,pdf_dir
+from models.paths import db_path,img_dir,pdf_dir
 class University:
     def __init__(self, db_path=db_path):
         self.db_path = db_path

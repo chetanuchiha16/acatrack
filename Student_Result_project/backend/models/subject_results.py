@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from models.config import db_path, pdf_dir, img_dir
+from models.paths import db_path, pdf_dir, img_dir
 # SubjectResult class
 class SubjectResult:
     def __init__(self, subject_code, semester, university):

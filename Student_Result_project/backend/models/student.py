@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from models.fetch import fetch_student_data
-from models.config import db_path, img_dir
+from models.paths import db_path, img_dir
 
 # Define Student class
 class Student:

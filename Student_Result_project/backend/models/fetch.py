@@ -1,6 +1,6 @@
 import sqlite3
 # Function to fetch data from the database with error handling for missing USN
-from models.config import db_path
+from models.paths import db_path
 def fetch_student_data(usn, semester, db_path=db_path):
     try:
         conn = sqlite3.connect(db_path)

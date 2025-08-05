@@ -1,8 +1,6 @@
 import sqlite3
 from models.config import db_path
-from flask_bcrypt import Bcrypt
-from backend.models.users import db, User
-from app import app
+from models.config import db, User
 
 
 conn = sqlite3.connect(db_path)
@@ -14,9 +12,12 @@ conn.commit()
 cursor.close()
 conn.close()
 
-bcrypt = Bcrypt(app)
 
 if __name__ == "__main__":
+    from app import app
+    from models.config import Bcrypt
+    bcrypt = Bcrypt(app)
+    
     with app.app_context():
         db.create_all()
         with open("password.txt", "w") as f:
