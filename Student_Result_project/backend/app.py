@@ -25,21 +25,23 @@
 from models.data_prep import prepare_data
 
 prepare_data()
-from gui import build_app
+# from gui import build_app
     
-widgets = build_app()
+# widgets = build_app()
 # Run the GUI
-widgets["root"].mainloop()
+# widgets["root"].mainloop()
 
 
-from flask import Flask, request, jsonify
+# from flask import Flask, request, jsonify
 from routes import register_routes
-from app_init import db
+from app_init import db, create_app
 # from backend.models.users import db
-app = Flask(__name__)
-db.init_app(app)
+app = create_app()
+
 with app.app_context():
-    db.create_allY
+    db.create_all()
 register_routes(app)
 
 # db.init_app(app)
+if __name__ == "__main__":
+    app.run(debug=True,host="localhost")

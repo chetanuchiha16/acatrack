@@ -72,44 +72,80 @@ Make sure the following are installed on your system:
 ```bash
 Student_Result_project/
 ├── README.md
-├── backend/
-│   ├── requirements.txt  
-│   ├── app.py
-│   ├── gui/
+├── backend/                     # Main backend logic and application files
+│   ├── app.py                  # Entry point of the backend application
+│   ├── app_init.py            # Application initialization script
+│   ├── names.txt              # Possibly used for name storage or testing
+│   ├── password.txt           # Stores passwords (⚠️ consider securing this)
+│   ├── requirements.txt       # Python dependencies
+│   ├── structure.txt          # Backend directory structure details
+│   │
+│   ├── gui/                   # GUI-related logic using PyQt or similar
 │   │   ├── events.py
-│   │   └── main_window.py
-│   ├── Inputs/
+│   │   ├── main_window.py
+│   │   └── __pycache__/
+│   │
+│   ├── Inputs/                # Input data used for processing
 │   │   ├── ExcelSheet/
-│   │   │   └── result list project.xlsx
+│   │   │   ├── result list project.xlsx
+│   │   │   └── result list project(old).xlsx
 │   │   └── Images/
 │   │       └── logo.png
-│   ├── instance/
+│   │
+│   ├── instance/              # Database instances (SQLite)
 │   │   └── user.db
-│   ├── logic/
+│   │
+│   ├── logic/                 # Core processing logic
 │   │   ├── sem_result.py
 │   │   ├── student_info.py
 │   │   ├── subject_result.py
-│   │   └── university_result.py
-│   ├── models/
+│   │   ├── university_result.py
+│   │   └── __pycache__/
+│   │
+│   ├── models/                # Data models and configuration
 │   │   ├── config.py
 │   │   ├── data_prep.py
 │   │   ├── fetch.py
+│   │   ├── paths.py
 │   │   ├── student.py
 │   │   ├── subject_results.py
-│   │   └── university.py
-│   │   └── users.py
-│   ├── Outputs/
+│   │   ├── university.py
+│   │   ├── users.py
+│   │   └── __pycache__/
+│   │
+│   ├── Outputs/               # Generated outputs (PDFs, graphs, databases)
 │   │   ├── student_data.db
+│   │   ├── student_data(old).db
 │   │   ├── Images/
+│   │   │   ├── attendance_pie_chart.png
+│   │   │   ├── performance_pie_chart.png
+│   │   │   └── ...
 │   │   └── PDFs/
-│   ├── tests/
+│   │       ├── <StudentName>_SEMx_report.pdf
+│   │       ├── SEMx_results.pdf
+│   │       └── subject_report_SEMx_<Code>.pdf
+│   │
+│   ├── routes/                # API routes (e.g., authentication)
+│   │   ├── auth.py
+│   │   └── __pycache__/
+│   │
+│   ├── tests/                 # Testing scripts
 │   │   ├── test_sql.py
-│   │   └── print_students.py
-│   ├── utils/
-│   │   └── genpass.py
-│   └── visuals/
-│       ├── plot_results.py
-│       ├── sem_pdf.py
+│   │   ├── print_students.py
+│   │   └── __pycache__/
+│   │
+│   ├── utils/                 # Utility/helper scripts
+│   │   ├── genpass.py
+│   │   └── __pycache__/
+│   │
+│   ├── visuals/               # Plotting and report generation
+│   │   ├── plot_results.py
+│   │   ├── plot_students.py
+│   │   ├── sem_pdf.py
+│   │   ├── student_report.py
+│   │   └── ...
+│   │
+│   └── __pycache__/           # Compiled Python files
 │       └── university_report.py
 ├── frontend/
 │   ├── index.html
