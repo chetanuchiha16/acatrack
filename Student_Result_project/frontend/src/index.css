@@ -5,9 +5,8 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  /* background-color: rgb(36, 36, 36); */
-  background-color: rgb(255, 255, 255);
-  color: #1a1a1a;
+  background-color: #c2f8ff;
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -29,11 +28,10 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  /* background-image: url("./assets/jss-1.jpeg"); */
+  background-image: url("./assets/jss-1.jpeg");
   background-repeat: no-repeat;
   background-size: cover;
   background-attachment: fixed;
-  backdrop-filter: blur(100px);
 }
 
 h1 {
