@@ -4,7 +4,9 @@ import axios from "axios";
 import { Link, useParams, useNavigate } from "react-router-dom";
 
 export default function Auth() {
-    let { who, id } = useParams();
+    let { who } = useParams() 
+    who = who || "Student";
+
     let navigate = useNavigate();
     console.log(who);
     let [username, setUsername] = useState("");
@@ -64,7 +66,7 @@ export default function Auth() {
                 Bengaluru
             </h1>
             <div className="absolute bottom-15">
-                <div className="flex w-2xl rounded-t-2xl justify-center">
+                <div className="flex w-2xl rounded-t-2xl justify-center text-white">
                     <button
                         onClick={() => navigate("/auth/Student")}
                         className="w-1/3 rounded-tl-2xl"
