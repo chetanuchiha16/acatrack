@@ -11,7 +11,7 @@ import pathlib
 # from models import SubjectResult
 # from models.config import db_path
 import matplotlib.pyplot as plt
-from models.config import db_path, pdf_dir, img_dir, logo_path
+from models.paths import db_path, pdf_dir, img_dir, logo_path
 
 def create_university_report(university, selected_semester, file_path=f"{pdf_dir}/university_report.pdf"):
     """

@@ -1,5 +1,5 @@
 import sqlite3
-from models.config import db_path
+from models.paths import db_path
 
 #temp function to print table names
 def print_table_names(db_path=db_path):

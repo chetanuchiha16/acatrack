@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from models.config import db_path, pdf_dir, img_dir
+from models.paths import db_path, pdf_dir, img_dir
 # Function to generate and display a chart in Tkinter for Student class
 def plot_student_marks(student, root):
     fig, ax = plt.subplots()

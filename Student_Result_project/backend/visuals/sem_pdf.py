@@ -9,7 +9,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 import pathlib
 from models import SubjectResult
-from models.config import db_path,pdf_dir,img_dir, logo_path
+from models.paths import db_path,pdf_dir,img_dir, logo_path
 
 def generate_sem_pdf(selected_semester, university, semester_subject_mapping, output_path):
     try:

@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import pathlib
-from models.config import db_path, pdf_dir, img_dir, logo_path
+from models.paths import db_path, pdf_dir, img_dir, logo_path
 
 def create_student_report(student, file_path=f"{pdf_dir}/student_report.pdf"):
     """

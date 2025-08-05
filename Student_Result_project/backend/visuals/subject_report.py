@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import pathlib
-from models.config import db_path, pdf_dir, img_dir, logo_path
+from models.paths import db_path, pdf_dir, img_dir, logo_path
 # import textwrap
 # from reportlab.lib import colors
 from reportlab.platypus import Image

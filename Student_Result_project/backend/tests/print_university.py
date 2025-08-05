@@ -1,7 +1,8 @@
 from models import University
+from models.paths import db_path
 
 #temp function to print university class data
-def test_university_class(selected_semester, db_path="Outputs/student_data.db"):
+def test_university_class(selected_semester, db_path=db_path):
     try:
         # Initialize the University class
         university = University(db_path=db_path)

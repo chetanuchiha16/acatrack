@@ -1,8 +1,9 @@
 from models import University
 from models import SubjectResult
+from models.paths import db_path
 #toppers list
 # Create an instance of University and load students
-university = University(db_path="Outputs/student_data.db")
+university = University(db_path=db_path)
 selected_semester = "SEM1"
 university.add_students(selected_semester)
 
