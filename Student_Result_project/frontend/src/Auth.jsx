@@ -6,19 +6,17 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 export default function Auth() {
     let { who, id } = useParams();
     let navigate = useNavigate();
-
+    console.log(who);
     let [username, setUsername] = useState("");
     let [password, setPassword] = useState("");
 
     useEffect(() => {
-        document.body.style.backgroundImage = "url('../public/jss-1.jpeg')"
+        document.body.style.backgroundImage = "url('../public/jss-1.jpeg')";
 
         return () => {
-
-            document.body.style.backgroundImage = "none"
-        }
-        
-    }, [])
+            document.body.style.backgroundImage = "none";
+        };
+    }, []);
 
     function handleSubmit(e) {
         e.preventDefault();
@@ -36,8 +34,10 @@ export default function Auth() {
             .then(({ data, status_code }) => {
                 if (data.message) {
                     alert(`${data.message} ${status_code}`);
+                    console.log(who);
                     navigate(`/auth/${who}/${data.id}`, {
                         state: {
+                            who: who,
                             id: data.id,
                             name: data.name,
                         },
@@ -49,15 +49,20 @@ export default function Auth() {
     }
 
     return (
-        <div className="w-full h-full overflow-hidden flex flex-col justify-center items-center">
+        <div className="w-full h-full overflow-hidden flex flex-col justify-center items-center bg-black">
             <div className="drop-shadow-2xl absolute left-10 top-10">
-
-            <img src={jssLogo} alt="jssLogo"  className="drop-shadow-2xl w-80"/>
+                <img
+                    src={jssLogo}
+                    alt="jssLogo"
+                    className="drop-shadow-2xl w-80"
+                />
             </div>
             <h1 className="text-[#1a1a1a] absolute top-14 font-bold">
-                JSS Academy of Technical Education, 
+                JSS Academy of Technical Education,
             </h1>
-            <h1 className="text-[#1a1a1a] absolute top-30 font-bold">Bengaluru</h1>
+            <h1 className="text-[#1a1a1a] absolute top-30 font-bold">
+                Bengaluru
+            </h1>
             <div className="absolute bottom-15">
                 <div className="flex w-2xl rounded-t-2xl justify-center">
                     <button
@@ -114,7 +119,9 @@ export default function Auth() {
                             ></input>
                         </div>
 
-                        <button className="ml-0 rounded-xl">Login</button>
+                        <button className="ml-0 rounded-xl text-white">
+                            Login
+                        </button>
                     </form>
                 </div>
             </div>
