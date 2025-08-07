@@ -13,13 +13,13 @@ export default function Student() {
 
     useEffect(() => {}, []);
     return (
-        <div className="flex justify-center items-center m-auto">
+        <main className="flex justify-center items-center m-auto">
             <h1 className="absolute top-2 m-auto ">Welcome {name}</h1>
 
             {/* <button className="rounded" onClick={() => navigate(`/auth/${who}/${id}/result`)}>Result</button> */}
             <div className="relative">
-                <div className="flex items-center justify-center min-h-[46px]">
-                    <div className=" border-4 border-b-0 border-black w-fit absolute left-0">
+                <section className="flex items-center justify-center min-h-[46px]">
+                    <nav className=" border-4 border-b-0 border-black w-fit absolute left-0">
                         <button
                             className="border border-black"
                             onClick={() => setSelectedTab((prev) => "result")}
@@ -34,8 +34,9 @@ export default function Student() {
                         >
                             Classroom
                         </button>
-                    </div>
-                    <div className="max-w-fit min-h-[46px] justify-self-center border-4 border-b-0 border-black">
+                    </nav>
+                    <fieldset className="max-w-fit min-h-[46px] justify-self-center border-4 border-b-0 border-black">
+                        <legend className="sr-only">Select Semester</legend>
                         <select
                             className="h-[46px]"
                             id="current"
@@ -53,13 +54,13 @@ export default function Student() {
                                 </option>
                             ))}
                         </select>
-                    </div>
-                </div>
+                    </fieldset>
+                </section>
                 {selectedTab === "result" && <Result />}
                 {selectedTab === "classroom" && <Classroom />}
             </div>
 
             {/* <button className="rounded">Classroom</button> */}
-        </div>
+        </main>
     );
 }
