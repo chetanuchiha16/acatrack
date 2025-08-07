@@ -8,7 +8,7 @@ import Student from "./Student.jsx";
 import Result from "./Result.jsx";
 import Error from "./Error.jsx";
 const route = createBrowserRouter([
-    { path: "/auth/Student/:id/result", element: <Result /> },
+    // { path: "/auth/Student/:id/result", element: <Result /> },
     { path: "/auth/:who/:id", element: <Student /> },
     { path: "/auth/:who", element: <Auth /> },
     { path: "/auth/", element: <Auth /> },

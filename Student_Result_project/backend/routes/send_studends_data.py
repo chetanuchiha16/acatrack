@@ -1,0 +1,76 @@
+from flask import Blueprint, request, jsonify, send_from_directory
+from models import Student
+from visuals import create_student_report
+from models.paths import db_path, pdf_dir
+import os
+
+student_bp = Blueprint('student', __name__)
+
+# @student_bp.route("/api/student", methods=["GET"])
+@student_bp.route(f"/auth/Student/result", methods=["GET"])
+def get_student_info():
+    usn = request.args.get("usn")
+    semester = request.args.get("semester")
+
+    print(f"Received USN: {usn}, Semester: {semester}")
+
+
+    try:
+        student = Student(usn=usn, semester=semester, db_path=db_path)
+
+        # Generate PDF
+        filename = f"{student.name}_{semester}_report.pdf"
+        file_path = os.path.join(pdf_dir, filename)
+        create_student_report(student, file_path=file_path)
+
+        return jsonify({
+            "name": student.name,
+            "usn": student.usn,
+            "total_marks": student.total_marks,
+            "percentage": student.percentage,
+            "credits": student.obtained_credits,
+            "sgpa": student.sgpa,
+            "cgpa": student.cgpa,
+            "subjects": [
+                {
+                    "code": code,
+                    "ia": ia,
+                    "see": see,
+                    "total": ia + see,
+                    "credit": credit,
+                    "status": status
+                }
+                for code, ia, see, credit, status in zip(
+                    student.subject_codes, student.ia_marks, student.see_marks,
+                    student.credits, student.pass_fail
+                )
+            ],
+            # "pdf_url": f"/auth/Student/report/{filename}"
+            "pdf_url": f"http://localhost:5000/auth/Student/report/{filename}"
+
+        })
+
+    except Exception as e:
+        print(f"[ERROR] {e}")
+        return jsonify({"error": str(e)}), 400
+
+@student_bp.route("/auth/Student/report/<filename>", methods=["GET"])
+def download_report(filename):
+    return send_from_directory(pdf_dir, filename, as_attachment=True)
+
+import io
+import base64
+
+@student_bp.route("/auth/Student/chart", methods=["GET"])
+def get_student_chart():
+    usn = request.args.get("usn")
+    semester = request.args.get("semester")
+    student = Student(usn=usn, semester=semester, db_path=db_path)
+    fig = student.plot_subject_marks()[0]
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+    img_base64 = base64.b64encode(buf.read()).decode("utf-8")
+
+    return jsonify({ "image": f"data:image/png;base64,{img_base64}" })
