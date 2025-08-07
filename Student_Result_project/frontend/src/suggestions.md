@@ -100,6 +100,8 @@ More setup details are available in [Tailwind's official guide](https://v3.tailw
 Would you like a sample layout or component built with these principles?
 
 #to HANDLE DIVS
+
+
 Great question! If you're looking to group and position multiple elements together in React with Tailwind—without relying solely on `<div>`—there are several **semantic and layout-friendly alternatives** that can help structure your UI more meaningfully and cleanly.
 
 ---
