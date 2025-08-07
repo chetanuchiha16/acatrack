@@ -1,4 +1,4 @@
-import customtkinter as ctk
+
 from models.paths import db_path, pdf_dir, img_dir
 # SubjectResult class
 class SubjectResult:
@@ -77,14 +77,15 @@ class SubjectResult:
             + "-" * 50 + "\n"
             f"PDF Saved"
         )
-
-        if output_widget:
-            output_widget.configure(state="normal")
-            output_widget.delete("1.0", ctk.END)  # Clear previous content
-            output_widget.insert(ctk.END, result_str)
-            output_widget.configure(state="disabled")
-        else:
-            print(result_str)
+        if __name__ == "__main__":
+            import customtkinter as ctk
+            if output_widget:
+                output_widget.configure(state="normal")
+                output_widget.delete("1.0", ctk.END)  # Clear previous content
+                output_widget.insert(ctk.END, result_str)
+                output_widget.configure(state="disabled")
+            else:
+                print(result_str)
 
     def plot_performance_pie_chart(self):
         """

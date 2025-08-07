@@ -6,13 +6,13 @@ import Classroom from "./Classroom";
 
 export default function Student() {
     let { who, id, name } = useLocation().state || {};
-    let [selectedTab, setSelectedTab] = useState("none");
+    let [selectedTab, setSelectedTab] = useState("result");
     let [currentSem, setCurrentSem] = useState("");
 
     const sems = ["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6"];
 
     return (
-        <main className="flex flex-col items-center w-full px-4 py-6">
+        <main className="flex flex-col items-center justify-center w-full px-4 py-6">
             {/* <h1 className="text-2xl font-bold font-serif mb-6">All The Best, {name || "Student"}!</h1> */}
 
             <section className="flex flex-wrap justify-center items-center gap-4 mb-6">
@@ -53,10 +53,10 @@ export default function Student() {
                 </fieldset>
             </section>
 
-            <div className="w-full max-w-6xl">
+            <div className="w-full max-w-6xl flex justify-center items-center">
                 {selectedTab === "result" && <Result usn={id} semester={currentSem} />}
                 {selectedTab === "classroom" && <Classroom />} 
-                {selectedTab === "none" && <div className="w-[80vw] h-[70vh] flex justify-center items-center border-4 border-black rounded-xl dark:text-white dark:bg-[#1a1a1a] text-black backdrop-blur-sm p-4 overflow-hidden"></div>} 
+                {/* {selectedTab === "none" && <div className="w-[80vw] h-[70vh] flex justify-center items-center border-4 border-black rounded-xl dark:text-white dark:bg-[#1a1a1a] text-black backdrop-blur-sm p-4 overflow-hidden"></div>}  */}
                 
                 {/* {selectedTab === "notes" && <FileExplorer />}  */}
             </div>

@@ -44,10 +44,13 @@ function FileGrid({ tree, path = "", setPath }) {
                             if (isFolder) {
                                 setPath(fullPath);
                             } else {
-                                window.open(
-                                    `/auth/Student/report${fullPath}`,
-                                    "_blank"
-                                );
+                                const downloadUrl = `http://localhost:5000/auth/Student/report${fullPath}`;
+                                const link = document.createElement("a");
+                                link.href = downloadUrl;
+                                link.download = ""; // empty string prompts download with original filename
+                                document.body.appendChild(link);
+                                link.click();
+                                link.remove();
                             }
                         }}
                     />

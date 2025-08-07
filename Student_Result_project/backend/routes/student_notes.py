@@ -26,7 +26,25 @@ def list_notes():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
+from flask import abort
+import os
+
 @student_notes_bp.route('/auth/Student/report/<path:filename>', methods=['GET'])
 def get_note(filename):
-    return send_from_directory(notes_dir, filename)
+    try:
+        # Secure full path
+        full_path = os.path.join(notes_dir, filename)
+        full_path = os.path.abspath(full_path)
+
+        # Prevent path traversal attacks
+        if not full_path.startswith(os.path.abspath(notes_dir)):
+            abort(403)
+
+        directory = os.path.dirname(full_path)
+        file = os.path.basename(full_path)
+
+        return send_from_directory(directory, file)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 

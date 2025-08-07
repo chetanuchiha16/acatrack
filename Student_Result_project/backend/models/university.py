@@ -1,5 +1,7 @@
 import sqlite3
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 from models import Student
 from models.paths import db_path,img_dir,pdf_dir
 class University:

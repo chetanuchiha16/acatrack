@@ -10,6 +10,8 @@ from reportlab.pdfgen import canvas
 import pathlib
 # from models import SubjectResult
 # from models.config import db_path
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from models.paths import db_path, pdf_dir, img_dir, logo_path
 
