@@ -87,6 +87,21 @@ class SubjectResult:
             else:
                 print(result_str)
 
+    def get_subject_results_dict(self):
+        return {
+            "subject_code": self.subject_code,
+            "semester": self.semester,
+            "total_students": self.total_students,
+            "present_students": self.present_students,
+            "absent_students": self.absent_students,
+            "pass_count": self.pass_count,
+            "fail_count": self.fail_count,
+            "pass_percentage": round(self.pass_percentage, 2),
+            "fcd_count": self.fcd_count,
+            "fc_count": self.fc_count,
+            "sc_count": self.sc_count
+        }
+
     def plot_performance_pie_chart(self):
         """
         Plot a pie chart for performance distribution across categories.

@@ -1,24 +1,34 @@
 from flask import Blueprint, request, jsonify
-from app_init import db,bcrypt
-from models import User
-
+from app_init import db, bcrypt
+from models import User, Teacher
 
 auth_bp = Blueprint("auth", __name__)
 
-@auth_bp.route("/auth", methods = ["POST"])
+@auth_bp.route("/auth", methods=["POST"])
 def auth():
     who = request.json.get("who")
     username = request.json.get("username")
     password = request.json.get("password")
 
-    user = User.query.filter(User.username == username).first()
-    name = user.name
-
-    if user:
-        pw_correct = bcrypt.check_password_hash(user.password,password)
-        if pw_correct:
-            return jsonify({"message":"login success","id":username,"name":name})
-        else:
-            return jsonify({"error":"Incorrect Password"})
+    # Decide which model to check based on 'who'
+    if who == "Student":
+        user = User.query.filter_by(username=username).first()
+    elif who == "Teacher":
+        user = Teacher.query.filter_by(username=username).first()
     else:
-        return jsonify({"error":"user not found"})
+        # If 'who' not provided or unknown, check both
+        user = User.query.filter_by(username=username).first() \
+               or Teacher.query.filter_by(username=username).first()
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    # Check password
+    if bcrypt.check_password_hash(user.password, password):
+        return jsonify({
+            "message": "Login success",
+            "id": username,
+            "name": user.name
+        })
+    else:
+        return jsonify({"error": "Incorrect password"}), 401
