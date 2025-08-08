@@ -1,11 +1,14 @@
 import React from "react";
 import jssLogo from "./assets/jssLogo.png";
 import { useState } from "react";
-
+import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 
 
 export default function Staff() {
+    let navigate = useNavigate()
+    let { who, id, name } = useLocation().state || {};
     const [isDark, setIsDark] = useState(false);
     return (
         <div className="min-h-screen w-screen bg-gray-200 px-20 py-3">
@@ -36,7 +39,7 @@ export default function Staff() {
 
             {/* Dashboard Options */}
             <div className="grid grid-cols-2 gap-4 h-15 w-[80%] mx-auto">
-                <div className="bg-red-200 w text-black text-2xl font-semibold cursor-pointer rounded-xl shadow-lg p-10 hover:bg-red-300 transition-all duration-200" onClick={() => navigate("/auth/Staff/")}>
+                <div className="bg-red-200 w text-black text-2xl font-semibold cursor-pointer rounded-xl shadow-lg p-10 hover:bg-red-300 transition-all duration-200" onClick={() => navigate(`/auth/Staff/${id}/StaffResults`)}>
                     <h2 className="text-2xl font-semibold mb-2 text-black">
                         Result
                     </h2>

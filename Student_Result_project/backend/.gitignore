@@ -1,4 +1,4 @@
 # Ignore all PDFs and PNGs inside output folders
 **/Outputs/*.pdf
 **/Outputs/*.png
-.pyc
+*.pyc

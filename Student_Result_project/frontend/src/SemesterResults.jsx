@@ -1,0 +1,208 @@
+import React, { useEffect, useState } from "react";
+
+// SemesterResults.jsx
+// Single-file React component using Tailwind CSS to call the Flask endpoint
+// Endpoint expected: GET /auth/Staff/sem_res?semester=SEM1
+
+export default function SemesterResults() {
+  const [semester, setSemester] = useState("SEM1");
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [view, setView] = useState("cards"); // 'cards' or 'table'
+
+  const semesters = ["SEM1", "SEM2", "SEM3", "SEM4"];
+
+  useEffect(() => {
+    fetchResults(semester);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [semester]);
+
+  async function fetchResults(selected) {
+    setLoading(true);
+    setError("");
+    setData(null);
+    try {
+      const q = new URLSearchParams({ semester: selected }).toString();
+      const res = await fetch(`http://localhost:5000/auth/Staff/sem_res?${q}`);
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        throw new Error(json?.error || `Request failed with ${res.status}`);
+      }
+      const json = await res.json();
+      setData(json);
+    } catch (err) {
+      setError(err.message || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function Stat({ label, value }) {
+    return (
+      <div className="flex flex-col items-center justify-center p-2">
+        <div className="text-xs uppercase text-slate-400">{label}</div>
+        <div className="text-xl font-semibold">{value}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto p-6">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-extrabold">Semester Results</h1>
+          <p className="text-sm text-slate-500">Fetch and browse subject-wise statistics from your Flask API.</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 bg-white/80 backdrop-blur px-3 py-2 rounded-xl shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7H3v12a2 2 0 002 2z" />
+            </svg>
+            <select
+              value={semester}
+              onChange={(e) => setSemester(e.target.value)}
+              className="appearance-none bg-transparent outline-none text-sm font-medium"
+            >
+              {semesters.map((s) => (
+                <option value={s} key={s}>{s}</option>
+              ))}
+            </select>
+          </label>
+
+          <div className="inline-flex overflow-hidden rounded-xl border bg-white shadow-sm">
+            <button
+              onClick={() => setView("cards")}
+              className={`px-3 py-2 text-sm ${view === "cards" ? "bg-slate-900 text-white" : "text-slate-600"}`}
+            >
+              Cards
+            </button>
+            <button
+              onClick={() => setView("table")}
+              className={`px-3 py-2 text-sm ${view === "table" ? "bg-slate-900 text-white" : "text-slate-600"}`}
+            >
+              Table
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <div className="mb-4">
+          {loading && (
+            <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center">
+              <div className="font-medium">Loading results…</div>
+              <div className="text-sm text-slate-500">Fetching data for <strong>{semester}</strong></div>
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>
+          )}
+
+          {!data && !loading && !error && (
+            <div className="rounded-lg border border-slate-100 p-6 text-slate-500">No data loaded. Choose a semester to begin.</div>
+          )}
+        </div>
+
+        {data && data.results && (
+          <section>
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <div className="text-sm text-slate-500">Showing</div>
+                <h2 className="text-lg font-semibold">{data.semester} — {data.results.length} subjects</h2>
+              </div>
+
+              <div className="text-sm text-slate-500">Overall snapshot
+                <div className="mt-1 text-xs text-slate-600">Powered by your Flask backend</div>
+              </div>
+            </div>
+
+            {view === "cards" ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {data.results.map((r) => (
+                  <article key={r.subject_code} className="group bg-white rounded-2xl p-4 shadow hover:shadow-lg transition-shadow border">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-xs text-slate-400">Subject</div>
+                        <div className="font-semibold text-lg">{r.subject_code}</div>
+                        <div className="text-sm text-slate-500 mt-1">Students: {r.total_students}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-full bg-slate-100 w-12 h-12 flex items-center justify-center text-sm font-semibold">{r.pass_percentage}%</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-3 gap-2">
+                      <div className="col-span-1 bg-slate-50 rounded-lg p-2 text-center">
+                        <div className="text-xs text-slate-400">Present</div>
+                        <div className="font-medium">{r.present_students}</div>
+                      </div>
+                      <div className="col-span-1 bg-slate-50 rounded-lg p-2 text-center">
+                        <div className="text-xs text-slate-400">Absent</div>
+                        <div className="font-medium">{r.absent_students}</div>
+                      </div>
+                      <div className="col-span-1 bg-slate-50 rounded-lg p-2 text-center">
+                        <div className="text-xs text-slate-400">Fail</div>
+                        <div className="font-medium">{r.fail_count}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                      <div className="flex items-center gap-3">
+                        <div>FCD: <span className="font-medium text-slate-700">{r.fcd_count}</span></div>
+                        <div>FC: <span className="font-medium text-slate-700">{r.fc_count}</span></div>
+                        <div>SC: <span className="font-medium text-slate-700">{r.sc_count}</span></div>
+                      </div>
+
+                      <button
+                        onClick={() => navigator.clipboard?.writeText(JSON.stringify(r))}
+                        className="text-xs text-slate-600 hover:text-slate-900"
+                      >Copy JSON</button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border">
+                <table className="min-w-full divide-y table-auto">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Subject</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Total</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Present</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Absent</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Pass %</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">FCD</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">FC</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">SC</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Fail</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y">
+                    {data.results.map((r) => (
+                      <tr key={r.subject_code} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 text-sm font-medium text-slate-700">{r.subject_code}</td>
+                        <td className="px-4 py-3 text-sm text-right text-slate-600">{r.total_students}</td>
+                        <td className="px-4 py-3 text-sm text-right text-slate-600">{r.present_students}</td>
+                        <td className="px-4 py-3 text-sm text-right text-slate-600">{r.absent_students}</td>
+                        <td className="px-4 py-3 text-sm text-right font-semibold">{r.pass_percentage}%</td>
+                        <td className="px-4 py-3 text-sm text-right">{r.fcd_count}</td>
+                        <td className="px-4 py-3 text-sm text-right">{r.fc_count}</td>
+                        <td className="px-4 py-3 text-sm text-right">{r.sc_count}</td>
+                        <td className="px-4 py-3 text-sm text-right text-red-600">{r.fail_count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
+      </main>
+
+      <footer className="mt-8 text-center text-xs text-slate-400">Tip: Add CORS on your Flask dev server or proxy requests through your frontend dev server (vite/create-react-app) if you hit network errors.</footer>
+    </div>
+  );
+}
