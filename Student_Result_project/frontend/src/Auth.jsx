@@ -54,19 +54,40 @@ export default function Auth() {
     }
 
     return (
-        <div className="w-full h-screen flex items-center justify-center  bg-opacity-30 backdrop-blur-sm">
-            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-3xl shadow-2xl p-8 w-[90%] max-w-md relative animate-fadeIn">
-                {/* Logo & Title */}
-                <div className="flex flex-col items-center mb-6">
-                    <img
-                        src={jssLogo}
-                        alt="JSS Logo"
-                        className="w-24 drop-shadow-lg"
-                    />
-                    <h1 className="text-lg font-bold text-white text-center drop-shadow-md">
-                        JSS Academy of Technical Education
-                    </h1>
-                    <p className="text-sm text-white/80">Bengaluru</p>
+        <div className="w-full h-full overflow-hidden flex flex-col justify-center items-center bg-black">
+            <div className="drop-shadow-2xl absolute left-10 top-10">
+                <img
+                    src={jssLogo}
+                    alt="jssLogo"
+                    className="drop-shadow-2xl w-80 "
+                />
+            </div>
+            <h1 className="text-[#1a1a1a] absolute top-14 font-bold">
+                JSS Academy of Technical Education,
+            </h1>
+            <h1 className="text-[#1a1a1a] absolute top-30 font-bold">
+                Bengaluru
+            </h1>
+            <div className="absolute bottom-15">
+                <div className="flex w-2xl rounded-t-2xl justify-center text-white">
+                    <button
+                        onClick={() => navigate("/auth/Student")}
+                        className="w-1/3 rounded-tl-2xl"
+                    >
+                        Student
+                    </button>
+                    <button
+                        onClick={() => navigate("/auth/Staff")}
+                        className="w-1/3"
+                    >
+                        Staff
+                    </button>
+                    <button
+                        onClick={() => navigate("/auth/Parent")}
+                        className="w-1/3 rounded-tr-2xl"
+                    >
+                        Parent
+                    </button>
                 </div>
 
                 {/* Role Selector */}

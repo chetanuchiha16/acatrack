@@ -14,6 +14,7 @@ const route = createBrowserRouter([
     { path: "/auth/Student/:id", element: <Student /> },
     { path: "/auth/:who", element: <Auth /> },
     { path: "/auth/", element: <Auth /> },
+    // change to app
     { path: `/`, element: <App /> },
     { path: `*`, element: <Error /> },
 ]);
