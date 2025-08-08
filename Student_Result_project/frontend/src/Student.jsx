@@ -1,66 +1,65 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Result from "./Result";
 import Classroom from "./Classroom";
+
+
 export default function Student() {
     let { who, id, name } = useLocation().state || {};
-    // let navigate = useNavigate()
     let [selectedTab, setSelectedTab] = useState("result");
-
-    let sems = ["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6"];
     let [currentSem, setCurrentSem] = useState("");
 
-    useEffect(() => {}, []);
+    const sems = ["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6"];
+
     return (
-        <main className="flex justify-center items-center m-auto">
-            <h1 className="absolute top-2 m-auto ">Welcome {name}</h1>
+        <main className="flex flex-col items-center justify-center w-full px-4 py-6">
+            {/* <h1 className="text-2xl font-bold font-serif mb-6">All The Best, {name || "Student"}!</h1> */}
 
-            {/* <button className="rounded" onClick={() => navigate(`/auth/${who}/${id}/result`)}>Result</button> */}
-            <div className="relative">
-                <section className="flex items-center justify-center min-h-[46px]">
-                    <nav className=" border-4 border-b-0 border-black w-fit absolute left-0">
-                        <button
-                            className="border border-black"
-                            onClick={() => setSelectedTab((prev) => "result")}
-                        >
-                            Result
-                        </button>
-                        <button
-                            className=""
-                            onClick={() =>
-                                setSelectedTab((prev) => "classroom")
-                            }
-                        >
-                            Classroom
-                        </button>
-                    </nav>
-                    <fieldset className="max-w-fit min-h-[46px] justify-self-center border-4 border-b-0 border-black">
-                        <legend className="sr-only">Select Semester</legend>
-                        <select
-                            className="h-[46px]"
-                            id="current"
-                            value={currentSem}
-                            onChange={(e) => setCurrentSem(e.target.value)}
-                        >
-                            {sems.map((sem, i) => (
-                                <option
-                                    className="dark:bg-[#1a1a1a]"
-                                    key={i}
-                                    value={sem}
-                                    id={i}
-                                >
-                                    {sem}
-                                </option>
-                            ))}
-                        </select>
-                    </fieldset>
-                </section>
-                {selectedTab === "result" && <Result />}
-                {selectedTab === "classroom" && <Classroom />}
+            <section className="flex flex-wrap justify-center items-center gap-4 mb-6">
+                <nav className="flex border-2 border-black rounded overflow-hidden">
+                    <button
+                        className={`px-4 py-2 border-r border-black transition duration-150 ${
+                            selectedTab === "result" ? "bg-blue-200 dark:bg-blue-700" : "bg-white dark:bg-[#1a1a1a]"
+                        }`}
+                        onClick={() => setSelectedTab("result")}
+                    >
+                        Result
+                    </button>
+                    <button
+                        className={`px-4 py-2 transition duration-150 ${
+                            selectedTab === "classroom" ? "bg-blue-200 dark:bg-blue-700" : "bg-white dark:bg-[#1a1a1a]"
+                        }`}
+                        onClick={() => setSelectedTab("classroom")}
+                    >
+                        Classroom
+                    </button>
+                    
+                </nav>
+
+                <fieldset className="border-2 border-black rounded">
+                    <legend className="sr-only">Select Semester</legend>
+                    <select
+                        className="px-3 py-2 rounded bg-white dark:bg-[#1a1a1a] text-black dark:text-white"
+                        value={currentSem}
+                        onChange={(e) => setCurrentSem(e.target.value)}
+                    >
+                        <option value="">Select Semester</option>
+                        {sems.map((sem, i) => (
+                            <option key={i} value={sem}>
+                                {sem}
+                            </option>
+                        ))}
+                    </select>
+                </fieldset>
+            </section>
+
+            <div className="w-full max-w-6xl flex justify-center items-center">
+                {selectedTab === "result" && <Result usn={id} semester={currentSem} />}
+                {selectedTab === "classroom" && <Classroom />} 
+                {/* {selectedTab === "none" && <div className="w-[80vw] h-[70vh] flex justify-center items-center border-4 border-black rounded-xl dark:text-white dark:bg-[#1a1a1a] text-black backdrop-blur-sm p-4 overflow-hidden"></div>}  */}
+                
+                {/* {selectedTab === "notes" && <FileExplorer />}  */}
             </div>
-
-            {/* <button className="rounded">Classroom</button> */}
         </main>
     );
 }

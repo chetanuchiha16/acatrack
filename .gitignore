@@ -1,4 +1,10 @@
 # Ignore all PDFs and PNGs inside output folders
 **/Outputs/*.pdf
 **/Outputs/*.png
+<<<<<<< HEAD
+*.pyc
+__pycache__/
+*.db
+=======
 .pyc
+>>>>>>> 8ab8d8deeca816de05f3c80fc5d31d78db8d9196

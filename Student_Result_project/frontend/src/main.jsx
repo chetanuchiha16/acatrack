@@ -7,11 +7,14 @@ import Auth from "./Auth.jsx";
 import Student from "./Student.jsx";
 import Result from "./Result.jsx";
 import Error from "./Error.jsx";
+import Staff from "./Staff.jsx";
 const route = createBrowserRouter([
-    { path: "/auth/Student/:id/result", element: <Result /> },
-    { path: "/auth/:who/:id", element: <Student /> },
+    // { path: "/auth/Student/:id/result", element: <Result /> },
+    { path: "/auth/Staff/:id", element: <Staff /> },
+    { path: "/auth/Student/:id", element: <Student /> },
     { path: "/auth/:who", element: <Auth /> },
     { path: "/auth/", element: <Auth /> },
+    // change to app
     { path: `/`, element: <App /> },
     { path: `*`, element: <Error /> },
 ]);
