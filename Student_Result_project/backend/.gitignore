@@ -2,3 +2,4 @@
 **/Outputs/*.pdf
 **/Outputs/*.png
 *.pyc
+*.db
