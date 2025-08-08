@@ -56,7 +56,7 @@ export default function Auth() {
                 <img
                     src={jssLogo}
                     alt="jssLogo"
-                    className="drop-shadow-2xl w-80"
+                    className="drop-shadow-2xl w-80 "
                 />
             </div>
             <h1 className="text-[#1a1a1a] absolute top-14 font-bold">
