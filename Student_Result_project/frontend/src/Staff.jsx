@@ -7,23 +7,9 @@ import { useState } from "react";
 
 export default function Staff() {
     const [isDark, setIsDark] = useState(false);
-
-    function toggleDark() {
-        setIsDark(!isDark);
-        document.documentElement.classList.toggle("dark");
-    }
     return (
         <div className="min-h-screen w-screen bg-gray-200 px-20 py-3">
-            {/* <div className='text-4xl font-bold mb-12 text-gray-800 flex items-center justify-between'>
-                <img src={jssLogo} alt="JSS Logo" className="drop-shadow-2xl w-40  " />
-
-                <span>Staff Dashboard</span>
-                <div className="cursor-pointer px-3 py-1.5 rounded-lg bg-gray-300 dark:bg-gray-700 text-black dark:text-white shadow hover:scale-105 hover:shadow-lg transition-all duration-300 text-center text-sm">
-                    Home
-                </div>
-
-            </div> */}
-
+            
             <div className="text-4xl font-bold mb-12 text-gray-800 flex items-center justify-between">
                 <img
                     src={jssLogo}
@@ -50,7 +36,7 @@ export default function Staff() {
 
             {/* Dashboard Options */}
             <div className="grid grid-cols-2 gap-4 h-15 w-[80%] mx-auto">
-                <div className="bg-red-200 w text-black text-2xl font-semibold cursor-pointer rounded-xl shadow-lg p-10 hover:bg-red-300 transition-all duration-200">
+                <div className="bg-red-200 w text-black text-2xl font-semibold cursor-pointer rounded-xl shadow-lg p-10 hover:bg-red-300 transition-all duration-200" onClick={() => navigate("/auth/Staff/")}>
                     <h2 className="text-2xl font-semibold mb-2 text-black">
                         Result
                     </h2>
