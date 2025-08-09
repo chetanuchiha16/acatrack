@@ -20,10 +20,22 @@ export default function ExcelViewer() {
     useEffect(() => {
         if (!worksheets || !worksheets[sheetIndex]) return;
         let rows = [];
+        let maxCols = 0;
+
+        // First pass: find the maximum number of columns in the sheet
         worksheets[sheetIndex].eachRow((row) => {
-            let values = row.values.slice(1);
+            maxCols = Math.max(maxCols, row.cellCount);
+        });
+
+        // Second pass: normalize all rows to have the same length
+        worksheets[sheetIndex].eachRow((row) => {
+            let values = row.values.slice(1); // remove the empty index 0
+            while (values.length < maxCols) {
+                values.push(""); // fill empty cells with ""
+            }
             rows.push(values);
         });
+
         setExcelData(rows);
     }, [worksheets, sheetIndex]);
 
@@ -35,7 +47,9 @@ export default function ExcelViewer() {
         let worksheet = workbookRef.current.worksheets[sheetIndex];
         let row = worksheet.getRow(rowIndex + 1);
         let cell = row.getCell(cellIndex + 1);
-        cell.value = isNaN(e.target.value) ? e.target.value : Number(e.target.value);
+        cell.value = isNaN(e.target.value)
+            ? e.target.value
+            : Number(e.target.value);
         row.commit();
     }
 
@@ -66,7 +80,9 @@ export default function ExcelViewer() {
 
     return (
         <div style={{ padding: "1rem" }}>
-            <h1 style={{ color: "var(--primary-color)" }}>Excel Table Viewer</h1>
+            <h1 style={{ color: "var(--primary-color)" }}>
+                Excel Table Viewer
+            </h1>
 
             <div style={{ marginBottom: "1rem", display: "flex", gap: "1rem" }}>
                 <select
@@ -76,7 +92,7 @@ export default function ExcelViewer() {
                         padding: "0.5rem",
                         borderRadius: "6px",
                         border: "1px solid var(--border-color)",
-                        backgroundColor: "var(--input-bg)",
+                        // backgroundColor: "var(--input-bg)",
                         color: "var(--text-color)",
                     }}
                 >
@@ -89,7 +105,7 @@ export default function ExcelViewer() {
                 <button
                     onClick={addRow}
                     style={{
-                        backgroundColor: "var(--button-bg)",
+                        // backgroundColor: "var(--button-bg)",
                         color: "var(--button-text)",
                         padding: "0.5rem 1rem",
                         borderRadius: "6px",
@@ -102,7 +118,7 @@ export default function ExcelViewer() {
                 <button
                     onClick={toExcel}
                     style={{
-                        backgroundColor: "var(--accent-color)",
+                        // backgroundColor: "var(--accent-color)",
                         color: "white",
                         padding: "0.5rem 1rem",
                         borderRadius: "6px",
@@ -123,7 +139,12 @@ export default function ExcelViewer() {
                     }}
                 >
                     <thead>
-                        <tr style={{ backgroundColor: "var(--header-bg)", color: "var(--header-text)" }}>
+                        <tr
+                            style={{
+                                backgroundColor: "var(--header-bg)",
+                                color: "var(--header-text)",
+                            }}
+                        >
                             {excelData[0]?.map((cellValue, cellIndex) => (
                                 <th
                                     key={cellIndex}
@@ -149,7 +170,10 @@ export default function ExcelViewer() {
                                             : "var(--row-odd-bg)",
                                     transition: "background 0.2s",
                                 }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--row-hover-bg)")}
+                                onMouseEnter={(e) =>
+                                    (e.currentTarget.style.backgroundColor =
+                                        "var(--row-hover-bg)")
+                                }
                                 onMouseLeave={(e) =>
                                     (e.currentTarget.style.backgroundColor =
                                         rowIndex % 2 === 0
@@ -167,16 +191,21 @@ export default function ExcelViewer() {
                                     >
                                         <input
                                             type="text"
-                                            value={cellValue}
+                                            value={cellValue ?? ""}
                                             onChange={(e) =>
-                                                handleInput(e, rowIndex + 1, cellIndex)
+                                                handleInput(
+                                                    e,
+                                                    rowIndex + 1,
+                                                    cellIndex
+                                                )
                                             }
                                             style={{
                                                 width: "100%",
                                                 padding: "0.3rem",
                                                 borderRadius: "4px",
                                                 border: "1px solid var(--border-color)",
-                                                backgroundColor: "var(--input-bg)",
+                                                backgroundColor:
+                                                    "var(--input-bg)",
                                                 color: "var(--text-color)",
                                             }}
                                         />
