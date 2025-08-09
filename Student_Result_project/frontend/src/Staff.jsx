@@ -55,7 +55,10 @@ export default function Staff() {
                     </p>
                 </div>
 
-                <div className="bg-green-200 dark:bg-green-800 text-black dark:text-white text-2xl font-semibold cursor-pointer rounded-xl shadow-lg p-10 hover:bg-green-300 dark:hover:bg-green-700 transition-all duration-200">
+                <div
+                    className="bg-green-200 dark:bg-green-800 text-black dark:text-white text-2xl font-semibold cursor-pointer rounded-xl shadow-lg p-10 hover:bg-green-300 dark:hover:bg-green-700 transition-all duration-200"
+                    onClick={() => navigate(`/auth/Staff/${id}/UploadResults`)}
+                >
                     <h2 className="text-2xl font-semibold mb-2">
                         Upload results
                     </h2>

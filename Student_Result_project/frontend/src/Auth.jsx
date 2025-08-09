@@ -75,7 +75,7 @@ export default function Auth() {
                         <button
                             key={role}
                             onClick={() => navigate(`/auth/${role}`)}
-                            className={`flex-1 py-2 rounded-full text-sm font-medium transition-all ${
+                            className={`flex-1 py-2 rounded-full text-sm font-medium transition-all mx-0.5 ${
                                 who === role
                                     ? "bg-blue-500 text-white shadow-md"
                                     : "text-white hover:bg-white/20"

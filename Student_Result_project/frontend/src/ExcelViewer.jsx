@@ -2,22 +2,18 @@ import { useState, useEffect, useRef } from "react";
 import * as ExcelJs from "exceljs";
 
 export default function ExcelViewer() {
-    let [worksheets, setWorksheets] = useState(null);
-    //   let [workbook, setWorkBook] = useState()
-    let workbookRef = useRef(null);
-    let [sheetIndex, setSheetIndex] = useState(0);
-    let [excelData, setExcelData] = useState([]);
+    const [worksheets, setWorksheets] = useState(null);
+    const workbookRef = useRef(null);
+    const [sheetIndex, setSheetIndex] = useState(0);
+    const [excelData, setExcelData] = useState([]);
 
     useEffect(() => {
-        fetch("template.xlsx")
+        fetch("/template.xlsx")
             .then((res) => res.arrayBuffer())
             .then(async (buffer) => {
-                // let workbook = new ExcelJs.Workbook();
-                let workbook = await new ExcelJs.Workbook().xlsx.load(buffer);
-                // await workbook.xlsx.load(buffer);
+                const workbook = await new ExcelJs.Workbook().xlsx.load(buffer);
                 workbookRef.current = workbook;
-                let worksheets = workbook.worksheets;
-                setWorksheets(worksheets);
+                setWorksheets(workbook.worksheets);
             });
     }, []);
 
@@ -28,7 +24,6 @@ export default function ExcelViewer() {
             let values = row.values.slice(1);
             rows.push(values);
         });
-        console.log(rows);
         setExcelData(rows);
     }, [worksheets, sheetIndex]);
 
@@ -37,19 +32,15 @@ export default function ExcelViewer() {
         rows[rowIndex][cellIndex] = e.target.value;
         setExcelData(rows);
 
-        let value = e.target.value;
         let worksheet = workbookRef.current.worksheets[sheetIndex];
         let row = worksheet.getRow(rowIndex + 1);
         let cell = row.getCell(cellIndex + 1);
-        cell.value = Number(value);
+        cell.value = isNaN(e.target.value) ? e.target.value : Number(e.target.value);
         row.commit();
     }
 
     async function toExcel() {
-        // let workbook = new ExcelJs.Workbook()
-        // let worksheet = workbook.addWorksheet(worksheets[sheetIndex].name).addRows(excelData)
         const buffer = await workbookRef.current.xlsx.writeBuffer();
-
         let blob = new Blob([buffer], { type: "application/octet-stream" });
 
         let formData = new FormData();
@@ -64,70 +55,138 @@ export default function ExcelViewer() {
                 return { data, status_code: res.status };
             })
             .then(({ data, status_code }) => {
-                if (data.message) {
-                    alert(data.message, status_code);
-                } else if (data.error) {
-                    alert(data.error, status_code);
-                }
+                alert(data.message || data.error, status_code);
             });
     }
 
     function addRow() {
         let newRow = new Array(excelData[0]?.length || 1).fill("");
         setExcelData([...excelData, newRow]);
-
-        // let a = [[1,2,3,4],[5,6,7,8]]
-
-        // addrow[rowIndex][cellIndex] = ""
     }
 
     return (
-        <div>
-            <h1>Table</h1>
-            <select
-                value={sheetIndex}
-                onChange={(e) => setSheetIndex(Number(e.target.value))}
-            >
-                {worksheets?.map((sheet, index) => (
-                    <option key={index} value={index}>
-                        {sheet.name}
-                    </option>
-                ))}
-            </select>
-            <table>
-                <thead>
-                    <tr>
-                        {excelData[0]?.map((cellValue, cellIndex) => (
-                            <th key={cellIndex}>{cellValue}</th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {excelData.slice(1).map((row, rowIndex) => (
-                        <tr key={rowIndex}>
-                            {row.map((cellValue, cellIndex) => (
-                                <td key={cellIndex}>
-                                    {
+        <div style={{ padding: "1rem" }}>
+            <h1 style={{ color: "var(--primary-color)" }}>Excel Table Viewer</h1>
+
+            <div style={{ marginBottom: "1rem", display: "flex", gap: "1rem" }}>
+                <select
+                    value={sheetIndex}
+                    onChange={(e) => setSheetIndex(Number(e.target.value))}
+                    style={{
+                        padding: "0.5rem",
+                        borderRadius: "6px",
+                        border: "1px solid var(--border-color)",
+                        backgroundColor: "var(--input-bg)",
+                        color: "var(--text-color)",
+                    }}
+                >
+                    {worksheets?.map((sheet, index) => (
+                        <option key={index} value={index}>
+                            {sheet.name}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    onClick={addRow}
+                    style={{
+                        backgroundColor: "var(--button-bg)",
+                        color: "var(--button-text)",
+                        padding: "0.5rem 1rem",
+                        borderRadius: "6px",
+                        border: "none",
+                        cursor: "pointer",
+                    }}
+                >
+                    ➕ Add Row
+                </button>
+                <button
+                    onClick={toExcel}
+                    style={{
+                        backgroundColor: "var(--accent-color)",
+                        color: "white",
+                        padding: "0.5rem 1rem",
+                        borderRadius: "6px",
+                        border: "none",
+                        cursor: "pointer",
+                    }}
+                >
+                    ⬆ Upload
+                </button>
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+                <table
+                    style={{
+                        borderCollapse: "collapse",
+                        width: "100%",
+                        backgroundColor: "var(--table-bg)",
+                    }}
+                >
+                    <thead>
+                        <tr style={{ backgroundColor: "var(--header-bg)", color: "var(--header-text)" }}>
+                            {excelData[0]?.map((cellValue, cellIndex) => (
+                                <th
+                                    key={cellIndex}
+                                    style={{
+                                        padding: "0.5rem",
+                                        border: "1px solid var(--border-color)",
+                                        textAlign: "left",
+                                    }}
+                                >
+                                    {cellValue}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {excelData.slice(1).map((row, rowIndex) => (
+                            <tr
+                                key={rowIndex}
+                                style={{
+                                    backgroundColor:
+                                        rowIndex % 2 === 0
+                                            ? "var(--row-even-bg)"
+                                            : "var(--row-odd-bg)",
+                                    transition: "background 0.2s",
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--row-hover-bg)")}
+                                onMouseLeave={(e) =>
+                                    (e.currentTarget.style.backgroundColor =
+                                        rowIndex % 2 === 0
+                                            ? "var(--row-even-bg)"
+                                            : "var(--row-odd-bg)")
+                                }
+                            >
+                                {row.map((cellValue, cellIndex) => (
+                                    <td
+                                        key={cellIndex}
+                                        style={{
+                                            padding: "0.4rem",
+                                            border: "1px solid var(--border-color)",
+                                        }}
+                                    >
                                         <input
                                             type="text"
                                             value={cellValue}
                                             onChange={(e) =>
-                                                handleInput(
-                                                    e,
-                                                    rowIndex + 1,
-                                                    cellIndex
-                                                )
+                                                handleInput(e, rowIndex + 1, cellIndex)
                                             }
+                                            style={{
+                                                width: "100%",
+                                                padding: "0.3rem",
+                                                borderRadius: "4px",
+                                                border: "1px solid var(--border-color)",
+                                                backgroundColor: "var(--input-bg)",
+                                                color: "var(--text-color)",
+                                            }}
                                         />
-                                    }
-                                </td>
-                            ))}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-            <button onClick={addRow}>Add Row</button>
-            <button onClick={toExcel}>Upload</button>
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }
