@@ -162,7 +162,7 @@ class University:
             return [{"error": f"Error occurred: {str(e)}"}]
         
 
-    def find_failed_students(self, selected_semester):
+    def find_failed_students_old(self, selected_semester):
         """
         Find students who failed in the selected semester and the subjects they failed.
 
@@ -204,6 +204,44 @@ class University:
         except Exception as e:
             print(f"Error occurred while fetching failed students: {str(e)}")
             return {}
+
+    def find_failed_students(self, selected_semester):
+        failed_students_list = []
+
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT SUBJECT_CODE_USN FROM {selected_semester}")
+            rows = cursor.fetchall()
+            conn.close()
+
+            for row in rows:
+                usn = row[0]
+                student = Student(usn, selected_semester, self.db_path)
+                pass_fail_subjects = student.calculate_pass_fail()
+
+                # If student has any fail, add full student data to the list
+                if "Fail" in pass_fail_subjects:
+                    # Build a dict representing all needed student fields
+                    failed_students_list.append({
+                        "name": student.name,
+                        "usn": student.usn,
+                        "cgpa": student.cgpa,
+                        "percentage": student.percentage,
+                        "obtained_credits": student.obtained_credits,
+                        "pass_fail": pass_fail_subjects,
+                        "ia_marks": student.ia_marks,
+                        "see_marks": student.see_marks,
+                        "subject_codes": student.subject_codes,
+                        # add any other fields your frontend expects
+                    })
+
+            return failed_students_list
+
+        except Exception as e:
+            print(f"Error occurred while fetching failed students: {str(e)}")
+            return []
+
 
     def display_failed_students(self, selected_semester):
         failed_students = self.find_failed_students(selected_semester)

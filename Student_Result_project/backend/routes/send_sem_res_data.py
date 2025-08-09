@@ -1,6 +1,8 @@
-from flask import Flask, jsonify, request,Blueprint
+from flask import Flask, jsonify, request,Blueprint,send_file
 from models import University, SubjectResult
-from models.paths import db_path
+from models.paths import db_path, pdf_dir
+from visuals import generate_sem_pdf
+import os
 
 sem_bp = Blueprint('sem_res',__name__)
 
@@ -49,3 +51,19 @@ def get_semester_results():
         return jsonify({"error": str(e)}), 500
 
 
+@sem_bp.route('/auth/Staff/sem_res/report/<semester>', methods=['GET'])
+def download_semester_report(semester):
+    semester_subject_mapping = {
+                "SEM1": ["BMATS101", "BCHES102", "BCEDK103", "BENGK106", "BICOK107", "BIDTK158", "BESCK104A", "BETCK105H"],
+                "SEM2": ["BMAT201", "BPHYS202", "BPOPS203", "BPWSK206", "BKSKK207", "BSFHK258", "BPLCK205B", "BESCK204C"],
+                "SEM3": ["BCS301", "BCS302", "BCS303", "BCS304", "BCSL305", "BSCK307", "BNSK359", "BCS306A", "BCS358D"],
+                "SEM4": ["BCS401", "BCS402", "BCS403", "BCSL404", "BBOC407", "BUHK408", "BPEK459_PhysicalEducation_OR_BNSK459_NSS_", "BCS405B"]
+            }
+    pdf_path = os.path.join(pdf_dir, f"{semester}_results.pdf")
+    if not os.path.exists(pdf_path):
+        # Optionally generate the PDF if it does not exist
+        university = University(db_path)
+        university.add_students(selected_semester=semester)
+        generate_sem_pdf(semester, university, semester_subject_mapping, output_path=pdf_path)
+        
+    return send_file(pdf_path, as_attachment=True, download_name=f"{semester}_results.pdf")

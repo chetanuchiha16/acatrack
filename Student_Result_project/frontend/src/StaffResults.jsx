@@ -13,8 +13,8 @@ export default function StaffResults() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-6xl mx-auto bg-white shadow-lg rounded-lg">
+    <div className="min-h-screen  p-6">
+      <div className="max-w-6xl mx-auto  shadow-lg rounded-lg">
         <div className="flex border-b">
           {tabs.map((tab) => (
             <button

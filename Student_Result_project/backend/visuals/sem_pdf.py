@@ -156,7 +156,7 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping, ou
 
         # Display failed students
         
-        failed_students = university.find_failed_students(selected_semester)
+        failed_students = university.find_failed_students_old(selected_semester)
         fail_title = Paragraph(f"<b> Slow Learners  {selected_semester}</b>", styles['Heading2'])
         elements.append(fail_title)
         elements.append(Spacer(1, 12))

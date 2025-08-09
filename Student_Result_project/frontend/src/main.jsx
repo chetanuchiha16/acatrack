@@ -9,8 +9,10 @@ import Student from "./Student.jsx";
 import Error from "./Error.jsx";
 import Staff from "./Staff.jsx";
 import StaffResults from "./StaffResults.jsx"
+import TeacherNotesUploader from "./TeacherNotesUploader.jsx";
 const route = createBrowserRouter([
     // { path: "/auth/Student/:id/result", element: <Result /> },
+    { path: "/auth/Staff/:id/StaffClassroom", element: <TeacherNotesUploader /> },
     { path: "/auth/Staff/:id/StaffResults", element: <StaffResults /> },
     { path: "/auth/Staff/:id", element: <Staff /> },
     { path: "/auth/Student/:id", element: <Student /> },

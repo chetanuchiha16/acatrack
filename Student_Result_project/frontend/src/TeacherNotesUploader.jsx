@@ -1,0 +1,228 @@
+import React, { useState, useEffect, useRef } from "react";
+import { FaFolder, FaFilePdf } from "react-icons/fa";
+
+function FileItem({ name, isFolder, onClick, selected }) {
+    return (
+        <div
+            className={`flex flex-col items-center w-24 m-2 p-2 rounded-lg cursor-pointer transition hover:bg-blue-100 dark:hover:bg-blue-900 ${
+                selected ? "ring-2 ring-blue-400 dark:ring-blue-300" : ""
+            }`}
+            onClick={onClick}
+        >
+            <div className="text-4xl mb-1 text-yellow-500">
+                {isFolder ? (
+                    <FaFolder />
+                ) : (
+                    <FaFilePdf className="text-red-500" />
+                )}
+            </div>
+            <div className="text-xs text-center break-words dark:text-white">
+                {name}
+            </div>
+        </div>
+    );
+}
+
+function FileGrid({ tree, path = "", setPath }) {
+    const [selected, setSelected] = useState(null);
+    const entries = Object.entries(tree);
+
+    return (
+        <div className="flex flex-wrap">
+            {entries.map(([name, value]) => {
+                const fullPath = `${path}/${name}`;
+                const isFolder = value !== null;
+
+                return (
+                    <FileItem
+                        key={fullPath}
+                        name={name}
+                        isFolder={isFolder}
+                        selected={selected === fullPath}
+                        onClick={() => {
+                            setSelected(fullPath);
+                            if (isFolder) {
+                                setPath(fullPath);
+                            }
+                        }}
+                    />
+                );
+            })}
+        </div>
+    );
+}
+
+function getDirAtPath(tree, path) {
+    if (!path) return tree;
+    const parts = path.split("/").filter(Boolean);
+    let current = tree;
+    for (let part of parts) {
+        current = current?.[part];
+        if (!current) return {};
+    }
+    return current;
+}
+
+export default function TeacherNotesUploader() {
+    const [fileTree, setFileTree] = useState(null);
+    const [currentPath, setCurrentPath] = useState("");
+    const [dragActive, setDragActive] = useState(false);
+    const [uploadStatus, setUploadStatus] = useState("");
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const fileInputRef = useRef(null);
+
+    useEffect(() => {
+        fetch("http://localhost:5000/auth/Staff/upload_notes")
+            .then((res) => res.json())
+            .then(setFileTree)
+            .catch((err) => console.error("Failed to load notes:", err));
+    }, []);
+
+    const currentDir = fileTree ? getDirAtPath(fileTree, currentPath) : null;
+
+    const goBack = () => {
+        const parts = currentPath.split("/").filter(Boolean);
+        parts.pop();
+        setCurrentPath("/" + parts.join("/"));
+    };
+
+    const handleFileSelect = (file) => {
+        if (file.type !== "application/pdf") {
+            setUploadStatus("❌ Only PDF files are allowed.");
+            return;
+        }
+        uploadFile(file);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFileSelect(e.dataTransfer.files[0]);
+        }
+    };
+
+    const uploadFile = (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("path", currentPath); // send folder path to backend
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "http://localhost:5000/auth/Staff/upload_notes", true);
+
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                setUploadProgress(
+                    Math.round((event.loaded / event.total) * 100)
+                );
+            }
+        };
+
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                setUploadStatus("✅ Uploaded successfully");
+                setUploadProgress(0);
+                // refresh file tree
+                fetch("http://localhost:5000/auth/Staff/upload_notes")
+                    .then((res) => res.json())
+                    .then(setFileTree);
+            } else {
+                setUploadStatus("❌ Upload failed");
+            }
+        };
+
+        xhr.onerror = () => setUploadStatus("❌ Upload error");
+
+        xhr.send(formData);
+    };
+
+    return (
+        <div className="w-[80vw] h-[70vh] flex flex-col border-4 border-black rounded-xl dark:text-white dark:bg-[#1a1a1a] text-black p-4 overflow-hidden">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">📄 Upload Notes (PDF)</h2>
+                {currentPath && (
+                    <button
+                        className="text-sm text-blue-600 hover:underline dark:text-blue-300"
+                        onClick={goBack}
+                    >
+                        🔙 Back
+                    </button>
+                )}
+            </div>
+
+            <div
+                className={`flex-1 p-4 rounded-xl border-2 border-dashed transition cursor-pointer ${
+                    dragActive
+                        ? "border-green-500 bg-green-50 dark:bg-green-900"
+                        : "border-gray-300"
+                }`}
+                onDragEnter={(e) => {
+                    e.preventDefault();
+                    setDragActive(true);
+                }}
+                onDragLeave={(e) => {
+                    e.preventDefault();
+                    setDragActive(false);
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+                // onClick={() => fileInputRef.current.click()}
+            >
+                {currentDir ? (
+                    <FileGrid
+                        tree={currentDir}
+                        path={currentPath}
+                        setPath={setCurrentPath}
+                    />
+                ) : (
+                    <p>Loading...</p>
+                )}
+                <p className="mt-4 text-center text-sm text-gray-500">
+                    {dragActive
+                        ? "📂 Drop file here to upload to this folder"
+                        : "Drag & drop or click to select a PDF"}
+                </p>
+            </div>
+            <div className="mt-4">
+                <button
+                    className="px-4 py-2 bg-blue-500 text-white rounded"
+                    onClick={() => fileInputRef.current.click()}
+                >
+                    📤 Upload PDF
+                </button>
+            </div>
+
+            <input
+                type="file"
+                ref={fileInputRef}
+                accept="application/pdf"
+                onChange={(e) => {
+                    if (e.target.files[0]) handleFileSelect(e.target.files[0]);
+                }}
+                className="hidden"
+            />
+
+            {uploadProgress > 0 && (
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
+                    <div
+                        className="bg-blue-500 h-2 rounded-full"
+                        style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                </div>
+            )}
+
+            {uploadStatus && (
+                <p
+                    className={`mt-2 text-sm ${
+                        uploadStatus.startsWith("✅")
+                            ? "text-green-600"
+                            : "text-red-600"
+                    }`}
+                >
+                    {uploadStatus}
+                </p>
+            )}
+        </div>
+    );
+}

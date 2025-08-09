@@ -4,6 +4,7 @@ from .send_studends_data import student_bp
 from .send_uni_data import uni_bp
 from .send_sub_res_data import sub_bp
 from .send_sem_res_data import sem_bp
+from .teacher_notes import teacher_notes_bp
 def register_routes(app):
     app.register_blueprint(auth_bp)
     app.register_blueprint(student_bp)
@@ -11,3 +12,4 @@ def register_routes(app):
     app.register_blueprint(uni_bp)
     app.register_blueprint(sub_bp)
     app.register_blueprint(sem_bp)
+    app.register_blueprint(teacher_notes_bp)
