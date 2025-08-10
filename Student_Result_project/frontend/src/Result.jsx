@@ -1,18 +1,15 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-
+import API_BASE from "./config";
 export default function Result({ usn, semester }) {
     const [data, setData] = useState(null);
     const [error, setError] = useState("");
 
     const fetchStudent = async () => {
         try {
-            const res = await axios.get(
-                "http://localhost:5000/auth/Student/result",
-                {
-                    params: { usn, semester },
-                }
-            );
+            const res = await axios.get(`${API_BASE}/auth/Student/result`, {
+                params: { usn, semester },
+            });
             setData(res.data);
             console.log(res.data, res.status);
             setError("");

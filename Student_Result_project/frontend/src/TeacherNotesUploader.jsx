@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaFolder, FaFilePdf } from "react-icons/fa";
-
+import API_BASE from "./config";
 function FileItem({ name, isFolder, onClick, selected }) {
     return (
         <div
@@ -72,7 +72,7 @@ export default function TeacherNotesUploader() {
     const fileInputRef = useRef(null);
 
     useEffect(() => {
-        fetch("http://localhost:5000/auth/Staff/upload_notes")
+        fetch(`${API_BASE}/auth/Staff/upload_notes`)
             .then((res) => res.json())
             .then(setFileTree)
             .catch((err) => console.error("Failed to load notes:", err));
@@ -109,7 +109,7 @@ export default function TeacherNotesUploader() {
         formData.append("path", currentPath); // send folder path to backend
 
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", "http://localhost:5000/auth/Staff/upload_notes", true);
+        xhr.open("POST", `${API_BASE}/auth/Staff/upload_notes`, true);
 
         xhr.upload.onprogress = (event) => {
             if (event.lengthComputable) {
@@ -124,7 +124,7 @@ export default function TeacherNotesUploader() {
                 setUploadStatus("✅ Uploaded successfully");
                 setUploadProgress(0);
                 // refresh file tree
-                fetch("http://localhost:5000/auth/Staff/upload_notes")
+                fetch(`${API_BASE}/auth/Staff/upload_notes`)
                     .then((res) => res.json())
                     .then(setFileTree);
             } else {

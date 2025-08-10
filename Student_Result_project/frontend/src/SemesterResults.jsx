@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-
+import API_BASE from "./config";
 // SemesterResults.jsx
 // Single-file React component using Tailwind CSS to call the Flask endpoint
 // Endpoint expected: GET /auth/Staff/sem_res?semester=SEM1
@@ -24,9 +24,7 @@ export default function SemesterResults() {
         setData(null);
         try {
             const q = new URLSearchParams({ semester: selected }).toString();
-            const res = await fetch(
-                `http://localhost:5000/auth/Staff/sem_res?${q}`
-            );
+            const res = await fetch(`${API_BASE}/auth/Staff/sem_res?${q}`);
             if (!res.ok) {
                 const json = await res.json().catch(() => null);
                 throw new Error(
@@ -45,7 +43,7 @@ export default function SemesterResults() {
         if (!semester) return;
         try {
             const response = await fetch(
-                `http://localhost:5000/auth/Staff/sem_res/report/${semester}`,
+                `${API_BASE}/auth/Staff/sem_res/report/${semester}`,
                 {
                     method: "GET",
                 }
@@ -347,13 +345,13 @@ export default function SemesterResults() {
                                 </table>
                             </div>
                         )}
-                                <button
-                                    onClick={downloadPDF}
-                                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm"
-                                    disabled={!semester}
-                                >
-                                    PDF
-                                </button>
+                        <button
+                            onClick={downloadPDF}
+                            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm"
+                            disabled={!semester}
+                        >
+                            PDF
+                        </button>
                     </section>
                 )}
             </main>

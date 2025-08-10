@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { FaFolder, FaFilePdf } from "react-icons/fa";
-
+import API_BASE from "./config";
 function FileItem({ name, isFolder, onClick, selected }) {
     return (
         <div
@@ -44,7 +44,13 @@ function FileGrid({ tree, path = "", setPath }) {
                             if (isFolder) {
                                 setPath(fullPath);
                             } else {
-                                const downloadUrl = `http://localhost:5000/auth/Student/report${fullPath}`;
+                                const encodedPath = fullPath
+                                    .split("/")
+                                    .map(encodeURIComponent)
+                                    .join("/");
+
+                                const downloadUrl = `${API_BASE}/auth/Student/report${encodedPath}`;
+                                // const downloadUrl = `${API_BASE}/auth/Student/report${fullPath}`;
                                 const link = document.createElement("a");
                                 link.href = downloadUrl;
                                 link.download = ""; // empty string prompts download with original filename
@@ -76,7 +82,7 @@ export default function FileExplorer() {
     const [currentPath, setCurrentPath] = useState("");
 
     useEffect(() => {
-        fetch("http://localhost:5000/auth/Student/notes")
+        fetch(`${API_BASE}/auth/Student/notes`)
             .then((res) => res.json())
             .then(setFileTree)
             .catch((err) => console.error("Failed to load notes:", err));
