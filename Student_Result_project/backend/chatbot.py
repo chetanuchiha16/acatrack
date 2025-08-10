@@ -187,7 +187,7 @@ def main():
             df = pd.read_excel(excel_file_path, sheet_name=sheet_name)
             print(f"✅ Successfully loaded sheet: '{sheet_name}' from '{excel_file_path}'.")
 
-            student_name_col = 'SUBJECT_CODE_Student Name'
+            student_name_col = 'SUBJECT_CODE_Student_Name'
             if student_name_col not in df.columns:
                 print(f"⚠ Warning: Sheet '{sheet_name}' is missing expected column '{student_name_col}'. Skipping this sheet.")
                 continue
