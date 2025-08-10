@@ -4,8 +4,10 @@ import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import ForgotPassword from "./ForgotPassword";
+import API_BASE from "./config";
 
 export default function Auth() {
+    // alert(API_BASE)no 
     let { who } = useParams();
     who = who || "Student";
     const navigate = useNavigate();
@@ -27,7 +29,7 @@ export default function Auth() {
         e.preventDefault();
         axios
             .post(
-                "http://localhost:5000/auth",
+                `${API_BASE}/auth`,
                 { who, username, password },
                 { withCredentials: true }
             )
@@ -47,7 +49,7 @@ export default function Auth() {
 
     function handleForgot(email) {
         axios
-            .post("http://localhost:5000/auth/forgot-password", { email })
+            .post(`${API_BASE}/auth/forgot-password`, { email })
             .then((res) => alert(res.data.message))
             .catch((err) => alert(err.response.data.error));
         setShowForgot(false);

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import * as ExcelJs from "exceljs";
-
+import API_BASE from "./config";
 export default function ExcelViewer() {
     const [worksheets, setWorksheets] = useState(null);
     const workbookRef = useRef(null);
@@ -60,7 +60,7 @@ export default function ExcelViewer() {
         let formData = new FormData();
         formData.append("file", blob, "template.xlsx");
 
-        fetch("http://localhost:5000/excel", {
+        fetch(`${API_BASE}/excel`, {
             method: "POST",
             body: formData,
         })

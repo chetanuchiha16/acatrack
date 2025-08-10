@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-
+import API_BASE from "./config";
 export default function OverallResults() {
     const [semester, setSemester] = useState("");
     const [view, setView] = useState("normal");
@@ -13,7 +13,7 @@ export default function OverallResults() {
 
     const fetchData = async () => {
         if (!semester) return;
-        let url = `http://localhost:5000/auth/Staff/overall_res?semester=${semester}`;
+        let url = `${API_BASE}/auth/Staff/overall_res?semester=${semester}`;
         if (view === "toppers") url += "&show_toppers=true";
         if (view === "failed") url += "&show_failed=true";
 
@@ -24,7 +24,7 @@ export default function OverallResults() {
 
     const downloadPDF = () => {
         if (!semester) return;
-        const url = `http://localhost:5000/auth/Staff/report/${semester}`;
+        const url = `${API_BASE}/auth/Staff/report/${semester}`;
         const a = document.createElement("a");
         a.href = url;
         a.download = `${semester}_report.pdf`;
