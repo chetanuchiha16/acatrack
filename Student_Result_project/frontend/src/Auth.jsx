@@ -31,13 +31,18 @@ export default function Auth() {
     // On mount, check if session exists, then redirect
     useEffect(() => {
         axios
-            .get(`${API_BASE}/auth`, { withCredentials: true })
+            .get(`${API_BASE}/auth/status`, { withCredentials: true })
             .then((res) => {
-                const user = res.data;
-                // Redirect to /auth/:role/:username
-                navigate(`/auth/${user.role || who}/${user.username}`, {
-                    replace: true,
-                });
+                if (res.data.logged_in) {
+                    navigate(`/auth/${res.data.who}/${res.data.id}`, {
+                        state: {
+                            who: res.data.who,
+                            id: res.data.id,
+                            name: res.data.name,
+                        },
+                        replace: true,
+                    });
+                }
             })
             .catch(() => {
                 // Not logged in, stay on login form

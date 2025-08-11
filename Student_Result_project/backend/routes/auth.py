@@ -7,14 +7,6 @@ auth_bp = Blueprint("auth", __name__)
 
 @auth_bp.route("/auth", methods=["POST"])
 def auth():
-    # If already logged in, skip password check
-    if "user_id" in session and "who" in session:
-        return jsonify({
-            "message": "Already logged in",
-            "id": session["user_id"],
-            "name": session["name"]
-        })
-
     who = request.json.get("who")
     username = request.json.get("username")
     password = request.json.get("password")
@@ -42,10 +34,29 @@ def auth():
         return jsonify({
             "message": "Login success",
             "id": username,
-            "name": user.name
+            "name": user.name,
+            "who": session["who"]
         })
     else:
         return jsonify({"error": "Incorrect password"}), 401
+
+
+@auth_bp.route("/auth/status", methods=["GET"])
+def auth_status():
+    if "user_id" in session and "who" in session:
+        return jsonify({
+            "logged_in": True,
+            "id": session["user_id"],
+            "name": session["name"],
+            "who": session["who"]
+        })
+    else:
+        return jsonify({
+            "logged_in": False,
+            "message": "Not logged in"
+        }), 200  # 200 instead of 401 so frontend doesn’t treat it as an error
+
+
 
 @auth_bp.route("/logout", methods=["POST"])
 def logout():
