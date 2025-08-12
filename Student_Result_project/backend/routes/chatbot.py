@@ -7,9 +7,10 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
+from rapidfuzz import process, fuzz  # fuzzy matching for names
 from models.paths import excel_path  # your existing path
 
-chatbot_bp = Blueprint("chatbot", __name__)
+chatbot_bp = Blueprint("student_report", __name__)
 
 # -----------------------------
 # Internal Helpers
@@ -117,7 +118,7 @@ def _load_student_data():
     if not os.path.exists(excel_path):
         raise FileNotFoundError(f"Excel file not found: {excel_path}")
 
-    sheet_names = ["SEM1", "SEM2", "SEM3", "SEM4"]
+    sheet_names = ["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6"]
     student_data_map = {}
 
     for sheet_name in sheet_names:
@@ -163,6 +164,24 @@ def _load_student_data():
 
     return student_data_map
 
+def _fuzzy_find_student(name, students, min_length=3, cutoff=70):
+    if not name or len(name.strip()) < min_length:
+        return None
+    lowered_map = {s.lower(): s for s in students}
+    lowered_names = list(lowered_map.keys())
+    name_lower = name.lower()
+
+    match = process.extractOne(
+        name_lower,
+        lowered_names,
+        scorer=fuzz.token_sort_ratio,
+        score_cutoff=cutoff
+    )
+    if match:
+        return lowered_map[match[0]]
+    return None
+
+
 # -----------------------------
 # API Routes
 # -----------------------------
@@ -175,13 +194,23 @@ def list_students():
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 404
 
-@chatbot_bp.route("/report/<student_name>", methods=["GET"])
-def get_student_report(student_name):
+@chatbot_bp.route("/report/<student_query>", methods=["GET"])
+def get_student_report(student_query):
     try:
         student_data_map = _load_student_data()
-        matched_name = next((n for n in student_data_map if n.lower() == student_name.lower()), None)
+
+        # Check if student_query is a normal student name or a natural language query
+        students = student_data_map.keys()
+
+        # If the query looks like a sentence (has spaces, keywords), try to extract student name
+        if any(word in student_query.lower() for word in ["show", "get", "report", "marks", "for"]):
+            # crude extraction: find best fuzzy match inside the query string
+            matched_name = _fuzzy_find_student(student_query, students)
+        else:
+            matched_name = _fuzzy_find_student(student_query, students)
+
         if not matched_name:
-            return jsonify({"error": "Student not found"}), 404
+            return jsonify({"error": "Student not found, please check the name of your ward before entering"}), 404
 
         student_data = student_data_map[matched_name]
         summary = _calculate_summary(student_data["semester_results"])
@@ -194,11 +223,17 @@ def get_student_report(student_name):
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 404
 
-@chatbot_bp.route("/report/<student_name>/pdf", methods=["GET"])
-def download_pdf_report(student_name):
+@chatbot_bp.route("/report/<student_query>/pdf", methods=["GET"])
+def download_pdf_report(student_query):
     try:
         student_data_map = _load_student_data()
-        matched_name = next((n for n in student_data_map if n.lower() == student_name.lower()), None)
+        students = student_data_map.keys()
+
+        if any(word in student_query.lower() for word in ["download", "pdf", "report", "for"]):
+            matched_name = _fuzzy_find_student(student_query, students)
+        else:
+            matched_name = _fuzzy_find_student(student_query, students)
+
         if not matched_name:
             return jsonify({"error": "Student not found"}), 404
 

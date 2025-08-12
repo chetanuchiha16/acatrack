@@ -1,7 +1,7 @@
 .chat-container {
   width: 100%;
-  max-width: 500px;
-  height: 90vh;
+  /* max-width: 500px; */
+  height: 100vh;
   margin: auto;
   display: flex;
   flex-direction: column;
@@ -74,4 +74,19 @@
 
 .chat-input button:hover {
   background: #075e54;
+}
+
+.download-btn {
+  background-color: #25d366; /* WhatsApp green */
+  border: none;
+  color: white;
+  padding: 8px 15px;
+  font-size: 14px;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.download-btn:hover {
+  background-color: #128c7e;
 }

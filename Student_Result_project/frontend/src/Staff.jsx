@@ -1,12 +1,20 @@
 import React, { useState } from "react";
 import jssLogo from "./assets/jssLogo.png";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate , useParams} from "react-router-dom";
+import axios from "axios";
+import API_BASE from "./config";
 
 export default function Staff() {
     let navigate = useNavigate();
-    let { who, id, name } = useLocation().state || {};
-    const [isDark, setIsDark] = useState(false);
+    const location = useLocation();
+    const params = useParams();
 
+    const { who, id, name } = location.state || {};
+    const finalWho = who || params.who;
+    const finalId = id || params.id;
+
+    console.log("finalId:", finalId);
+    const [isDark, setIsDark] = useState(false);
     return (
         <div className="min-h-screen w-screen bg-gray-200 dark:bg-gray-900 px-20 py-3">
             {/* Header */}
@@ -19,7 +27,19 @@ export default function Staff() {
 
                 <span className="flex-1 text-center">Staff Dashboard</span>
 
-                <div className="cursor-pointer px-3 py-1.5 rounded-lg bg-gray-300 dark:bg-gray-700 text-black dark:text-white shadow hover:scale-105 hover:shadow-lg transition-all duration-300 text-center text-sm">
+                <div
+                    className="cursor-pointer px-3 py-1.5 rounded-lg bg-gray-300 dark:bg-gray-700 text-black dark:text-white shadow hover:scale-105 hover:shadow-lg transition-all duration-300 text-center text-sm"
+                    // onClick={async () => {
+                    //     try {
+                    //         const res = await axios.post(`${API_BASE}/logout`);
+                    //         console.log(res.data);
+                    //         // Redirect after successful logout
+                    //         navigate(`/auth`); // or "/" or wherever your login page is
+                    //     } catch (error) {
+                    //         console.error("Logout failed:", error);
+                    //     }
+                    // }}
+                >
                     Home
                 </div>
             </div>
@@ -38,7 +58,7 @@ export default function Staff() {
             <div className="grid grid-cols-2 gap-4 w-[80%] mx-auto">
                 <div
                     className="bg-red-200 dark:bg-red-800 text-black dark:text-white text-2xl font-semibold cursor-pointer rounded-xl shadow-lg p-10 hover:bg-red-300 dark:hover:bg-red-700 transition-all duration-200"
-                    onClick={() => navigate(`/auth/Staff/${id}/StaffResults`)}
+                    onClick={() => navigate(`/auth/Staff/${finalId}/StaffResults`)}
                 >
                     <h2 className="text-2xl font-semibold mb-2">Result</h2>
                     <p className="text-gray-600 dark:text-gray-300">
@@ -47,17 +67,22 @@ export default function Staff() {
                 </div>
 
                 <div className="bg-blue-200 dark:bg-blue-800 text-black dark:text-white text-2xl font-semibold cursor-pointer rounded-xl shadow-lg p-10 hover:bg-blue-300 dark:hover:bg-blue-700 transition-all duration-200">
-                    <h2 className="text-2xl font-semibold mb-2">
-                        Subject-wise Upload
+                    <h2
+                        className="text-2xl font-semibold mb-2"
+                        onClick={() => {
+                            navigate(`/auth/Staff/${finalId}/SendEmails`);
+                        }}
+                    >
+                        Email Upload
                     </h2>
                     <p className="text-gray-600 dark:text-gray-300">
-                        View and manage results
+                        View and manage Email
                     </p>
                 </div>
 
                 <div
                     className="bg-green-200 dark:bg-green-800 text-black dark:text-white text-2xl font-semibold cursor-pointer rounded-xl shadow-lg p-10 hover:bg-green-300 dark:hover:bg-green-700 transition-all duration-200"
-                    onClick={() => navigate(`/auth/Staff/${id}/UploadResults`)}
+                    onClick={() => navigate(`/auth/Staff/${finalId}/UploadResults`)}
                 >
                     <h2 className="text-2xl font-semibold mb-2">
                         Upload results
@@ -71,7 +96,7 @@ export default function Staff() {
                     <h2
                         className="text-2xl font-semibold mb-2"
                         onClick={() =>
-                            navigate(`/auth/Staff/${id}/StaffClassroom`)
+                            navigate(`/auth/Staff/${finalId}/StaffClassroom`)
                         }
                     >
                         Classroom

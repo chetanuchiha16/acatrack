@@ -12,8 +12,11 @@ import StaffResults from "./StaffResults.jsx"
 import ExcelViewer from "./ExcelViewer.jsx";
 import TeacherNotesUploader from "./TeacherNotesUploader.jsx";
 import ChatBot from "./Chatbot.jsx";
+import SemesterResults from "./SemesterResults.jsx";
+import SendEmails from "./SendEmails.jsx";
 const route = createBrowserRouter([
     // { path: "/auth/Student/:id/result", element: <Result /> },
+    { path: "/auth/Staff/:id/SendEmails", element: <SendEmails /> },
     { path: "/auth/Staff/:id/UploadResults", element: <ExcelViewer excel_path={`template.xlsx`}/> },
     { path: "/auth/Staff/:id/StaffClassroom", element: <TeacherNotesUploader /> },
     { path: "/auth/Staff/:id/StaffResults", element: <StaffResults /> },
@@ -22,6 +25,8 @@ const route = createBrowserRouter([
     { path: "/auth/Student/:id", element: <Student /> },
     { path: "/auth/:who", element: <Auth /> },
     { path: "/auth/", element: <Auth /> },
+    { path: "/auth", element: <Auth /> },
+    // { path: "/logout", element: <Auth /> },
     { path: `/`, element: <App /> },
     { path: `*`, element: <Error /> },
 ]);

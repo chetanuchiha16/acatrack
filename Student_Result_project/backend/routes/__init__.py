@@ -7,6 +7,7 @@ from .send_sem_res_data import sem_bp
 from .teacher_notes import teacher_notes_bp
 from .excel import excel_bp
 from .chatbot import chatbot_bp
+from .send_email import email_bp
 def register_routes(app):
     app.register_blueprint(auth_bp)
     app.register_blueprint(student_bp)
@@ -17,3 +18,5 @@ def register_routes(app):
     app.register_blueprint(teacher_notes_bp)
     app.register_blueprint(excel_bp)
     app.register_blueprint(chatbot_bp)
+    app.register_blueprint(email_bp)
+    

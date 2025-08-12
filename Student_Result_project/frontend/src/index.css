@@ -2,7 +2,8 @@
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  
+  width: 100vw;
+  height: 100vh;
   color-scheme: light dark;
   color: #1f2937; /* modern neutral dark text */
   background-color: #f9fafb; /* soft light background */
