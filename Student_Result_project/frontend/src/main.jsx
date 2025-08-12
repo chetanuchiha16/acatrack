@@ -12,7 +12,8 @@ import StaffResults from "./StaffResults.jsx"
 import ExcelViewer from "./ExcelViewer.jsx";
 import TeacherNotesUploader from "./TeacherNotesUploader.jsx";
 
-import SubjectResults from "./SubjectResults.jsx";
+import Result from "./Result.jsx";
+
 
 const route = createBrowserRouter([
     // { path: "/auth/Student/:id/result", element: <Result /> },
@@ -23,7 +24,7 @@ const route = createBrowserRouter([
     { path: "/auth/Student/:id", element: <Student /> },
     { path: "/auth/:who", element: <Auth /> },
     { path: "/auth/", element: <Auth /> },
-    { path: `/`, element: <TeacherNotesUploader /> },
+    { path: `/`, element: < Result/> },
     { path: `*`, element: <Error /> },
 ]);
 

@@ -80,9 +80,15 @@ export default function ExcelViewer() {
 
     return (
         <div style={{ padding: "1rem" }}>
-            <h1 style={{ color: "var(--primary-color)" }}>
+            <h1 className="text-[1.125rem] sm:text-[1.5rem] md:text-[2rem] leading-tight mb-6 text-[var(--primary-color)]">
                 Excel Table Viewer
             </h1>
+
+
+
+
+
+
 
             <div style={{ marginBottom: "1rem", display: "flex", gap: "1rem" }}>
                 <select
@@ -171,14 +177,14 @@ export default function ExcelViewer() {
                                     transition: "background 0.2s",
                                 }}
                                 onMouseEnter={(e) =>
-                                    (e.currentTarget.style.backgroundColor =
-                                        "var(--row-hover-bg)")
+                                (e.currentTarget.style.backgroundColor =
+                                    "var(--row-hover-bg)")
                                 }
                                 onMouseLeave={(e) =>
-                                    (e.currentTarget.style.backgroundColor =
-                                        rowIndex % 2 === 0
-                                            ? "var(--row-even-bg)"
-                                            : "var(--row-odd-bg)")
+                                (e.currentTarget.style.backgroundColor =
+                                    rowIndex % 2 === 0
+                                        ? "var(--row-even-bg)"
+                                        : "var(--row-odd-bg)")
                                 }
                             >
                                 {row.map((cellValue, cellIndex) => (
