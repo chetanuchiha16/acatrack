@@ -1,0 +1,76 @@
+.chat-container {
+  width: 100%;
+  max-width: 500px;
+  height: 90vh;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  background: #ece5dd; /* WhatsApp bg */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.chat-box {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.chat-message {
+  display: flex;
+  margin: 5px 0;
+}
+
+.chat-message.user {
+  justify-content: flex-end;
+}
+
+.chat-message.bot {
+  justify-content: flex-start;
+}
+
+.message-bubble {
+  max-width: 70%;
+  padding: 8px 12px;
+  border-radius: 7.5px;
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+.user .message-bubble {
+  background: #dcf8c6; /* WhatsApp user msg */
+}
+
+.bot .message-bubble {
+  background: #fff;
+  border: 1px solid #ddd;
+}
+
+.chat-input {
+  display: flex;
+  padding: 8px;
+  background: #f0f0f0;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 8px;
+  font-size: 14px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+}
+
+.chat-input button {
+  margin-left: 8px;
+  padding: 8px 12px;
+  border: none;
+  background: #128c7e;
+  color: white;
+  border-radius: 50px;
+  cursor: pointer;
+}
+
+.chat-input button:hover {
+  background: #075e54;
+}

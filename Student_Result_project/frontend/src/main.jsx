@@ -13,7 +13,7 @@ import ExcelViewer from "./ExcelViewer.jsx";
 import TeacherNotesUploader from "./TeacherNotesUploader.jsx";
 const route = createBrowserRouter([
     // { path: "/auth/Student/:id/result", element: <Result /> },
-    { path: "/auth/Staff/:id/UploadResults", element: <ExcelViewer /> },
+    { path: "/auth/Staff/:id/UploadResults", element: <ExcelViewer excel_path={`template.xlsx`}/> },
     { path: "/auth/Staff/:id/StaffClassroom", element: <TeacherNotesUploader /> },
     { path: "/auth/Staff/:id/StaffResults", element: <StaffResults /> },
     { path: "/auth/Staff/:id", element: <Staff /> },
