@@ -3,6 +3,7 @@ from pathlib import Path
 base_dir = Path(__file__).resolve().parent.parent
 # print("../Inputs")
 excel_path = str(base_dir / "Inputs/ExcelSheet/result list project.xlsx")
+email_excel_path = str(base_dir / "Inputs/ExcelSheet/Email.xlsx")
 logo_path = str(base_dir / "Inputs" / "Images" / "logo.png")
 db_path = str(base_dir / "Outputs" / "student_data.db")
 pdf_dir = str(base_dir / "Outputs" / "PDFs")

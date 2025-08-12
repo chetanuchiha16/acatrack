@@ -11,11 +11,13 @@ import Staff from "./Staff.jsx";
 import StaffResults from "./StaffResults.jsx"
 import ExcelViewer from "./ExcelViewer.jsx";
 import TeacherNotesUploader from "./TeacherNotesUploader.jsx";
+import ChatBot from "./Chatbot.jsx";
 const route = createBrowserRouter([
     // { path: "/auth/Student/:id/result", element: <Result /> },
     { path: "/auth/Staff/:id/UploadResults", element: <ExcelViewer excel_path={`template.xlsx`}/> },
     { path: "/auth/Staff/:id/StaffClassroom", element: <TeacherNotesUploader /> },
     { path: "/auth/Staff/:id/StaffResults", element: <StaffResults /> },
+    { path: "/auth/Parent/:id", element: <ChatBot/> },
     { path: "/auth/Staff/:id", element: <Staff /> },
     { path: "/auth/Student/:id", element: <Student /> },
     { path: "/auth/:who", element: <Auth /> },

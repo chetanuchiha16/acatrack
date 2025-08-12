@@ -9,7 +9,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from models.paths import excel_path  # your existing path
 
-student_report_bp = Blueprint("student_report", __name__)
+chatbot_bp = Blueprint("chatbot", __name__)
 
 # -----------------------------
 # Internal Helpers
@@ -167,7 +167,7 @@ def _load_student_data():
 # API Routes
 # -----------------------------
 
-@student_report_bp.route("/students", methods=["GET"])
+@chatbot_bp.route("/students", methods=["GET"])
 def list_students():
     try:
         students = sorted(_load_student_data().keys())
@@ -175,7 +175,7 @@ def list_students():
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 404
 
-@student_report_bp.route("/report/<student_name>", methods=["GET"])
+@chatbot_bp.route("/report/<student_name>", methods=["GET"])
 def get_student_report(student_name):
     try:
         student_data_map = _load_student_data()
@@ -194,7 +194,7 @@ def get_student_report(student_name):
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 404
 
-@student_report_bp.route("/report/<student_name>/pdf", methods=["GET"])
+@chatbot_bp.route("/report/<student_name>/pdf", methods=["GET"])
 def download_pdf_report(student_name):
     try:
         student_data_map = _load_student_data()
