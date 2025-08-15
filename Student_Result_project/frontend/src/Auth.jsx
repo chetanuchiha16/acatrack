@@ -141,6 +141,18 @@ export default function Auth() {
                         className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm sm:text-base"
                     />
                 </div>
+            {/* Login Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="relative">
+                    <FaUser className="absolute left-3 top-3 text-white/70" />
+                    <input
+                        type="text"
+                        placeholder="Username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm sm:text-base"
+                    />
+                </div>
 
                 <div className="relative">
                     <FaLock className="absolute left-3 top-3 text-white/70" />
@@ -168,6 +180,13 @@ export default function Auth() {
                     Login
                 </button>
             </form>
+                <button
+                    type="submit"
+                    className="w-full py-2 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-600 hover:to-blue-800 transition-all shadow-lg text-sm sm:text-base"
+                >
+                    Login
+                </button>
+            </form>
 
             {/* Links */}
             <div className="mt-4 flex flex-col sm:flex-row sm:justify-between items-center text-xs sm:text-sm text-white/70 gap-2">
@@ -177,6 +196,28 @@ export default function Auth() {
                 >
                     Forgot password?
                 </p>
+            {/* Links */}
+            <div className="mt-4 flex flex-col sm:flex-row sm:justify-between items-center text-xs sm:text-sm text-white/70 gap-2">
+                <p
+                    onClick={() => setShowForgot(true)}
+                    className="text-blue-300 hover:underline cursor-pointer"
+                >
+                    Forgot password?
+                </p>
+
+                {showForgot && (
+                    <ForgotPassword
+                        onSubmit={handleForgot}
+                        onClose={() => setShowForgot(false)}
+                    />
+                )}
+                <a href="#" className="hover:text-white">
+                    Need help?
+                </a>
+            </div>
+        </div>
+    </div>
+);
 
                 {showForgot && (
                     <ForgotPassword
