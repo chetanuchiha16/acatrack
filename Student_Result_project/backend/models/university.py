@@ -196,8 +196,9 @@ class University:
                         if usn not in failed_students:
                             failed_students[usn] = []
                         # Assuming that the subject codes are stored in a list
-                        subject_code = student.subject_codes[subject_index]  # Example, assuming `subject_codes` is a list
-                        failed_students[usn].append(subject_code)
+                        # subject_code = student.subject_codes[subject_index]  # Example, assuming `subject_codes` is a list
+                        subject_name = student.subject_names[subject_index]
+                        failed_students[usn].append(subject_name)
 
             return failed_students
 
@@ -233,6 +234,7 @@ class University:
                         "ia_marks": student.ia_marks,
                         "see_marks": student.see_marks,
                         "subject_codes": student.subject_codes,
+                        "subject_names": student.subject_names,
                         # add any other fields your frontend expects
                     })
 

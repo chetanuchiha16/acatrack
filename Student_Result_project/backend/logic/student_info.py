@@ -21,8 +21,8 @@ if __name__ == "__main__":
             info_text.insert(ctk.END, f"CGPA: {student.cgpa:.2f}\n")
             info_text.insert(ctk.END, "Subject-wise Marks:\n")
 
-            for i, (subject_code,ia, see, credit, status) in enumerate(zip(student.subject_codes,student.ia_marks, student.see_marks, student.credits, student.pass_fail), 1):
-                info_text.insert(ctk.END, f"  {i} {subject_code}: IA Marks = {ia}, SEE Marks = {see}, Total Marks = {ia + see}, Credits = {credit}, Status = {status}\n")
+            for i, (subject_code,subject_name,ia, see, credit, status) in enumerate(zip(student.subject_codes,student.subject_names,student.ia_marks, student.see_marks, student.credits, student.pass_fail), 1):
+                info_text.insert(ctk.END, f"  {i} {subject_code} {subject_name}: IA Marks = {ia}, SEE Marks = {see}, Total Marks = {ia + see}, Credits = {credit}, Status = {status}\n")
             
             fig = student.plot_subject_marks()[0]
             fig.set_size_inches(10, 6)

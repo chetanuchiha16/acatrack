@@ -9,6 +9,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from rapidfuzz import process, fuzz  # fuzzy matching for names
 from models.paths import excel_path  # your existing path
+from models.fetch import sem_subjects
 
 chatbot_bp = Blueprint("student_report", __name__)
 
@@ -85,8 +86,11 @@ def generate_pdf_report(student_data):
 
                 table_data = [['Subject', 'Score', 'Pass/Fail']]
                 for res in subjects_in_semester:
+                    # subject_code = str(res.get('subject'))
+                    subject_code = res.get('subject')
                     table_data.append([
-                        str(res.get('subject', 'N/A')),
+                        # str(res.get('subject', 'N/A')),
+                        sem_subjects[sem].get(subject_code,"N/A"),
                         str(res.get('score', 'N/A')),
                         str(res.get('grade', 'N/A'))
                     ])

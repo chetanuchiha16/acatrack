@@ -3,6 +3,7 @@ from models import University, SubjectResult
 from models.paths import db_path, pdf_dir
 from visuals import generate_sem_pdf
 import os
+from models.fetch import sem_subjects
 
 sem_bp = Blueprint('sem_res',__name__)
 
@@ -31,6 +32,7 @@ def get_semester_results():
         for subject_code in subjects:
             subject_result = SubjectResult(subject_code, semester, university)
             results.append({
+                "subject_name":sem_subjects[semester].get(subject_code, "Unknown subject"),
                 "subject_code": subject_code,
                 "total_students": subject_result.total_students,
                 "present_students": subject_result.present_students,

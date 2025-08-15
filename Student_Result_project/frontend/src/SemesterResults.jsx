@@ -192,7 +192,7 @@ export default function SemesterResults() {
                                                     Subject
                                                 </div>
                                                 <div className="font-semibold text-base sm:text-lg break-words">
-                                                    {r.subject_code}
+                                                    {r.subject_name} ({r.subject_code})
                                                 </div>
                                                 <div className="text-xs sm:text-sm text-slate-500 mt-1">
                                                     Students: {r.total_students}
@@ -295,7 +295,7 @@ export default function SemesterResults() {
                                         {data.results.map((r) => (
                                             <tr key={r.subject_code} className="hover:bg-black">
                                                 <td className="px-2 sm:px-4 py-2 sm:py-3 font-medium break-words">
-                                                    {r.subject_code}
+                                                    {r.subject_name}
                                                 </td>
                                                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                                                     {r.total_students}

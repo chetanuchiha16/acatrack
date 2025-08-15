@@ -61,7 +61,7 @@ export default function Result({ usn, semester }) {
                                         className="bg-gray-100 dark:bg-neutral-800 p-3 rounded-lg shadow-sm"
                                     >
                                         <span className="font-medium">
-                                            {idx + 1}. {sub.code}
+                                            {idx + 1}. {sub.subject_name} ({sub.code})
                                         </span>
                                         <br />
                                         IA: <span className="font-semibold">{sub.ia}</span>,

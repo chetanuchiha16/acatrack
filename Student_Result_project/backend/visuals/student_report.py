@@ -52,26 +52,28 @@ def create_student_report(student, file_path=f"{pdf_dir}/student_report.pdf"):
     y_position = 540
     c.setFont("Helvetica", 10)
     c.drawString(50, y_position, "Sl.No")
-    c.drawString(100, y_position, "Subject Code")
-    c.drawString(200, y_position, "IA Marks")
-    c.drawString(300, y_position, "SEE Marks")
+    c.drawString(100, y_position, "Subject Name")
+    # c.drawString(100, y_position, "Subject Code")
+    c.drawString(300, y_position, "IA Marks")
+    c.drawString(350, y_position, "SEE Marks")
     c.drawString(400, y_position, "Total Marks")
-    c.drawString(500, y_position, "Credits")
-    c.drawString(550, y_position, "Status")
+    c.drawString(450, y_position, "Credits")
+    c.drawString(500, y_position, "Status")
     y_position -= 20
     c.line(50, y_position + 10, 550, y_position + 10)  # Horizontal line for table header
 
     line_spacing = 20
-    for i, (subject_code, ia, see, credit, status) in enumerate(
-        zip(student.subject_codes, student.ia_marks, student.see_marks, student.credits, student.pass_fail)
+    for i, (subject_name,subject_code, ia, see, credit, status) in enumerate(
+        zip(student.subject_names, student.subject_codes, student.ia_marks, student.see_marks, student.credits, student.pass_fail)
     ):
         c.drawString(50, y_position, str(i + 1))
-        c.drawString(100, y_position, subject_code)
-        c.drawString(200, y_position, str(ia))
-        c.drawString(300, y_position, str(see))
+        c.drawString(100, y_position, f"{subject_name} {subject_code}")
+        # c.drawString(100, y_position, subject_code)
+        c.drawString(300, y_position, str(ia))
+        c.drawString(350, y_position, str(see))
         c.drawString(400, y_position, str(ia + see))
-        c.drawString(500, y_position, str(credit))
-        c.drawString(550, y_position, status)
+        c.drawString(450, y_position, str(credit))
+        c.drawString(500, y_position, status)
         y_position -= line_spacing
 
         # Start a new page if space runs out

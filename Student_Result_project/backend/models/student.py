@@ -13,6 +13,7 @@ class Student:
         self.usn = usn
         self.name = student_info["name"]
         self.subject_codes=student_info["subject_code"]
+        self.subject_names=student_info["subject_name"]
         self.ia_marks = student_info["ia_marks"]
         self.see_marks = student_info["see_marks"]
         self.credits = student_info["credits"]
@@ -197,13 +198,13 @@ class Student:
         print(str)
         #print(self.subject_codes))
         # Display subject-wise details using the subject codes
-        for i,(subject_code,ia, see, credit, status) in enumerate(zip(self.subject_codes,self.ia_marks, self.see_marks, self.credits, self.pass_fail)):
-            print(f" {i+1}  {subject_code}: IA Marks = {ia}, SEE Marks = {see}, Total Marks = {ia + see}, Credits = {credit}, Status = {status}")
+        for i,(subject_code, subject_name, ia, see, credit, status) in enumerate(zip(self.subject_codes, self.subject_names, self.ia_marks, self.see_marks, self.credits, self.pass_fail)):
+            print(f" {i+1}  {subject_name} {subject_code}: IA Marks = {ia}, SEE Marks = {see}, Total Marks = {ia + see}, Credits = {credit}, Status = {status}")
             #self.plot_subject_marks()
 
     def plot_subject_marks(self):
         """Bar graph showing IA and SEE marks for each subject."""
-        subjects = [f" {subject_code}" for subject_code in self.subject_codes]
+        subjects = [f" {subject_name} {subject_code} " for subject_name, subject_code in zip(self.subject_names, self.subject_codes)]
 
         fig=plt.figure(figsize=(10, 6))
         plt.bar(subjects, self.ia_marks, label='IA Marks', color='skyblue', alpha=0.7)
