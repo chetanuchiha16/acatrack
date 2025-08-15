@@ -3,7 +3,7 @@ import jssLogo from "./assets/jssLogo.png";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import API_BASE from "./config";
-
+import LogoutButton from "./LogoutButton";
 export default function Staff() {
     let navigate = useNavigate();
     const location = useLocation();
@@ -25,16 +25,12 @@ export default function Staff() {
                     alt="JSS Logo"
                     className="drop-shadow-2xl w-28 sm:w-32 md:w-40"
                 />
-
-                <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center flex-1">
-                    Staff Dashboard
-                </span>
                 <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center flex-1">
                     Staff Dashboard
                 </span>
 
                 {/* Home button (absolute on small screens) */}
-                <div
+                {/* <div
                     className="cursor-pointer px-4 py-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-black dark:text-white shadow hover:scale-105 hover:shadow-lg transition-all duration-300 text-center text-sm sm:text-base 
                                absolute right-4 top-2 sm:static sm:right-auto sm:top-auto"
                     // onClick={async () => {
@@ -49,7 +45,8 @@ export default function Staff() {
                     // }}
                 >
                     Home
-                </div>
+                </div> */}
+                <LogoutButton />
             </div>
 
             {/* Welcome Section */}

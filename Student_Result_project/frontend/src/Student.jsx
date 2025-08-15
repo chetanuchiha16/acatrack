@@ -2,7 +2,7 @@ import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Result from "./Result";
 import Classroom from "./Classroom";
-
+import LogoutButton from "./LogoutButton";
 
 export default function Student() {
     let { who, id, name } = useLocation().state || {};
@@ -13,13 +13,17 @@ export default function Student() {
 
     return (
         <main className="flex flex-col items-center justify-center w-full px-4 py-6">
-            {/* <h1 className="text-2xl font-bold font-serif mb-6">All The Best, {name || "Student"}!</h1> */}
+            
+                <LogoutButton />
+            
 
             <section className="flex flex-wrap justify-center items-center gap-4 mb-6">
                 <nav className="flex border-2 border-black rounded overflow-hidden">
                     <button
                         className={`px-4 py-2 border-r border-black transition duration-150 ${
-                            selectedTab === "result" ? "bg-blue-200 dark:bg-blue-700" : "bg-white dark:bg-[#1a1a1a]"
+                            selectedTab === "result"
+                                ? "bg-blue-200 dark:bg-blue-700"
+                                : "bg-white dark:bg-[#1a1a1a]"
                         }`}
                         onClick={() => setSelectedTab("result")}
                     >
@@ -27,13 +31,14 @@ export default function Student() {
                     </button>
                     <button
                         className={`px-4 py-2 transition duration-150 ${
-                            selectedTab === "classroom" ? "bg-blue-200 dark:bg-blue-700" : "bg-white dark:bg-[#1a1a1a]"
+                            selectedTab === "classroom"
+                                ? "bg-blue-200 dark:bg-blue-700"
+                                : "bg-white dark:bg-[#1a1a1a]"
                         }`}
                         onClick={() => setSelectedTab("classroom")}
                     >
                         Classroom
                     </button>
-                    
                 </nav>
 
                 <fieldset className="border-2 border-black rounded">
@@ -54,10 +59,12 @@ export default function Student() {
             </section>
 
             <div className="w-full max-w-6xl flex justify-center items-center">
-                {selectedTab === "result" && <Result usn={id} semester={currentSem} />}
-                {selectedTab === "classroom" && <Classroom />} 
+                {selectedTab === "result" && (
+                    <Result usn={id} semester={currentSem} />
+                )}
+                {selectedTab === "classroom" && <Classroom />}
                 {/* {selectedTab === "none" && <div className="w-[80vw] h-[70vh] flex justify-center items-center border-4 border-black rounded-xl dark:text-white dark:bg-[#1a1a1a] text-black backdrop-blur-sm p-4 overflow-hidden"></div>}  */}
-                
+
                 {/* {selectedTab === "notes" && <FileExplorer />}  */}
             </div>
         </main>

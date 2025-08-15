@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./ChatBot.css"; // We'll style it like WhatsApp
 import API_BASE from "./config";
+import LogoutButton from "./LogoutButton";
 export default function ChatBot() {
     const [messages, setMessages] = useState([
         {
@@ -105,6 +106,7 @@ export default function ChatBot() {
 
     return (
         <div className="chat-container md:w-[500px]">
+            <LogoutButton/>
             <div className="chat-box m-l-[50%]">
                 {messages.map((msg, i) => (
                     <div key={i} className={`chat-message ${msg.sender}`}>
