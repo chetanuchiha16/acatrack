@@ -26,7 +26,7 @@ export default function Result({ usn, semester }) {
     }, [usn, semester]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="max-h-full min-w-full flex items-center justify-center p-4">
             <div className="w-full sm:w-[95vw] md:w-[85vw] h-auto min-h-[75vh] flex justify-center items-center border-4 border-black rounded-xl dark:text-white dark:bg-[#1a1a1a] text-black backdrop-blur-sm p-4 overflow-hidden">
                 {error && (
                     <p className="text-red-500 font-semibold text-center">{error}</p>

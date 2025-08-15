@@ -13,9 +13,7 @@ export default function Student() {
 
     return (
         <main className="flex flex-col items-center justify-center w-full px-4 py-6">
-            
-                <LogoutButton />
-            
+            <LogoutButton />
 
             <section className="flex flex-wrap justify-center items-center gap-4 mb-6">
                 <nav className="flex border-2 border-black rounded overflow-hidden">
