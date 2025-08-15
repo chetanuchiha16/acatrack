@@ -10,6 +10,9 @@ from reportlab.pdfgen import canvas
 import pathlib
 from models import SubjectResult
 from models.paths import db_path,pdf_dir,img_dir, logo_path
+from models.fetch import sem_subjects
+styles = getSampleStyleSheet()
+normal_style = styles["Normal"]
 
 def generate_sem_pdf(selected_semester, university, semester_subject_mapping, output_path):
     try:
@@ -43,7 +46,7 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping, ou
         elements.append(sem_title)
         elements.append(Spacer(1, 12))
 
-        headers = ["Subject Code", "Total Students", "Present", "Absent", "Pass %", "FCD", "FC", "SC", "Fail"]
+        headers = ["Subject Name", "Total Students", "Present", "Absent", "Pass %", "FCD", "FC", "SC", "Fail"]
         column_widths = [80, 90, 70, 70, 60, 50, 50, 50, 50]  # Adjust column widths to fit
 
         data = [headers]
@@ -51,8 +54,9 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping, ou
         # Process each subject
         for subject_code in subjects:
             subject_result = SubjectResult(subject_code, selected_semester, university)
+            subject_name = sem_subjects[selected_semester].get(subject_code, "unknown subject")
             row = [
-                subject_code,
+                Paragraph(subject_name, normal_style),
                 subject_result.total_students,
                 subject_result.present_students,
                 subject_result.absent_students,
@@ -135,7 +139,7 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping, ou
                 str(i),
                 topper['usn'],
                 topper['name'],
-                topper['percentage'],
+                round(topper['percentage'],2),
             ]
             topper_data.append(row1)
 
@@ -163,16 +167,19 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping, ou
 
 
         fail_headers = ["USN", "Subjects failed"]
-        column_widths = [90, 130]  # Adjust column widths to fit
+        column_widths = [90, 400]  # Adjust column widths to fit
 
         fail_data = [fail_headers]
 
-        for usn, subjects in failed_students.items():
+        for usn, failed_sub_codes in failed_students.items():
+            subjects_str = ", ".join(failed_sub_codes)  # neat comma-separated string
             row2 = [
-                f"{usn}",
-                f"{subjects}",
+                usn,
+                Paragraph(subjects_str,normal_style),
             ]
             fail_data.append(row2)
+
+            
 
          # Create the table
         fail_table = Table(fail_data, colWidths=column_widths)

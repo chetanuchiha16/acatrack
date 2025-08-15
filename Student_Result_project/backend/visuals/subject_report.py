@@ -15,6 +15,7 @@ from reportlab.lib.pagesizes import letter
 # from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 import pathlib
+from models.fetch import sem_subjects
 # from models import SubjectResult
 # from models.config import db_path
 def create_subject_report(subject_result, file_path=f"{pdf_dir}/subject_report.pdf"):
@@ -26,7 +27,7 @@ def create_subject_report(subject_result, file_path=f"{pdf_dir}/subject_report.p
     counts = [subject_result.pass_count, subject_result.fail_count]
     fig, ax = plt.subplots()
     ax.bar(labels, counts, color=['green', 'red'])
-    ax.set_title(f"Performance in {subject_result.subject_code}")
+    ax.set_title(f"Performance in {subject_result.subject_name} {subject_result.subject_code}")
     ax.set_ylabel("Number of Students")
     graph_path = f"{img_dir}/subject_graph.png"
     plt.savefig(graph_path)
@@ -52,7 +53,7 @@ def create_subject_report(subject_result, file_path=f"{pdf_dir}/subject_report.p
     
     # Title for Subject Report
     c.setFont("Helvetica-Bold", 14)
-    c.drawString(100, 715, f"Subject Report for {subject_result.subject_code} ({subject_result.semester})")
+    c.drawString(100, 715, f"Subject Report for {subject_result.subject_name} {subject_result.subject_code} ({subject_result.semester})")
 
     # Insert the bar chart for performance
     c.drawImage(graph_path, 100, 500, width=400, height=200)

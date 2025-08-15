@@ -13,24 +13,28 @@ export default function StaffResults() {
   ];
 
   return (
-    <div className="min-h-screen  p-6">
-      <div className="max-w-6xl mx-auto  shadow-lg rounded-lg">
-        <div className="flex border-b">
+    <div className="min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-6xl mx-auto shadow-lg rounded-lg bg-white dark:bg-gray-800">
+        
+        {/* Tabs */}
+        <div className="flex flex-col sm:flex-row border-b">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 p-4 text-center font-medium ${
+              className={`flex-1 p-3 sm:p-4 text-center font-medium text-sm sm:text-base transition-colors duration-200 ${
                 activeTab === tab.id
                   ? "bg-blue-500 text-white"
-                  : "hover:bg-gray-200"
+                  : "hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
               }`}
             >
               {tab.label}
             </button>
           ))}
         </div>
-        <div className="p-6">
+
+        {/* Tab Content */}
+        <div className="p-4 sm:p-6 text-gray-800 dark:text-gray-100">
           {activeTab === "semester" && <SemesterResults />}
           {activeTab === "subject" && <SubjectResults />}
           {activeTab === "overall" && <OverallResults />}

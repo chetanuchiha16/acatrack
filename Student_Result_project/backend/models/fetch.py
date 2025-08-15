@@ -1,6 +1,49 @@
 import sqlite3
 # Function to fetch data from the database with error handling for missing USN
 from models.paths import db_path
+sem_subjects = {
+    "SEM1": {
+        "BMATS101": "Mathematics for CSE Stream-I",
+        "BCHES102": "Applied Chemistry for CSE Stream",
+        "BCEDK103": "Computer-Aided Engineering Drawing",
+        "BENGK106": "Communicative English",
+        "BICOK107": "Indian Constitution",
+        "BIDTK158": "Innovation and Design Thinking",
+        "BESCK104A": "Introduction to Civil Engineering",
+        "BETCK105H": "Introduction to Internet of Things (IoT)"
+    },
+    "SEM2": {
+        "BMAT201": "Mathematics for CSE Stream-II",
+        "BPHYS202": "Applied Physics for CSE Stream",
+        "BPOPS203": "Principles of Programming Using C",
+        "BPWSK206": "Professional Writing Skills in English",
+        "BKSKK207": "Samskrutika Kannada / Balake Kannada",
+        "BSFHK258": "Scientific Foundations of Health",
+        "BPLCK205B": "Introduction to Python Programming",
+        "BESCK204C": "Introduction to Electronics Engineering"
+    },
+    "SEM3": {
+        "BCS301": "Mathematics for Computer Science",
+        "BCS302": "Digital Design & Computer Organization",
+        "BCS303": "Operating Systems",
+        "BCS304": "Data Structures and Applications",
+        "BCSL305": "Data Structures Lab",
+        "BSCK307": "Soft Skills and Aptitude",
+        "BNSK359": "National Service Scheme (NSS)",
+        "BCS306A": "Object Oriented Programming with Java",
+        "BCS358D": "Data Visualization with Python"
+    },
+    "SEM4": {
+        "BCS401": "Analysis & Design of Algorithms",
+        "BCS402": "Microcontrollers",
+        "BCS403": "Database Management Systems",
+        "BCSL404": "Analysis & Design of Algorithms Lab",
+        "BBOC407": "Biology for Computer Engineers",
+        "BUHK408": "Universal Human Values",
+        "BPEK459_PhysicalEducation_OR_BNSK459_NSS_": "Physical Education or NSS",
+        "BCS405B": "Graph Theory"
+    }
+}
 def fetch_student_data(usn, semester, db_path=db_path):
     try:
         conn = sqlite3.connect(db_path)
@@ -22,6 +65,8 @@ def fetch_student_data(usn, semester, db_path=db_path):
 
         # Extract data from the row
         student_data = rows[0]
+
+
 
         # Extracting internal marks, external marks, and credits
         subject_code=[]
@@ -46,6 +91,7 @@ def fetch_student_data(usn, semester, db_path=db_path):
             "name": student_data[1],  # Student Name
             "usn": usn,
             "subject_code": subject_code,
+            "subject_name": [sem_subjects[semester].get(code,"unknown_subject") for code in subject_code],
             "ia_marks": ia_marks,
             "see_marks": see_marks,
             "credits": credits,
@@ -62,3 +108,5 @@ if(__name__) == ("__main__"):
         print(student_data)
     else:
         print("No data found for the specified USN.")'''
+    
+    print(fetch_student_data("1JS22CS006","SEM1"))

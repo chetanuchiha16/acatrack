@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaFolder, FaFilePdf } from "react-icons/fa";
 import API_BASE from "./config";
+
 function FileItem({ name, isFolder, onClick, selected }) {
     return (
         <div
-            className={`flex flex-col items-center w-24 m-2 p-2 rounded-lg cursor-pointer transition hover:bg-blue-100 dark:hover:bg-blue-900 ${
-                selected ? "ring-2 ring-blue-400 dark:ring-blue-300" : ""
-            }`}
+            className={`flex flex-col items-center w-24 sm:w-28 m-2 p-2 rounded-lg cursor-pointer transition hover:bg-blue-100 dark:hover:bg-blue-900 ${selected ? "ring-2 ring-blue-400 dark:ring-blue-300" : ""
+                }`}
             onClick={onClick}
         >
             <div className="text-4xl mb-1 text-yellow-500">
@@ -28,7 +28,7 @@ function FileGrid({ tree, path = "", setPath }) {
     const entries = Object.entries(tree);
 
     return (
-        <div className="flex flex-wrap">
+        <div className="flex flex-wrap justify-center">
             {entries.map(([name, value]) => {
                 const fullPath = `${path}/${name}`;
                 const isFolder = value !== null;
@@ -106,16 +106,14 @@ export default function TeacherNotesUploader() {
     const uploadFile = (file) => {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("path", currentPath); // send folder path to backend
+        formData.append("path", currentPath);
 
         const xhr = new XMLHttpRequest();
         xhr.open("POST", `${API_BASE}/auth/Staff/upload_notes`, true);
 
         xhr.upload.onprogress = (event) => {
             if (event.lengthComputable) {
-                setUploadProgress(
-                    Math.round((event.loaded / event.total) * 100)
-                );
+                setUploadProgress(Math.round((event.loaded / event.total) * 100));
             }
         };
 
@@ -123,7 +121,6 @@ export default function TeacherNotesUploader() {
             if (xhr.status === 200) {
                 setUploadStatus("✅ Uploaded successfully");
                 setUploadProgress(0);
-                // refresh file tree
                 fetch(`${API_BASE}/auth/Staff/upload_notes`)
                     .then((res) => res.json())
                     .then(setFileTree);
@@ -138,9 +135,27 @@ export default function TeacherNotesUploader() {
     };
 
     return (
-        <div className="w-[80vw] h-[70vh] flex flex-col border-4 border-black rounded-xl dark:text-white dark:bg-[#1a1a1a] text-black p-4 overflow-hidden">
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">📄 Upload Notes (PDF)</h2>
+        <div className="w-full sm:w-[90vw] lg:w-[80vw] h-auto min-h-[70vh] mx-auto flex flex-col border-4 border-black rounded-xl dark:text-white dark:bg-[#1a1a1a] text-black p-4 overflow-hidden">
+            {/* Header */}
+            {/* <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center mb-4 gap-3 text-center">
+        <h2 className="text-lg sm:text-xl font-semibold">
+          📄 Upload Notes (PDF)
+        </h2>
+        {currentPath && (
+          <button
+            className="text-sm text-blue-600 hover:underline dark:text-blue-300"
+            onClick={goBack}
+          >
+            🔙 Back
+          </button>
+        )}
+      </div> */}
+
+
+            <div className="flex flex-col sm:flex-row justify-center items-center mb-4 gap-3 text-center">
+                <h2 className="text-lg sm:text-xl font-semibold">
+                    📄 Upload Notes (PDF)
+                </h2>
                 {currentPath && (
                     <button
                         className="text-sm text-blue-600 hover:underline dark:text-blue-300"
@@ -151,12 +166,12 @@ export default function TeacherNotesUploader() {
                 )}
             </div>
 
+            {/* Drop Zone / File Grid */}
             <div
-                className={`flex-1 p-4 rounded-xl border-2 border-dashed transition cursor-pointer ${
-                    dragActive
+                className={`flex-1 p-4 rounded-xl border-2 border-dashed transition cursor-pointer ${dragActive
                         ? "border-green-500 bg-green-50 dark:bg-green-900"
                         : "border-gray-300"
-                }`}
+                    }`}
                 onDragEnter={(e) => {
                     e.preventDefault();
                     setDragActive(true);
@@ -167,7 +182,6 @@ export default function TeacherNotesUploader() {
                 }}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
-                // onClick={() => fileInputRef.current.click()}
             >
                 {currentDir ? (
                     <FileGrid
@@ -176,17 +190,19 @@ export default function TeacherNotesUploader() {
                         setPath={setCurrentPath}
                     />
                 ) : (
-                    <p>Loading...</p>
+                    <p className="text-center text-gray-500">Loading...</p>
                 )}
-                <p className="mt-4 text-center text-sm text-gray-500">
+                <p className="mt-4 text-center text-xs sm:text-sm text-gray-500">
                     {dragActive
                         ? "📂 Drop file here to upload to this folder"
-                        : "Drag & drop or click to select a PDF"}
+                        : "Drag & drop or click the button below to select a PDF"}
                 </p>
             </div>
-            <div className="mt-4">
+
+            {/* Upload Button */}
+            <div className="mt-4 flex justify-center">
                 <button
-                    className="px-4 py-2 bg-blue-500 text-white rounded"
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition"
                     onClick={() => fileInputRef.current.click()}
                 >
                     📤 Upload PDF
@@ -203,6 +219,7 @@ export default function TeacherNotesUploader() {
                 className="hidden"
             />
 
+            {/* Progress Bar */}
             {uploadProgress > 0 && (
                 <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
                     <div
@@ -212,13 +229,13 @@ export default function TeacherNotesUploader() {
                 </div>
             )}
 
+            {/* Upload Status */}
             {uploadStatus && (
                 <p
-                    className={`mt-2 text-sm ${
-                        uploadStatus.startsWith("✅")
+                    className={`mt-2 text-sm text-center ${uploadStatus.startsWith("✅")
                             ? "text-green-600"
                             : "text-red-600"
-                    }`}
+                        }`}
                 >
                     {uploadStatus}
                 </p>

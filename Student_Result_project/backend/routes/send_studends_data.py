@@ -33,6 +33,7 @@ def get_student_info():
             "cgpa": student.cgpa,
             "subjects": [
                 {
+                    "subject_name":subject_name,
                     "code": code,
                     "ia": ia,
                     "see": see,
@@ -40,8 +41,8 @@ def get_student_info():
                     "credit": credit,
                     "status": status
                 }
-                for code, ia, see, credit, status in zip(
-                    student.subject_codes, student.ia_marks, student.see_marks,
+                for code,subject_name, ia, see, credit, status in zip(
+                    student.subject_codes, student.subject_names, student.ia_marks, student.see_marks,
                     student.credits, student.pass_fail
                 )
             ],

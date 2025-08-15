@@ -7,47 +7,48 @@ export default function SubjectResults() {
 
     const semesterOptions = ["SEM1", "SEM2", "SEM3", "SEM4"];
     const subjectMapping = {
-        SEM1: [
-            "BMATS101",
-            "BCHES102",
-            "BCEDK103",
-            "BENGK106",
-            "BICOK107",
-            "BIDTK158",
-            "BESCK104A",
-            "BETCK105H",
-        ],
-        SEM2: [
-            "BMAT201",
-            "BPHYS202",
-            "BPOPS203",
-            "BPWSK206",
-            "BKSKK207",
-            "BSFHK258",
-            "BPLCK205B",
-            "BESCK204C",
-        ],
-        SEM3: [
-            "BCS301",
-            "BCS302",
-            "BCS303",
-            "BCS304",
-            "BCSL305",
-            "BSCK307",
-            "BNSK359",
-            "BCS306A",
-            "BCS358D",
-        ],
-        SEM4: [
-            "BCS401",
-            "BCS402",
-            "BCS403",
-            "BCSL404",
-            "BBOC407",
-            "BUHK408",
-            "BPEK459_PhysicalEducation_OR_BNSK459_NSS_",
-            "BCS405B",
-        ],
+        SEM1: {
+            BMATS101: "Mathematics for CSE Stream-I",
+            BCHES102: "Applied Chemistry for CSE Stream",
+            BCEDK103: "Computer-Aided Engineering Drawing",
+            BENGK106: "Communicative English",
+            BICOK107: "Indian Constitution",
+            BIDTK158: "Innovation and Design Thinking",
+            BESCK104A: "Introduction to Civil Engineering",
+            BETCK105H: "Introduction to Internet of Things (IoT)",
+        },
+        SEM2: {
+            BMAT201: "Mathematics for CSE Stream-II",
+            BPHYS202: "Applied Physics for CSE Stream",
+            BPOPS203: "Principles of Programming Using C",
+            BPWSK206: "Professional Writing Skills in English",
+            BKSKK207: "Samskrutika Kannada / Balake Kannada",
+            BSFHK258: "Scientific Foundations of Health",
+            BPLCK205B: "Introduction to Python Programming",
+            BESCK204C: "Introduction to Electronics Engineering",
+        },
+        SEM3: {
+            BCS301: "Mathematics for Computer Science",
+            BCS302: "Digital Design & Computer Organization",
+            BCS303: "Operating Systems",
+            BCS304: "Data Structures and Applications",
+            BCSL305: "Data Structures Lab",
+            BSCK307: "Soft Skills and Aptitude",
+            BNSK359: "National Service Scheme (NSS)",
+            BCS306A: "Object Oriented Programming with Java",
+            BCS358D: "Data Visualization with Python",
+        },
+        SEM4: {
+            BCS401: "Analysis & Design of Algorithms",
+            BCS402: "Microcontrollers",
+            BCS403: "Database Management Systems",
+            BCSL404: "Analysis & Design of Algorithms Lab",
+            BBOC407: "Biology for Computer Engineers",
+            BUHK408: "Universal Human Values",
+            BPEK459_PhysicalEducation_OR_BNSK459_NSS_:
+                "Physical Education or NSS",
+            BCS405B: "Graph Theory",
+        },
     };
 
     const fetchData = async () => {
@@ -101,11 +102,13 @@ export default function SubjectResults() {
                 >
                     <option value="">Select Subject</option>
                     {semester &&
-                        subjectMapping[semester]?.map((sub) => (
-                            <option key={sub} value={sub}>
-                                {sub}
-                            </option>
-                        ))}
+                        Object.entries(subjectMapping[semester]).map(
+                            ([code, name]) => (
+                                <option key={code} value={code}>
+                                    {name}
+                                </option>
+                            )
+                        )}
                 </select>
 
                 <button
@@ -129,7 +132,8 @@ export default function SubjectResults() {
             {data && (
                 <div className="p-6 rounded-xl shadow-sm bg-[var(--card)] text-[var(--card-foreground)] transition-colors">
                     <h3 className="text-lg font-semibold mb-4">
-                        {data.subject_code} — {data.semester}
+                        {data.subject_name} {data.subject_code} —{" "}
+                        {data.semester}
                     </h3>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

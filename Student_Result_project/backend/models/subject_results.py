@@ -1,8 +1,10 @@
 
 from models.paths import db_path, pdf_dir, img_dir
+from models.fetch import sem_subjects
 # SubjectResult class
 class SubjectResult:
     def __init__(self, subject_code, semester, university):
+        self.subject_name = sem_subjects[semester].get(subject_code,"Unknown subject")
         self.subject_code = subject_code
         self.semester = semester
         self.university = university  # Instance of the University class
@@ -89,6 +91,7 @@ class SubjectResult:
 
     def get_subject_results_dict(self):
         return {
+            "subject_name":self.subject_name,
             "subject_code": self.subject_code,
             "semester": self.semester,
             "total_students": self.total_students,
