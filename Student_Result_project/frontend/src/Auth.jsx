@@ -153,7 +153,7 @@ export default function Auth() {
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 inset-y-0 flex items-center !bg-transparent hover:!border-0 text-white/70 focus:!outline-none"
+                            className="absolute right-3 inset-y-0 flex items-center !border-0 !bg-transparent hover:!border-0 focus:!outline-0 text-white/70 focus:!outline-none"
                             tabIndex={-1}
                         >
                             {showPassword ? <FaEyeSlash /> : <FaEye />}
