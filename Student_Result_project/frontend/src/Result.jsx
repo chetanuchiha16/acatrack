@@ -89,7 +89,7 @@ export default function Result({ usn, semester }) {
                             <a
                                 href={data.pdf_url}
                                 download
-                                className="inline-block px-4 sm:px-6 py-2 rounded-full bg-blue-600 text-white font-bold text-sm sm:text-base hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all"
+                                className="inline-block px-4 sm:px-6 py-2 rounded-full bg-blue-600 !text-white font-bold text-sm sm:text-base hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all"
                             >
                                 📄 Download Report
                             </a>
