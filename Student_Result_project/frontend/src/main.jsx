@@ -14,22 +14,36 @@ import TeacherNotesUploader from "./TeacherNotesUploader.jsx";
 import ChatBot from "./Chatbot.jsx";
 import SemesterResults from "./SemesterResults.jsx";
 import SendEmails from "./SendEmails.jsx";
+import AdminLogin from "./AdminLogin.jsx";
+import HiddenShortcut from "./HiddenShortcut.jsx"; // wherever your file is
+import AdminPanel from "./AdminPanel.jsx";
+
+function RootLayout({ children }) {
+  return (
+    <>
+      <HiddenShortcut />
+      {children}
+    </>
+  );
+}
+
 const route = createBrowserRouter([
-    // { path: "/auth/Student/:id/result", element: <Result /> },
-    { path: "/auth/Staff/:id/SendEmails", element: <SendEmails /> },
-    { path: "/auth/Staff/:id/UploadResults", element: <ExcelViewer excel_path={`template.xlsx`}/> },
-    { path: "/auth/Staff/:id/StaffClassroom", element: <TeacherNotesUploader /> },
-    { path: "/auth/Staff/:id/StaffResults", element: <StaffResults /> },
-    { path: "/auth/Parent/:id", element: <ChatBot/> },
-    { path: "/auth/Staff/:id", element: <Staff /> },
-    { path: "/auth/Student/:id", element: <Student /> },
-    { path: "/auth/:who", element: <Auth /> },
-    { path: "/auth/", element: <Auth /> },
-    { path: "/auth", element: <Auth /> },
-    // { path: "/logout", element: <Auth /> },
-    { path: `/`, element: <App /> },
-    { path: `*`, element: <Error /> },
+    { path: "/auth/Staff/:id/SendEmails", element: <RootLayout><SendEmails /></RootLayout> },
+    { path: "/auth/Staff/:id/UploadResults", element: <RootLayout><ExcelViewer excel_path={`template.xlsx`} /></RootLayout> },
+    { path: "/auth/Staff/:id/StaffClassroom", element: <RootLayout><TeacherNotesUploader /></RootLayout> },
+    { path: "/auth/Staff/:id/StaffResults", element: <RootLayout><StaffResults /></RootLayout> },
+    { path: "/auth/Staff/:id", element: <RootLayout><Staff /></RootLayout> },
+    { path: "/auth/Student/:id", element: <RootLayout><Student /></RootLayout> },
+    { path: "/auth/Parent/:id", element: <RootLayout><ChatBot /></RootLayout> },
+    { path: "/auth/:who", element: <RootLayout><Auth /></RootLayout> },
+    { path: "/auth/", element: <RootLayout><Auth /></RootLayout> },
+    { path: "/auth", element: <RootLayout><Auth /></RootLayout> },
+    { path: "/admin/panel", element: <RootLayout><AdminPanel /></RootLayout> },
+    { path: "/admin", element: <RootLayout><AdminLogin /></RootLayout> },
+    { path: "/", element: <RootLayout><App /></RootLayout> },
+    { path: "*", element: <RootLayout><Error /></RootLayout> },
 ]);
+
 
 createRoot(document.getElementById("root")).render(
     <StrictMode>

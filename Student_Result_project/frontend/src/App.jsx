@@ -1,6 +1,8 @@
 import { useState } from "react";
 import "./App.css";
 import Auth from "./Auth";
+import AdminLogin from "./AdminLogin";
+import HiddenShortcut from "./HiddenShortcut";
 
 function App() {
     const [count, setCount] = useState(0);
@@ -8,6 +10,7 @@ function App() {
     return (
         <>
             <Auth />
+            <HiddenShortcut/>
         </>
     );
 }
