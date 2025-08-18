@@ -1,10 +1,15 @@
+import os
 class Config:
     # Database
     SQLALCHEMY_DATABASE_URI = "sqlite:///user.db"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Secret key (should be in environment variable for production)
-    SECRET_KEY = "supersecretkey"
+    # Flask secret key
+    SECRET_KEY = os.environ.get("SECRET_KEY", "supersecretkey")
+
+    # Admin secret (for /admin endpoints)
+    ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "supersecretkey")  # fallback for dev
+
 
     # Session configuration
     SESSION_TYPE = "filesystem"         # Or 'redis' for production

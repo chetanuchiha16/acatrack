@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 export default function AdminPanel() {
   const navigate = useNavigate();
   const savedSecret = localStorage.getItem("admin_secret");
-
+  
   const [secret, setSecret] = useState(savedSecret || "");
   const [mode, setMode] = useState("missing");
   const [status, setStatus] = useState("");

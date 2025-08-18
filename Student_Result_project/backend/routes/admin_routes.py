@@ -59,11 +59,11 @@ DEFAULT_ADMIN_SECRET = "supersecretkey"
 
 # ---------- Helpers ----------
 def _get_admin_secret() -> str:
-    # Priority: environment variable > app.config > default fallback
+    # Priority: environment variable > app.config > fallback
     return (
         os.environ.get("ADMIN_SECRET")
         or current_app.config.get("ADMIN_SECRET")
-        or DEFAULT_ADMIN_SECRET
+        or "supersecretkey"
     )
 
 
