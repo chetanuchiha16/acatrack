@@ -120,7 +120,7 @@ export default function Auth() {
                             className={`flex-1 py-2 rounded-full text-xs sm:text-sm font-medium transition-all mx-0.5 ${
                                 who === role
                                     ? "!bg-blue-500 !text-white !shadow-md"
-                                    : "!text-white !hover:bg-white/20"
+                                    : "!text-white hover:bg-white/20"
                             }`}
                         >
                             {role}
