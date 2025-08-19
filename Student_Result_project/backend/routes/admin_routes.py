@@ -255,7 +255,9 @@ def upload_emails():
         name = str(row.get("Student_Name", "")).strip()
         parent_email = str(row.get("Parent_Email", "")).strip()
         student_email = str(row.get("Student_Email", "")).strip()
-
+        parent_phno = str(row.get("Parent_PHNO", "")).strip()
+        student_phno = str(row.get("Student_PHNO", "")).strip()
+        
         if not usn:
             continue
 
@@ -266,6 +268,8 @@ def upload_emails():
                     name=name,
                     parent_email=parent_email,
                     student_email=student_email,
+                    parent_phno = parent_phno,
+                    student_phno = student_phno,
                 )
             )
             count_inserted += 1
