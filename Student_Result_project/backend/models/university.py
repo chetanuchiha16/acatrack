@@ -31,7 +31,7 @@ class University:
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            query = f"SELECT DISTINCT Subject_Code_USN FROM {semester}"
+            query = f"SELECT DISTINCT student_usn FROM {semester}"
             cursor.execute(query)
             usns = [row[0] for row in cursor.fetchall()]
             conn.close()
@@ -117,7 +117,7 @@ class University:
                     # Fetch all students for the selected semester
                     conn = sqlite3.connect(db_path)
                     cursor = conn.cursor()
-                    cursor.execute(f"SELECT SUBJECT_CODE_USN FROM {semester} WHERE SUBJECT_CODE_USN IS NOT NULL;")
+                    cursor.execute(f"SELECT student_usn FROM {semester} WHERE student_usn IS NOT NULL;")
                     student_usns = cursor.fetchall()
                     conn.close()
 
@@ -178,7 +178,7 @@ class University:
             # Fetch all students for the selected semester
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute(f"SELECT SUBJECT_CODE_USN FROM {selected_semester}")
+            cursor.execute(f"SELECT student_usn FROM {selected_semester}")
             rows = cursor.fetchall()
             conn.close()
 
@@ -212,7 +212,7 @@ class University:
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute(f"SELECT SUBJECT_CODE_USN FROM {selected_semester}")
+            cursor.execute(f"SELECT student_usn FROM {selected_semester}")
             rows = cursor.fetchall()
             conn.close()
 

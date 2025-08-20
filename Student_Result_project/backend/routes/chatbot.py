@@ -128,7 +128,7 @@ def _load_student_data():
     for sheet_name in sheet_names:
         try:
             df = pd.read_excel(excel_path, sheet_name=sheet_name)
-            student_name_col = 'SUBJECT_CODE_Student_Name'
+            student_name_col = 'student_name'
             if student_name_col not in df.columns:
                 continue
 

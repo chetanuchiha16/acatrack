@@ -53,7 +53,7 @@ def fetch_student_data(usn, semester, db_path=db_path):
         query = f"""
         SELECT *
         FROM {semester}
-        WHERE "Subject_Code_USN" = ?
+        WHERE "student_usn" = ?
         """
         cursor.execute(query, (usn,))
         rows = cursor.fetchall()
