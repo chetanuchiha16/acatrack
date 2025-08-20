@@ -48,6 +48,7 @@ export default function SubjectResults() {
             BPEK459_PhysicalEducation_OR_BNSK459_NSS_:
                 "Physical Education or NSS",
             BCS405B: "Graph Theory",
+            BCSL456D: "Technical Writing using LaTeX"
         },
     };
 

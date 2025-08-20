@@ -41,7 +41,8 @@ sem_subjects = {
         "BBOC407": "Biology for Computer Engineers",
         "BUHK408": "Universal Human Values",
         "BPEK459_PhysicalEducation_OR_BNSK459_NSS_": "Physical Education or NSS",
-        "BCS405B": "Graph Theory"
+        "BCS405B": "Graph Theory",
+        "BCSL456D": "Technical Writing using LaTeX"
     }
 }
 def fetch_student_data(usn, semester, db_path=db_path):
