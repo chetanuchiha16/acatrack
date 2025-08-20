@@ -106,7 +106,7 @@ export default function ChatBot() {
 
     return (
         <div className="chat-container md:w-[500px]">
-            <LogoutButton/>
+            <LogoutButton />
             <div className="chat-box m-l-[50%]">
                 {messages.map((msg, i) => (
                     <div key={i} className={`chat-message ${msg.sender}`}>

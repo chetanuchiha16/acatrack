@@ -12,7 +12,7 @@ conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 techers = cursor.execute("SELECT SEM1_Staff_Initials FROM Subjectwise_result_1").fetchall()
-stus = cursor.execute("SELECT Student_USN, Student_Name FROM SEM1").fetchall()
+stus = cursor.execute("SELECT student_usn, student_name FROM SEM1").fetchall()
 
 conn.commit()
 cursor.close()
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     df = pd.read_excel(excel_path)
 
     # Required column names in Excel
-    required_cols = ["Student_USN", "Student_Name", "Parent_Email", "Student_Email"]
+    required_cols = ["student_usn", "student_name", "Parent_Email", "Student_Email"]
     for col in required_cols:
         if col not in df.columns:
             raise ValueError(f"Missing column in Excel: {col}")
@@ -65,8 +65,8 @@ if __name__ == "__main__":
 
         count_inserted = 0
         for _, row in df.iterrows():
-            usn = str(row["Student_USN"]).strip()
-            name = str(row["Student_Name"]).strip()
+            usn = str(row["student_usn"]).strip()
+            name = str(row["student_name"]).strip()
             parent_email = str(row["Parent_Email"]).strip()
             student_email = str(row["Student_Email"]).strip()
 
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         df_mentors = pd.read_excel(excel_path)
 
         # Required columns
-        required_mentor_cols = ["Mentor_Name", "Student_USN"]
+        required_mentor_cols = ["Mentor_Name", "student_usn"]
         for col in required_mentor_cols:
             if col not in df_mentors.columns:
                 raise ValueError(f"Missing column in Excel: {col}")
@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
             for _, row in df_mentors.iterrows():
                 mentor_name = str(row["Mentor_Name"]).strip()
-                student_usn = str(row["Student_USN"]).strip()
+                student_usn = str(row["student_usn"]).strip()
 
                 # Get or create Mentor
                 mentor = mentor_cache.get(mentor_name)
