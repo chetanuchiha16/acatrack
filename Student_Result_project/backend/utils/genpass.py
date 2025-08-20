@@ -3,15 +3,16 @@ from models.paths import db_path
 from app_init import bcrypt
 from models import db, User, Teacher, StudentEmail
 import pandas as pd
-from models.paths import email_excel_path
+from models.paths import email_excel_path, mentor_excel_path
 from app_init import create_app
+from models import Mentor, MentorStudent
 app = create_app()
 
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 techers = cursor.execute("SELECT SEM1_Staff_Initials FROM Subjectwise_result_1").fetchall()
-stus = cursor.execute("SELECT SUBJECT_CODE_USN, SUBJECT_CODE_Student_Name FROM SEM1").fetchall()
+stus = cursor.execute("SELECT Student_USN, Student_Name FROM SEM1").fetchall()
 
 conn.commit()
 cursor.close()
@@ -83,8 +84,58 @@ if __name__ == "__main__":
 
         db.session.commit()
         print(f"Inserted {count_inserted} new email records.")
-### use python -m utils.genpass
+
+        #mentors
+
+        excel_path = mentor_excel_path  # change to your file path
+
+        df_mentors = pd.read_excel(excel_path)
+
+        # Required columns
+        required_mentor_cols = ["Mentor_Name", "Student_USN"]
+        for col in required_mentor_cols:
+            if col not in df_mentors.columns:
+                raise ValueError(f"Missing column in Excel: {col}")
+
+        with app.app_context():
+            db.create_all()  # make sure Mentor + MentorStudent tables exist
+
+            mentor_cache = {}  # cache to reduce queries
+            count_mentors = 0
+            count_mappings = 0
+
+            for _, row in df_mentors.iterrows():
+                mentor_name = str(row["Mentor_Name"]).strip()
+                student_usn = str(row["Student_USN"]).strip()
+
+                # Get or create Mentor
+                mentor = mentor_cache.get(mentor_name)
+                if mentor is None:
+                    mentor = Mentor.query.filter_by(name=mentor_name).first()
+                    if mentor is None:
+                        mentor = Mentor(name=mentor_name)
+                        db.session.add(mentor)
+                        db.session.flush()  # get mentor.id without full commit
+                        count_mentors += 1
+                    mentor_cache[mentor_name] = mentor
+
+                # Add MentorStudent mapping if not exists
+                exists = MentorStudent.query.filter_by(
+                    mentor_id=mentor.id,
+                    student_usn=student_usn
+                ).first()
+                if not exists:
+                    db.session.add(MentorStudent(
+                        mentor_id=mentor.id,
+                        student_usn=student_usn
+                    ))
+                    count_mappings += 1
+
+            db.session.commit()
+            print(f"Inserted {count_mentors} new mentors, {count_mappings} mentor-student mappings.")
+            
+        ### use python -m utils.genpass
 
 
-        
+                
 
