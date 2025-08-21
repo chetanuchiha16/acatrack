@@ -17,6 +17,8 @@ import SendEmails from "./SendEmails.jsx";
 import AdminLogin from "./AdminLogin.jsx";
 import HiddenShortcut from "./HiddenShortcut.jsx"; // wherever your file is
 import AdminPanel from "./AdminPanel.jsx";
+import MentorResults from "./MentorResults.jsx";
+
 
 function RootLayout({ children }) {
   return (
@@ -28,6 +30,7 @@ function RootLayout({ children }) {
 }
 
 const route = createBrowserRouter([
+    { path: "/auth/Staff/:id/MentorResults", element: <RootLayout><MentorResults /></RootLayout> },
     { path: "/auth/Staff/:id/SendEmails", element: <RootLayout><SendEmails /></RootLayout> },
     { path: "/auth/Staff/:id/UploadResults", element: <RootLayout><ExcelViewer excel_path={`template.xlsx`} /></RootLayout> },
     { path: "/auth/Staff/:id/StaffClassroom", element: <RootLayout><TeacherNotesUploader /></RootLayout> },
