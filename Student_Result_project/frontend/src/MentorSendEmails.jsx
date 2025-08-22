@@ -1,274 +1,437 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import API_BASE from "./config";
 
-export default function MentorSendEmails({ mentorId = 3 }) {
-  // States for student list
-  const [students, setStudents] = useState([]);
-  const [loadingStudents, setLoadingStudents] = useState(true);
+export default function MentorSendEmails({ mentorId }) {
+    const [students, setStudents] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [expanded, setExpanded] = useState({});
+    const [studentMessages, setStudentMessages] = useState({});
+    const [loadingMessages, setLoadingMessages] = useState(true);
+    const [feedback, setFeedback] = useState({ text: "", type: "" });
+    const [search, setSearch] = useState("");
 
-  // Everyone email states
-  const [subjectAll, setSubjectAll] = useState("");
-  const [messageAll, setMessageAll] = useState("");
-  const [feedbackAll, setFeedbackAll] = useState({ text: "", type: "" });
+    useEffect(() => {
+        if (mentorId) {
+            fetchStudents();
+            fetchMessages();
+        }
+    }, [mentorId]);
 
-  // Individual email states
-  const [usn, setUsn] = useState("");
-  const [subjectInd, setSubjectInd] = useState("");
-  const [messageInd, setMessageInd] = useState("");
-  const [feedbackInd, setFeedbackInd] = useState({ text: "", type: "" });
-
-  // Messages history
-  const [messages, setMessages] = useState([]);
-  const [loadingMessages, setLoadingMessages] = useState(true);
-
-  // ---------------- Fetch Students ----------------
-  useEffect(() => {
     const fetchStudents = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/mentor/${mentorId}/students`);
-        setStudents(res.data.students || []);
-      } catch (err) {
-        console.error("Failed to fetch mentor students", err);
-      } finally {
-        setLoadingStudents(false);
-      }
+        setLoading(true);
+        try {
+            const res = await axios.get(
+                `${API_BASE}/mentor/${mentorId}/students`
+            );
+            setStudents(res.data.students || []);
+        } catch (err) {
+            console.error("Failed to fetch students", err);
+        } finally {
+            setLoading(false);
+        }
     };
-    fetchStudents();
-  }, [mentorId]);
 
-  // ---------------- Fetch Messages ----------------
-  const fetchMessages = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/mentor/${mentorId}/messages`);
-      setMessages(res.data || []);
-    } catch (err) {
-      console.error("Failed to fetch messages", err);
-    } finally {
-      setLoadingMessages(false);
-    }
-  };
+    const fetchMessages = async () => {
+        try {
+            const res = await axios.get(
+                `${API_BASE}/mentor/${mentorId}/messages`
+            );
+            const grouped = {};
+            res.data.forEach((msg) => {
+                const usn = msg.student_usn || "all";
+                if (!grouped[usn]) grouped[usn] = [];
+                grouped[usn].push(msg);
+            });
+            setStudentMessages(grouped);
+        } catch (err) {
+            console.error("Failed to fetch messages", err);
+        } finally {
+            setLoadingMessages(false);
+        }
+    };
 
-  useEffect(() => {
-    fetchMessages();
-  }, [mentorId]);
+    const toggleExpand = (usn) => {
+        setExpanded((prev) => ({ ...prev, [usn]: !prev[usn] }));
+    };
 
-  // ---------------- Send Emails ----------------
-  const sendEmailToAll = async (recipientType) => {
-    if (!subjectAll.trim() || !messageAll.trim()) {
-      setFeedbackAll({ text: "Subject and message are required.", type: "error" });
-      return;
-    }
-    try {
-      await axios.post(`${API_BASE}/mentor/${mentorId}/send-email/all`, {
-        recipientType,
-        subject: subjectAll,
-        message: messageAll,
-      });
-      setFeedbackAll({ text: `Email sent to all ${recipientType}s successfully!`, type: "success" });
-      fetchMessages(); // refresh history
-    } catch (err) {
-      setFeedbackAll({ text: `Failed to send email to ${recipientType}s.`, type: "error" });
-      console.error(err);
-    }
-  };
+    const sendEmail = async (recipientType, usn, subject, message) => {
+        if (!subject.trim() || !message.trim()) {
+            setFeedback({
+                text: "Subject and message are required.",
+                type: "error",
+            });
+            return;
+        }
 
-  const sendEmailToIndividual = async (recipientType) => {
-    if (!usn) {
-      setFeedbackInd({ text: "Please select a student USN.", type: "error" });
-      return;
-    }
-    if (!subjectInd.trim() || !messageInd.trim()) {
-      setFeedbackInd({ text: "Subject and message are required.", type: "error" });
-      return;
-    }
-    try {
-      await axios.post(`${API_BASE}/mentor/${mentorId}/send-email/student`, {
-        usn,
-        recipientType,
-        subject: subjectInd,
-        message: messageInd,
-      });
-      setFeedbackInd({
-        text: `Email sent to ${recipientType} (${usn}) successfully!`,
-        type: "success",
-      });
-      fetchMessages(); // refresh history
-    } catch (err) {
-      setFeedbackInd({ text: `Failed to send email to ${recipientType} (${usn})`, type: "error" });
-      console.error(err);
-    }
-  };
+        try {
+            // Always store message first
+            const stored = await axios.post(
+                `${API_BASE}/mentor/${mentorId}/messages`,
+                {
+                    usn,
+                    recipientType,
+                    subject,
+                    message,
+                }
+            );
 
-  // ---------------- Delete Message ----------------
-  const deleteMessage = async (msgId) => {
-    try {
-      await axios.delete(`${API_BASE}/mentor/${mentorId}/messages/${msgId}`);
-      setMessages((prev) => prev.filter((m) => m.id !== msgId));
-    } catch (err) {
-      console.error("Failed to delete message", err);
-    }
-  };
+            setStudentMessages((prev) => {
+                const key = usn || "all";
+                return {
+                    ...prev,
+                    [key]: [stored.data, ...(prev[key] || [])],
+                };
+            });
 
-  // ---------------- Render ----------------
-  return (
-    <div className="max-w-7xl mx-auto p-6 mt-10">
-      <div className="flex flex-col md:flex-row gap-10">
-        {/* Left: Email to All */}
-        <section className="flex-1 rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-semibold mb-6">Send Email to All</h2>
-          <label className="block mb-2 font-medium">Subject</label>
-          <input
-            type="text"
-            value={subjectAll}
-            onChange={(e) => setSubjectAll(e.target.value)}
-            placeholder="Enter email subject"
-            className="w-full mb-4 px-4 py-2 border rounded-md"
-          />
-          <label className="block mb-2 font-medium">Message</label>
-          <textarea
-            value={messageAll}
-            onChange={(e) => setMessageAll(e.target.value)}
-            placeholder="Enter your message..."
-            rows={7}
-            className="w-full mb-4 px-4 py-2 border rounded-md"
-          />
-          <div className="flex gap-4">
-            <button
-              onClick={() => sendEmailToAll("student")}
-              className="flex-1 bg-indigo-600 text-white py-3 rounded-md hover:bg-indigo-700"
-            >
-              Email All Students
-            </button>
-            <button
-              onClick={() => sendEmailToAll("parent")}
-              className="flex-1 bg-yellow-600 text-white py-3 rounded-md hover:bg-yellow-700"
-            >
-              Email All Parents
-            </button>
-          </div>
-          {feedbackAll.text && (
-            <p
-              className={`mt-4 p-3 rounded-md text-center ${
-                feedbackAll.type === "success"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
-              {feedbackAll.text}
-            </p>
-          )}
-        </section>
+            let emailRes;
+            if (usn) {
+                emailRes = await axios.post(
+                    `${API_BASE}/mentor/${mentorId}/send-email/student`,
+                    {
+                        usn,
+                        recipientType,
+                        subject,
+                        message,
+                    }
+                );
+            } else {
+                emailRes = await axios.post(
+                    `${API_BASE}/mentor/${mentorId}/send-email/all`,
+                    {
+                        recipientType,
+                        subject,
+                        message,
+                    }
+                );
+            }
 
-        {/* Right: Email Individual */}
-        <section className="flex-1 rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-semibold mb-6">Send Email to Individual</h2>
-          {loadingStudents ? (
-            <p>Loading students...</p>
-          ) : (
-            <>
-              <label className="block mb-2 font-medium">Select Student (USN)</label>
-              <select
-                value={usn}
-                onChange={(e) => setUsn(e.target.value)}
-                className="w-full mb-4 px-4 py-2 border rounded-md"
-              >
-                <option value="">-- Select Student --</option>
-                {students.map((s) => (
-                  <option key={s.usn} value={s.usn}>
-                    {s.usn} - {s.name}
-                  </option>
-                ))}
-              </select>
+            if (emailRes.status >= 200 && emailRes.status < 300) {
+                setFeedback({
+                    text: `Email sent to ${
+                        usn || "all"
+                    } ${recipientType}(s) successfully!`,
+                    type: "success",
+                });
+            } else {
+                throw new Error("Email failed");
+            }
+        } catch (err) {
+            console.error("Email sending failed", err);
+            setFeedback({
+                text: `Message stored but email failed for ${
+                    usn || "all"
+                } ${recipientType}(s).`,
+                type: "error",
+            });
 
-              <label className="block mb-2 font-medium">Subject</label>
-              <input
-                type="text"
-                value={subjectInd}
-                onChange={(e) => setSubjectInd(e.target.value)}
-                placeholder="Enter subject"
-                className="w-full mb-4 px-4 py-2 border rounded-md"
-              />
+            // Mark the latest stored message as "failed"
+            setStudentMessages((prev) => {
+                const key = usn || "all";
+                const updated = [...(prev[key] || [])];
+                if (updated.length > 0) {
+                    updated[0] = { ...updated[0], email_failed: true };
+                }
+                return { ...prev, [key]: updated };
+            });
+        }
+    };
 
-              <label className="block mb-2 font-medium">Message</label>
-              <textarea
-                value={messageInd}
-                onChange={(e) => setMessageInd(e.target.value)}
-                placeholder="Enter your message..."
-                rows={7}
-                className="w-full mb-4 px-4 py-2 border rounded-md"
-              />
+    const deleteMessage = async (msgId, usn) => {
+        try {
+            await axios.delete(
+                `${API_BASE}/mentor/${mentorId}/messages/${msgId}`
+            );
+            setStudentMessages((prev) => {
+                const key = usn || "all";
+                return {
+                    ...prev,
+                    [key]: prev[key].filter((m) => m.id !== msgId),
+                };
+            });
+        } catch (err) {
+            console.error("Failed to delete message", err);
+        }
+    };
 
-              <div className="flex gap-4">
-                <button
-                  onClick={() => sendEmailToIndividual("student")}
-                  className="flex-1 bg-green-600 text-white py-3 rounded-md hover:bg-green-700"
+    // Filter students by name or USN (case-insensitive)
+    const filteredStudents = students.filter(
+        (s) =>
+            s.name.toLowerCase().includes(search.toLowerCase()) ||
+            s.usn.toLowerCase().includes(search.toLowerCase())
+    );
+
+    return (
+        <div className="p-6 space-y-6">
+            <h2 className="text-2xl font-bold mb-4">Mentor Email Panel</h2>
+
+            {feedback.text && (
+                <p
+                    className={`p-2 rounded text-center ${
+                        feedback.type === "success"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                    }`}
                 >
-                  Email Student
-                </button>
-                <button
-                  onClick={() => sendEmailToIndividual("parent")}
-                  className="flex-1 bg-yellow-600 text-white py-3 rounded-md hover:bg-yellow-700"
-                >
-                  Email Parent
-                </button>
-              </div>
-            </>
-          )}
+                    {feedback.text}
+                </p>
+            )}
 
-          {feedbackInd.text && (
-            <p
-              className={`mt-4 p-3 rounded-md text-center ${
-                feedbackInd.type === "success"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
-              {feedbackInd.text}
-            </p>
-          )}
-        </section>
-      </div>
+            {/* Two-column layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* LEFT: Broadcast Section */}
+                <div className="border rounded p-4 shadow space-y-3">
+                    <h2 className="text-xl font-semibold">Broadcast to All</h2>
+                    <input
+                        type="text"
+                        placeholder="Subject"
+                        className="border px-3 py-2 w-full rounded"
+                        id="subject-all"
+                    />
+                    <textarea
+                        placeholder="Message..."
+                        rows={3}
+                        className="border px-3 py-2 w-full rounded"
+                        id="msg-all"
+                    />
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() =>
+                                sendEmail(
+                                    "student",
+                                    null,
+                                    document.getElementById("subject-all").value,
+                                    document.getElementById("msg-all").value
+                                )
+                            }
+                            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                        >
+                            Email All Students
+                        </button>
+                        <button
+                            onClick={() =>
+                                sendEmail(
+                                    "parent",
+                                    null,
+                                    document.getElementById("subject-all").value,
+                                    document.getElementById("msg-all").value
+                                )
+                            }
+                            className="bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
+                        >
+                            Email All Parents
+                        </button>
+                    </div>
 
-      {/* Messages History */}
-      <section className="mt-12 rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-semibold mb-6">Sent Messages</h2>
-        {loadingMessages ? (
-          <p>Loading messages...</p>
-        ) : messages.length === 0 ? (
-          <p className="text-gray-600">No messages yet.</p>
-        ) : (
-          <ul className="space-y-4">
-            {messages.map((msg) => (
-              <li
-                key={msg.id}
-                className="border rounded-md p-4 flex justify-between items-start"
-              >
-                <div>
-                  <p className="font-semibold">
-                    To:{" "}
-                    {msg.student_usn
-                      ? `${msg.recipient_type} (${msg.student_usn})`
-                      : `All ${msg.recipient_type}s`}
-                  </p>
-                  <p className="text-gray-700">
-                    <strong>Subject:</strong> {msg.subject}
-                  </p>
-                  <p className="text-gray-600 mt-1 whitespace-pre-line">
-                    {msg.message}
-                  </p>
+                    {/* All Messages */}
+                    <div>
+                        <h3 className="font-medium mt-4 mb-2">
+                            Broadcast History
+                        </h3>
+                        {loadingMessages ? (
+                            <p>Loading...</p>
+                        ) : !studentMessages["all"] ||
+                          studentMessages["all"].length === 0 ? (
+                            <p className="text-gray-500">
+                                No broadcast messages yet.
+                            </p>
+                        ) : (
+                            <ul className="space-y-2">
+                                {studentMessages["all"].map((msg) => (
+                                    <li
+                                        key={msg.id}
+                                        className="border rounded p-2 flex justify-between"
+                                    >
+                                        <div>
+                                            <p className="text-sm">
+                                                <strong>{msg.subject}</strong>{" "}
+                                                {msg.email_failed && (
+                                                    <span className="text-red-600 ml-2">
+                                                        (Email Failed)
+                                                    </span>
+                                                )}
+                                            </p>
+                                            <p className="text-gray-700 text-sm whitespace-pre-line">
+                                                {msg.message}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() =>
+                                                deleteMessage(msg.id, null)
+                                            }
+                                            className="ml-2 text-red-600 hover:text-red-800 text-sm"
+                                        >
+                                            Delete
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
                 </div>
-                <button
-                  onClick={() => deleteMessage(msg.id)}
-                  className="ml-4 text-red-600 hover:text-red-800"
-                >
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </div>
-  );
+
+                {/* RIGHT: Student List */}
+                <div>
+                    {/* Search bar */}
+                    <div className="mb-4">
+                        <input
+                            type="text"
+                            placeholder="Search students by name or USN..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="border px-3 py-2 w-full rounded"
+                        />
+                    </div>
+
+                    <h2 className="text-xl font-semibold mb-4">Students</h2>
+                    {loading ? (
+                        <p>Loading students...</p>
+                    ) : filteredStudents.length === 0 ? (
+                        <p>No students match your search.</p>
+                    ) : (
+                        <div className="space-y-4">
+                            {filteredStudents.map((s) => (
+                                <div
+                                    key={s.usn}
+                                    className="border rounded p-4 shadow hover:shadow-lg transition"
+                                >
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="font-semibold">
+                                                {s.name}
+                                            </p>
+                                            <p className="text-gray-600">
+                                                USN: {s.usn}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => toggleExpand(s.usn)}
+                                            className="text-sm text-gray-800 bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
+                                        >
+                                            {expanded[s.usn] ? "Hide" : "Show"}
+                                        </button>
+                                    </div>
+
+                                    {expanded[s.usn] && (
+                                        <div className="mt-4 space-y-4">
+                                            {/* Individual Form */}
+                                            <div className="space-y-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Subject"
+                                                    className="border px-3 py-2 w-full rounded"
+                                                    id={`subject-${s.usn}`}
+                                                />
+                                                <textarea
+                                                    placeholder="Message..."
+                                                    rows={3}
+                                                    className="border px-3 py-2 w-full rounded"
+                                                    id={`msg-${s.usn}`}
+                                                />
+                                                <div className="flex gap-3">
+                                                    <button
+                                                        onClick={() =>
+                                                            sendEmail(
+                                                                "student",
+                                                                s.usn,
+                                                                document.getElementById(
+                                                                    `subject-${s.usn}`
+                                                                ).value,
+                                                                document.getElementById(
+                                                                    `msg-${s.usn}`
+                                                                ).value
+                                                            )
+                                                        }
+                                                        className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                                                    >
+                                                        Email Student
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            sendEmail(
+                                                                "parent",
+                                                                s.usn,
+                                                                document.getElementById(
+                                                                    `subject-${s.usn}`
+                                                                ).value,
+                                                                document.getElementById(
+                                                                    `msg-${s.usn}`
+                                                                ).value
+                                                            )
+                                                        }
+                                                        className="bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
+                                                    >
+                                                        Email Parent
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Student History */}
+                                            <div>
+                                                <h3 className="font-medium mb-2">
+                                                    Messages
+                                                </h3>
+                                                {loadingMessages ? (
+                                                    <p>Loading...</p>
+                                                ) : !studentMessages[s.usn] ||
+                                                  studentMessages[s.usn]
+                                                      .length === 0 ? (
+                                                    <p className="text-gray-500">
+                                                        No messages yet.
+                                                    </p>
+                                                ) : (
+                                                    <ul className="space-y-2">
+                                                        {studentMessages[
+                                                            s.usn
+                                                        ].map((msg) => (
+                                                            <li
+                                                                key={msg.id}
+                                                                className="border rounded p-2 flex justify-between"
+                                                            >
+                                                                <div>
+                                                                    <p className="text-sm">
+                                                                        <strong>
+                                                                            {
+                                                                                msg.subject
+                                                                            }
+                                                                        </strong>{" "}
+                                                                        {msg.email_failed && (
+                                                                            <span className="text-red-600 ml-2">
+                                                                                (Email
+                                                                                Failed)
+                                                                            </span>
+                                                                        )}
+                                                                    </p>
+                                                                    <p className="text-gray-700 text-sm whitespace-pre-line">
+                                                                        {
+                                                                            msg.message
+                                                                        }
+                                                                    </p>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        deleteMessage(
+                                                                            msg.id,
+                                                                            s.usn
+                                                                        )
+                                                                    }
+                                                                    className="ml-2 text-red-600 hover:text-red-800 text-sm"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
 }
