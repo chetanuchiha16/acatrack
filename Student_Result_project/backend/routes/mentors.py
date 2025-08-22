@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, send_from_directory
-from models import Mentor, MentorStudent, StudentEmail
+from models import Mentor, MentorStudent, StudentAuth
 from models import Student  # reuse your existing Student class logic
 from visuals import create_student_report
 from models.paths import db_path, pdf_dir

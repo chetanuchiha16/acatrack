@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 from app_init import db, bcrypt
-from models import User, Teacher
+from models import StudentAuth, Teacher
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -13,12 +13,12 @@ def auth():
 
     # Decide which model to check based on 'who'
     if who == "Student":
-        user = User.query.filter_by(username=username).first()
+        user = StudentAuth.query.filter_by(username=username).first()
     elif who == "Teacher":
         user = Teacher.query.filter_by(username=username).first()
     else:
         # If 'who' not provided or unknown, check both
-        user = User.query.filter_by(username=username).first() \
+        user = StudentAuth.query.filter_by(username=username).first() \
                or Teacher.query.filter_by(username=username).first()
 
     if not user:

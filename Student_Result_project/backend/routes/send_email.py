@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import StudentEmail  # your SQLAlchemy model
+from models import StudentAuth  # your SQLAlchemy model
 from app_init import db          # your DB instance
 import smtplib
 from email.mime.text import MIMEText
@@ -45,11 +45,11 @@ def send_email_to_all():
     try:
         # Filter students or parents based on recipientType
         if recipient_type == "parent":
-            recipients = StudentEmail.query.filter(StudentEmail.parent_email != None).all()
+            recipients = StudentAuth.query.filter(StudentAuth.parent_email != None).all()
             email_attr = "parent_email"
             name_attr = "parent_name"  # assuming you have a parent_name field; otherwise fallback to student name
         else:
-            recipients = StudentEmail.query.all()
+            recipients = StudentAuth.query.all()
             email_attr = "student_email"
             name_attr = "name"
 
@@ -90,7 +90,7 @@ def send_email_to_student():
     if not usn or not subject or not message:
         return jsonify({"error": "USN, subject and message are required"}), 400
 
-    student = StudentEmail.query.filter_by(usn=usn).first()
+    student = StudentAuth.query.filter_by(username=usn).first()
     if not student:
         return jsonify({"error": "Student not found"}), 404
 
