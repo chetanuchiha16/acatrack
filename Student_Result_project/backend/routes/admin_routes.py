@@ -7,18 +7,8 @@ FEATURES
 - Option to create ONLY missing accounts (default) or ALL (re-generate)
 - Returns a downloadable CSV of (username,name,plain_password,hash)
 - Upload .xlsx or .csv of emails; file is saved to models.paths.email_excel_path
-- Validates required columns and inserts new rows into StudentEmail table
+- Validates required columns and inserts new rows into StudentAuth table
 - Upload mentor Excel; validates and inserts into Mentor + MentorStudent tables
-
-SETUP
-1) Put this file somewhere importable (e.g., `admin_routes.py` at project root).
-2) Register the blueprint inside `create_app()`:
-
-    from admin_routes import admin_bp
-    app.register_blueprint(admin_bp)
-
-3) Configure a secret. Prefer environment variable `ADMIN_SECRET`. As a fallback
-   you can set app.config["ADMIN_SECRET"] or edit DEFAULT_ADMIN_SECRET below.
 """
 from __future__ import annotations
 
@@ -33,7 +23,7 @@ from flask import Blueprint, current_app, jsonify, request, send_file
 from werkzeug.utils import secure_filename
 
 from app_init import bcrypt
-from models import Teacher, User, StudentEmail, Mentor, MentorStudent, db
+from models import Teacher, StudentAuth, Mentor, MentorStudent, db
 from models.paths import db_path, email_excel_path, mentor_excel_path
 
 # ---------- Blueprint ----------
@@ -111,7 +101,7 @@ def generate_accounts():
     students, teachers = _fetch_source_rows()
 
     if mode == "all":
-        User.query.delete()
+        StudentAuth.query.delete()
         Teacher.query.delete()
         db.session.commit()
 
@@ -125,12 +115,12 @@ def generate_accounts():
         name = (name or "").strip()
         usn = str(usn).strip()
 
-        if mode == "missing" and User.query.filter_by(username=usn).first():
+        if mode == "missing" and StudentAuth.query.filter_by(username=usn).first():
             continue
 
         plain = f"{_safe_seed(name)}{usn[-3:]}"
         pw_hash = bcrypt.generate_password_hash(password=plain).decode("utf-8")
-        db.session.add(User(username=usn, name=name, password=pw_hash))
+        db.session.add(StudentAuth(username=usn, name=name, password=pw_hash))
         out.write(f"{usn},{name},{plain},{pw_hash},student\n")
 
     # Teachers
@@ -158,7 +148,7 @@ def generate_accounts():
 
 @admin_bp.route("/upload-emails", methods=["POST"])
 def upload_emails():
-    """Upload Excel/CSV with student+parent emails."""
+    """Upload Excel/CSV with student+parent emails (insert or update)."""
     if not _check_secret(request):
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -189,24 +179,44 @@ def upload_emails():
         return jsonify({"error": f"Missing required columns: {', '.join(missing)}"}), 400
 
     count_inserted = 0
+    count_updated = 0
+
     for _, row in df.iterrows():
         usn = str(row["student_usn"]).strip()
-        if not usn or StudentEmail.query.filter_by(usn=usn).first():
+        if not usn:
             continue
-        db.session.add(
-            StudentEmail(
-                usn=usn,
-                name=str(row["student_name"]).strip(),
-                parent_email=str(row["Parent_Email"]).strip(),
-                student_email=str(row["Student_Email"]).strip(),
-                parent_phno=str(row.get("Parent_PHNO", "")).strip(),
-                student_phno=str(row.get("Student_PHNO", "")).strip(),
+
+        student = StudentAuth.query.filter_by(username=usn).first()
+        if student:
+            # update existing record
+            # student.name = str(row["student_name"]).strip()
+            student.parent_email = str(row["Parent_Email"]).strip()
+            student.student_email = str(row["Student_Email"]).strip()
+            student.parent_phno = str(row.get("Parent_PHNO", "")).strip()
+            student.student_phno = str(row.get("Student_PHNO", "")).strip()
+            count_updated += 1
+        else:
+            # insert new record
+            db.session.add(
+                StudentAuth(
+                    username=usn,
+                    name=str(row["student_name"]).strip(),
+                    parent_email=str(row["Parent_Email"]).strip(),
+                    student_email=str(row["Student_Email"]).strip(),
+                    parent_phno=str(row.get("Parent_PHNO", "")).strip(),
+                    student_phno=str(row.get("Student_PHNO", "")).strip(),
+                )
             )
-        )
-        count_inserted += 1
+            count_inserted += 1
 
     db.session.commit()
-    return jsonify({"status": "success", "emails_inserted": count_inserted, "file_saved_to": save_path})
+    return jsonify({
+        "status": "success",
+        "emails_inserted": count_inserted,
+        "emails_updated": count_updated,
+        "file_saved_to": save_path
+    })
+
 
 
 @admin_bp.route("/upload-mentors", methods=["POST"])
