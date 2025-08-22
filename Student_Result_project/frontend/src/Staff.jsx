@@ -19,34 +19,18 @@ export default function Staff() {
         <div className="min-h-screen w-screen bg-gray-200 dark:bg-gray-900 px-4 sm:px-8 md:px-16 py-4 sm:py-6">
             {/* Header */}
 
-            <div className="relative flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 mb-10">
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-8 ">
                 <img
                     src={jssLogo}
                     alt="JSS Logo"
                     className="drop-shadow-2xl w-28 sm:w-32 md:w-40"
                 />
-                <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center flex-1">
+                <div className="text-2xl mt-4 sm:mt-0 sm:text-3xl sm:mr-23 md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center flex-1">
                     Staff Dashboard
-                </span>
-
-                {/* Home button (absolute on small screens) */}
-                {/* <div
-                    className="cursor-pointer px-4 py-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-black dark:text-white shadow hover:scale-105 hover:shadow-lg transition-all duration-300 text-center text-sm sm:text-base 
-                               absolute right-4 top-2 sm:static sm:right-auto sm:top-auto"
-                    // onClick={async () => {
-                    //     try {
-                    //         const res = await axios.post(`${API_BASE}/logout`);
-                    //         console.log(res.data);
-                    //         // Redirect after successful logout
-                    //         navigate(`/auth`); // or "/" or wherever your login page is
-                    //     } catch (error) {
-                    //         console.error("Logout failed:", error);
-                    //     }
-                    // }}
-                >
-                    Home
-                </div> */}
-                <LogoutButton />
+                </div>
+                <div>
+                    <LogoutButton size="sm" />
+                </div>
             </div>
 
             {/* Welcome Section */}
@@ -64,7 +48,7 @@ export default function Staff() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-5xl mx-auto">
                 <div
-                    className="bg-red-200 dark:bg-red-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-red-300 dark:hover:bg-red-700 transition-all duration-200"
+                    className="bg-red-300 dark:bg-red-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-red-400 dark:hover:bg-red-700 transition-all duration-200"
                     onClick={() =>
                         navigate(`/auth/Staff/${finalId}/StaffResults`)
                     }
@@ -77,7 +61,7 @@ export default function Staff() {
                     </p>
                 </div>
 
-                <div className="bg-blue-200 dark:bg-blue-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-blue-300 dark:hover:bg-blue-700 transition-all duration-200">
+                <div className="bg-blue-300 dark:bg-blue-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-blue-400 dark:hover:bg-blue-700 transition-all duration-200">
                     <h2
                         className="text-lg sm:text-xl md:text-2xl font-semibold mb-2"
                         onClick={() => {
@@ -93,7 +77,7 @@ export default function Staff() {
                 </div>
 
                 <div
-                    className="bg-green-200 dark:bg-green-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-green-300 dark:hover:bg-green-700 transition-all duration-200"
+                    className="bg-green-300 dark:bg-green-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-green-400 dark:hover:bg-green-700 transition-all duration-200"
                     onClick={() =>
                         navigate(`/auth/Staff/${finalId}/UploadResults`)
                     }
@@ -108,7 +92,7 @@ export default function Staff() {
                 </div>
 
                 <div
-                    className="bg-yellow-100 dark:bg-yellow-700 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-yellow-200 dark:hover:bg-yellow-600 transition-all duration-200"
+                    className="bg-yellow-200 dark:bg-yellow-700 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-yellow-300 dark:hover:bg-yellow-600 transition-all duration-200"
                     onClick={() =>
                         navigate(`/auth/Staff/${finalId}/StaffClassroom`)
                     }

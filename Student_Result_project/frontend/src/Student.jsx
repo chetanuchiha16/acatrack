@@ -15,31 +15,29 @@ export default function Student() {
         <main className="flex flex-col items-center justify-center w-full px-4 py-6">
             <LogoutButton />
 
-            <section className="flex flex-wrap justify-center items-center gap-4 mb-6">
+            <section className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 mb-6">
                 <nav className="flex border-2 border-black rounded overflow-hidden">
                     <button
-                        className={`px-4 py-2 border-r border-black transition duration-150 ${
-                            selectedTab === "result"
-                                ? "bg-blue-200 dark:bg-blue-700"
-                                : "bg-white dark:bg-[#1a1a1a]"
-                        }`}
+                        className={`px-4 py-2 border-r border-black transition duration-150 ${selectedTab === "result"
+                            ? "bg-blue-200 dark:bg-blue-700"
+                            : "bg-white dark:bg-[#1a1a1a]"
+                            }`}
                         onClick={() => setSelectedTab("result")}
                     >
                         Result
                     </button>
                     <button
-                        className={`px-4 py-2 transition duration-150 ${
-                            selectedTab === "classroom"
-                                ? "bg-blue-200 dark:bg-blue-700"
-                                : "bg-white dark:bg-[#1a1a1a]"
-                        }`}
+                        className={`px-4 py-2 transition duration-150 ${selectedTab === "classroom"
+                            ? "bg-blue-200 dark:bg-blue-700"
+                            : "bg-white dark:bg-[#1a1a1a]"
+                            }`}
                         onClick={() => setSelectedTab("classroom")}
                     >
                         Classroom
                     </button>
                 </nav>
 
-                <fieldset className="border-2 border-black rounded">
+                {/* <fieldset className="border-2 border-black rounded">
                     <legend className="sr-only">Select Semester</legend>
                     <select
                         className="px-3 py-2 rounded bg-white dark:bg-[#1a1a1a] text-black dark:text-white"
@@ -53,7 +51,29 @@ export default function Student() {
                             </option>
                         ))}
                     </select>
+                </fieldset> */}
+
+
+                <fieldset className="border-2 border-black rounded">
+                    <legend className="sr-only">Select Semester</legend>
+                    <select
+                        className="px-3 py-2 rounded bg-white dark:bg-[#1a1a1a] text-black dark:text-white"
+                        value={currentSem}
+                        onChange={(e) => setCurrentSem(e.target.value)}
+                    >
+                        <option  value="">Select Semester</option>
+                        {sems.map((sem, i) => (
+                            <option key={i} value={sem}>
+                                {sem}
+                            </option>
+                        ))}
+                    </select>
+
                 </fieldset>
+
+
+
+
             </section>
 
             <div className="w-full max-w-6xl flex justify-center items-center">

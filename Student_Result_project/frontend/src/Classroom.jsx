@@ -5,19 +5,19 @@ import API_BASE from "./config";
 function FileItem({ name, isFolder, onClick, selected }) {
     return (
         <div
-            className={`flex flex-col items-center p-3 sm:p-4 rounded-lg cursor-pointer transition hover:bg-blue-100 dark:hover:bg-blue-900 ${
-                selected ? "ring-2 ring-blue-400 dark:ring-blue-300" : ""
-            }`}
+            className={`flex flex-col items-center p-3 sm:p-4 rounded-lg cursor-pointer transition 
+                hover:bg-indigo-100 dark:hover:bg-indigo-800 shadow-sm
+                ${selected ? "ring-2 ring-indigo-400 dark:ring-indigo-300" : ""}`}
             onClick={onClick}
         >
-            <div className="text-3xl sm:text-4xl mb-2">
+            <div className="text-3xl sm:text-4xl mb-2 text-amber-500">
                 {isFolder ? (
-                    <FaFolder className="text-yellow-500" />
+                    <FaFolder />
                 ) : (
                     <FaFilePdf className="text-red-500" />
                 )}
             </div>
-            <div className="text-xs sm:text-sm text-center break-words dark:text-white">
+            <div className="text-xs sm:text-sm text-center break-words text-gray-800 dark:text-gray-200">
                 {name}
             </div>
         </div>
@@ -96,35 +96,39 @@ export default function FileExplorer() {
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto flex flex-col border-4 border-black rounded-xl dark:text-white dark:bg-[#1a1a1a] backdrop-blur-sm p-4 h-[80vh]">
-            {/* Sticky header */}
-            <div className="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-[#1e1e1e] z-10 p-2 rounded">
-                <h2 className="text-lg sm:text-xl font-semibold">
-                    🗃️ File Explorer
-                </h2>
-                {currentPath && (
-                    <button
-                        className="text-sm text-blue-600 hover:underline dark:text-blue-300"
-                        onClick={goBack}
-                    >
-                        🔙 Back
-                    </button>
-                )}
-            </div>
+        <div className="w-screen min-h-screen bg-gradient-to-br from-slate-50 to-slate-200 dark:from-gray-900 dark:to-gray-800 flex justify-center items-center p-4">
+            <div className="w-full max-w-7xl mx-auto flex flex-col border border-gray-300 dark:border-gray-700 rounded-2xl shadow-lg 
+                dark:text-gray-100 dark:bg-gray-900 bg-white text-gray-900 backdrop-blur-sm p-4 h-[80vh]">
+                
+                {/* Sticky header */}
+                <div className="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-gray-800 z-10 p-2 rounded">
+                    <h2 className="text-lg sm:text-xl font-semibold text-indigo-600 dark:text-indigo-400">
+                        🗃️ File Explorer
+                    </h2>
+                    {currentPath && (
+                        <button
+                            className="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200 transition"
+                            onClick={goBack}
+                        >
+                            🔙 Back
+                        </button>
+                    )}
+                </div>
 
-            {/* Scrollable file area */}
-            <div className="flex-1 overflow-auto">
-                {currentDir ? (
-                    <FileGrid
-                        tree={currentDir}
-                        path={currentPath}
-                        setPath={setCurrentPath}
-                    />
-                ) : (
-                    <p className="text-gray-600 dark:text-gray-400">
-                        Loading...
-                    </p>
-                )}
+                {/* Scrollable file area */}
+                <div className="flex-1 overflow-auto">
+                    {currentDir ? (
+                        <FileGrid
+                            tree={currentDir}
+                            path={currentPath}
+                            setPath={setCurrentPath}
+                        />
+                    ) : (
+                        <p className="text-gray-500 dark:text-gray-400">
+                            Loading...
+                        </p>
+                    )}
+                </div>
             </div>
         </div>
     );

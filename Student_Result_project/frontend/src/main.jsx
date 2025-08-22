@@ -14,6 +14,8 @@ import TeacherNotesUploader from "./TeacherNotesUploader.jsx";
 import ChatBot from "./Chatbot.jsx";
 import SemesterResults from "./SemesterResults.jsx";
 import SendEmails from "./SendEmails.jsx";
+
+import Classroom from "./Classroom.jsx";
 const route = createBrowserRouter([
     // { path: "/auth/Student/:id/result", element: <Result /> },
     { path: "/auth/Staff/:id/SendEmails", element: <SendEmails /> },
@@ -27,7 +29,7 @@ const route = createBrowserRouter([
     { path: "/auth/", element: <Auth /> },
     { path: "/auth", element: <Auth /> },
     // { path: "/logout", element: <Auth /> },
-    { path: `/`, element: <App /> },
+    { path: `/`, element: < App/> },
     { path: `*`, element: <Error /> },
 ]);
 

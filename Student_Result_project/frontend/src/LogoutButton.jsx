@@ -19,13 +19,25 @@ export default function LogoutButton() {
     };
 
     return (
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed top-4 right-3 sm:top-6 sm:right-4 z-50">
             <div
                 onClick={handleLogout}
-                className="cursor-pointer px-4 py-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-black dark:text-white shadow hover:scale-105 hover:shadow-lg transition-all duration-300 text-center text-sm sm:text-base"
+                className="
+        button
+        !bg-red-500 hover:!bg-red-600 active:!bg-red-700 
+        !text-white
+        shadow-md 
+        hover:scale-105 hover:shadow-lg 
+        active:scale-95
+        rounded-sm md:rounded-md
+        p-2 
+        transition-all duration-200 ease-in-out
+        text-sm sm:text-md md:text-lg font-medium
+    "
             >
                 Logout
             </div>
+
         </div>
     );
 }
