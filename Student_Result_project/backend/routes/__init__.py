@@ -10,6 +10,7 @@ from .chatbot import chatbot_bp
 from .send_email import email_bp
 from .admin_routes import admin_bp
 from .mentors import mentor_bp
+from .mentor_send_email import mentor_email_bp
 def register_routes(app):
     app.register_blueprint(auth_bp)
     app.register_blueprint(student_bp)
@@ -23,4 +24,5 @@ def register_routes(app):
     app.register_blueprint(email_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(mentor_bp)
+    app.register_blueprint(mentor_email_bp)
     

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import API_BASE from "./config";
 
-export default function MentorResults({ mentor_id = 3}) {
+export default function MentorResults({ mentor_id }) {
   const [semester, setSemester] = useState("SEM1");
   const [mentees, setMentees] = useState([]);
   const [loading, setLoading] = useState(false);
