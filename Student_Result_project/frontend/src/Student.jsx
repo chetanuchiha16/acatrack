@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Result from "./Result";
 import Classroom from "./Classroom";
 import LogoutButton from "./LogoutButton";
+import MenteeRecieveEmails from "./MenteeRecieveEmails";
 
 export default function Student() {
     let { who, id, name } = useLocation().state || {};
@@ -37,6 +38,16 @@ export default function Student() {
                     >
                         Classroom
                     </button>
+                    <button
+                        className={`px-4 py-2 transition duration-150 ${
+                            selectedTab === "mentee"
+                                ? "bg-blue-200 dark:bg-blue-700"
+                                : "bg-white dark:bg-[#1a1a1a]"
+                        }`}
+                        onClick={() => setSelectedTab("mentee")}
+                    >
+                        Mentee
+                    </button>
                 </nav>
 
                 <fieldset className="border-2 border-black rounded">
@@ -61,6 +72,7 @@ export default function Student() {
                     <Result usn={id} semester={currentSem} />
                 )}
                 {selectedTab === "classroom" && <Classroom />}
+                {selectedTab === "mentee" && <MenteeRecieveEmails usn={id} />}
                 {/* {selectedTab === "none" && <div className="w-[80vw] h-[70vh] flex justify-center items-center border-4 border-black rounded-xl dark:text-white dark:bg-[#1a1a1a] text-black backdrop-blur-sm p-4 overflow-hidden"></div>}  */}
 
                 {/* {selectedTab === "notes" && <FileExplorer />}  */}

@@ -5,8 +5,8 @@ class StudentAuth(db.Model):
     username = db.Column(db.String(10), primary_key=True, unique=True)
     name = db.Column(db.String(100))
     password = db.Column(db.String(128), nullable=True)   # use larger length for bcrypt hashes
-    parent_email = db.Column(db.String(100), nullable=True)
-    student_email = db.Column(db.String(100), nullable=True)
+    parent_email = db.Column(db.String(100), nullable=True, default="chetan16ck@gmail.com")
+    student_email = db.Column(db.String(100), nullable=True, default="chetan16ck@gmail.com")
     parent_phno = db.Column(db.String(100), nullable=True)
     student_phno = db.Column(db.String(100), nullable=True)
 

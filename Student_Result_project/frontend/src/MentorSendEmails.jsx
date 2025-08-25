@@ -11,6 +11,11 @@ export default function MentorSendEmails({ mentorId }) {
     const [feedback, setFeedback] = useState({ text: "", type: "" });
     const [search, setSearch] = useState("");
 
+    // Controlled inputs
+    const [broadcastSubject, setBroadcastSubject] = useState("");
+    const [broadcastMsg, setBroadcastMsg] = useState("");
+    const [studentInputs, setStudentInputs] = useState({});
+
     useEffect(() => {
         if (mentorId) {
             fetchStudents();
@@ -65,22 +70,24 @@ export default function MentorSendEmails({ mentorId }) {
         }
 
         try {
-            // Always store message first
             const stored = await axios.post(
                 `${API_BASE}/mentor/${mentorId}/messages`,
-                {
-                    usn,
-                    recipientType,
-                    subject,
-                    message,
-                }
+                { usn, recipientType, subject, message }
             );
 
             setStudentMessages((prev) => {
                 const key = usn || "all";
+                const newMsg = {
+                    ...stored.data,
+                    read_status:
+                        stored.data.read_status?.map((s) => ({
+                            ...s,
+                            read: false,
+                        })) || [],
+                };
                 return {
                     ...prev,
-                    [key]: [stored.data, ...(prev[key] || [])],
+                    [key]: [newMsg, ...(prev[key] || [])],
                 };
             });
 
@@ -88,21 +95,12 @@ export default function MentorSendEmails({ mentorId }) {
             if (usn) {
                 emailRes = await axios.post(
                     `${API_BASE}/mentor/${mentorId}/send-email/student`,
-                    {
-                        usn,
-                        recipientType,
-                        subject,
-                        message,
-                    }
+                    { usn, recipientType, subject, message }
                 );
             } else {
                 emailRes = await axios.post(
                     `${API_BASE}/mentor/${mentorId}/send-email/all`,
-                    {
-                        recipientType,
-                        subject,
-                        message,
-                    }
+                    { recipientType, subject, message }
                 );
             }
 
@@ -113,6 +111,17 @@ export default function MentorSendEmails({ mentorId }) {
                     } ${recipientType}(s) successfully!`,
                     type: "success",
                 });
+
+                // Clear input after success
+                if (usn) {
+                    setStudentInputs((prev) => ({
+                        ...prev,
+                        [usn]: { subject: "", message: "" },
+                    }));
+                } else {
+                    setBroadcastSubject("");
+                    setBroadcastMsg("");
+                }
             } else {
                 throw new Error("Email failed");
             }
@@ -125,7 +134,6 @@ export default function MentorSendEmails({ mentorId }) {
                 type: "error",
             });
 
-            // Mark the latest stored message as "failed"
             setStudentMessages((prev) => {
                 const key = usn || "all";
                 const updated = [...(prev[key] || [])];
@@ -154,7 +162,6 @@ export default function MentorSendEmails({ mentorId }) {
         }
     };
 
-    // Filter students by name or USN (case-insensitive)
     const filteredStudents = students.filter(
         (s) =>
             s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -163,36 +170,39 @@ export default function MentorSendEmails({ mentorId }) {
 
     return (
         <div className="p-6 space-y-6">
-            <h2 className="text-2xl font-bold mb-4">Mentor Email Panel</h2>
+            <h2 className="text-3xl font-bold mb-6 text-center">
+                Mentor Email Panel
+            </h2>
 
             {feedback.text && (
                 <p
-                    className={`p-2 rounded text-center ${
+                    className={`p-3 rounded-xl text-center shadow ${
                         feedback.type === "success"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                            ? "bg-green-100/70 text-green-900 backdrop-blur-md"
+                            : "bg-red-100/70 text-red-900 backdrop-blur-md"
                     }`}
                 >
                     {feedback.text}
                 </p>
             )}
 
-            {/* Two-column layout */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* LEFT: Broadcast Section */}
-                <div className="border rounded p-4 shadow space-y-3">
+                {/* Broadcast */}
+                <div className="rounded-2xl p-6 shadow-lg border border-white/20 bg-white/40 dark:bg-gray-800/40 backdrop-blur-lg space-y-3">
                     <h2 className="text-xl font-semibold">Broadcast to All</h2>
                     <input
                         type="text"
                         placeholder="Subject"
-                        className="border px-3 py-2 w-full rounded"
-                        id="subject-all"
+                        value={broadcastSubject}
+                        onChange={(e) => setBroadcastSubject(e.target.value)}
+                        className="border px-3 py-2 w-full rounded bg-white/50 dark:bg-gray-900/50 backdrop-blur-md"
                     />
                     <textarea
                         placeholder="Message..."
                         rows={3}
-                        className="border px-3 py-2 w-full rounded"
-                        id="msg-all"
+                        value={broadcastMsg}
+                        onChange={(e) => setBroadcastMsg(e.target.value)}
+                        className="border px-3 py-2 w-full rounded bg-white/50 dark:bg-gray-900/50 backdrop-blur-md"
                     />
                     <div className="flex gap-3">
                         <button
@@ -200,11 +210,11 @@ export default function MentorSendEmails({ mentorId }) {
                                 sendEmail(
                                     "student",
                                     null,
-                                    document.getElementById("subject-all").value,
-                                    document.getElementById("msg-all").value
+                                    broadcastSubject,
+                                    broadcastMsg
                                 )
                             }
-                            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                            className="bg-green-600 text-white px-4 py-2 rounded-xl shadow hover:bg-green-700 transition"
                         >
                             Email All Students
                         </button>
@@ -213,17 +223,17 @@ export default function MentorSendEmails({ mentorId }) {
                                 sendEmail(
                                     "parent",
                                     null,
-                                    document.getElementById("subject-all").value,
-                                    document.getElementById("msg-all").value
+                                    broadcastSubject,
+                                    broadcastMsg
                                 )
                             }
-                            className="bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
+                            className="bg-yellow-600 text-white px-4 py-2 rounded-xl shadow hover:bg-yellow-700 transition"
                         >
                             Email All Parents
                         </button>
                     </div>
 
-                    {/* All Messages */}
+                    {/* History */}
                     <div>
                         <h3 className="font-medium mt-4 mb-2">
                             Broadcast History
@@ -237,49 +247,59 @@ export default function MentorSendEmails({ mentorId }) {
                             </p>
                         ) : (
                             <ul className="space-y-2">
-                                {studentMessages["all"].map((msg) => (
-                                    <li
-                                        key={msg.id}
-                                        className="border rounded p-2 flex justify-between"
-                                    >
-                                        <div>
-                                            <p className="text-sm">
-                                                <strong>{msg.subject}</strong>{" "}
-                                                {msg.email_failed && (
-                                                    <span className="text-red-600 ml-2">
-                                                        (Email Failed)
-                                                    </span>
-                                                )}
-                                            </p>
-                                            <p className="text-gray-700 text-sm whitespace-pre-line">
-                                                {msg.message}
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={() =>
-                                                deleteMessage(msg.id, null)
-                                            }
-                                            className="ml-2 text-red-600 hover:text-red-800 text-sm"
+                                {studentMessages["all"].map((msg) => {
+                                    const total = msg.read_status?.length || 0;
+                                    const readCount = msg.read_status
+                                        ? msg.read_status.filter((s) => s.read)
+                                              .length
+                                        : 0;
+                                    return (
+                                        <li
+                                            key={msg.id}
+                                            className="border rounded-xl p-3 flex justify-between items-center bg-white/40 dark:bg-gray-900/40 backdrop-blur-md"
                                         >
-                                            Delete
-                                        </button>
-                                    </li>
-                                ))}
+                                            <div>
+                                                <p className="text-sm font-semibold">
+                                                    {msg.subject}{" "}
+                                                    {msg.email_failed && (
+                                                        <span className="text-red-600 ml-2">
+                                                            (Email Failed)
+                                                        </span>
+                                                    )}
+                                                </p>
+                                                <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-line">
+                                                    {msg.message}
+                                                </p>
+                                                <p className="text-xs text-gray-500">
+                                                    Seen by {readCount}/{total}{" "}
+                                                    students
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() =>
+                                                    deleteMessage(msg.id, null)
+                                                }
+                                                className="text-red-600 hover:text-red-800 text-sm"
+                                            >
+                                                Delete
+                                            </button>
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         )}
                     </div>
                 </div>
 
-                {/* RIGHT: Student List */}
+                {/* Student List */}
                 <div>
-                    {/* Search bar */}
                     <div className="mb-4">
                         <input
                             type="text"
                             placeholder="Search students by name or USN..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="border px-3 py-2 w-full rounded"
+                            className="border px-3 py-2 w-full rounded bg-white/50 dark:bg-gray-900/50 backdrop-blur-md"
                         />
                     </div>
 
@@ -293,20 +313,20 @@ export default function MentorSendEmails({ mentorId }) {
                             {filteredStudents.map((s) => (
                                 <div
                                     key={s.usn}
-                                    className="border rounded p-4 shadow hover:shadow-lg transition"
+                                    className="rounded-2xl p-4 shadow-lg border border-white/20 bg-white/40 dark:bg-gray-800/40 backdrop-blur-lg transition"
                                 >
                                     <div className="flex justify-between items-center">
                                         <div>
                                             <p className="font-semibold">
                                                 {s.name}
                                             </p>
-                                            <p className="text-gray-600">
+                                            <p className="text-gray-600 dark:text-gray-400">
                                                 USN: {s.usn}
                                             </p>
                                         </div>
                                         <button
                                             onClick={() => toggleExpand(s.usn)}
-                                            className="text-sm text-gray-800 bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
+                                            className="text-sm text-gray-800 dark:text-gray-200 bg-gray-200/60 dark:bg-gray-700/60 px-3 py-1 rounded-xl hover:bg-gray-300/60 dark:hover:bg-gray-600/60"
                                         >
                                             {expanded[s.usn] ? "Hide" : "Show"}
                                         </button>
@@ -314,19 +334,55 @@ export default function MentorSendEmails({ mentorId }) {
 
                                     {expanded[s.usn] && (
                                         <div className="mt-4 space-y-4">
-                                            {/* Individual Form */}
+                                            {/* Form */}
                                             <div className="space-y-2">
                                                 <input
                                                     type="text"
                                                     placeholder="Subject"
-                                                    className="border px-3 py-2 w-full rounded"
-                                                    id={`subject-${s.usn}`}
+                                                    value={
+                                                        studentInputs[s.usn]
+                                                            ?.subject || ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        setStudentInputs(
+                                                            (prev) => ({
+                                                                ...prev,
+                                                                [s.usn]: {
+                                                                    ...(prev[
+                                                                        s.usn
+                                                                    ] || {}),
+                                                                    subject:
+                                                                        e.target
+                                                                            .value,
+                                                                },
+                                                            })
+                                                        )
+                                                    }
+                                                    className="border px-3 py-2 w-full rounded bg-white/50 dark:bg-gray-900/50 backdrop-blur-md"
                                                 />
                                                 <textarea
                                                     placeholder="Message..."
                                                     rows={3}
-                                                    className="border px-3 py-2 w-full rounded"
-                                                    id={`msg-${s.usn}`}
+                                                    value={
+                                                        studentInputs[s.usn]
+                                                            ?.message || ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        setStudentInputs(
+                                                            (prev) => ({
+                                                                ...prev,
+                                                                [s.usn]: {
+                                                                    ...(prev[
+                                                                        s.usn
+                                                                    ] || {}),
+                                                                    message:
+                                                                        e.target
+                                                                            .value,
+                                                                },
+                                                            })
+                                                        )
+                                                    }
+                                                    className="border px-3 py-2 w-full rounded bg-white/50 dark:bg-gray-900/50 backdrop-blur-md"
                                                 />
                                                 <div className="flex gap-3">
                                                     <button
@@ -334,15 +390,16 @@ export default function MentorSendEmails({ mentorId }) {
                                                             sendEmail(
                                                                 "student",
                                                                 s.usn,
-                                                                document.getElementById(
-                                                                    `subject-${s.usn}`
-                                                                ).value,
-                                                                document.getElementById(
-                                                                    `msg-${s.usn}`
-                                                                ).value
+                                                                studentInputs[
+                                                                    s.usn
+                                                                ]?.subject ||
+                                                                    "",
+                                                                studentInputs[
+                                                                    s.usn
+                                                                ]?.message || ""
                                                             )
                                                         }
-                                                        className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                                                        className="bg-green-600 text-white px-4 py-2 rounded-xl shadow hover:bg-green-700"
                                                     >
                                                         Email Student
                                                     </button>
@@ -351,22 +408,23 @@ export default function MentorSendEmails({ mentorId }) {
                                                             sendEmail(
                                                                 "parent",
                                                                 s.usn,
-                                                                document.getElementById(
-                                                                    `subject-${s.usn}`
-                                                                ).value,
-                                                                document.getElementById(
-                                                                    `msg-${s.usn}`
-                                                                ).value
+                                                                studentInputs[
+                                                                    s.usn
+                                                                ]?.subject ||
+                                                                    "",
+                                                                studentInputs[
+                                                                    s.usn
+                                                                ]?.message || ""
                                                             )
                                                         }
-                                                        className="bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
+                                                        className="bg-yellow-600 text-white px-4 py-2 rounded-xl shadow hover:bg-yellow-700"
                                                     >
                                                         Email Parent
                                                     </button>
                                                 </div>
                                             </div>
 
-                                            {/* Student History */}
+                                            {/* History */}
                                             <div>
                                                 <h3 className="font-medium mb-2">
                                                     Messages
@@ -383,44 +441,54 @@ export default function MentorSendEmails({ mentorId }) {
                                                     <ul className="space-y-2">
                                                         {studentMessages[
                                                             s.usn
-                                                        ].map((msg) => (
-                                                            <li
-                                                                key={msg.id}
-                                                                className="border rounded p-2 flex justify-between"
-                                                            >
-                                                                <div>
-                                                                    <p className="text-sm">
-                                                                        <strong>
+                                                        ].map((msg) => {
+                                                            const status =
+                                                                msg
+                                                                    .read_status?.[0];
+                                                            return (
+                                                                <li
+                                                                    key={msg.id}
+                                                                    className="border rounded-xl p-3 flex justify-between items-center bg-white/40 dark:bg-gray-900/40 backdrop-blur-md"
+                                                                >
+                                                                    <div>
+                                                                        <p className="text-sm font-semibold">
                                                                             {
                                                                                 msg.subject
+                                                                            }{" "}
+                                                                            {msg.email_failed && (
+                                                                                <span className="text-red-600 ml-2">
+                                                                                    (Email
+                                                                                    Failed)
+                                                                                </span>
+                                                                            )}
+                                                                        </p>
+                                                                        <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-line">
+                                                                            {
+                                                                                msg.message
                                                                             }
-                                                                        </strong>{" "}
-                                                                        {msg.email_failed && (
-                                                                            <span className="text-red-600 ml-2">
-                                                                                (Email
-                                                                                Failed)
-                                                                            </span>
-                                                                        )}
-                                                                    </p>
-                                                                    <p className="text-gray-700 text-sm whitespace-pre-line">
-                                                                        {
-                                                                            msg.message
+                                                                        </p>
+                                                                        <p className="text-xs text-gray-500">
+                                                                            {status
+                                                                                ? status.read
+                                                                                    ? "✅ Read"
+                                                                                    : "📩 Unread"
+                                                                                : "📩 Unread"}
+                                                                        </p>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            deleteMessage(
+                                                                                msg.id,
+                                                                                s.usn
+                                                                            )
                                                                         }
-                                                                    </p>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() =>
-                                                                        deleteMessage(
-                                                                            msg.id,
-                                                                            s.usn
-                                                                        )
-                                                                    }
-                                                                    className="ml-2 text-red-600 hover:text-red-800 text-sm"
-                                                                >
-                                                                    Delete
-                                                                </button>
-                                                            </li>
-                                                        ))}
+                                                                        className="text-red-600 hover:text-red-800 text-sm"
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </li>
+                                                            );
+                                                        })}
                                                     </ul>
                                                 )}
                                             </div>
