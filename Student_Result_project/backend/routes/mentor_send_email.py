@@ -201,6 +201,11 @@ def delete_message(mentor_id, msg_id):
     msg = MentorMessage.query.filter_by(id=msg_id, mentor_id=mentor_id).first()
     if not msg:
         return jsonify({"error": "Message not found"}), 404
+
+    # Delete related student statuses manually
+    StudentMessageStatus.query.filter_by(msg_id=msg_id).delete()
+
+    # Delete the message itself
     db.session.delete(msg)
     db.session.commit()
     return jsonify({"success": True})
