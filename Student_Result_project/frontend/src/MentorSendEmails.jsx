@@ -15,7 +15,7 @@ export default function MentorSendEmails({ mentorId }) {
     const [broadcastSubject, setBroadcastSubject] = useState("");
     const [broadcastMsg, setBroadcastMsg] = useState("");
     const [studentInputs, setStudentInputs] = useState({});
-
+    console.log(studentMessages);
     useEffect(() => {
         if (mentorId) {
             fetchStudents();
@@ -85,6 +85,7 @@ export default function MentorSendEmails({ mentorId }) {
                             read: false,
                         })) || [],
                 };
+                console.log(newMsg);
                 return {
                     ...prev,
                     [key]: [newMsg, ...(prev[key] || [])],
@@ -443,8 +444,11 @@ export default function MentorSendEmails({ mentorId }) {
                                                             s.usn
                                                         ].map((msg) => {
                                                             const status =
-                                                                msg
-                                                                    .read_status?.[0];
+                                                                msg.read_status?.find(
+                                                                    ({usn}) =>
+                                                                        usn ===
+                                                                        s.usn
+                                                                );
                                                             return (
                                                                 <li
                                                                     key={msg.id}

@@ -8,6 +8,7 @@ export default function MentorResults({ mentor_id }) {
   const [selectedMentee, setSelectedMentee] = useState(null);
   const [chartData, setChartData] = useState("");
   const [expandedMentees, setExpandedMentees] = useState({});
+  const [searchTerm, setSearchTerm] = useState(""); // <-- for live search
 
   useEffect(() => {
     if (mentor_id) fetchMentees();
@@ -50,31 +51,50 @@ export default function MentorResults({ mentor_id }) {
     }));
   };
 
+  // Filter mentees based on searchTerm
+  const filteredMentees = mentees.filter(
+    (mentee) =>
+      mentee.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      mentee.usn.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Mentee Results</h1>
 
       {/* Semester Selector */}
-      <div>
-        <label className="mr-2 font-semibold">Semester:</label>
-        <select
-          value={semester}
-          onChange={(e) => setSemester(e.target.value)}
-          className="border rounded px-2 py-1"
-        >
-          {["SEM1","SEM2","SEM3","SEM4","SEM5","SEM6","SEM7","SEM8"].map((sem) => (
-            <option key={sem} value={sem}>{sem}</option>
-          ))}
-        </select>
+      <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-2 md:space-y-0">
+        <div>
+          <label className="mr-2 font-semibold">Semester:</label>
+          <select
+            value={semester}
+            onChange={(e) => setSemester(e.target.value)}
+            className="border rounded px-2 py-1"
+          >
+            {["SEM1","SEM2","SEM3","SEM4","SEM5","SEM6","SEM7","SEM8"].map((sem) => (
+              <option key={sem} value={sem}>{sem}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Live Search Bar */}
+        <div>
+          <input
+            type="text"
+            placeholder="Search by name or USN..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border rounded px-2 py-1 w-full md:w-64"
+          />
+        </div>
       </div>
 
       {loading ? (
         <p>Loading mentees...</p>
       ) : (
         <div className="space-y-4">
-          {mentees.length === 0 && <p>No mentees found.</p>}
-
-          {mentees.map((mentee) => (
+          {filteredMentees.length === 0 && <p>No mentees found.</p>}
+          {filteredMentees.map((mentee) => (
             <div
               key={mentee.usn}
               className="border rounded p-4 shadow hover:shadow-lg transition"
@@ -116,7 +136,7 @@ export default function MentorResults({ mentor_id }) {
                 <div className="mt-4 overflow-x-auto">
                   <table className="w-full border-collapse border border-gray-300">
                     <thead>
-                      <tr className="">
+                      <tr>
                         <th className="border px-2 py-1">Code</th>
                         <th className="border px-2 py-1">Subject</th>
                         <th className="border px-2 py-1">IA</th>

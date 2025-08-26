@@ -35,7 +35,8 @@ def auth():
             "message": "Login success",
             "id": username,
             "name": user.name,
-            "who": session["who"]
+            "who": session["who"],
+            "mentor_id": user.mentor_id if user.mentor_id else "not a mentor"              
         })
     else:
         return jsonify({"error": "Incorrect password"}), 401
