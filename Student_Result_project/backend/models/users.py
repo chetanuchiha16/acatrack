@@ -7,13 +7,18 @@ class StudentAuth(db.Model):
     password = db.Column(db.String(128), nullable=True)   # use larger length for bcrypt hashes
     parent_email = db.Column(db.String(100), nullable=True, default="chetan16ck@gmail.com")
     student_email = db.Column(db.String(100), nullable=True, default="chetan16ck@gmail.com")
-    parent_phno = db.Column(db.String(100), nullable=True)
-    student_phno = db.Column(db.String(100), nullable=True)
+    parent_phno = db.Column(db.String(100), nullable=True, default="1234567890")
+    student_phno = db.Column(db.String(100), nullable=True, default="1234567890")
 
 
 class Teacher(db.Model):
     __tablename__ = 'teachers'
     username = db.Column(db.String(10), primary_key=True, unique=True)
+    mentor_id = db.Column(
+    db.Integer,
+    db.ForeignKey('mentors.id', name='fk_teachers_mentor_id'),  # give it a name
+    nullable=True
+)
     name = db.Column(db.String(100))
     password = db.Column(db.String(128), nullable=True)
 

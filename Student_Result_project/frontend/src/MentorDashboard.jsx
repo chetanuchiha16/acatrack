@@ -2,11 +2,15 @@ import React, { useState } from "react";
 import { BarChart3, Users, Send, CalendarDays } from "lucide-react";
 import MentorResults from "./MentorResults";
 import MentorSendEmails from "./MentorSendEmails";
+import { useLocation, useParams } from "react-router-dom";
 
-export default function MentorDashboard({mentor_id = 1}) {
+export default function MentorDashboard() {
   const [activeTab, setActiveTab] = useState("results");
   const [date, setDate] = useState("");
-
+  let {mentor_id} = useLocation().state || {}
+  
+  console.log(mentor_id)
+  let {finalId} = useParams()
   const tabs = [
     { id: "results", label: "Results", icon: <BarChart3 className="w-4 h-4" /> },
     { id: "communication", label: "Comm.", icon: <Users className="w-4 h-4" /> },
