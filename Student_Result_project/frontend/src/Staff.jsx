@@ -125,7 +125,7 @@ export default function Staff() {
                     className="bg-orange-100 dark:bg-orange-700 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-yellow-200 dark:hover:bg-orange-600 transition-all duration-200"
                     onClick={() =>
                         navigate(`/auth/Staff/${finalId}/MentorDashboard`, {
-                            state:{mentor_id}
+                            state: { mentor_id },
                         })
                     }
                 >
