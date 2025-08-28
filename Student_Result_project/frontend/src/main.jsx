@@ -19,6 +19,7 @@ import HiddenShortcut from "./HiddenShortcut.jsx"; // wherever your file is
 import AdminPanel from "./AdminPanel.jsx";
 import MentorResults from "./MentorResults.jsx";
 import MentorDashboard from "./MentorDashboard.jsx";
+import API_BASE from "./config.js";
 
 
 function RootLayout({ children }) {
@@ -34,7 +35,7 @@ const route = createBrowserRouter([
     { path: "/auth/Staff/:id/MentorDashboard", element: <RootLayout><MentorDashboard /></RootLayout> },
     { path: "/auth/Staff/:id/MentorResults", element: <RootLayout><MentorResults /></RootLayout> },
     { path: "/auth/Staff/:id/SendEmails", element: <RootLayout><SendEmails /></RootLayout> },
-    { path: "/auth/Staff/:id/UploadResults", element: <RootLayout><ExcelViewer excel_path={`template.xlsx`} /></RootLayout> },
+    { path: "/auth/Staff/:id/UploadResults", element: <RootLayout><ExcelViewer excel_route={`${API_BASE}/excel/template.xlsx`} /></RootLayout> },
     { path: "/auth/Staff/:id/StaffClassroom", element: <RootLayout><TeacherNotesUploader /></RootLayout> },
     { path: "/auth/Staff/:id/StaffResults", element: <RootLayout><StaffResults /></RootLayout> },
     { path: "/auth/Staff/:id", element: <RootLayout><Staff /></RootLayout> },

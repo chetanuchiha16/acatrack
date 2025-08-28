@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import * as ExcelJs from "exceljs";
 import API_BASE from "./config";
-export default function ExcelViewer({excel_path}) {
+export default function ExcelViewer({excel_route}) {
     const [worksheets, setWorksheets] = useState(null);
     const workbookRef = useRef(null);
     const [sheetIndex, setSheetIndex] = useState(0);
     const [excelData, setExcelData] = useState([]);
 
     useEffect(() => {
-        fetch(`/${excel_path}`)
+        fetch(`${excel_route}`)
             .then((res) => res.arrayBuffer())
             .then(async (buffer) => {
                 const workbook = await new ExcelJs.Workbook().xlsx.load(buffer);
@@ -58,7 +58,7 @@ export default function ExcelViewer({excel_path}) {
         let blob = new Blob([buffer], { type: "application/octet-stream" });
 
         let formData = new FormData();
-        formData.append("file", blob, `${excel_path}`);
+        formData.append("file", blob, `${excel_route.split("/").pop()}`);
 
         fetch(`${API_BASE}/excel`, {
             method: "POST",
