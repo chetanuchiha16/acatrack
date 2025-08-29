@@ -45,12 +45,11 @@
 
 a {
   font-weight: 500;
-  color: var(--primary);
   text-decoration: inherit;
   transition: color 0.2s ease;
 }
 a:hover {
-  color: var(--primary-hover);
+  scale: 101%;
 }
 
 body {
@@ -65,10 +64,10 @@ body {
   background-attachment: fixed;
 }
 
-h1 {
+/* h1 {
   font-size: 3.2em;
-  line-height: 1.1;
-}
+  line-height: 1.1; */
+/* } */
 
 button {
   border: 1px solid transparent;

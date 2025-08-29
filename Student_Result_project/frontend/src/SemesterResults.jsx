@@ -75,32 +75,18 @@ export default function SemesterResults() {
     return (
         <div className="max-w-6xl mx-auto p-4 sm:p-6">
             <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-3 sm:gap-4 mb-6">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-extrabold">
+                <div className="flex items-center justify-center">
+                    <div className="text-xl sm:text-2xl font-extrabold">
                         Semester Results
-                    </h1>
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                    <label className="flex items-center gap-2 backdrop-blur px-3 py-2 rounded-xl shadow-sm">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 text-slate-500"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7H3v12a2 2 0 002 2z"
-                            />
-                        </svg>
+                    <label className="flex items-center gap-2 backdrop-blur px-3 py-2 rounded-xl  w-40">
                         <select
                             value={semester}
                             onChange={(e) => setSemester(e.target.value)}
-                            className="appearance-none bg-transparent outline-none text-sm font-medium"
+                            className="appearance-none bg-transparent outline-none text-sm font-medium "
                         >
                             {semesters.map((s) => (
                                 <option value={s} key={s}>
@@ -171,12 +157,7 @@ export default function SemesterResults() {
                                 </h2>
                             </div>
 
-                            <div className="text-xs sm:text-sm text-slate-500">
-                                Overall snapshot
-                                <div className="mt-1 text-[10px] sm:text-xs text-slate-600">
-                                    Powered by your Flask backend
-                                </div>
-                            </div>
+                            
                         </div>
 
                         {view === "cards" ? (
@@ -293,7 +274,7 @@ export default function SemesterResults() {
                                     </thead>
                                     <tbody className="divide-y">
                                         {data.results.map((r) => (
-                                            <tr key={r.subject_code} className="hover:bg-black">
+                                            <tr key={r.subject_code} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                                                 <td className="px-2 sm:px-4 py-2 sm:py-3 font-medium break-words">
                                                     {r.subject_name}
                                                 </td>
@@ -330,7 +311,7 @@ export default function SemesterResults() {
 
                         <button
                             onClick={downloadPDF}
-                            className="mt-4 bg-green-500 hover:bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm"
+                            className="mt-4 bg-green-500 hover:bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm hover:scale-102"
                             disabled={!semester}
                         >
                             PDF
