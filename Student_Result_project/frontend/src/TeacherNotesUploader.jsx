@@ -132,8 +132,8 @@ export default function TeacherNotesUploader() {
   };
 
   return (
-    <div className="w-screen min-h-screen bg-gradient-to-br from-slate-50 to-slate-200 dark:from-gray-900 dark:to-gray-800 flex justify-center items-center p-4">
-      <div className="w-full sm:w-[90vw] lg:w-[90vw] xl:w-[90vw] h-auto min-h-[90vh] mx-auto flex flex-col border border-gray-300 dark:border-gray-700 rounded-2xl shadow-lg dark:text-gray-100 dark:bg-gray-900 bg-white text-gray-900 p-6 overflow-hidden">
+    <div className="w-screen min-h-screen bg-gradient-to-br from-gray-50-50 to-slate-200 dark:from-gray-900 dark:to-gray-800 flex justify-center items-center p-4">
+      <div className="w-full sm:w-[90vw] lg:w-[85vw] xl:w-[78vw] h-auto min-h-[90vh] mx-auto flex flex-col border border-gray-300 dark:border-gray-700 rounded-2xl shadow-lg dark:text-gray-100 dark:bg-gray-900 bg-white text-gray-900 p-6 overflow-hidden">
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center mb-6 gap-3 text-center">

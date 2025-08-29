@@ -52,34 +52,35 @@ export default function MenteeRecieveEmails({ usn }) {
     }, [usn]);
 
     return (
-        <div className="w-full max-w-7xl mx-auto flex flex-col border-4 border-black rounded-xl dark:text-white dark:bg-[#1a1a1a] backdrop-blur-sm p-4 h-[80vh]">
-            <div className="flex flex-col md:flex-row gap-6 p-6 min-h-full bg-gradient-to-br from-gray-900 via-gray-950 to-black">
+        <div className="w-full max-w-7xl mx-auto flex flex-col rounded-xl p-4 h-[80vh]">
+            <div className="flex flex-col md:flex-row gap-6 p-6 min-h-full bg-white shadow-xl rounded-2xl">
                 {/* Left: Messages list */}
-                <div className="w-full md:w-1/3 rounded-2xl backdrop-blur-md bg-gray-800/30 shadow-xl border border-gray-700/50 overflow-hidden">
-                    <h2 className="text-xl font-semibold p-4 border-b border-gray-700/40 text-gray-100">
+                <div className="w-full md:w-1/3 rounded-2xl bg-white border border-gray-200 shadow-sm overflow-hidden">
+                    <h2 className="text-lg font-semibold p-4 bg-gray-50 border-b border-gray-200 text-gray-800">
                         Inbox
                     </h2>
                     {loading ? (
-                        <p className="p-4 text-gray-400">Loading messages...</p>
+                        <p className="p-4 text-gray-500">Loading messages...</p>
                     ) : messages.length === 0 ? (
-                        <p className="p-4 text-gray-400">No messages yet</p>
+                        <p className="p-4 text-gray-500">No messages yet</p>
                     ) : (
-                        <ul className="divide-y divide-gray-700/40">
+                        <ul className="divide-y divide-gray-100">
                             {messages.map((msg) => (
                                 <li
                                     key={msg.id}
-                                    className={`p-4 cursor-pointer transition ${
+                                    className={`p-4 cursor-pointer transition rounded-md ${
                                         selectedMessage?.id === msg.id
-                                            ? "bg-emerald-500/20 border-l-4 border-emerald-400"
-                                            : "hover:bg-gray-700/30"
+                                            ? "bg-emerald-50 border-l-4 border-emerald-400"
+                                            : "hover:bg-gray-50"
                                     }`}
                                     onClick={() => fetchMessageDetail(msg.id)}
                                 >
-                                    <p className="font-medium text-gray-100 truncate">
+                                    <p className="font-medium text-gray-800 truncate">
                                         {msg.subject || "No subject"}
                                     </p>
-                                    <p className="text-sm text-gray-400 truncate">
-                                        {msg.message?.slice(0, 50) || "No content"}
+                                    <p className="text-sm text-gray-500 truncate">
+                                        {msg.message?.slice(0, 50) ||
+                                            "No content"}
                                     </p>
                                 </li>
                             ))}
@@ -88,18 +89,18 @@ export default function MenteeRecieveEmails({ usn }) {
                 </div>
 
                 {/* Right: Message detail */}
-                <div className="w-full md:flex-1 rounded-2xl backdrop-blur-md bg-gray-800/30 shadow-xl border border-gray-700/50 p-8 flex flex-col justify-between">
+                <div className="w-full md:flex-1 rounded-2xl bg-white border border-gray-200 shadow-sm p-8 flex flex-col justify-between">
                     {selectedMessage ? (
                         <>
                             <div>
-                                <h3 className="text-2xl font-bold mb-2 text-gray-100">
+                                <h3 className="text-2xl font-bold mb-2 text-gray-900">
                                     {selectedMessage.subject || "No subject"}
                                 </h3>
-                                <p className="text-sm text-gray-400 mb-6">
+                                <p className="text-sm text-gray-500 mb-6">
                                     From:{" "}
                                     {selectedMessage.mentor_name || "Unknown"}
                                 </p>
-                                <div className="bg-gray-900/40 p-4 rounded-xl text-gray-200 whitespace-pre-line shadow-inner">
+                                <div className="bg-gray-50 p-4 rounded-xl text-gray-700 whitespace-pre-line shadow-inner">
                                     {selectedMessage.message}
                                 </div>
                             </div>
@@ -108,14 +109,14 @@ export default function MenteeRecieveEmails({ usn }) {
                                     onClick={() =>
                                         markAsRead(selectedMessage.id)
                                     }
-                                    className="px-6 py-3 rounded-xl bg-emerald-500/80 text-white font-semibold hover:bg-emerald-600 transition shadow-lg"
+                                    className="px-6 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 transition shadow-md"
                                 >
                                     Mark as Read
                                 </button>
                             </div>
                         </>
                     ) : (
-                        <div className="text-center text-gray-500 flex-1 flex items-center justify-center">
+                        <div className="text-center text-gray-400 flex-1 flex items-center justify-center">
                             <p>Select a message to view</p>
                         </div>
                     )}

@@ -20,8 +20,8 @@ import AdminPanel from "./AdminPanel.jsx";
 import MentorResults from "./MentorResults.jsx";
 import MentorDashboard from "./MentorDashboard.jsx";
 import API_BASE from "./config.js";
-
-
+import ParentDashboard from "./ParentDashboard.jsx";
+import ParentResult from "./ParentResult.jsx";
 function RootLayout({ children }) {
   return (
     <>
@@ -32,6 +32,9 @@ function RootLayout({ children }) {
 }
 
 const route = createBrowserRouter([
+  { path: "/auth/Parent/:id/ParentResult", element: <RootLayout><ParentResult /></RootLayout> },
+  { path: "/auth/Parent/:id/ChatBot", element: <RootLayout><ChatBot /></RootLayout> },
+  { path: "/auth/Parent/:id", element: <RootLayout><ParentDashboard /></RootLayout> },
     { path: "/auth/Staff/:id/MentorDashboard", element: <RootLayout><MentorDashboard /></RootLayout> },
     { path: "/auth/Staff/:id/MentorResults", element: <RootLayout><MentorResults /></RootLayout> },
     { path: "/auth/Staff/:id/SendEmails", element: <RootLayout><SendEmails /></RootLayout> },
@@ -40,7 +43,6 @@ const route = createBrowserRouter([
     { path: "/auth/Staff/:id/StaffResults", element: <RootLayout><StaffResults /></RootLayout> },
     { path: "/auth/Staff/:id", element: <RootLayout><Staff /></RootLayout> },
     { path: "/auth/Student/:id", element: <RootLayout><Student /></RootLayout> },
-    { path: "/auth/Parent/:id", element: <RootLayout><ChatBot /></RootLayout> },
     { path: "/auth/:who", element: <RootLayout><Auth /></RootLayout> },
     { path: "/auth/", element: <RootLayout><Auth /></RootLayout> },
     { path: "/auth", element: <RootLayout><Auth /></RootLayout> },

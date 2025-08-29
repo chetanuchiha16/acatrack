@@ -16,16 +16,16 @@ export default function Staff() {
     console.log("finalId:", finalId);
     const [isDark, setIsDark] = useState(false);
     return (
-        <div className="min-h-screen w-screen bg-gray-200 dark:bg-gray-900 px-4 sm:px-8 md:px-16 py-4 sm:py-6">
+        <div className="min-h-screen w-screen bg-gray-100 dark:bg-gray-900 px-4 sm:px-8 md:px-16 py-4 sm:py-6">
             {/* Header */}
 
-            <div className="flex flex-col sm:flex-row items-center justify-between mb-8 ">
+            <div className="flex flex-row items-center justify-between mb-6 ">
                 <img
                     src={jssLogo}
                     alt="JSS Logo"
                     className="drop-shadow-2xl w-28 sm:w-32 md:w-40"
                 />
-                <div className="text-2xl mt-4 sm:mt-0 sm:text-3xl sm:mr-23 md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center flex-1">
+                <div className="text-2xl mt-4 sm:mt-0 sm:text-3xl sm:mr-23 md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center">
                     Staff Dashboard
                 </div>
                 <div>
@@ -33,8 +33,11 @@ export default function Staff() {
                 </div>
             </div>
 
+            {/* Divider */}
+            <div className="w-[95%] mx-auto h-[2px] bg-gray-300 my-4 mt-[-4] rounded shadow-sm"></div>
+
             {/* Welcome Section */}
-            <div className="space-y-2 mb-8 text-center sm:text-center lg:text-center">
+            <div className="space-y-2 mb-8 mt-2 text-center sm:text-center lg:text-center">
                 <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100">
                     Welcome , {name || "Staff Member"}
                 </p>
@@ -48,7 +51,7 @@ export default function Staff() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-5xl mx-auto">
                 <div
-                    className="bg-red-300 dark:bg-red-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-red-400 dark:hover:bg-red-700 transition-all duration-200"
+                    className="bg-red-300 dark:bg-red-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-red-400 dark:hover:bg-red-700 transition-all duration-200 "
                     onClick={() =>
                         navigate(`/auth/Staff/${finalId}/StaffResults`)
                     }
@@ -107,7 +110,7 @@ export default function Staff() {
                     </p>
                 </div>
                 <div
-                    className="bg-orange-100 dark:bg-orange-700 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-yellow-200 dark:hover:bg-orange-600 transition-all duration-200"
+                    className="bg-orange-200 dark:bg-orange-700 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-orange-300 dark:hover:bg-orange-600 transition-all duration-200"
                     onClick={() =>
                         navigate(`/auth/Staff/${finalId}/MentorDashboard`, {
                             state: { mentor_id },
