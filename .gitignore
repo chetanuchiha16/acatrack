@@ -1,10 +1,12 @@
-# Ignore all PDFs and PNGs inside output folders
+# Ignore all PDFs and PNGs inside any Outputs folder (recursively)
 **/Outputs/*.pdf
 **/Outputs/*.png
-<<<<<<< HEAD
+
+# Python compiled files
 *.pyc
+
+# Python cache folders
 __pycache__/
+
+# Database files
 *.db
-=======
-*.pyc
->>>>>>> 8ab8d8deeca816de05f3c80fc5d31d78db8d9196

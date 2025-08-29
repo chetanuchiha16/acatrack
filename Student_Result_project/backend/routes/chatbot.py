@@ -165,8 +165,9 @@ def _calculate_backlogs(student_data):
                 credits = float(sub.get("credits", 0) or 0)
             except (ValueError, TypeError):
                 continue
-
-            if credits > 0 and external < 18:
+            if external == 0:
+                continue    
+            if credits >= 0 and external < 18:
                 failed_subjects.append(sub)
                 total_credits += credits
 
