@@ -57,7 +57,7 @@ export default function ParentResult() {
             <img
               src={jssLogo}
               alt="Logo"
-              className="w-20 h-auto drop-shadow-lg"
+              className="drop-shadow-2xl w-28 sm:w-32 md:w-40"
             />
           </div>
 
@@ -72,22 +72,24 @@ export default function ParentResult() {
             <select
               value={lang}
               onChange={(e) => setLang(e.target.value)}
-              className="px-2 py-1 border rounded-md text-sm dark:bg-gray-800 dark:text-gray-100"
+              className="px-2 py-1 border rounded-md text-sm dark:bg-gray-800 dark:text-gray-100 "
             >
-              <option value="en">English</option>
-              <option value="hi">हिंदी</option>
-              <option value="kn">ಕನ್ನಡ</option>
+              <option value="en">English&nbsp;&nbsp;&nbsp;&nbsp;</option>
+              <option value="hi">हिंदी&nbsp;&nbsp;&nbsp;&nbsp;</option>
+              <option value="kn">ಕನ್ನಡ&nbsp;&nbsp;&nbsp;&nbsp;</option>
             </select>
           </div>
         </div>
       </div>
+       {/* Divider */}
+            <div className="w-[95%] mx-auto h-[2px] bg-gray-300 my-4 mt-[-4] rounded shadow-sm"></div>
 
       {/* Page container */}
       <div className="max-w-4xl mx-auto w-full space-y-6">
         {/* Student USN input card */}
         <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 shadow-lg">
           <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block mb-2 text-lg font-medium text-gray-700 dark:text-gray-300">
               {t.usn}
             </label>
             <input
@@ -114,7 +116,7 @@ export default function ParentResult() {
             >
               <button
                 onClick={() => setSelectedTab("result")}
-                className={`px-3 py-2 text-xs sm:text-sm transition ${
+                className={`px-3 py-2 text-xs sm:text-sm hover:scale-101 transition ${
                   selectedTab === "result"
                     ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
                     : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"

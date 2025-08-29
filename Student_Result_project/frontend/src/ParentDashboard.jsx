@@ -30,6 +30,7 @@ export default function ParentDashboard() {
                 </span>
                 <LogoutButton />
             </div>
+            
 
              {/* Divider */}
             <div className="w-[95%] mx-auto h-[2px] bg-gray-300 my-4 mt-[-4] rounded shadow-sm"></div>
