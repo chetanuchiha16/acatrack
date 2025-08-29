@@ -36,11 +36,11 @@ export default function Staff() {
             {/* Welcome Section */}
             <div className="space-y-2 mb-8 text-center sm:text-center lg:text-center">
                 <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                    Welcome to the Staff Dashboard
+                    Welcome , {name || "Staff Member"}
                 </p>
 
                 <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
-                    Here you can view student results, upload notes, and more.
+                    Manage results, classroom sessions, and communications efficiently from your dashboard.
                 </p>
             </div>
 
@@ -61,18 +61,19 @@ export default function Staff() {
                     </p>
                 </div>
 
-                <div className="bg-blue-300 dark:bg-blue-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-blue-400 dark:hover:bg-blue-700 transition-all duration-200">
+                <div className="bg-blue-300 dark:bg-blue-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-blue-400 dark:hover:bg-blue-700 transition-all duration-200"
+                    onClick={() => {
+                        navigate(`/auth/Staff/${finalId}/SendEmails`);
+                    }}
+                >
                     <h2
                         className="text-lg sm:text-xl md:text-2xl font-semibold mb-2"
-                        onClick={() => {
-                            navigate(`/auth/Staff/${finalId}/SendEmails`);
-                        }}
                     >
                         Email Upload
                     </h2>
 
                     <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
-                        View and manage results
+                        Send emails and manage communications
                     </p>
                 </div>
 
@@ -87,7 +88,7 @@ export default function Staff() {
                     </h2>
 
                     <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
-                        View and manage results
+                        Upload and update student results
                     </p>
                 </div>
 
@@ -102,7 +103,7 @@ export default function Staff() {
                     </h2>
 
                     <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
-                        View and manage Classroom
+                        Upload and manage classroom sessions
                     </p>
                 </div>
             </div>

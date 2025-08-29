@@ -2,22 +2,17 @@ import { useEffect, useState } from "react";
 import { FaFolder, FaFilePdf } from "react-icons/fa";
 import API_BASE from "./config";
 
-function FileItem({ name, isFolder, onClick, selected }) {
+function FileItem({ name, isFolder, onClick }) {
     return (
         <div
-            className={`flex flex-col items-center p-3 sm:p-4 rounded-lg cursor-pointer transition 
-                hover:bg-indigo-100 dark:hover:bg-indigo-800 shadow-sm
-                ${selected ? "ring-2 ring-indigo-400 dark:ring-indigo-300" : ""}`}
+            className="flex flex-col items-center p-3 rounded-lg cursor-pointer transition 
+                       hover:bg-indigo-100 dark:hover:bg-indigo-800 shadow-md border border-gray-200 dark:border-gray-700"
             onClick={onClick}
         >
-            <div className="text-3xl sm:text-4xl mb-2 text-amber-500">
-                {isFolder ? (
-                    <FaFolder />
-                ) : (
-                    <FaFilePdf className="text-red-500" />
-                )}
+            <div className="text-3xl mb-2 text-amber-500">
+                {isFolder ? <FaFolder /> : <FaFilePdf className="text-red-500" />}
             </div>
-            <div className="text-xs sm:text-sm text-center break-words text-gray-800 dark:text-gray-200">
+            <div className="text-sm text-center break-words text-gray-800 dark:text-gray-200">
                 {name}
             </div>
         </div>
@@ -25,11 +20,10 @@ function FileItem({ name, isFolder, onClick, selected }) {
 }
 
 function FileGrid({ tree, path = "", setPath }) {
-    const [selected, setSelected] = useState(null);
     const entries = Object.entries(tree);
 
     return (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {entries.map(([name, value]) => {
                 const fullPath = `${path}/${name}`;
                 const isFolder = value !== null;
@@ -39,9 +33,7 @@ function FileGrid({ tree, path = "", setPath }) {
                         key={fullPath}
                         name={name}
                         isFolder={isFolder}
-                        selected={selected === fullPath}
                         onClick={() => {
-                            setSelected(fullPath);
                             if (isFolder) {
                                 setPath(fullPath);
                             } else {
@@ -96,14 +88,13 @@ export default function FileExplorer() {
     };
 
     return (
-        <div className="w-screen min-h-screen bg-gradient-to-br from-slate-50 to-slate-200 dark:from-gray-900 dark:to-gray-800 flex justify-center items-center p-4">
-            <div className="w-full max-w-7xl mx-auto flex flex-col border border-gray-300 dark:border-gray-700 rounded-2xl shadow-lg 
-                dark:text-gray-100 dark:bg-gray-900 bg-white text-gray-900 backdrop-blur-sm p-4 h-[80vh]">
+        <div className="w-full flex justify-center p-4">
+            <div className="w-full max-w-7xl flex flex-col border border-gray-300 dark:border-gray-700 rounded-xl shadow-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4">
                 
-                {/* Sticky header */}
-                <div className="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-gray-800 z-10 p-2 rounded">
-                    <h2 className="text-lg sm:text-xl font-semibold text-indigo-600 dark:text-indigo-400">
-                        🗃️ File Explorer
+                {/* Header */}
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
+                        🗃️ Classroom Files
                     </h2>
                     {currentPath && (
                         <button
@@ -115,16 +106,22 @@ export default function FileExplorer() {
                     )}
                 </div>
 
-                {/* Scrollable file area */}
+                {/* File area */}
                 <div className="flex-1 overflow-auto">
                     {currentDir ? (
-                        <FileGrid
-                            tree={currentDir}
-                            path={currentPath}
-                            setPath={setCurrentPath}
-                        />
+                        Object.keys(currentDir).length > 0 ? (
+                            <FileGrid
+                                tree={currentDir}
+                                path={currentPath}
+                                setPath={setCurrentPath}
+                            />
+                        ) : (
+                            <p className="text-center text-gray-500 dark:text-gray-400 mt-4">
+                                No files available
+                            </p>
+                        )
                     ) : (
-                        <p className="text-gray-500 dark:text-gray-400">
+                        <p className="text-center text-gray-500 dark:text-gray-400 mt-4">
                             Loading...
                         </p>
                     )}

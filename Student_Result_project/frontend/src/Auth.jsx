@@ -88,17 +88,17 @@ export default function Auth() {
       {/* Top Section with Logo & Title */}
       <div className="absolute top-4 sm:top-6 w-full flex flex-col items-center">
         {/* Logo pinned left */}
-        <div className="absolute left-1/2 xl:left-20 transform -translate-x-1/2">
+        <div className="absolute left-1/2 xl:left-25 transform -translate-x-1/2">
           <img
             src={jssLogo}
             alt="JSS Logo"
-            className="w-25 sm:w-33 md:w-30 lg:w-30 h-auto drop-shadow-lg"
+            className="w-33 sm:w-33 md:w-37 lg:w-39 h-auto drop-shadow-lg"
           />
         </div>
 
         {/* Title centered */}
         <div className="text-center mt-10">
-          <div className="text-3xl sm:text-4xl sm:mt-2.5 md:text-4xl xl:-mt-11 lg:text-5xl font-bold text-red-700 drop-shadow-md">
+          <div className="text-4xl mt-2.5 sm:text-4xl sm:mt-2.5 md:text-5xl md:mt-5 xl:-mt-11 lg:text-5xl lg:mt-5 font-bold text-red-700 drop-shadow-md">
             JSS Academy of Technical Education
           </div>
           <p className="text-base sm:text-lg md:text-xl text-red-600">

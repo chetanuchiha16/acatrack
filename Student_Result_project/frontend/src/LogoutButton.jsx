@@ -19,7 +19,7 @@ export default function LogoutButton() {
     };
 
     return (
-        <div className="fixed top-4 right-3 sm:top-6 sm:right-4 z-50">
+        
             <div
                 onClick={handleLogout}
                 className="
@@ -38,6 +38,6 @@ export default function LogoutButton() {
                 Logout
             </div>
 
-        </div>
+       
     );
 }
