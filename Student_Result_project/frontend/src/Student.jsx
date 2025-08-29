@@ -10,7 +10,7 @@ export default function Student() {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams();
-
+const [view, setView] = useState("table");
   const { name: locName, id: locId, usn: locUsn, branch: locBranch } =
     location.state || {};
 
@@ -137,32 +137,61 @@ export default function Student() {
           </div>
 
           {/* Semester select */}
-          <div className="w-full sm:w-64">
-            {selectedTab === "result" ? (
-              <label className="relative block w-full">
-                <select
-                  value={currentSem}
-                  onChange={(e) => setCurrentSem(e.target.value)}
-                  className="appearance-none w-full px-3 py-2 rounded-md bg-white dark:bg-[#0f1720] text-sm text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Semester</option>
-                  {sems.map((sem) => (
-                    <option key={sem} value={sem}>
-                      {sem}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              <div className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
-                Click{" "}
-                <span className="font-medium text-gray-700 dark:text-gray-200">
-                  Result
-                </span>{" "}
-                to pick a semester.
-              </div>
-            )}
-          </div>
+          {/* Semester + view toggle */}
+<div className="w-full sm:w-auto flex items-center gap-3">
+  {selectedTab === "result" ? (
+    <>
+      {/* Semester Select */}
+      <label className="relative block w-40">
+        <select
+          value={currentSem}
+          onChange={(e) => setCurrentSem(e.target.value)}
+          className="appearance-none w-full px-3 py-2 rounded-md bg-white dark:bg-[#0f1720] text-sm text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Select Semester</option>
+          {sems.map((sem) => (
+            <option key={sem} value={sem}>
+              {sem}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {/* Cards / Table Toggle */}
+      <div className=" overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 shadow-sm hidden sm:inline-flex">
+        <button
+          onClick={() => setView("cards")}
+          className={`px-3 py-2 text-xs sm:text-sm transition ${
+            view === "cards"
+              ? "bg-slate-900 text-white"
+              : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          }`}
+        >
+          Cards
+        </button>
+        <button
+          onClick={() => setView("table")}
+          className={`px-3 py-2 text-xs sm:text-sm transition ${
+            view === "table"
+              ? "bg-slate-900 text-white"
+              : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          }`}
+        >
+          Table
+        </button>
+      </div>
+    </>
+  ) : (
+    <div className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
+      Click{" "}
+      <span className="font-medium text-gray-700 dark:text-gray-200">
+        Result
+      </span>{" "}
+      to pick a semester.
+    </div>
+  )}
+</div>
+
         </section>
 
         {/* Main content */}
@@ -178,7 +207,7 @@ export default function Student() {
 
           <div className="w-full">
             {selectedTab === "result" && currentSem !== "" && (
-              <Result usn={finalUsn} semester={currentSem} />
+              <Result usn={finalUsn} semester={currentSem} view={view}/>
             )}
             {selectedTab === "classroom" && <Classroom />}
             {selectedTab === "mentee" && (
