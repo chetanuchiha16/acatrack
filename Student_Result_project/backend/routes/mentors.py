@@ -22,48 +22,58 @@ def get_mentor_students():
         mentor = Mentor.query.filter_by(id=mentor_id).first()
         if not mentor:
             return jsonify({"error": "Mentor not found"}), 404
-
+        
         results = []
 
-        for ms in mentor.students:  # MentorStudent objects
+        for ms in mentor.students:
             usn = ms.student_usn
+            # print(f"Fetching student data for USN: {usn}, Semester: {semester}")
 
-            # Initialize your Student class (the one that reads from SEM tables)
-            student = Student(usn=usn, semester=semester, db_path=db_path)
+            try:
+                student = Student(usn=usn, semester=semester, db_path=db_path)
+                # print("student name: ", student.name)
 
-            # Generate PDF for each mentee
-            filename = f"{student.name}_{semester}_report.pdf"
-            file_path = os.path.join(pdf_dir, filename)
-            create_student_report(student, file_path=file_path)
+                # Generate PDF
+                filename = f"{student.name}_{semester}_report.pdf"
+                file_path = os.path.join(pdf_dir, filename)
+                create_student_report(student, file_path=file_path)
 
-            results.append({
-                "name": student.name,
-                "usn": student.usn,
-                "total_marks": student.total_marks,
-                "percentage": student.percentage,
-                "credits": student.obtained_credits,
-                "sgpa": student.sgpa,
-                "cgpa": student.cgpa,
-                "subjects": [
-                    {
-                        "subject_name": subject_name,
-                        "code": code,
-                        "ia": ia,
-                        "see": see,
-                        "total": ia + see,
-                        "credit": credit,
-                        "status": status
-                    }
-                    for code, subject_name, ia, see, credit, status in zip(
-                        student.subject_codes, student.subject_names,
-                        student.ia_marks, student.see_marks,
-                        student.credits, student.pass_fail
-                    )
-                ],
-                "pdf_url": f"http://localhost:5000/auth/Staff/Mentor/report/{filename}"
-            })
+                results.append({
+                    "name": student.name,
+                    "usn": student.usn,
+                    "total_marks": student.total_marks,
+                    "percentage": student.percentage,
+                    "credits": student.obtained_credits,
+                    "sgpa": student.sgpa,
+                    "cgpa": student.cgpa,
+                    "subjects": [
+                        {
+                            "subject_name": subject_name,
+                            "code": code,
+                            "ia": ia,
+                            "see": see,
+                            "total": ia + see,
+                            "credit": credit,
+                            "status": status
+                        }
+                        for code, subject_name, ia, see, credit, status in zip(
+                            student.subject_codes, student.subject_names,
+                            student.ia_marks, student.see_marks,
+                            student.credits, student.pass_fail
+                        )
+                    ],
+                    "pdf_url": f"http://localhost:5000/auth/Staff/Mentor/report/{filename}"
+                })
+
+            except Exception as e:
+                print(f"[WARNING] Student data not found for USN {usn}: {e}")
+                results.append({
+                    "usn": usn,
+                    "error": "Student data not found"
+                })
 
         return jsonify(results)
+
 
     except Exception as e:
         print(f"[ERROR] {e}")

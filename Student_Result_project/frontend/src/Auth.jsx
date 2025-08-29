@@ -60,7 +60,7 @@ export default function Auth() {
         if (data.message) {
           setUser({ username: data.id, name: data.name, role: who });
           navigate(`/auth/${who}/${data.id}`, {
-            state: { who, id: data.id, name: data.name },
+            state: { who, id: data.id, name: data.name , mentor_id:data.mentor_id},
           });
         } else {
           alert(`${data.error}`);

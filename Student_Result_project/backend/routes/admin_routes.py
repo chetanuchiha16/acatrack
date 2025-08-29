@@ -63,10 +63,10 @@ def _fetch_source_rows() -> Tuple[List[Tuple[str, str]], List[Tuple[str]]]:
     conn, cur = _connect_sqlite()
     try:
         teachers = cur.execute(
-            "SELECT SEM1_Staff_Initials FROM Subjectwise_result_1"
+            "SELECT Mentor_Name FROM Staffs"
         ).fetchall()
         students = cur.execute(
-            "SELECT student_usn, student_name FROM SEM1"
+            "SELECT student_usn, student_name FROM SEM4"
         ).fetchall()
     finally:
         conn.close()
@@ -75,7 +75,7 @@ def _fetch_source_rows() -> Tuple[List[Tuple[str, str]], List[Tuple[str]]]:
 
 def _unique_teacher_username() -> str:
     while True:
-        candidate = str(random.randint(10_000_000, 99_999_999))
+        candidate = str(random.randint(1000, 1010))
         if not Teacher.query.filter_by(username=candidate).first():
             return candidate
 
@@ -130,10 +130,11 @@ def generate_accounts():
             continue
 
         username = _unique_teacher_username()
-        plain = f"{_safe_seed(teacher_name)}{username[-3:]}"
+        plain = f"{_safe_seed(teacher_name.split(" ",1)[1])}{username[-3:]}"
         pw_hash = bcrypt.generate_password_hash(password=plain).decode("utf-8")
-        db.session.add(Teacher(username=username, name=teacher_name, password=pw_hash))
-        out.write(f"{username},{teacher_name},{plain},{pw_hash},teacher\n")
+        if not Teacher.query.filter_by(name = teacher_name).first(): 
+            db.session.add(Teacher(username=username, name=teacher_name, password=pw_hash))
+            out.write(f"{username},{teacher_name},{plain},{pw_hash},teacher\n")
 
     db.session.commit()
 
@@ -257,6 +258,7 @@ def upload_mentors():
         if not student_usn:
             continue
 
+        # Get or create mentor
         mentor = mentor_cache.get(mentor_name)
         if mentor is None:
             mentor = Mentor.query.filter_by(name=mentor_name).first()
@@ -264,14 +266,19 @@ def upload_mentors():
                 mentor = Mentor(name=mentor_name)
                 db.session.add(mentor)
                 db.session.flush()
-                count_mentors += 1
             mentor_cache[mentor_name] = mentor
 
+        # Add student mapping
         if not MentorStudent.query.filter_by(mentor_id=mentor.id, student_usn=student_usn).first():
             db.session.add(MentorStudent(mentor_id=mentor.id, student_usn=student_usn))
-            count_mappings += 1
+
+        # Optionally assign teacher with the same name as mentor
+        teacher = Teacher.query.filter_by(name=mentor_name).first()
+        if teacher and teacher.mentor_id is None:
+            teacher.mentor_id = mentor.id
 
     db.session.commit()
+    
     return jsonify({
         "status": "success",
         "mentors_inserted": count_mentors,

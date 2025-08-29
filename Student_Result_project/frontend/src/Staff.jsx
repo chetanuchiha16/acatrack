@@ -9,7 +9,7 @@ export default function Staff() {
     const location = useLocation();
     const params = useParams();
 
-    const { who, id, name } = location.state || {};
+    const { who, id, name, mentor_id } = location.state || {};
     const finalWho = who || params.who;
     const finalId = id || params.id;
 
@@ -104,6 +104,22 @@ export default function Staff() {
 
                     <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
                         Upload and manage classroom sessions
+                    </p>
+                </div>
+                <div
+                    className="bg-orange-100 dark:bg-orange-700 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-yellow-200 dark:hover:bg-orange-600 transition-all duration-200"
+                    onClick={() =>
+                        navigate(`/auth/Staff/${finalId}/MentorDashboard`, {
+                            state: { mentor_id },
+                        })
+                    }
+                >
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-2">
+                        Mentees
+                    </h2>
+
+                    <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
+                        View and manage Mentees
                     </p>
                 </div>
             </div>
