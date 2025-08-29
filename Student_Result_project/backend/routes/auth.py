@@ -32,11 +32,13 @@ def auth():
         session["who"] = who or ("Teacher" if isinstance(user, Teacher) else "Student")
 
         return jsonify({
-            "message": "Login success",
-            "id": username,
-            "name": user.name,
-            "who": session["who"]
-        })
+        "message": "Login success",
+        "id": username,
+        "name": user.name,
+        "who": session["who"],
+        "mentor_id": getattr(user, "mentor_id", "not a mentor")
+    })
+
     else:
         return jsonify({"error": "Incorrect password"}), 401
 
