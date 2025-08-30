@@ -12,6 +12,7 @@ from .admin_routes import admin_bp
 from .mentors import mentor_bp
 from .mentor_send_email import mentor_email_bp
 from .mentee_recieve_email import student_email_bp
+from .student_ai import ai_bp
 def register_routes(app):
     app.register_blueprint(auth_bp)
     app.register_blueprint(student_bp)
@@ -27,4 +28,5 @@ def register_routes(app):
     app.register_blueprint(mentor_bp)
     app.register_blueprint(mentor_email_bp)
     app.register_blueprint(student_email_bp)
+    app.register_blueprint(ai_bp)
     
