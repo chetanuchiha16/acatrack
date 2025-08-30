@@ -30,6 +30,7 @@ const [view, setView] = useState("table");
   }, [selectedTab]);
 
   return (
+
     <main className="min-h-screen w-full bg-gray-100 dark:bg-gray-900 px-4 sm:px-6 lg:px-8 py-6">
       {/* Header */}
       <div className="max-w-6xl mx-auto w-full mb-6">
@@ -52,10 +53,12 @@ const [view, setView] = useState("table");
         </div>
       </div>
 
+      <div className="w-[95%] mx-auto h-[2px] bg-gray-300 my-4 mt-[-4] rounded shadow-sm"></div>
+
       {/* Page container */}
       <div className="max-w-5xl mx-auto w-full space-y-6">
         {/* Student info */}
-        <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-5 shadow-lg">
+        <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-5 shadow-xl">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6 items-center">
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-300">Name</p>

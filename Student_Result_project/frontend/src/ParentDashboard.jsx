@@ -19,7 +19,7 @@ export default function ParentDashboard() {
         <div className="min-h-screen w-screen  dark:bg-gray-900 px-4 sm:px-8 md:px-16 py-4 sm:py-6">
             {/* Header */}
 
-            <div className="relative flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 mb-10">
+            <div className="relative flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 mb-6">
                 <img
                     src={jssLogo}
                     alt="JSS Logo"
@@ -30,6 +30,10 @@ export default function ParentDashboard() {
                 </span>
                 <LogoutButton />
             </div>
+            
+
+             {/* Divider */}
+            <div className="w-[95%] mx-auto h-[2px] bg-gray-300 my-4 mt-[-4] rounded shadow-sm"></div>
 
             {/* Welcome Section */}
             <div className="space-y-2 mb-8 text-center sm:text-center lg:text-center">
@@ -46,7 +50,7 @@ export default function ParentDashboard() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-5xl mx-auto">
                 <div
-                    className="bg-red-200 dark:bg-red-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-red-300 dark:hover:bg-red-700 transition-all duration-200"
+                    className="bg-red-300 dark:bg-red-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-red-400 dark:hover:bg-red-700 transition-all duration-200"
                     onClick={() =>
                         navigate(`/auth/Parent/${finalId}/ParentResult`)
                     }
@@ -59,7 +63,7 @@ export default function ParentDashboard() {
                     </p>
                 </div>
 
-                <div className="bg-blue-200 dark:bg-blue-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-blue-300 dark:hover:bg-blue-700 transition-all duration-200">
+                <div className="bg-blue-300 dark:bg-blue-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-blue-400 dark:hover:bg-blue-700 transition-all duration-200">
                     <h2
                         className="text-lg sm:text-xl md:text-2xl font-semibold mb-2"
                         onClick={() => {

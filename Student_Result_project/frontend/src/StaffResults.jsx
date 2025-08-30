@@ -14,7 +14,7 @@ export default function StaffResults() {
 
   return (
     <div className="min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-6xl mx-auto shadow-md rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
+      <div className="max-w-6xl mx-auto shadow-xl rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
         
         {/* Tabs */}
         <div className="flex flex-col sm:flex-row">

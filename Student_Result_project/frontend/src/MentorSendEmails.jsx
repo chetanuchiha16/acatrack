@@ -170,14 +170,14 @@ export default function MentorSendEmails({ mentorId }) {
     );
 
     return (
-        <div className="p-6 space-y-6">
-            <h2 className="text-3xl font-bold mb-6 text-center">
+        <div className="space-y-6 ">
+            <h2 className="text-2xl font-bold text-center">
                 Mentor Email Panel
             </h2>
 
             {feedback.text && (
                 <p
-                    className={`p-3 rounded-xl text-center shadow ${
+                    className={`p-3 rounded-xl text-center ${
                         feedback.type === "success"
                             ? "bg-green-100/70 text-green-900 backdrop-blur-md"
                             : "bg-red-100/70 text-red-900 backdrop-blur-md"
@@ -189,8 +189,8 @@ export default function MentorSendEmails({ mentorId }) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Broadcast */}
-                <div className="rounded-2xl p-6 shadow-lg border border-white/20 bg-white/40 dark:bg-gray-800/40 backdrop-blur-lg space-y-3">
-                    <h2 className="text-xl font-semibold">Broadcast to All</h2>
+                <div className="rounded-2xl p-6 shadow-xl border border-white/20 bg-white/40 dark:bg-gray-800/40 backdrop-blur-lg space-y-3">
+                    <h2 className="text-xl font-semibold mb-[-4]">Broadcast to All</h2>
                     <input
                         type="text"
                         placeholder="Subject"

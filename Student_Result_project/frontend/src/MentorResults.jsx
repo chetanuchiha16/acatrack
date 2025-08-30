@@ -59,8 +59,8 @@ export default function MentorResults({ mentor_id }) {
   );
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Mentee Results</h1>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold ">Mentee Results</h1>
 
       {/* Semester Selector */}
       <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-2 md:space-y-0">
@@ -71,7 +71,7 @@ export default function MentorResults({ mentor_id }) {
             onChange={(e) => setSemester(e.target.value)}
             className="border rounded px-2 py-1"
           >
-            {["SEM1","SEM2","SEM3","SEM4","SEM5","SEM6","SEM7","SEM8"].map((sem) => (
+            {["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6", "SEM7", "SEM8"].map((sem) => (
               <option key={sem} value={sem}>{sem}</option>
             ))}
           </select>
@@ -107,7 +107,7 @@ export default function MentorResults({ mentor_id }) {
                   <p>Total Marks: {mentee.total_marks} | SGPA: {mentee.sgpa} | CGPA: {mentee.cgpa}</p>
                 </div>
 
-                <div className="flex space-x-2 mt-3 md:mt-0">
+                {/* <div className="flex space-x-2 mt-3 md:mt-0">
                   <a
                     href={mentee.pdf_url}
                     target="_blank"
@@ -128,7 +128,34 @@ export default function MentorResults({ mentor_id }) {
                   >
                     {expandedMentees[mentee.usn] ? "Hide Subjects" : "View Subjects"}
                   </button>
+                </div> */}
+
+
+                <div className="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0 mt-3 md:mt-0">
+                  <a
+                    href={mentee.pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition text-center w-full md:w-auto"
+                  >
+                    Download PDF
+                  </a>
+                  <button
+                    onClick={() => fetchChart(mentee.usn)}
+                    className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 transition text-center w-full md:w-auto"
+                  >
+                    View Chart
+                  </button>
+                  <button
+                    onClick={() => toggleExpand(mentee.usn)}
+                    className="text-gray-800 px-3 py-2 rounded hover:bg-gray-300 transition text-center w-full md:w-auto"
+                  >
+                    {expandedMentees[mentee.usn] ? "Hide Subjects" : "View Subjects"}
+                  </button>
                 </div>
+
+
+
               </div>
 
               {/* Subjects Table */}

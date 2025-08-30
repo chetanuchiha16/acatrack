@@ -136,7 +136,7 @@ export default function SendEmails() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 mt-10 space-y-10">
+    <div className="max-w-7xl mx-auto p-6 space-y-10 shadow-2xl mt-10">
       <div className="flex flex-col md:flex-row gap-10">
         {/* Left: Email to Everyone */}
         <section className="flex-1 rounded-lg shadow-md p-6">
@@ -157,7 +157,7 @@ export default function SendEmails() {
             value={messageAll}
             onChange={(e) => setMessageAll(e.target.value)}
             rows={7}
-            className="w-full mb-4 px-4 py-2 border rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="w-full mb-4 px-4 py-2 border rounded-md resize-y h-70 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
 
           <div className="flex gap-4">
@@ -253,7 +253,7 @@ export default function SendEmails() {
       </div>
 
       {/* Message Manager Section */}
-      <section className="rounded-lg shadow-md p-6">
+      <section className="rounded-lg p-6">
         <h2 className="text-2xl font-semibold mb-6">Message Manager</h2>
         {messages.length === 0 ? (
           <p className="text-gray-500">No messages yet.</p>

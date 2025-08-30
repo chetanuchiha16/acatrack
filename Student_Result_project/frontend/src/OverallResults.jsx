@@ -56,7 +56,7 @@ export default function OverallResults() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6 shadow rounded-lg bg-[var(--background)] text-[var(--foreground)] transition-colors">
+    <div className="max-w-6xl mx-auto p-4 sm:p-6 rounded-lg bg-[var(--background)] text-[var(--foreground)] transition-colors">
       <h2 className="text-xl sm:text-2xl font-bold mb-4">Overall Performance</h2>
 
       {/* Filters */}
