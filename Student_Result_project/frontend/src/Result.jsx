@@ -52,11 +52,6 @@ export default function Result({ usn, semester, view }) {
                         </p>
                     </div>
                 )}
-{data && !loading && (
-    <div className="mt-6">
-        <StudentAIInsights usn={data.usn} semester={semester} />
-    </div>
-)}
                 {view === "cards" && data && !loading && (
                     <div className="space-y-5 hidden sm:block">
                         {/* Title */}
@@ -148,8 +143,8 @@ export default function Result({ usn, semester, view }) {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {data.subjects.map((sub, idx) => (
                                     <div
-                                        key={idx}
-                                        className="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-md p-3"
+                                    key={idx}
+                                    className="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-md p-3"
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="flex-1 min-w-0">
@@ -442,7 +437,7 @@ export default function Result({ usn, semester, view }) {
                                                             className={
                                                                 sub.status ===
                                                                 "Pass"
-                                                                    ? "text-green-600"
+                                                                ? "text-green-600"
                                                                     : "text-red-600"
                                                             }
                                                         >
@@ -469,6 +464,11 @@ export default function Result({ usn, semester, view }) {
                             </div>
                         </div>
 
+                            {data && !loading && (
+                                <div className="mt-6">
+                                    <StudentAIInsights usn={data.usn} semester={semester} />
+                                </div>
+                            )}
                         {/* Actions */}
                         <div className="flex items-center justify-center mt-3 !text-white">
                             {data.pdf_url ? (
