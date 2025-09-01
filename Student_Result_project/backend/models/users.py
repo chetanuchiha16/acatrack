@@ -8,6 +8,10 @@ class StudentAuth(db.Model):
     student_email = db.Column(db.String(100), nullable=True)
     student_phno = db.Column(db.String(20), nullable=True)
 
+    # Link to mentor (one-to-many: one mentor, many students)
+    mentor_id = db.Column(db.Integer, db.ForeignKey("mentors.id"), nullable=True)
+    mentor = db.relationship("Mentor", backref=db.backref("students", lazy=True))
+
 
 class ParentAuth(db.Model):
     __tablename__ = "parents"
@@ -25,7 +29,7 @@ class ParentAuth(db.Model):
     name = db.Column(db.String(100), nullable=True)   # actual parent name if available
     relation = db.Column(db.String(50), nullable=True, default="Guardian")  # Father/Mother/Guardian
 
-    # Link to student
+    # Link to student (one parent per student account)
     student_usn = db.Column(
         db.String(10),
         db.ForeignKey("students.username"),
@@ -33,7 +37,6 @@ class ParentAuth(db.Model):
         unique=True
     )
     student = db.relationship("StudentAuth", backref=db.backref("parent_account", uselist=False))
-
 
 
 class Teacher(db.Model):
@@ -47,18 +50,8 @@ class Teacher(db.Model):
     name = db.Column(db.String(100))
     password = db.Column(db.String(128), nullable=True)
 
+
 class Mentor(db.Model):
     __tablename__ = 'mentors'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-
-
-class MentorStudent(db.Model):
-    __tablename__ = 'mentor_students'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    mentor_id = db.Column(db.Integer, db.ForeignKey('mentors.id'), nullable=False)
-    student_usn = db.Column(db.String(50), db.ForeignKey('students.username'), nullable=False)
-
-    # Relationships
-    mentor = db.relationship('Mentor', backref=db.backref('students', lazy=True))
-    student = db.relationship('StudentAuth', backref=db.backref('mentors', lazy=True))

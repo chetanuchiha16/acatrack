@@ -8,7 +8,7 @@ FEATURES
 - Returns a downloadable CSV of (username,name,plain_password,hash)
 - Upload .xlsx or .csv of emails; file is saved to models.paths.email_excel_path
 - Validates required columns and inserts new rows into StudentAuth table
-- Upload mentor Excel; validates and inserts into Mentor + MentorStudent tables
+- Upload mentor Excel; validates and inserts into Mentor  tables
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from flask import Blueprint, current_app, jsonify, request, send_file
 from werkzeug.utils import secure_filename
 
 from app_init import bcrypt
-from models import Teacher, StudentAuth, Mentor, MentorStudent, ParentAuth, db
+from models import Teacher, StudentAuth, Mentor, ParentAuth, db
 from models.paths import db_path, email_excel_path, mentor_excel_path
 
 # ---------- Blueprint ----------
@@ -327,8 +327,11 @@ def upload_mentors():
             mentor_cache[mentor_name] = mentor
 
         # Add student mapping
-        if not MentorStudent.query.filter_by(mentor_id=mentor.id, student_usn=student_usn).first():
-            db.session.add(MentorStudent(mentor_id=mentor.id, student_usn=student_usn))
+        # Add student mapping (Option 2 style)
+        student = StudentAuth.query.filter_by(username=student_usn).first()
+        if student:
+            student.mentor_id = mentor.id
+            db.session.commit()
 
         # Optionally assign teacher with the same name as mentor
         teacher = Teacher.query.filter_by(name=mentor_name).first()
