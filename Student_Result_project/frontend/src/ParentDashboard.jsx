@@ -14,6 +14,7 @@ export default function ParentDashboard() {
     const finalId = id || params.id;
 
     console.log("finalId:", finalId);
+    console.log("mentor_id", mentor_id);
     const [isDark, setIsDark] = useState(false);
     return (
         <div className="min-h-screen w-screen  dark:bg-gray-900 px-4 sm:px-8 md:px-16 py-4 sm:py-6">

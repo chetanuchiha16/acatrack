@@ -114,7 +114,7 @@ def get_mentor_students(mentor_id):
     for ms in mentor.students:
         s = StudentAuth.query.filter_by(username=ms.student_usn).first()
         if s:
-            students.append({"usn": s.username, "name": s.name})
+            students.append({"usn": s.username, "name": s.name, "parent_name":s.parent_account.name, "parent_email":s.parent_account.email, "parent_phone":s.parent_account.phone})
     return jsonify({"students": students})
 
 

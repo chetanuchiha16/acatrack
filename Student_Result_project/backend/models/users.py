@@ -40,10 +40,10 @@ class Teacher(db.Model):
     __tablename__ = 'teachers'
     username = db.Column(db.String(10), primary_key=True, unique=True)
     mentor_id = db.Column(
-    db.Integer,
-    db.ForeignKey('mentors.id', name='fk_teachers_mentor_id'),  # give it a name
-    nullable=True
-)
+        db.Integer,
+        db.ForeignKey('mentors.id', name='fk_teachers_mentor_id'),  # give it a name
+        nullable=True
+    )
     name = db.Column(db.String(100))
     password = db.Column(db.String(128), nullable=True)
 

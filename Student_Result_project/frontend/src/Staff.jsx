@@ -12,7 +12,7 @@ export default function Staff() {
     const { who, id, name, mentor_id } = location.state || {};
     const finalWho = who || params.who;
     const finalId = id || params.id;
-
+    console.log(mentor_id)
     console.log("finalId:", finalId);
     const [isDark, setIsDark] = useState(false);
     return (

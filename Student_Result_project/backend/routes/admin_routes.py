@@ -132,7 +132,7 @@ def generate_accounts():
         parent_username = f"{usn}_parent"
         if not ParentAuth.query.filter_by(username=parent_username).first():
             plain_parent = "default123"
-            pw_hash_parent = generate_password_hash(plain_parent)
+            pw_hash_parent = bcrypt.generate_password_hash(password=plain_parent).decode("utf-8")
             new_parent = ParentAuth(
                 username=parent_username,
                 password=pw_hash_parent,

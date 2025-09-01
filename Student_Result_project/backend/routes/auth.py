@@ -57,14 +57,26 @@ def auth():
         session["name"] = display_name
         session["who"] = who
 
+        mentor_id = None
+
+        if who == "Staff":
+            mentor_id = getattr(user, "mentor_id", None)
+
+        elif who == "Parent":
+            # parent → student → mentors (list of MentorStudent objects)
+            if user.student and user.student.mentors:
+                # Example: just pick the first mentor_id
+                mentor_id = user.student.mentors[0].mentor_id
+
         return jsonify({
             "message": "Login success",
             "id": username,
             "name": display_name,
             "who": who,
-            "relation": relation if who == "Parent" else None,
-            "mentor_id": getattr(user, "mentor_id", None) if who == "Teacher" else None
+            "relation": getattr(user, "relation", None) if who == "Parent" else None,
+            "mentor_id": mentor_id
         })
+
 
 
 
