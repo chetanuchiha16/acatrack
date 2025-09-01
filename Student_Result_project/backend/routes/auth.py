@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 from app_init import db, bcrypt
-from models import StudentAuth, Teacher
+from models import StudentAuth, Teacher, ParentAuth
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -16,31 +16,57 @@ def auth():
         user = StudentAuth.query.filter_by(username=username).first()
     elif who == "Teacher":
         user = Teacher.query.filter_by(username=username).first()
+    elif who == "Parent":
+        user = ParentAuth.query.filter_by(username = username).first()
     else:
         # If 'who' not provided or unknown, check both
         user = StudentAuth.query.filter_by(username=username).first() \
-               or Teacher.query.filter_by(username=username).first()
+               or Teacher.query.filter_by(username=username).first() \
+               or ParentAuth.query.filter_by(username = username).first()
 
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    # Check password
     if bcrypt.check_password_hash(user.password, password):
+        # Figure out role dynamically if not provided
+        if who is None:
+            if isinstance(user, StudentAuth):
+                who = "Student"
+            elif isinstance(user, Teacher):
+                who = "Teacher"
+            elif isinstance(user, ParentAuth):
+                who = "Parent"
+
+        # Pick a display name depending on role
+        if who == "Parent":
+            # Prefer actual parent name if available
+            if user.name:
+                display_name = user.name
+            else:
+                display_name = f"Parent of {user.student.name}"
+
+            # Also grab relation if you added that column
+            relation = getattr(user, "relation", None)
+        else:
+            display_name = getattr(user, "name", username)
+            relation = None
+
+
         # Store login info in session
         session["user_id"] = username
-        session["name"] = user.name
-        session["who"] = who or ("Teacher" if isinstance(user, Teacher) else "Student")
+        session["name"] = display_name
+        session["who"] = who
 
         return jsonify({
-        "message": "Login success",
-        "id": username,
-        "name": user.name,
-        "who": session["who"],
-        "mentor_id": getattr(user, "mentor_id", "not a mentor")
-    })
+            "message": "Login success",
+            "id": username,
+            "name": display_name,
+            "who": who,
+            "relation": relation if who == "Parent" else None,
+            "mentor_id": getattr(user, "mentor_id", None) if who == "Teacher" else None
+        })
 
-    else:
-        return jsonify({"error": "Incorrect password"}), 401
+
 
 
 @auth_bp.route("/auth/status", methods=["GET"])
