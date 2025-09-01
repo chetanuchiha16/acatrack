@@ -40,7 +40,7 @@ class SubjectResult:
         """
         Calculate pass and fail counts for the subject.
         """
-        pass_count = sum(1 for student in self.students_data if (student["ia"]>=20 and student["see"]>=18))
+        pass_count = sum(1 for student in self.students_data if (student["ia"]>=18 and student["see"]>=18))
         fail_count = self.present_students - pass_count
         # for student in self.students_data:
             # if (student["ia"]<20 and student["see"]<18):
@@ -48,14 +48,43 @@ class SubjectResult:
                                               
         return pass_count, fail_count
 
+    # def fetch_performance_categories(self):
+    #     """
+    #     Calculate counts for performance categories (FCD, FC, SC).
+    #     """
+    #     fcd_count = sum(1 for student in self.students_data if student["Total_Marks"] >= 70)
+    #     fc_count = sum(1 for student in self.students_data if 60 <= student["Total_Marks"] < 70)
+    #     sc_count = sum(1 for student in self.students_data if 50 <= student["Total_Marks"] < 60)
+    #     return fcd_count, fc_count, sc_count
+
+    #new logic
+
     def fetch_performance_categories(self):
         """
         Calculate counts for performance categories (FCD, FC, SC).
+        - If Credits == 0 and SEE == 0, use IA marks instead of Total_Marks.
         """
-        fcd_count = sum(1 for student in self.students_data if student["Total_Marks"] >= 70)
-        fc_count = sum(1 for student in self.students_data if 60 <= student["Total_Marks"] < 70)
-        sc_count = sum(1 for student in self.students_data if 50 <= student["Total_Marks"] < 60)
+        fcd_count = 0
+        fc_count = 0
+        sc_count = 0
+
+        for student in self.students_data:
+            # Decide which marks to use
+            if student.get("Credits", 0) == 0 and student.get("SEE", 0) == 0:
+                marks = student.get("IA", 0)  # use IA
+            else:
+                marks = student.get("Total_Marks", 0)  # use Total_Marks
+
+            # Categorize
+            if marks >= 70:
+                fcd_count += 1
+            elif 60 <= marks < 70:
+                fc_count += 1
+            elif 50 <= marks < 60:
+                sc_count += 1
+
         return fcd_count, fc_count, sc_count
+
 
     def calculate_pass_percentage(self):
         """
