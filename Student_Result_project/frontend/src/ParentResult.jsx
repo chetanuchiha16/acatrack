@@ -4,29 +4,21 @@ import { semesterOptions } from "./config";
 import jssLogo from "./assets/jssLogo.png";
 import API_BASE from "./config";
 import { useTranslation } from "react-i18next";
-
+import useStudentStore from "./parent_student_details";
 export default function ParentResult() {
     const [sem, setSem] = useState("");
     const [view, setView] = useState("table");
     const [selectedTab, setSelectedTab] = useState("result");
-    const [loading, setLoading] = useState(true);
-    const [studentData, setStudentData] = useState(null);
+    // const [loading, setLoading] = useState(true);
+    // const [studentData, setStudentData] = useState(null);
 
     const { t, i18n } = useTranslation();
 
     // Fetch student details
-    useEffect(() => {
-        fetch(`${API_BASE}/parent/student-details`, { credentials: "include" })
-            .then((res) => res.json())
-            .then((data) => {
-                setStudentData(data);
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error(err);
-                setLoading(false);
-            });
-    }, []);
+    const { studentData, loading } = useStudentStore();
+
+  if (loading) return <div>Loading...</div>;
+  if (!studentData) return <div>No data</div>;
 
     // Set default semester (last one)
     useEffect(() => {

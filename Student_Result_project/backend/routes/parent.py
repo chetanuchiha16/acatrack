@@ -16,6 +16,12 @@ def get_student_details():
     student = parent.student
     mentor = student.mentor
 
+    # 👇 fetch the teacher who has this mentor_id
+    teacher = None
+    if mentor:
+        from models import Teacher
+        teacher = Teacher.query.filter_by(mentor_id=mentor.id).first()
+
     return jsonify({
         "student": {
             "usn": student.username,
@@ -25,6 +31,8 @@ def get_student_details():
         },
         "mentor": {
             "id": mentor.id if mentor else None,
-            "name": mentor.name if mentor else None
+            "name": mentor.name if mentor else None,
+            "email": teacher.email if teacher else None,
+            "phone": teacher.phone if teacher else None,
         }
     })
