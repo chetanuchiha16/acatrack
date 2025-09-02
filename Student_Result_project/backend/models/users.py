@@ -50,6 +50,10 @@ class Teacher(db.Model):
     name = db.Column(db.String(100))
     password = db.Column(db.String(128), nullable=True)
 
+    # Contact info
+    email = db.Column(db.String(100), nullable=True, default = f"{name}@teacher.com")
+    phone = db.Column(db.String(20), nullable=True, default = "123456789")
+
 
 class Mentor(db.Model):
     __tablename__ = 'mentors'

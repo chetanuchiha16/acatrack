@@ -323,6 +323,7 @@ def upload_mentors():
             if mentor is None:
                 mentor = Mentor(name=mentor_name)
                 db.session.add(mentor)
+                count_mentors += 1
                 db.session.flush()
             mentor_cache[mentor_name] = mentor
 
@@ -331,6 +332,7 @@ def upload_mentors():
         student = StudentAuth.query.filter_by(username=student_usn).first()
         if student:
             student.mentor_id = mentor.id
+            count_mappings += 1
             db.session.commit()
 
         # Optionally assign teacher with the same name as mentor

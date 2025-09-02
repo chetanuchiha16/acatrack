@@ -64,9 +64,9 @@ def auth():
 
         elif who == "Parent":
             # parent → student → mentors (list of MentorStudent objects)
-            if user.student and user.student.mentors:
+            if user.student and user.student.mentor:
                 # Example: just pick the first mentor_id
-                mentor_id = user.student.mentors[0].mentor_id
+                mentor_id = user.student.mentor.id
 
         return jsonify({
             "message": "Login success",
