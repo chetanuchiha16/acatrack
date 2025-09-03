@@ -1,0 +1,16 @@
+{
+  "title": "Parent Dashboard",
+  "welcome": "Welcome to the Parent Dashboard",
+  "description": "Here you can view student results, upload notes, and more.",
+  "usn": "Student USN",
+  "enterUsn": "Enter USN",
+  "semester": "Semester",
+  "result": "Result",
+  "resultDesc": "View and manage results",
+  "info": "Enter your child’s USN and choose Result to view performance.",
+  "table": "Table",
+  "card": "Cards",
+  "noData": "No data available",
+  "chatbot": "Chatbot",
+  "chatbotDesc": "View Chatbot"
+}

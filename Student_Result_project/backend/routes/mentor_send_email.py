@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import Mentor, StudentAuth, MentorStudent
+from models import Mentor, StudentAuth
 from app_init import db
 from email.utils import parseaddr
 import smtplib
@@ -95,13 +95,15 @@ def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=
 
 def serialize_message_with_read_status(msg):
     students = []
-    for ms in msg.mentor.students:
-        s = StudentAuth.query.filter_by(username=ms.student_usn).first()
-        if not s:
-            continue
+    for s in msg.mentor.students:  # now directly StudentAuth objects
         status = StudentMessageStatus.query.filter_by(student_usn=s.username, msg_id=msg.id).first()
-        students.append({"usn": s.username, "name": s.name, "read": status.read if status else False})
+        students.append({
+            "usn": s.username,
+            "name": s.name,
+            "read": status.read if status else False
+        })
     return {**msg.to_dict(), "read_status": students}
+
 
 
 # ---------------- Mentor APIs ----------------
@@ -111,11 +113,16 @@ def get_mentor_students(mentor_id):
     if not mentor:
         return jsonify({"error": "Mentor not found"}), 404
     students = []
-    for ms in mentor.students:
-        s = StudentAuth.query.filter_by(username=ms.student_usn).first()
-        if s:
-            students.append({"usn": s.username, "name": s.name})
+    for s in mentor.students:  # direct students now
+        students.append({
+            "usn": s.username,
+            "name": s.name,
+            "parent_name": s.parent_account.name if s.parent_account else None,
+            "parent_email": s.parent_account.email if s.parent_account else None,
+            "parent_phone": s.parent_account.phone if s.parent_account else None
+        })
     return jsonify({"students": students})
+
 
 
 @mentor_email_bp.route("/mentor/<int:mentor_id>/messages", methods=["GET"])
@@ -179,16 +186,14 @@ def send_email_all(mentor_id):
         return jsonify({"error": "Mentor not found"}), 404
 
     results = []
-    for ms in mentor.students:
-        s = StudentAuth.query.filter_by(username=ms.student_usn).first()
-        if not s:
-            continue
+    for s in mentor.students:  # direct now
         if recipient_type == "parent":
-            to_email = getattr(s, "parent_email", None)
-            name = getattr(s, "parent_name", None) or s.name
+            to_email = getattr(s.parent_account, "email", None)
+            name = getattr(s.parent_account, "name", None) or s.name
         else:
             to_email = getattr(s, "student_email", None)
             name = s.name
+
 
         success = send_email(to_email, subject, f"Hello {name},\n\n{message}")
         results.append({"usn": s.username, "success": success})
