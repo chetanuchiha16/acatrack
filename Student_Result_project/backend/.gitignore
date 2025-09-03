@@ -2,5 +2,5 @@
 **/Outputs/**/*.png
 **/Outputs/**/*.pdf
 *.pyc
-# *.db
+*.db
 *.pdf

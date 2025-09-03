@@ -9,4 +9,4 @@
 __pycache__/
 
 # Database files
-# *.db
+*.db
