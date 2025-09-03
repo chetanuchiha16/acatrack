@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import API_BASE from "./config";
-import LogoutButton from "./LogoutButton";
 import Confetti from "react-confetti";
-
 
 export default function ChatBot() {
     const [messages, setMessages] = useState([
@@ -12,14 +10,19 @@ export default function ChatBot() {
     const [listening, setListening] = useState(false);
     const [introPlayed, setIntroPlayed] = useState(false);
     const [recognitionRef, setRecognitionRef] = useState(null);
+    const [showConfetti, setShowConfetti] = useState(false);
+    useEffect(() => {
+        // This runs when component unmounts (page refresh or navigation)
+        return () => {
+            window.speechSynthesis.cancel(); // stops all ongoing speech
+        };
+    }, []);
     const messagesEndRef = useRef(null);
-
     const [openSemesters, setOpenSemesters] = useState({});
     const [openBacklogs, setOpenBacklogs] = useState({});
     const [openAlphabet, setOpenAlphabet] = useState({});
-    //new confetti
-    const [showConfetti, setShowConfetti] = useState(false);
 
+    // Auto-scroll messages
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
@@ -36,10 +39,12 @@ export default function ChatBot() {
     // --- VOICE INTRO & LISTENING ---
     const startVoiceFlow = () => {
         if (!introPlayed) {
-            const introText = "🙏Welcome to JSSTrack360 🎓, and I'm here to help you with your ward's report. Please tell me your ward's name to get the full report.📖";
+            const introText = "🙏 Welcome to JSSTrack360 🎓. Please tell me your ward's name to get the full report. 📖";
+            const speechText = "Welcome to JSSTrack360. Please tell me your ward's name to get the full report.";
             setMessages(prev => [...prev, { sender: "bot", text: introText }]);
+
             setIntroPlayed(true);
-            speak(introText, startListening);
+            speak(speechText, startListening);
         } else {
             startListening();
         }
@@ -103,34 +108,36 @@ export default function ChatBot() {
                 speak(data.error);
                 return;
             }
-            if (totalBacklogCredits === 0) {
-                speechText += "No backlogs. Excellent!";
-                setShowConfetti(true);
-
-                // stop after 2 seconds
-                setTimeout(() => setShowConfetti(false), 2000);
-            }
 
             // Add report, semesters, backlogs, downloads
             setMessages(prev => [...prev,
-            { sender: "bot", type: "header", text: `📄 Report for ${data.student_name}` },
-            { sender: "bot", type: "semesters", data: data.semester_results },
-            { sender: "bot", type: "backlogs", data: data.backlogs, totalCredits: data.total_backlog_credits },
-            {
-                sender: "bot", type: "downloads", downloadUrls: {
-                    full: `${API_BASE}/report/${encodeURIComponent(data.student_name)}/pdf?type=full`,
-                    backlog: `${API_BASE}/report/${encodeURIComponent(data.student_name)}/pdf?type=backlog`
-                }
-            },
-            { sender: "bot", type: "thank", text: "The reports have been generated successfully. Thank you for using JssTrack360 chatbot. Have a great day!!" }
+                { sender: "bot", type: "header", text: `📄 Report for ${data.student_name}` },
+                { sender: "bot", type: "semesters", data: data.semester_results },
+                { sender: "bot", type: "backlogs", data: data.backlogs, totalCredits: data.total_backlog_credits },
+                {
+                    sender: "bot", type: "downloads", downloadUrls: {
+                        full: `${API_BASE}/report/${encodeURIComponent(data.student_name)}/pdf?type=full`,
+                        backlog: `${API_BASE}/report/${encodeURIComponent(data.student_name)}/pdf?type=backlog`
+                    }
+                },
+                { sender: "bot", type: "thank", text: "✅ The reports have been generated successfully. Thank you for using JssTrack360 chatbot. Have a great day!!" }
             ]);
 
-            // Speak once for report + backlog
+            // Speech + confetti
             let speechText = `Here is the report for ${data.student_name}. `;
             const totalBacklogCredits = data.total_backlog_credits;
-            if (totalBacklogCredits === 0) speechText += "No backlogs. Excellent!";
-            else if (totalBacklogCredits > 18) speechText += `⚠️ Backlog credits exceed 18. Risk of year back.`;
-            else speechText += `Some backlogs are present. Total credits: ${totalBacklogCredits}.`;
+
+            if (totalBacklogCredits === 0) {
+                speechText += "No backlogs. Excellent!";
+                setShowConfetti(true);
+                setTimeout(() => setShowConfetti(false), 5000);
+            } else if (totalBacklogCredits > 18) {
+                speechText += "⚠️ Backlog credits exceed 18. Risk of year back.";
+            } else {
+                speechText += `Some backlogs are present. Total credits: ${totalBacklogCredits}.`;
+            }
+
+        
             speechText += " The reports have been generated successfully. Thank you for using JssTrack360 chatbot. Have a great day!!";
             speak(speechText);
 
@@ -171,18 +178,44 @@ export default function ChatBot() {
         </div>
     );
 
+
     return (
         <div className="flex flex-col items-center w-full h-screen">
+            {/* 🎉 Confetti celebration */}
             {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} />}
-            <div className="flex justify-between w-full max-w-3xl p-2 shadow-sm">
-                <h1 className="font-semibold text-lg">🎓 Student Result Chatbot</h1>
-                <LogoutButton />
+
+            <div className="flex items-center justify-between w-full max-w-3xl p-2 shadow-sm">
+                {/* Left spacer (empty div keeps title centered) */}
+                <div className="w-1/3"></div>
+
+                {/* Title in center */}
+                <h1 className="w-1/3 text-center font-semibold text-lg">
+                    🎓 Student Result Chatbot
+                </h1>
+
+                {/* Back button on right */}
+                <div className="w-1/3 flex justify-end">
+                    <button
+                        onClick={() => {
+                            const currentPath = window.location.pathname; 
+                            const newPath = currentPath.replace(/\/ChatBot$/, ""); 
+                            window.location.href = newPath;
+                        }}
+                        className="px-3 py-1 bg-gray-700 text-white rounded-lg hover:bg-gray-900 transition-transform transform hover:scale-105"
+                    >
+                        ⬅ Back
+                    </button>
+                </div>
             </div>
 
+
+            {/* Chat window */}
             <div className="flex flex-col flex-1 w-full max-w-3xl overflow-y-auto px-3 py-4 space-y-3">
+                {/* Messages */}
                 {messages.map((msg, i) => (
                     <div key={i} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                         <div className={`rounded-2xl px-4 py-2 shadow-md max-w-[85%] whitespace-pre-line transition-all duration-300 ${msg.sender === "user" ? "bg-blue-500 text-white" : "bg-gray-800 text-white"}`}>
+
                             {/* Normal messages */}
                             {!msg.type && msg.text && msg.text.split("\n").map((line, idx) => <p key={idx}>{line}</p>)}
 
@@ -195,7 +228,7 @@ export default function ChatBot() {
                             {/* Thank note */}
                             {msg.type === "thank" && <p className="mt-2 font-semibold text-white">{msg.text}</p>}
 
-                            {/* Student List */}
+                            {/* Students list */}
                             {msg.type === "students" && (
                                 <div className="mt-2">
                                     {Object.entries(
@@ -336,7 +369,8 @@ export default function ChatBot() {
                 >
                     Send
                 </button>
-                {/* Voice button + listening indicator inline */}
+
+                {/* Voice button + listening indicator */}
                 <div className="flex items-center gap-2">
                     <button
                         onClick={startVoiceFlow}
@@ -358,3 +392,4 @@ export default function ChatBot() {
         </div>
     );
 }
+

@@ -42,6 +42,7 @@ export default function ParentResult() {
       {/* Header */}
       <div className="max-w-6xl mx-auto w-full mb-6">
         <div className="flex items-center justify-between">
+          {/* Logo */}
           <div className="flex items-center">
             <img
               src={jssLogo}
@@ -50,11 +51,13 @@ export default function ParentResult() {
             />
           </div>
 
+          {/* Title */}
           <div className="text-[22px] sm:text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center">
             {t("title")}
           </div>
 
-          <div>
+          {/* Language + Back button side by side */}
+          <div className="flex items-center gap-2">
             <select
               value={i18n.language}
               onChange={(e) => changeLanguage(e.target.value)}
@@ -64,9 +67,21 @@ export default function ParentResult() {
               <option value="hi">हिंदी</option>
               <option value="kan">ಕನ್ನಡ</option>
             </select>
+
+            <button
+              onClick={() => {
+                const currentPath = window.location.pathname; 
+                const newPath = currentPath.replace(/\/ParentResult$/, ""); 
+                window.location.href = newPath;
+              }}
+              className="px-3 py-1 bg-gray-700 text-white rounded-lg hover:bg-gray-900 transition-transform transform hover:scale-105"
+            >
+              ⬅ Back
+            </button>
           </div>
         </div>
       </div>
+
 
       {/* Divider */}
       <div className="w-[95%] mx-auto h-[2px] bg-gray-300 my-4 mt-[-4] rounded shadow-sm"></div>
