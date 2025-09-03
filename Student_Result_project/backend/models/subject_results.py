@@ -36,17 +36,39 @@ class SubjectResult:
                 })
         return students_data
 
-    def fetch_subject_stats(self):
-        """
-        Calculate pass and fail counts for the subject.
-        """
-        pass_count = sum(1 for student in self.students_data if (student["ia"]>=18 and student["see"]>=18))
-        fail_count = self.present_students - pass_count
+    # def fetch_subject_stats(self):
+    #     """
+    #     Calculate pass and fail counts for the subject.
+    #     """
+    #     pass_count = sum(1 for student in self.students_data if (student["ia"]>=18 and student["see"]>=18))
+    #     fail_count = self.present_students - pass_count
         # for student in self.students_data:
             # if (student["ia"]<20 and student["see"]<18):
                 # print("failed students",student["name"])
-                                              
+        #return pass_count, fail_count
+
+    #new logic
+
+    def fetch_subject_stats(self):
+        """
+        Calculate pass and fail counts for the subject.
+        - If Credits == 0 and SEE == 0, use only IA marks to decide pass.
+        """
+        pass_count = 0
+
+        for student in self.students_data:
+            if student.get("see", 0) == 0:
+                # Use only IA
+                if student.get("ia", 0) >= 18:
+                    pass_count += 1
+            else:
+                # Normal rule
+                if student.get("ia", 0) >= 18 and student.get("see", 0) >= 18:
+                    pass_count += 1
+
+        fail_count = self.present_students - pass_count
         return pass_count, fail_count
+
 
     # def fetch_performance_categories(self):
     #     """
@@ -70,8 +92,8 @@ class SubjectResult:
 
         for student in self.students_data:
             # Decide which marks to use
-            if student.get("Credits", 0) == 0 and student.get("SEE", 0) == 0:
-                marks = student.get("IA", 0)  # use IA
+            if student.get("see", 0) == 0:
+                marks = student.get("ia", 0)  # use IA
             else:
                 marks = student.get("Total_Marks", 0)  # use Total_Marks
 
@@ -84,6 +106,8 @@ class SubjectResult:
                 sc_count += 1
 
         return fcd_count, fc_count, sc_count
+    
+            
 
 
     def calculate_pass_percentage(self):
@@ -167,3 +191,4 @@ class SubjectResult:
         plt.savefig(graph_path)
         #plt.show()
         return fig,graph_path
+    

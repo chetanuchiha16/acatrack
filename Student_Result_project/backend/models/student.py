@@ -28,22 +28,50 @@ class Student:
         self.percentage = self.calculate_percentage()
         self.pass_fail = self.calculate_pass_fail()
 
+    # def calculate_pass_fail(self):
+    #     """
+    #     Calculates pass/fail status for each subject and handles edge cases like SCR and No Credits.
+    #     """
+    #     pass_fail_subjects = []
+    #     for ia, see, credits in zip(self.ia_marks, self.see_marks, self.credits):
+    #         if credits == 0:
+    #             pass_fail_subjects.append("No Credits")  # Subject has no credits
+    #         elif see == 0:
+    #             pass_fail_subjects.append("SCR")  # Student skipped SEE
+    #         elif ia >= 20 and see >= 18:
+    #             pass_fail_subjects.append("Pass")  # Passed both IA and SEE
+    #         else:
+    #             pass_fail_subjects.append("Fail")  # Failed IA or SEE
+    #     self.pass_fail = pass_fail_subjects
+    #     return pass_fail_subjects
+
+    #new code updated logic
+
     def calculate_pass_fail(self):
         """
-        Calculates pass/fail status for each subject and handles edge cases like SCR and No Credits.
+        Calculates pass/fail status for each subject.
+        - Normal case: IA >= 20 and SEE >= 18 → Pass
+        - Special case: If Credits == 0 and SEE == 0 → only IA >= 18 → Pass
+        - If Credits == 0 but SEE given → mark No Credits
+        - If SEE == 0 but Credits > 0 → mark SCR (Skipped SEE)
         """
         pass_fail_subjects = []
         for ia, see, credits in zip(self.ia_marks, self.see_marks, self.credits):
-            if credits == 0:
-                pass_fail_subjects.append("No Credits")  # Subject has no credits
+            if see == 0:
+                # Special case → IA-only check
+                pass_fail_subjects.append("Pass" if ia >= 18 else "Fail")
+            elif credits == 0:
+                pass_fail_subjects.append("No Credits")  # No-credit subject
             elif see == 0:
-                pass_fail_subjects.append("SCR")  # Student skipped SEE
+                pass_fail_subjects.append("SCR")  # Skipped SEE
             elif ia >= 20 and see >= 18:
-                pass_fail_subjects.append("Pass")  # Passed both IA and SEE
+                pass_fail_subjects.append("Pass")  # Normal pass
             else:
-                pass_fail_subjects.append("Fail")  # Failed IA or SEE
+                pass_fail_subjects.append("Fail")  # Normal fail
+
         self.pass_fail = pass_fail_subjects
         return pass_fail_subjects
+
     
     def categorize(self):
         """

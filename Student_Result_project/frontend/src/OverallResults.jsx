@@ -166,7 +166,8 @@ export default function OverallResults() {
                             <strong>IA Marks:</strong>
                             <ul className="list-disc list-inside">
                               {student.ia_marks.map((mark, i) => (
-                                <li key={i}>Subject {i + 1}: {mark}</li>
+                                // <li key={i}>Subject {i + 1}: {mark}</li>
+                                <li key={i}>{student.subject_names[i]}: {mark}</li>
                               ))}
                             </ul>
                           </div>
@@ -174,7 +175,8 @@ export default function OverallResults() {
                             <strong>SEE Marks:</strong>
                             <ul className="list-disc list-inside">
                               {student.see_marks.map((mark, i) => (
-                                <li key={i}>Subject {i + 1}: {mark}</li>
+                                // <li key={i}>Subject {i + 1}: {mark}</li>
+                                <li key={i}>{student.subject_names[i]}: {mark}</li>
                               ))}
                             </ul>
                           </div>
@@ -182,7 +184,8 @@ export default function OverallResults() {
                             <strong>Pass/Fail:</strong>
                             <ul className="list-disc list-inside">
                               {student.pass_fail.map((pf, i) => (
-                                <li key={i}>Subject {i + 1}: {pf}</li>
+                                // <li key={i}>Subject {i + 1}: {pf}</li>
+                                <li key={i}>{student.subject_names[i]}: {pf}</li>
                               ))}
                             </ul>
                           </div>

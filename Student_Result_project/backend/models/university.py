@@ -150,6 +150,8 @@ class University:
                             "see_marks": student.see_marks,
                             "total_marks": student.total_marks,
                             "pass_fail": student.pass_fail,
+                            "subject_names": student.subject_names,   # ✅ Added
+                            "subject_codes": student.subject_codes,  # ✅ Added
                         })
 
                 except ValueError as e:

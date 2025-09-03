@@ -1,11 +1,9 @@
 # student_report_blueprint.py
 from flask import Blueprint, request, jsonify, send_file
 from io import BytesIO
-import sqlite3
-import os
-import re
+import sqlite3, os, re
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from rapidfuzz import process, fuzz
@@ -13,209 +11,118 @@ from models.paths import db_path
 from models.fetch import sem_subjects
 
 chatbot_bp = Blueprint("student_report", __name__)
-
 SEMESTERS = ["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6"]
 
-# -----------------------------
-# PDF Generation
-# -----------------------------
+# ---------------- PDF Generation ----------------
 def generate_pdf_report(student_data):
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter,
-                            rightMargin=72, leftMargin=72,
-                            topMargin=72, bottomMargin=18)
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
     styles = getSampleStyleSheet()
     story = []
 
-    student_name = student_data.get("student_name", "N/A")
-    semester_results = student_data.get("semester_results", {})
-    comments = student_data.get("comments", "No additional comments provided.")
-
-    story.append(Paragraph("<b>Student Academic Report</b>", styles['h1']))
+    story.append(Paragraph(f"<b>Student Academic Report</b>", styles['Title']))
     story.append(Spacer(1, 12))
-    story.append(Paragraph(f"<b>Student Name:</b> {student_name}", styles['Normal']))
+    story.append(Paragraph(f"<b>Student Name:</b> {student_data['student_name']}", styles['Heading2']))
     story.append(Spacer(1, 12))
 
-    if not semester_results:
-        story.append(Paragraph("<b>No subject results found.</b>", styles['Normal']))
-    else:
-        for sem in sorted(semester_results.keys()):
-            subjects_in_semester = semester_results[sem]
-            if subjects_in_semester:
-                story.append(Spacer(1, 12))
-                story.append(Paragraph(f"<b>--- Semester: {sem} ---</b>", styles['h2']))
-                story.append(Spacer(1, 6))
+    for sem, subjects in student_data['semester_results'].items():
+        story.append(Paragraph(f"<b>{sem}</b>", styles['Heading2']))
+        table_data = [["Subject","Internal","External","Total","Credits","Result"]]
+        for s in subjects:
+            internal = s.get("internal") or 0
+            external = s.get("external") or 0
+            credits = s.get("credits") or 0
+            try:
+                result = "Pass" if (float(internal) >= 18 and float(external) >= 18) or external==0 else "Fail"
+            except:
+                result = "N/A"
+            table_data.append([s.get("subject","N/A"), internal, external, s.get("total","N/A"), credits, result])
 
-                table_data = [['Subject', 'Internal', 'External', 'Total', 'Credits', 'Result']]
-                for res in subjects_in_semester:
-                    internal_val = res.get('internal')
-                    external_val = res.get('external')
-                    total_val = res.get('total')
-                    credits_val = res.get('credits')
-
-                    try:
-                        if float(internal_val) >= 18 and float(external_val) >= 18:
-                            result_status = "Pass"
-                        elif float(credits_val) == 0:
-                            result_status = "Pass"
-                        elif float(external_val) == 0:
-                            result_status = "Pass"
-                        else:
-                            result_status = "Fail"
-                    except (ValueError, TypeError):
-                        result_status = "N/A"
-
-                    table_data.append([
-                        str(res.get('subject', 'N/A')),
-                        str(internal_val if internal_val is not None else 'N/A'),
-                        str(external_val if external_val is not None else 'N/A'),
-                        str(total_val if total_val is not None else 'N/A'),
-                        str(credits_val if credits_val is not None else 'N/A'),
-                        result_status
-                    ])
-
-                table = Table(table_data, colWidths=[2*72, 1*72, 1*72, 1*72, 1*72, 1*72])
-                table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#ADD8E6')),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-                    ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F0F8FF')),
-                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey)
-                ]))
-                story.append(table)
-
-    story.append(Spacer(1, 12))
-    story.append(Paragraph(f"<b>Teacher's Comments:</b> {comments}", styles['Normal']))
-    story.append(Spacer(1, 6))
-    story.append(Paragraph("<i>Generated by the Student Result Chatbot.</i>", styles['Normal']))
+        table = Table(table_data, hAlign='LEFT')
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#ADD8E6')),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+            ('ALIGN', (0,0), (-1,-1), 'CENTER')
+        ]))
+        story.append(table)
+        story.append(Spacer(1,12))
 
     doc.build(story)
     buffer.seek(0)
     return buffer
 
-
-def generate_backlog_pdf(student_name, backlogs, total_backlog_credits):
+# ---------------- Backlog PDF ----------------
+def generate_backlog_pdf(student_name, backlogs, total_credits):
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter,
-                            rightMargin=72, leftMargin=72,
-                            topMargin=72, bottomMargin=18)
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
     styles = getSampleStyleSheet()
     story = []
 
-    story.append(Paragraph(f"<b>Backlog Report - {student_name}</b>", styles['h1']))
-    story.append(Spacer(1, 12))
+    story.append(Paragraph(f"<b>Backlog Report - {student_name}</b>", styles['Title']))
+    story.append(Spacer(1,12))
 
     if not backlogs:
-        story.append(Paragraph("✅ No backlogs found.", styles['Normal']))
+        story.append(Paragraph("<font color='green'><b>⚠️ No backlogs found.</b></font>", styles['Normal']))
     else:
-        story.append(Paragraph(
-            "<font color='red'><b>Warning: Student has backlogs!</b></font>", styles['Normal']
-        ))
-        story.append(Spacer(1, 12))
-
-        if total_backlog_credits > 18:
-            story.append(Paragraph(
-                "<font color='red'><b>⚠️ Backlog credits exceed 18. Risk of year back.</b></font>", styles['Normal']
-            ))
-            story.append(Spacer(1, 12))
+        story.append(Paragraph("<font color='red'><b>⚠️ Student has backlogs!</b></font>", styles['Normal']))
+        story.append(Spacer(1,12))
+        if total_credits > 18:
+            story.append(Paragraph("<font color='red'><b>⚠️ Backlog credits exceed 18. Risk of year back.</b></font>", styles['Normal']))
+            story.append(Spacer(1,12))
 
         for sem, subjects in backlogs.items():
-            story.append(Paragraph(f"<b>Semester: {sem}</b>", styles['h2']))
-            table_data = [["Subject", "Internal", "External", "Credits"]]
-            for sub in subjects:
-                table_data.append([
-                    sub["subject"],
-                    str(sub["internal"]),
-                    str(sub["external"]),
-                    str(sub.get("credits", ""))
-                ])
-            table = Table(table_data, colWidths=[2*72, 1*72, 1*72, 1*72])
+            story.append(Paragraph(f"<b>{sem}</b>", styles['Heading2']))
+            table_data = [["Subject","Internal","External","Credits"]]
+            for s in subjects:
+                table_data.append([s.get("subject","N/A"), s.get("internal",0), s.get("external",0), s.get("credits",0)])
+            table = Table(table_data, hAlign='LEFT')
             table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.red),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#FFCCCC'))
+                ('BACKGROUND',(0,0),(-1,0),colors.red),
+                ('TEXTCOLOR',(0,0),(-1,0),colors.white),
+                ('GRID',(0,0),(-1,-1),0.5,colors.black),
+                ('ALIGN',(0,0),(-1,-1),'CENTER')
             ]))
             story.append(table)
-            story.append(Spacer(1, 12))
+            story.append(Spacer(1,12))
 
-        story.append(Paragraph(f"<b>Total Backlog Credits:</b> {total_backlog_credits}", styles['Normal']))
+        story.append(Paragraph(f"<b>Total Backlog Credits:</b> {total_credits}", styles['Normal']))
 
     doc.build(story)
     buffer.seek(0)
     return buffer
 
-
-# -----------------------------
-# Helpers
-# -----------------------------
-def _calculate_backlogs(student_data):
-    backlogs = {}
-    total_credits = 0.0
-    semester_results = student_data.get("semester_results", {})
-
-    for sem, subjects in semester_results.items():
-        failed_subjects = []
-        for sub in subjects:
-            try:
-                external = float(sub.get("external", 0) or 0)
-                credits = float(sub.get("credits", 0) or 0)
-            except (ValueError, TypeError):
-                continue
-            if external == 0:
-                continue    
-            if credits >= 0 and external < 18:
-                failed_subjects.append(sub)
-                total_credits += credits
-
-        if failed_subjects:
-            backlogs[sem] = failed_subjects
-
-    return backlogs, total_credits
-
-
+# ---------------- Helpers ----------------
 def fetch_student_data_from_db():
     if not os.path.exists(db_path):
         raise FileNotFoundError(f"Database file '{db_path}' not found.")
-
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    student_data_map = {}
+    data_map = {}
 
     for sem in SEMESTERS:
         try:
             cursor.execute(f"SELECT * FROM {sem}")
             rows = cursor.fetchall()
             columns = [desc[0] for desc in cursor.description]
-
-            student_name_col = "student_name"
-            internal_cols = [col for col in columns if col.endswith('_INTERNALS')]
-            subject_codes = [re.sub(r'_INTERNALS$', '', col) for col in internal_cols]
+            internal_cols = [c for c in columns if c.endswith("_INTERNALS")]
+            subjects = [re.sub("_INTERNALS$","",c) for c in internal_cols]
 
             for row in rows:
                 row_dict = dict(zip(columns, row))
-                student_full_name_raw = str(row_dict.get(student_name_col, "")).strip()
-                student_full_name = student_full_name_raw.lower()
-                if not student_full_name:
+                student_name_raw = str(row_dict.get("student_name","")).strip()
+                student_name_key = student_name_raw.lower()
+                if not student_name_key:
                     continue
 
-                if student_full_name not in student_data_map:
-                    student_data_map[student_full_name] = {
-                        "student_name": student_full_name_raw,
-                        "semester_results": {},
-                        "comments": "No additional comments provided."
-                    }
+                if student_name_key not in data_map:
+                    data_map[student_name_key] = {"student_name": student_name_raw, "semester_results": {}}
 
-                if sem not in student_data_map[student_full_name]["semester_results"]:
-                    student_data_map[student_full_name]["semester_results"][sem] = []
+                if sem not in data_map[student_name_key]["semester_results"]:
+                    data_map[student_name_key]["semester_results"][sem] = []
 
-                for subj in subject_codes:
-                    subjects_list = student_data_map[student_full_name]["semester_results"][sem]
-                    subjects_list.append({
-                        "subject": sem_subjects.get(sem,"unknown sem").get(subj, "Unknown subject") ,
+                for subj in subjects:
+                    data_map[student_name_key]["semester_results"][sem].append({
+                        "subject": sem_subjects.get(sem, {}).get(subj,"Unknown"),
                         "internal": row_dict.get(f"{subj}_INTERNALS"),
                         "external": row_dict.get(f"{subj}_EXTERNALS"),
                         "total": row_dict.get(f"{subj}_TOTAL"),
@@ -223,19 +130,34 @@ def fetch_student_data_from_db():
                     })
         except sqlite3.OperationalError:
             continue
-    conn.close()
-    return student_data_map
 
+    conn.close()
+    return data_map
+
+def _calculate_backlogs(student_data):
+    backlogs = {}
+    total_credits = 0.0
+    for sem, subjects in student_data.get("semester_results", {}).items():
+        failed = []
+        for s in subjects:
+            try:
+                external = float(s.get("external") or 0)
+                credits = float(s.get("credits") or 0)
+            except:
+                continue
+            if external != 0 and external < 18:
+                failed.append(s)
+                total_credits += credits
+        if failed:
+            backlogs[sem] = failed
+    return backlogs, total_credits
 
 def _fuzzy_find_student(name, students, cutoff=70):
     lowered_map = {s.lower(): s for s in students}
     match = process.extractOne(name.lower(), list(lowered_map.keys()), scorer=fuzz.token_sort_ratio, score_cutoff=cutoff)
     return lowered_map[match[0]] if match else None
 
-
-# -----------------------------
-# API Routes
-# -----------------------------
+# ---------------- Routes ----------------
 @chatbot_bp.route("/students", methods=["GET"])
 def list_students():
     try:
@@ -244,51 +166,35 @@ def list_students():
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 404
 
-
 @chatbot_bp.route("/report/<student_query>", methods=["GET"])
 def get_student_report(student_query):
-    try:
-        student_data_map = fetch_student_data_from_db()
-        students = student_data_map.keys()
-
-        matched_name = _fuzzy_find_student(student_query, students)
-        if not matched_name:
-            return jsonify({"error": "Student not found"}), 404
-
-        student_data = student_data_map[matched_name]
-        backlogs, total_credits = _calculate_backlogs(student_data)
-
-        return jsonify({
-            "student_name": student_data["student_name"],
-            "semester_results": student_data["semester_results"],
-            "backlogs": backlogs,
-            "total_backlog_credits": total_credits
-        })
-    except FileNotFoundError as e:
-        return jsonify({"error": str(e)}), 404
-
+    students = fetch_student_data_from_db()
+    matched_name = _fuzzy_find_student(student_query, students.keys())
+    if not matched_name:
+        return jsonify({"error":"Student not found"}),404
+    student_data = students[matched_name]
+    backlogs, total_credits = _calculate_backlogs(student_data)
+    return jsonify({
+        "student_name": student_data["student_name"],
+        "semester_results": student_data["semester_results"],
+        "backlogs": backlogs,
+        "total_backlog_credits": total_credits
+    })
 
 @chatbot_bp.route("/report/<student_query>/pdf", methods=["GET"])
 def download_pdf_report(student_query):
-    try:
-        student_data_map = fetch_student_data_from_db()
-        students = student_data_map.keys()
+    students = fetch_student_data_from_db()
+    matched_name = _fuzzy_find_student(student_query, students.keys())
+    if not matched_name:
+        return jsonify({"error":"Student not found"}),404
+    student_data = students[matched_name]
+    report_type = request.args.get("type","full")
+    if report_type=="backlog":
+        backlogs, total_credits = _calculate_backlogs(student_data)
+        pdf_buffer = generate_backlog_pdf(student_data["student_name"], backlogs, total_credits)
+        filename = f"{student_data['student_name'].replace(' ','_')}_Backlog_Report.pdf"
+    else:
+        pdf_buffer = generate_pdf_report(student_data)
+        filename = f"{student_data['student_name'].replace(' ','_')}_Semester_Report.pdf"
 
-        matched_name = _fuzzy_find_student(student_query, students)
-        if not matched_name:
-            return jsonify({"error": "Student not found"}), 404
-
-        student_data = student_data_map[matched_name]
-        report_type = request.args.get("type", "full")  # ?type=backlog
-
-        if report_type == "backlog":
-            backlogs, total_credits = _calculate_backlogs(student_data)
-            pdf_buffer = generate_backlog_pdf(student_data["student_name"], backlogs, total_credits)
-            filename = f"{student_data['student_name'].replace(' ', '_')}_Backlog_Report.pdf"
-        else:
-            pdf_buffer = generate_pdf_report(student_data)
-            filename = f"{student_data['student_name'].replace(' ', '_')}_Semester_Report.pdf"
-
-        return send_file(pdf_buffer, mimetype="application/pdf", as_attachment=True, download_name=filename)
-    except FileNotFoundError as e:
-        return jsonify({"error": str(e)}), 404
+    return send_file(pdf_buffer, mimetype="application/pdf", as_attachment=True, download_name=filename)
