@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import API_BASE from "./config";
 import LogoutButton from "./LogoutButton";
+import Confetti from "react-confetti";
+
 
 export default function ChatBot() {
     const [messages, setMessages] = useState([
@@ -15,6 +17,8 @@ export default function ChatBot() {
     const [openSemesters, setOpenSemesters] = useState({});
     const [openBacklogs, setOpenBacklogs] = useState({});
     const [openAlphabet, setOpenAlphabet] = useState({});
+    //new confetti
+    const [showConfetti, setShowConfetti] = useState(false);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -99,6 +103,13 @@ export default function ChatBot() {
                 speak(data.error);
                 return;
             }
+            if (totalBacklogCredits === 0) {
+                speechText += "No backlogs. Excellent!";
+                setShowConfetti(true);
+
+                // stop after 2 seconds
+                setTimeout(() => setShowConfetti(false), 2000);
+            }
 
             // Add report, semesters, backlogs, downloads
             setMessages(prev => [...prev,
@@ -162,6 +173,7 @@ export default function ChatBot() {
 
     return (
         <div className="flex flex-col items-center w-full h-screen">
+            {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} />}
             <div className="flex justify-between w-full max-w-3xl p-2 shadow-sm">
                 <h1 className="font-semibold text-lg">🎓 Student Result Chatbot</h1>
                 <LogoutButton />
