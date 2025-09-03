@@ -51,7 +51,7 @@ class Teacher(db.Model):
     password = db.Column(db.String(128), nullable=True)
 
     # Contact info
-    email = db.Column(db.String(100), nullable=True, default = f"{name}@teacher.com")
+    email = db.Column(db.String(100), nullable=True, default = f"chetan16ck@gmaail.com")
     phone = db.Column(db.String(20), nullable=True, default = "123456789")
 
 

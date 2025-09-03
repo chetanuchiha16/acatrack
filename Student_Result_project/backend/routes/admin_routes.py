@@ -124,7 +124,7 @@ def generate_accounts():
         # --- Student account ---
         plain_student = f"{_safe_seed(name)}{usn[-3:]}"
         pw_hash_student = bcrypt.generate_password_hash(password=plain_student).decode("utf-8")
-        student = StudentAuth(username=usn, name=name, password=pw_hash_student, student_email = f"{name}@student.com", student_phno = "123456789")
+        student = StudentAuth(username=usn, name=name, password=pw_hash_student, student_email = f"chetan16ck@gmail.com", student_phno = "123456789")
         db.session.add(student)
         out.write(f"{usn},{name},{plain_student},{pw_hash_student},student,\n")
 
@@ -138,7 +138,7 @@ def generate_accounts():
                 password=pw_hash_parent,
                 student_usn=usn,
                 name=f"Parent of {student.name}" if student else "Parent",
-                email=f"{student.name}@parent.com",
+                email=f"chetan16ck@gmail.com",
                 phone="123456789"
             )
 
