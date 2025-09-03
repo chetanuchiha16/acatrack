@@ -1,11 +1,9 @@
-from flask import Blueprint, request, jsonify, send_from_directory
-from models import Mentor, MentorStudent, StudentAuth
-from models import Student  # reuse your existing Student class logic
-from visuals import create_student_report
+from models import Mentor, StudentAuth
+from models import Student
 from models.paths import db_path, pdf_dir
-import os
-import io
-import base64
+from visuals import create_student_report
+from flask import Blueprint, request, jsonify, send_from_directory
+import os, io, base64
 
 mentor_bp = Blueprint('mentor', __name__)
 
@@ -22,18 +20,16 @@ def get_mentor_students():
         mentor = Mentor.query.filter_by(id=mentor_id).first()
         if not mentor:
             return jsonify({"error": "Mentor not found"}), 404
-        
+
+        # ✅ get students directly from StudentAuth (new design)
+        students = StudentAuth.query.filter_by(mentor_id=mentor_id).all()
+
         results = []
 
-        for ms in mentor.students:
-            usn = ms.student_usn
-            # print(f"Fetching student data for USN: {usn}, Semester: {semester}")
-
+        for s in students:
             try:
-                student = Student(usn=usn, semester=semester, db_path=db_path)
-                # print("student name: ", student.name)
+                student = Student(usn=s.username, semester=semester, db_path=db_path)
 
-                # Generate PDF
                 filename = f"{student.name}_{semester}_report.pdf"
                 file_path = os.path.join(pdf_dir, filename)
                 create_student_report(student, file_path=file_path)
@@ -66,45 +62,13 @@ def get_mentor_students():
                 })
 
             except Exception as e:
-                print(f"[WARNING] Student data not found for USN {usn}: {e}")
+                print(f"[WARNING] Student data not found for USN {s.username}: {e}")
                 results.append({
-                    "usn": usn,
+                    "usn": s.username,
                     "error": "Student data not found"
                 })
 
         return jsonify(results)
-
-
-    except Exception as e:
-        print(f"[ERROR] {e}")
-        return jsonify({"error": str(e)}), 400
-
-
-# Route to download mentee PDF reports
-@mentor_bp.route("/auth/Staff/Mentor/report/<filename>", methods=["GET"])
-def download_mentee_report(filename):
-    return send_from_directory(pdf_dir, filename, as_attachment=True)
-
-
-# Route to get chart of a specific mentee
-@mentor_bp.route("/auth/Staff/Mentor/chart", methods=["GET"])
-def get_mentee_chart():
-    usn = request.args.get("usn")
-    semester = request.args.get("semester")
-
-    if not usn or not semester:
-        return jsonify({"error": "usn and semester are required"}), 400
-
-    try:
-        student = Student(usn=usn, semester=semester, db_path=db_path)
-        fig = student.plot_subject_marks()[0]
-
-        buf = io.BytesIO()
-        fig.savefig(buf, format="png")
-        buf.seek(0)
-        img_base64 = base64.b64encode(buf.read()).decode("utf-8")
-
-        return jsonify({"image": f"data:image/png;base64,{img_base64}"})
 
     except Exception as e:
         print(f"[ERROR] {e}")

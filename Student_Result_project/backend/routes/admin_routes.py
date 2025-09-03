@@ -8,10 +8,11 @@ FEATURES
 - Returns a downloadable CSV of (username,name,plain_password,hash)
 - Upload .xlsx or .csv of emails; file is saved to models.paths.email_excel_path
 - Validates required columns and inserts new rows into StudentAuth table
-- Upload mentor Excel; validates and inserts into Mentor + MentorStudent tables
+- Upload mentor Excel; validates and inserts into Mentor  tables
 """
 from __future__ import annotations
 
+from werkzeug.security import generate_password_hash  # add this import
 import io
 import os
 import random
@@ -23,7 +24,7 @@ from flask import Blueprint, current_app, jsonify, request, send_file
 from werkzeug.utils import secure_filename
 
 from app_init import bcrypt
-from models import Teacher, StudentAuth, Mentor, MentorStudent, db
+from models import Teacher, StudentAuth, Mentor, ParentAuth, db
 from models.paths import db_path, email_excel_path, mentor_excel_path
 
 # ---------- Blueprint ----------
@@ -88,6 +89,7 @@ def health():
     return jsonify({"status": "ok"})
 
 
+
 @admin_bp.route("/generate-accounts", methods=["POST"])
 def generate_accounts():
     """Create student/teacher accounts and return a downloadable CSV."""
@@ -103,12 +105,13 @@ def generate_accounts():
     if mode == "all":
         StudentAuth.query.delete()
         Teacher.query.delete()
+        ParentAuth.query.delete()
         db.session.commit()
 
     out = io.StringIO()
-    out.write("username,name,plain_password,password_hash,role\n")
+    out.write("username,name,plain_password,password_hash,role,linked_student\n")
 
-    # Students
+    # Students + Parents
     for usn, name in students:
         if not usn:
             continue
@@ -118,10 +121,29 @@ def generate_accounts():
         if mode == "missing" and StudentAuth.query.filter_by(username=usn).first():
             continue
 
-        plain = f"{_safe_seed(name)}{usn[-3:]}"
-        pw_hash = bcrypt.generate_password_hash(password=plain).decode("utf-8")
-        db.session.add(StudentAuth(username=usn, name=name, password=pw_hash))
-        out.write(f"{usn},{name},{plain},{pw_hash},student\n")
+        # --- Student account ---
+        plain_student = f"{_safe_seed(name)}{usn[-3:]}"
+        pw_hash_student = bcrypt.generate_password_hash(password=plain_student).decode("utf-8")
+        student = StudentAuth(username=usn, name=name, password=pw_hash_student, student_email = f"{name}@student.com", student_phno = "123456789")
+        db.session.add(student)
+        out.write(f"{usn},{name},{plain_student},{pw_hash_student},student,\n")
+
+        # --- Parent account (placeholder) ---
+        parent_username = f"{usn}_parent"
+        if not ParentAuth.query.filter_by(username=parent_username).first():
+            plain_parent = "default123"
+            pw_hash_parent = bcrypt.generate_password_hash(password=plain_parent).decode("utf-8")
+            new_parent = ParentAuth(
+                username=parent_username,
+                password=pw_hash_parent,
+                student_usn=usn,
+                name=f"Parent of {student.name}" if student else "Parent",
+                email=f"{student.name}@parent.com",
+                phone="123456789"
+            )
+
+            db.session.add(new_parent)
+            out.write(f"{parent_username},Parent of {name},{plain_parent},{pw_hash_parent},parent,{usn}\n")
 
     # Teachers
     for (teacher_name,) in teachers:
@@ -130,11 +152,11 @@ def generate_accounts():
             continue
 
         username = _unique_teacher_username()
-        plain = f"{_safe_seed(teacher_name.split(" ",1)[1])}{username[-3:]}"
+        plain = f"{_safe_seed(teacher_name.split(' ',1)[1])}{username[-3:]}"
         pw_hash = bcrypt.generate_password_hash(password=plain).decode("utf-8")
-        if not Teacher.query.filter_by(name = teacher_name).first(): 
+        if not Teacher.query.filter_by(name=teacher_name).first(): 
             db.session.add(Teacher(username=username, name=teacher_name, password=pw_hash))
-            out.write(f"{username},{teacher_name},{plain},{pw_hash},teacher\n")
+            out.write(f"{username},{teacher_name},{plain},{pw_hash},teacher,\n")
 
     db.session.commit()
 
@@ -145,6 +167,7 @@ def generate_accounts():
         as_attachment=True,
         download_name="generated_passwords.csv",
     )
+
 
 
 @admin_bp.route("/upload-emails", methods=["POST"])
@@ -188,27 +211,62 @@ def upload_emails():
             continue
 
         student = StudentAuth.query.filter_by(username=usn).first()
+        
+
         if student:
-            # update existing record
-            # student.name = str(row["student_name"]).strip()
-            student.parent_email = str(row["Parent_Email"]).strip()
+            # update existing student record
             student.student_email = str(row["Student_Email"]).strip()
-            student.parent_phno = str(row.get("Parent_PHNO", "")).strip()
             student.student_phno = str(row.get("Student_PHNO", "")).strip()
-            count_updated += 1
-        else:
-            # insert new record
-            db.session.add(
-                StudentAuth(
-                    username=usn,
-                    name=str(row["student_name"]).strip(),
-                    parent_email=str(row["Parent_Email"]).strip(),
-                    student_email=str(row["Student_Email"]).strip(),
-                    parent_phno=str(row.get("Parent_PHNO", "")).strip(),
-                    student_phno=str(row.get("Student_PHNO", "")).strip(),
+
+            # update parent (via relationship)
+            if student.parent_account:
+                student.parent_account.email = str(row["Parent_Email"]).strip()
+                student.parent_account.phone = str(row.get("Parent_PHNO", "")).strip()
+            else:
+                # create parent if missing
+                parent_username = f"{student.username}_parent"
+                plain_parent_pw = "default123"
+                pw_hash = bcrypt.generate_password_hash(plain_parent_pw).decode("utf-8")
+
+                parent = ParentAuth(
+                    username=parent_username,
+                    password=pw_hash,
+                    email=str(row["Parent_Email"]).strip(),
+                    phone=str(row.get("Parent_PHNO", "")).strip(),
+                    student_usn=student.username
                 )
+                db.session.add(parent)
+
+            count_updated += 1
+
+        else:
+            # insert new student + parent record
+            new_student = StudentAuth(
+                username=usn,
+                name=str(row["student_name"]).strip(),
+                student_email=str(row["Student_Email"]).strip(),
+                student_phno=str(row.get("Student_PHNO", "")).strip(),
             )
+            db.session.add(new_student)
+
+            parent_username = f"{usn}_parent"
+            plain_parent_pw = "default123"
+            pw_hash = bcrypt.generate_password_hash(plain_parent_pw).decode("utf-8")
+
+            new_parent = ParentAuth(
+                username=parent_username,
+                password=pw_hash,
+                email=str(row["Parent_Email"]).strip(),
+                phone=str(row.get("Parent_PHNO", "")).strip(),
+                student_usn=usn,
+                name=str(row.get("Parent_Name", f"Parent of {row['student_name']}")).strip(),
+                relation=str(row.get("Parent_Relation", "Guardian")).strip()
+            )
+
+            db.session.add(new_parent)
+
             count_inserted += 1
+
 
     db.session.commit()
     return jsonify({
@@ -265,12 +323,17 @@ def upload_mentors():
             if mentor is None:
                 mentor = Mentor(name=mentor_name)
                 db.session.add(mentor)
+                count_mentors += 1
                 db.session.flush()
             mentor_cache[mentor_name] = mentor
 
         # Add student mapping
-        if not MentorStudent.query.filter_by(mentor_id=mentor.id, student_usn=student_usn).first():
-            db.session.add(MentorStudent(mentor_id=mentor.id, student_usn=student_usn))
+        # Add student mapping (Option 2 style)
+        student = StudentAuth.query.filter_by(username=student_usn).first()
+        if student:
+            student.mentor_id = mentor.id
+            count_mappings += 1
+            db.session.commit()
 
         # Optionally assign teacher with the same name as mentor
         teacher = Teacher.query.filter_by(name=mentor_name).first()

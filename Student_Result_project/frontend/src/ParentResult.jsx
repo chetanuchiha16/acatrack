@@ -1,58 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Result from "./Result";
 import { semesterOptions } from "./config";
 import jssLogo from "./assets/jssLogo.png";
-
-const languages = {
-  en: {
-    title: "Parent Dashboard",
-    usn: "Student USN",
-    enterUsn: "Enter USN",
-    semester: "Semester",
-    result: "Result",
-    info: "Enter your child’s USN and choose Result to view performance.",
-    table: "Table",
-    card: "Cards",
-  },
-  hi: {
-    title: "अभिभावक डैशबोर्ड",
-    usn: "छात्र का यूएसएन",
-    enterUsn: "यूएसएन दर्ज करें",
-    semester: "सेमेस्टर",
-    result: "परिणाम",
-    info: "अपने बच्चे का यूएसएन दर्ज करें और परिणाम देखने के लिए चुनें।",
-    table: "टेबल",
-    card: "कार्ड",
-  },
-  kn: {
-    title: "ಪಾಲಕರ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
-    usn: "ವಿದ್ಯಾರ್ಥಿ ಯುಎಸ್ಎನ್",
-    enterUsn: "ಯುಎಸ್ಎನ್ ನಮೂದಿಸಿ",
-    semester: "ಸೆಮಿಸ್ಟರ್",
-    result: "ಫಲಿತಾಂಶ",
-    info: "ನಿಮ್ಮ ಮಗುವಿನ ಯುಎಸ್ಎನ್ ನಮೂದಿಸಿ ಮತ್ತು ಫಲಿತಾಂಶ ಆಯ್ಕೆಮಾಡಿ.",
-    table: "ಕೋಷ್ಟಕ",
-    card: "ಕಾರ್ಡ್",
-  },
-};
+import { useTranslation } from "react-i18next";
+import useStudentStore from "./parent_student_details";
 
 export default function ParentResult() {
-  const [usn, setUsn] = useState("");
   const [sem, setSem] = useState("");
   const [view, setView] = useState("table");
-  const [lang, setLang] = useState("en");
-  const [selectedTab, setSelectedTab] = useState("");
+  const [selectedTab, setSelectedTab] = useState("result");
 
-  const t = languages[lang];
+  const { t, i18n } = useTranslation();
 
-  const isReady = selectedTab === "result" && usn.trim() !== "" && sem !== "";
+  // Zustand store
+  const { studentData, loading, fetchStudentData } = useStudentStore();
+
+  // Fetch data on mount
+  useEffect(() => {
+    fetchStudentData();
+  }, [fetchStudentData]);
+
+  // Set default semester when data arrives
+  useEffect(() => {
+    if (studentData && semesterOptions.length > 0) {
+      setSem(semesterOptions[semesterOptions.length - 1]);
+    }
+  }, [studentData]);
+
+  const isReady =
+    selectedTab === "result" && studentData?.student?.usn && sem !== "";
+
+  const changeLanguage = (lng) => i18n.changeLanguage(lng);
+
+  if (loading) return <div>Loading...</div>;
+  if (!studentData) return <div>{t("noData", "No data available")}</div>;
+
+  console.log(studentData);
 
   return (
     <main className="min-h-screen w-full bg-gray-100 dark:bg-gray-900 px-4 sm:px-6 lg:px-8 py-6">
       {/* Header */}
       <div className="max-w-6xl mx-auto w-full mb-6">
         <div className="flex items-center justify-between">
-          {/* Logo */}
           <div className="flex items-center">
             <img
               src={jssLogo}
@@ -61,84 +50,47 @@ export default function ParentResult() {
             />
           </div>
 
-          {/* Title */}
           <div className="text-[22px] sm:text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center">
-            {t.title}
+            {t("title")}
           </div>
-          
 
-          {/* Language */}
           <div>
             <select
-              value={lang}
-              onChange={(e) => setLang(e.target.value)}
-              className="px-2 py-1 border rounded-md text-sm dark:bg-gray-800 dark:text-gray-100 "
+              value={i18n.language}
+              onChange={(e) => changeLanguage(e.target.value)}
+              className="px-2 py-1 border rounded-md text-sm dark:bg-gray-800 dark:text-gray-100"
             >
-              <option value="en">English&nbsp;&nbsp;&nbsp;&nbsp;</option>
-              <option value="hi">हिंदी&nbsp;&nbsp;&nbsp;&nbsp;</option>
-              <option value="kn">ಕನ್ನಡ&nbsp;&nbsp;&nbsp;&nbsp;</option>
+              <option value="en">English</option>
+              <option value="hi">हिंदी</option>
+              <option value="kan">ಕನ್ನಡ</option>
             </select>
           </div>
         </div>
       </div>
-       {/* Divider */}
-            <div className="w-[95%] mx-auto h-[2px] bg-gray-300 my-4 mt-[-4] rounded shadow-sm"></div>
+
+      {/* Divider */}
+      <div className="w-[95%] mx-auto h-[2px] bg-gray-300 my-4 mt-[-4] rounded shadow-sm"></div>
 
       {/* Page container */}
       <div className="max-w-4xl mx-auto w-full space-y-6">
-        {/* Student USN input card */}
-        <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 shadow-lg">
-          <div>
-            <label className="block mb-2 text-lg font-medium text-gray-700 dark:text-gray-300">
-              {t.usn}
-            </label>
-            <input
-              type="text"
-              value={usn}
-              onChange={(e) => setUsn(e.target.value.toUpperCase())}
-              placeholder={t.enterUsn}
-              className="w-full px-4 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
-            />
-          </div>
-
-          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-            {t.info}
-          </p>
-        </section>
-
-        {/* Tabs + semester selector */}
         <section className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          {/* Tabs */}
           <div className="w-full flex justify-center sm:justify-start">
             <nav
               className="inline-flex rounded-md bg-gray-50 dark:bg-[#0b1220] border border-gray-200 dark:border-gray-700 overflow-hidden"
               role="tablist"
-            >
-              <button
-                onClick={() => setSelectedTab("result")}
-                className={`px-3 py-2 text-xs sm:text-sm hover:scale-101 transition ${
-                  selectedTab === "result"
-                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
-                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                }`}
-              >
-                {t.result}
-              </button>
-            </nav>
+            ></nav>
           </div>
 
-          {/* Semester + view */}
           <div className="w-full sm:w-auto flex items-center gap-3">
             {selectedTab === "result" ? (
               <>
-                {/* Semester Select */}
                 <label className="relative block w-40">
                   <select
                     value={sem}
                     onChange={(e) => setSem(e.target.value)}
                     className="appearance-none w-full px-3 py-2 rounded-md bg-white dark:bg-[#0f1720] text-sm text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">{t.semester}</option>
+                    <option value="">{t("semester")}</option>
                     {semesterOptions.map((s) => (
                       <option key={s} value={s}>
                         {s}
@@ -147,7 +99,6 @@ export default function ParentResult() {
                   </select>
                 </label>
 
-                {/* Cards / Table Toggle */}
                 <div className="overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 shadow-sm hidden sm:inline-flex">
                   <button
                     onClick={() => setView("cards")}
@@ -157,7 +108,7 @@ export default function ParentResult() {
                         : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                     }`}
                   >
-                    {t.card}
+                    {t("card")}
                   </button>
                   <button
                     onClick={() => setView("table")}
@@ -167,22 +118,25 @@ export default function ParentResult() {
                         : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                     }`}
                   >
-                    {t.table}
+                    {t("table")}
                   </button>
                 </div>
               </>
             ) : (
               <div className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
-                {t.info}
+                {t("info")}
               </div>
             )}
           </div>
         </section>
 
-        {/* Result content */}
         <section>
           {isReady && (
-            <Result usn={usn.toUpperCase()} semester={sem} view={view} />
+            <Result
+              usn={studentData.student.usn}
+              semester={sem}
+              view={view}
+            />
           )}
         </section>
       </div>

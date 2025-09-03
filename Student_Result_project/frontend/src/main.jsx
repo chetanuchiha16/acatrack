@@ -22,7 +22,9 @@ import MentorDashboard from "./MentorDashboard.jsx";
 import API_BASE from "./config.js";
 import ParentDashboard from "./ParentDashboard.jsx";
 import ParentResult from "./ParentResult.jsx";
+
 function RootLayout({ children }) {
+  
   return (
     <>
       <HiddenShortcut />

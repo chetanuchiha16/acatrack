@@ -32,7 +32,7 @@ export const subjectMapping = {
         BCS303: "Operating Systems",
         BCS304: "Data Structures and Applications",
         BCSL305: "Data Structures Lab",
-        BSCK307: "Soft Skills and Aptitude",
+        BSCK307: "Social Connect and Responsibility",
         BNSK359: "National Service Scheme (NSS)",
         BCS306A: "Object Oriented Programming with Java",
         BCS358D: "Data Visualization with Python",
