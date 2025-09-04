@@ -2,126 +2,158 @@ import { useEffect, useState } from "react";
 import API_BASE from "./config";
 
 export default function MenteeRecieveEmails({ usn }) {
-    const [messages, setMessages] = useState([]);
-    const [selectedMessage, setSelectedMessage] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState([]);
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [meetings, setMeetings] = useState([]);
+  const [loadingMessages, setLoadingMessages] = useState(true);
+  const [loadingMeetings, setLoadingMeetings] = useState(true);
 
-    // Fetch all messages
-    const fetchMessages = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch(`${API_BASE}/student/${usn}/messages`);
-            const data = await res.json();
-            setMessages(data);
-        } catch (err) {
-            console.error("Error fetching messages:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
+  // Fetch inbox messages
+  const fetchMessages = async () => {
+    setLoadingMessages(true);
+    try {
+      const res = await fetch(`${API_BASE}/student/${usn}/messages`);
+      const data = await res.json();
+      setMessages(data);
+    } catch (err) {
+      console.error("Error fetching messages:", err);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
 
-    // Fetch single message detail
-    const fetchMessageDetail = async (msgId) => {
-        try {
-            const res = await fetch(
-                `${API_BASE}/student/${usn}/messages/${msgId}`
-            );
-            if (res.ok) {
-                const data = await res.json();
-                setSelectedMessage(data);
-            }
-        } catch (err) {
-            console.error("Error fetching message detail:", err);
-        }
-    };
+  // Fetch meetings for mentee
+  const fetchMeetings = async () => {
+    setLoadingMeetings(true);
+    try {
+      const res = await fetch(`${API_BASE}/auth/Student/Mentee/meeting/${usn}`);
+      const data = await res.json();
+      setMeetings(data);
+    } catch (err) {
+      console.error("Error fetching meetings:", err);
+    } finally {
+      setLoadingMeetings(false);
+    }
+  };
 
-    // Mark message as read
-    const markAsRead = async (msgId) => {
-        try {
-            await fetch(`${API_BASE}/student/${usn}/messages/${msgId}/read`, {
-                method: "POST",
-            });
-            fetchMessages(); // refresh list
-        } catch (err) {
-            console.error("Error marking as read:", err);
-        }
-    };
+  const fetchMessageDetail = async (msgId) => {
+    try {
+      const res = await fetch(`${API_BASE}/student/${usn}/messages/${msgId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedMessage(data);
+      }
+    } catch (err) {
+      console.error("Error fetching message detail:", err);
+    }
+  };
 
-    useEffect(() => {
-        fetchMessages();
-    }, [usn]);
+  const markAsRead = async (msgId) => {
+    try {
+      await fetch(`${API_BASE}/student/${usn}/messages/${msgId}/read`, { method: "POST" });
+      fetchMessages();
+    } catch (err) {
+      console.error("Error marking as read:", err);
+    }
+  };
 
-    return (
-        <div className="w-full max-w-7xl mx-auto flex flex-col rounded-xl p-4 h-[80vh]">
-            <div className="flex flex-col md:flex-row gap-6 p-6 min-h-full bg-white shadow-xl rounded-2xl">
-                {/* Left: Messages list */}
-                <div className="w-full md:w-1/3 rounded-2xl bg-white border border-gray-200 shadow-sm overflow-hidden">
-                    <h2 className="text-lg font-semibold p-4 bg-gray-50 border-b border-gray-200 text-gray-800">
-                        Inbox
-                    </h2>
-                    {loading ? (
-                        <p className="p-4 text-gray-500">Loading messages...</p>
-                    ) : messages.length === 0 ? (
-                        <p className="p-4 text-gray-500">No messages yet</p>
-                    ) : (
-                        <ul className="divide-y divide-gray-100">
-                            {messages.map((msg) => (
-                                <li
-                                    key={msg.id}
-                                    className={`p-4 cursor-pointer transition rounded-md ${
-                                        selectedMessage?.id === msg.id
-                                            ? "bg-emerald-50 border-l-4 border-emerald-400"
-                                            : "hover:bg-gray-50"
-                                    }`}
-                                    onClick={() => fetchMessageDetail(msg.id)}
-                                >
-                                    <p className="font-medium text-gray-800 truncate">
-                                        {msg.subject || "No subject"}
-                                    </p>
-                                    <p className="text-sm text-gray-500 truncate">
-                                        {msg.message?.slice(0, 50) ||
-                                            "No content"}
-                                    </p>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
+  useEffect(() => {
+    fetchMessages();
+    fetchMeetings();
+  }, [usn]);
 
-                {/* Right: Message detail */}
-                <div className="w-full md:flex-1 rounded-2xl bg-white border border-gray-200 shadow-sm p-8 flex flex-col justify-between">
-                    {selectedMessage ? (
-                        <>
-                            <div>
-                                <h3 className="text-2xl font-bold mb-2 text-gray-900">
-                                    {selectedMessage.subject || "No subject"}
-                                </h3>
-                                <p className="text-sm text-gray-500 mb-6">
-                                    From:{" "}
-                                    {selectedMessage.mentor_name || "Unknown"}
-                                </p>
-                                <div className="bg-gray-50 p-4 rounded-xl text-gray-700 whitespace-pre-line shadow-inner">
-                                    {selectedMessage.message}
-                                </div>
-                            </div>
-                            <div className="mt-6">
-                                <button
-                                    onClick={() =>
-                                        markAsRead(selectedMessage.id)
-                                    }
-                                    className="px-6 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 transition shadow-md"
-                                >
-                                    Mark as Read
-                                </button>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="text-center text-gray-400 flex-1 flex items-center justify-center">
-                            <p>Select a message to view</p>
-                        </div>
-                    )}
-                </div>
-            </div>
+  return (
+    <div className="w-full max-w-7xl mx-auto p-4 sm:p-6">
+      <div className="w-full rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md flex flex-col md:flex-row min-h-[70vh] overflow-hidden">
+        
+        {/* Left Panel - Inbox & Meetings */}
+        <div className="w-full md:w-1/3 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+          
+          {/* Inbox */}
+          <h2 className="text-sm sm:text-lg font-semibold text-blue-600 dark:text-blue-400 p-4 border-b border-gray-200 dark:border-gray-700">
+            Inbox
+          </h2>
+          {loadingMessages ? (
+            <p className="p-4 text-gray-500 dark:text-gray-400">Loading messages...</p>
+          ) : messages.length === 0 ? (
+            <p className="p-4 text-gray-500 dark:text-gray-400">No messages yet</p>
+          ) : (
+            <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+              {messages.map((msg) => (
+                <li
+                  key={msg.id}
+                  className={`p-4 cursor-pointer transition ${
+                    selectedMessage?.id === msg.id
+                      ? "bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500"
+                      : "hover:bg-gray-50 dark:hover:bg-gray-700"
+                  }`}
+                  onClick={() => fetchMessageDetail(msg.id)}
+                >
+                  <p className="font-medium text-gray-800 dark:text-gray-200 truncate">
+                    {msg.subject || "No subject"}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                    {msg.message?.slice(0, 50) || "No content"}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Meetings */}
+          <h2 className="text-sm sm:text-lg font-semibold text-green-600 dark:text-green-400 p-4 border-t border-gray-200 dark:border-gray-700">
+            Meetings
+          </h2>
+          {loadingMeetings ? (
+            <p className="p-4 text-gray-500 dark:text-gray-400">Loading meetings...</p>
+          ) : meetings.length === 0 ? (
+            <p className="p-4 text-gray-500 dark:text-gray-400">No meetings scheduled</p>
+          ) : (
+            <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+              {meetings
+                .sort((a, b) => new Date(a.date) - new Date(b.date))
+                .map((m) => (
+                  <li key={m.id} className="p-4 border-b border-gray-100 dark:border-gray-700">
+                    <p className="font-medium text-gray-800 dark:text-gray-200 truncate">{m.title}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{new Date(m.date).toLocaleDateString()}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{m.agenda}</p>
+                  </li>
+                ))}
+            </ul>
+          )}
         </div>
-    );
+
+        {/* Right Panel - Message Detail */}
+        <div className="flex-1 p-6 flex flex-col justify-between">
+          {selectedMessage ? (
+            <>
+              <div>
+                <h3 className="text-lg sm:text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+                  {selectedMessage.subject || "No subject"}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                  From: {selectedMessage.mentor_name || "Unknown"}
+                </p>
+                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-xl text-gray-700 dark:text-gray-200 whitespace-pre-line shadow-inner">
+                  {selectedMessage.message}
+                </div>
+              </div>
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => markAsRead(selectedMessage.id)}
+                  className="inline-block px-5 py-2 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
+                >
+                  ✅ Mark as Read
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
+              <p>Select a message to view</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
