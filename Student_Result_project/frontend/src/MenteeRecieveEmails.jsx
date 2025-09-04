@@ -4,10 +4,13 @@ import API_BASE from "./config";
 export default function MenteeRecieveEmails({ usn }) {
   const [messages, setMessages] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [meetings, setMeetings] = useState([]);
+  const [loadingMessages, setLoadingMessages] = useState(true);
+  const [loadingMeetings, setLoadingMeetings] = useState(true);
 
+  // Fetch inbox messages
   const fetchMessages = async () => {
-    setLoading(true);
+    setLoadingMessages(true);
     try {
       const res = await fetch(`${API_BASE}/student/${usn}/messages`);
       const data = await res.json();
@@ -15,7 +18,21 @@ export default function MenteeRecieveEmails({ usn }) {
     } catch (err) {
       console.error("Error fetching messages:", err);
     } finally {
-      setLoading(false);
+      setLoadingMessages(false);
+    }
+  };
+
+  // Fetch meetings for mentee
+  const fetchMeetings = async () => {
+    setLoadingMeetings(true);
+    try {
+      const res = await fetch(`${API_BASE}/auth/Student/Mentee/meeting/${usn}`);
+      const data = await res.json();
+      setMeetings(data);
+    } catch (err) {
+      console.error("Error fetching meetings:", err);
+    } finally {
+      setLoadingMeetings(false);
     }
   };
 
@@ -33,9 +50,7 @@ export default function MenteeRecieveEmails({ usn }) {
 
   const markAsRead = async (msgId) => {
     try {
-      await fetch(`${API_BASE}/student/${usn}/messages/${msgId}/read`, {
-        method: "POST",
-      });
+      await fetch(`${API_BASE}/student/${usn}/messages/${msgId}/read`, { method: "POST" });
       fetchMessages();
     } catch (err) {
       console.error("Error marking as read:", err);
@@ -44,18 +59,21 @@ export default function MenteeRecieveEmails({ usn }) {
 
   useEffect(() => {
     fetchMessages();
+    fetchMeetings();
   }, [usn]);
 
   return (
     <div className="w-full max-w-7xl mx-auto p-4 sm:p-6">
       <div className="w-full rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md flex flex-col md:flex-row min-h-[70vh] overflow-hidden">
         
-        {/* Left Panel - Inbox */}
-        <div className="w-full md:w-1/3 border-r border-gray-200 dark:border-gray-700">
+        {/* Left Panel - Inbox & Meetings */}
+        <div className="w-full md:w-1/3 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+          
+          {/* Inbox */}
           <h2 className="text-sm sm:text-lg font-semibold text-blue-600 dark:text-blue-400 p-4 border-b border-gray-200 dark:border-gray-700">
             Inbox
           </h2>
-          {loading ? (
+          {loadingMessages ? (
             <p className="p-4 text-gray-500 dark:text-gray-400">Loading messages...</p>
           ) : messages.length === 0 ? (
             <p className="p-4 text-gray-500 dark:text-gray-400">No messages yet</p>
@@ -79,6 +97,28 @@ export default function MenteeRecieveEmails({ usn }) {
                   </p>
                 </li>
               ))}
+            </ul>
+          )}
+
+          {/* Meetings */}
+          <h2 className="text-sm sm:text-lg font-semibold text-green-600 dark:text-green-400 p-4 border-t border-gray-200 dark:border-gray-700">
+            Meetings
+          </h2>
+          {loadingMeetings ? (
+            <p className="p-4 text-gray-500 dark:text-gray-400">Loading meetings...</p>
+          ) : meetings.length === 0 ? (
+            <p className="p-4 text-gray-500 dark:text-gray-400">No meetings scheduled</p>
+          ) : (
+            <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+              {meetings
+                .sort((a, b) => new Date(a.date) - new Date(b.date))
+                .map((m) => (
+                  <li key={m.id} className="p-4 border-b border-gray-100 dark:border-gray-700">
+                    <p className="font-medium text-gray-800 dark:text-gray-200 truncate">{m.title}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{new Date(m.date).toLocaleDateString()}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{m.agenda}</p>
+                  </li>
+                ))}
             </ul>
           )}
         </div>

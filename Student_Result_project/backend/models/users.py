@@ -1,5 +1,5 @@
 from app_init import db
-
+from datetime import datetime
 class StudentAuth(db.Model):
     __tablename__ = 'students'
     username = db.Column(db.String(10), primary_key=True, unique=True)
@@ -59,3 +59,14 @@ class Mentor(db.Model):
     __tablename__ = 'mentors'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
+
+
+class Meeting(db.Model):
+    __tablename__ = 'meetings'
+    id = db.Column(db.Integer, primary_key=True)
+    mentor_id = db.Column(db.Integer, nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    agenda = db.Column(db.Text, nullable=True)
+    date = db.Column(db.Date, nullable=False)
+    venue = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

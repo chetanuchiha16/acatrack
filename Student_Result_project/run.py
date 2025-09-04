@@ -13,7 +13,7 @@ vite = subprocess.Popen("npm run dev", cwd="frontend", shell=True)
 time.sleep(5)
 
 # Open the React app (Vite default port is 5173)
-webbrowser.open("http://localhost:5173")
+# webbrowser.open("http://localhost:5173")
 
 try:
     flask.wait()
