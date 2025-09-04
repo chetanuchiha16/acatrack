@@ -6,7 +6,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 mentor_email_bp = Blueprint("mentor_email", __name__)
 
@@ -19,7 +19,7 @@ class MentorMessage(db.Model):
     recipient_type = db.Column(db.String)  # student/parent
     subject = db.Column(db.String)
     message = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     email_failed = db.Column(db.Boolean, default=False)
 
     mentor = db.relationship("Mentor", backref=db.backref("messages", lazy=True))

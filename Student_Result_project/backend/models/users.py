@@ -1,5 +1,5 @@
 from app_init import db
-from datetime import datetime
+from datetime import datetime, timezone
 class StudentAuth(db.Model):
     __tablename__ = 'students'
     username = db.Column(db.String(10), primary_key=True, unique=True)
@@ -69,4 +69,4 @@ class Meeting(db.Model):
     agenda = db.Column(db.Text, nullable=True)
     date = db.Column(db.Date, nullable=False)
     venue = db.Column(db.String(200), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
