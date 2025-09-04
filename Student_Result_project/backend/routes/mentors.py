@@ -1,8 +1,12 @@
-import os
-from flask import Blueprint, request, jsonify
-from models import Mentor, StudentAuth, Student
-from models.paths import db_path, pdf_dir
+from flask import Blueprint, request, jsonify, send_from_directory
+from models import Mentor, StudentAuth
+from models import Student  # reuse your existing Student class logic
 from visuals import create_student_report
+from models.paths import db_path, pdf_dir
+import os
+import io
+import base64
+
 
 mentor_bp = Blueprint('mentor', __name__)
 
@@ -72,6 +76,38 @@ def get_mentor_students():
                 })
 
         return jsonify(results)
+
+    except Exception as e:
+        print(f"[ERROR] {e}")
+        return jsonify({"error": str(e)}), 400
+
+
+
+# Route to download mentee PDF reports
+@mentor_bp.route("/auth/Staff/Mentor/report/<filename>", methods=["GET"])
+def download_mentee_report(filename):
+    return send_from_directory(pdf_dir, filename, as_attachment=True)
+
+
+# Route to get chart of a specific mentee
+@mentor_bp.route("/auth/Staff/Mentor/chart", methods=["GET"])
+def get_mentee_chart():
+    usn = request.args.get("usn")
+    semester = request.args.get("semester")
+
+    if not usn or not semester:
+        return jsonify({"error": "usn and semester are required"}), 400
+
+    try:
+        student = Student(usn=usn, semester=semester, db_path=db_path)
+        fig = student.plot_subject_marks()[0]
+        # print("fig", fig) 
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png")
+        buf.seek(0)
+        img_base64 = base64.b64encode(buf.read()).decode("utf-8")
+
+        return jsonify({"image": f"data:image/png;base64,{img_base64}"})
 
     except Exception as e:
         print(f"[ERROR] {e}")
