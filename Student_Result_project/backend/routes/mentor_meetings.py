@@ -46,7 +46,17 @@ def add_meeting(mentor_id):
     mentor = Mentor.query.get(mentor_id)
     if mentor:
         subject = f"New Meeting Scheduled: {title}"
-        body = f"Hello,\n\nA new meeting has been scheduled by {mentor.name}.\n\nTitle: {title}\nAgenda: {agenda}\nDate: {meeting_date.strftime('%Y-%m-%d')}\n\nPlease attend on time."
+        body = f"""Hello,
+
+        A new meeting has been scheduled by {mentor.name}.
+
+        Title: {title}
+        Agenda: {agenda}
+        Date: {meeting_date.strftime('%Y-%m-%d')}
+        Venue: {venue}
+
+        Please attend on time."""
+
 
         # Send to each student
         for s in mentor.students:  # direct students
