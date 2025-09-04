@@ -7,6 +7,7 @@ export default function MentorMeetings({ mentorId }) {
   const [date, setDate] = useState("");
   const [agenda, setAgenda] = useState("");
   const [title, setTitle] = useState("");
+  const [venue, setVenue] = useState("");
 
   
 
@@ -32,9 +33,11 @@ export default function MentorMeetings({ mentorId }) {
     }
 
     try {
-      await axios.post(`${API_BASE}/auth/Staff/Mentor/meeting/${mentorId}`, { title, date, agenda });
+      await axios.post(`${API_BASE}/auth/Staff/Mentor/meeting/${mentorId}`, { title, date, venue, agenda });
+
       setTitle("");
       setDate("");
+      setVenue("");
       setAgenda("");
       fetchMeetings(); // refresh list
     } catch (err) {
@@ -72,6 +75,13 @@ export default function MentorMeetings({ mentorId }) {
         onChange={(e) => setDate(e.target.value)}
         className="border p-2 rounded w-full md:w-1/2"
       />
+      <input
+        type="text"
+        placeholder="Venue"
+        value={venue}
+        onChange={(e) => setVenue(e.target.value)}
+        className="border p-2 rounded w-full md:w-1/2"
+      />
       <textarea
         placeholder="Agenda / Notes..."
         value={agenda}
@@ -81,11 +91,14 @@ export default function MentorMeetings({ mentorId }) {
       />
 
       <button
-        onClick={addMeeting}
-        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
-      >
-        <CalendarDays className="w-4 h-4" /> Save Reminder
-      </button>
+  onClick={addMeeting}
+  disabled={!title || !date || !venue}
+  className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+    title && date && venue ? "bg-blue-600 text-white hover:bg-blue-700" : "!bg-gray-300 !text-gray-600 !cursor-not-allowed hover:!border-white"
+  }`}
+>
+  <CalendarDays className="w-4 h-4" /> Save Reminder
+</button>
 
       <h3 className="mt-6 font-bold text-xl">Upcoming Meetings</h3>
       {meetings.length === 0 ? (
@@ -93,16 +106,19 @@ export default function MentorMeetings({ mentorId }) {
       ) : (
         <ul className="space-y-2">
           {meetings
-            .sort((a, b) => new Date(a.date) - new Date(b.date))
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
             .map((m) => (
               <li
                 key={m.id}
                 className="border p-2 rounded flex justify-between items-center"
               >
                 <div>
-                  <strong>{m.title}</strong> - {m.date}
-                  <p className="text-sm">{m.agenda}</p>
-                </div>
+  <strong>{m.title}</strong> - {new Date(m.date).toLocaleDateString()}
+  <br />
+  <strong>{m.venue}</strong>
+  <p className="text-sm">{m.agenda}</p>
+</div>
+
                 <button
                   onClick={() => removeMeeting(m.id)}
                   className="text-red-600 hover:text-red-800"

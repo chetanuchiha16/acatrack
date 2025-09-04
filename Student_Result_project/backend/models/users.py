@@ -68,4 +68,5 @@ class Meeting(db.Model):
     title = db.Column(db.String(200), nullable=False)
     agenda = db.Column(db.Text, nullable=True)
     date = db.Column(db.Date, nullable=False)
+    venue = db.Column(db.String(200), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
