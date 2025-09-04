@@ -8,7 +8,7 @@ const Error = () => (
         justifyContent: 'center',
         height: '100vh',
         background: '#f8d7da',
-        background:'white',
+        // background:'white',
         color: '#721c24'
     }}>
         <h1 style={{ fontSize: '4rem', margin: 0 ,fontWeight:'bold'}}>404</h1>

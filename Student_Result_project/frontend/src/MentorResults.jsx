@@ -36,6 +36,7 @@ export default function MentorResults({ mentor_id }) {
         `${API_BASE}/auth/Staff/Mentor/chart?usn=${usn}&semester=${semester}`
       );
       const data = await res.json();
+      // console.log("Chart response:", data);  // <--- check this
       setChartData(data.image);
       setSelectedMentee(usn);
     } catch (err) {

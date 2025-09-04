@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import Mentor, StudentAuth, MentorStudent
+from models import Mentor, StudentAuth
 from app_init import db
 from email.utils import parseaddr
 import smtplib
@@ -30,6 +30,7 @@ class MentorMessage(db.Model):
             "id": self.id,
             "mentor_id": self.mentor_id,
             "mentor_name": self.mentor.name if self.mentor else None,
+            "mentor_email": getattr(self.mentor, "email", None),  # optional
             "student_usn": self.student_usn,
             "student_name": self.student.name if self.student else None,
             "recipient_type": self.recipient_type,
@@ -38,6 +39,7 @@ class MentorMessage(db.Model):
             "created_at": self.created_at.isoformat(),
             "email_failed": self.email_failed,
         }
+
 
 
 class StudentMessageStatus(db.Model):
@@ -80,12 +82,19 @@ def send_email(to_email, subject, body):
 
 # ---------------- Save Message ----------------
 def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=False):
+    mentor = Mentor.query.get(mentor_id)
+    sender_info = f"\n\n--\nMessage sent by {mentor.name}"
+    if hasattr(mentor, "email"):
+        sender_info += f"\nEmail: {mentor.email}"
+    if hasattr(mentor, "phone"):
+        sender_info += f"\nPhone: {mentor.phone}"
+
     msg = MentorMessage(
         mentor_id=mentor_id,
         student_usn=usn,
         recipient_type=recipient_type,
         subject=subject,
-        message=message,
+        message=message + sender_info,
         email_failed=email_failed,
     )
     db.session.add(msg)
@@ -93,15 +102,18 @@ def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=
     return msg
 
 
+
 def serialize_message_with_read_status(msg):
     students = []
-    for ms in msg.mentor.students:
-        s = StudentAuth.query.filter_by(username=ms.student_usn).first()
-        if not s:
-            continue
+    for s in msg.mentor.students:  # now directly StudentAuth objects
         status = StudentMessageStatus.query.filter_by(student_usn=s.username, msg_id=msg.id).first()
-        students.append({"usn": s.username, "name": s.name, "read": status.read if status else False})
+        students.append({
+            "usn": s.username,
+            "name": s.name,
+            "read": status.read if status else False
+        })
     return {**msg.to_dict(), "read_status": students}
+
 
 
 # ---------------- Mentor APIs ----------------
@@ -111,11 +123,16 @@ def get_mentor_students(mentor_id):
     if not mentor:
         return jsonify({"error": "Mentor not found"}), 404
     students = []
-    for ms in mentor.students:
-        s = StudentAuth.query.filter_by(username=ms.student_usn).first()
-        if s:
-            students.append({"usn": s.username, "name": s.name})
+    for s in mentor.students:  # direct students now
+        students.append({
+            "usn": s.username,
+            "name": s.name,
+            "parent_name": s.parent_account.name if s.parent_account else None,
+            "parent_email": s.parent_account.email if s.parent_account else None,
+            "parent_phone": s.parent_account.phone if s.parent_account else None
+        })
     return jsonify({"students": students})
+
 
 
 @mentor_email_bp.route("/mentor/<int:mentor_id>/messages", methods=["GET"])
@@ -163,7 +180,16 @@ def send_email_student(mentor_id):
         to_email = getattr(student, "student_email", None)
         name = student.name
 
-    success = send_email(to_email, subject, f"Hello {name},\n\n{message}")
+    mentor = Mentor.query.get(mentor_id)
+    sender_info = f"\n\n--\nMessage sent by {mentor.name} (Mentor)"
+    if hasattr(mentor, "email"):
+        sender_info += f"\nEmail: {mentor.email}"
+    if hasattr(mentor, "phone"):
+        sender_info += f"\nPhone: {mentor.phone}"
+
+    success = send_email(to_email, subject, f"Hello {name},\n\n{message}{sender_info}")
+
+
     return jsonify({"success": success}), (200 if success else 500)
 
 
@@ -179,18 +205,24 @@ def send_email_all(mentor_id):
         return jsonify({"error": "Mentor not found"}), 404
 
     results = []
-    for ms in mentor.students:
-        s = StudentAuth.query.filter_by(username=ms.student_usn).first()
-        if not s:
-            continue
+    for s in mentor.students:  # direct now
         if recipient_type == "parent":
-            to_email = getattr(s, "parent_email", None)
-            name = getattr(s, "parent_name", None) or s.name
+            to_email = getattr(s.parent_account, "email", None)
+            name = getattr(s.parent_account, "name", None) or s.name
         else:
             to_email = getattr(s, "student_email", None)
             name = s.name
 
-        success = send_email(to_email, subject, f"Hello {name},\n\n{message}")
+
+        mentor = Mentor.query.get(mentor_id)
+        sender_info = f"\n\n--\nMessage sent by {mentor.name}"
+        if hasattr(mentor, "email"):
+            sender_info += f"\nEmail: {mentor.email}"
+        if hasattr(mentor, "phone"):
+            sender_info += f"\nPhone: {mentor.phone}"
+
+        success = send_email(to_email, subject, f"Hello {name},\n\n{message}{sender_info}")
+
         results.append({"usn": s.username, "success": success})
 
     return jsonify(results), 200

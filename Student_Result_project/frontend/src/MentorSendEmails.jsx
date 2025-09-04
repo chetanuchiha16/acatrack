@@ -324,6 +324,15 @@ export default function MentorSendEmails({ mentorId }) {
                                             <p className="text-gray-600 dark:text-gray-400">
                                                 USN: {s.usn}
                                             </p>
+                                            <p className="text-gray-600 dark:text-gray-400">
+                                                Parent Name: {s.parent_name}
+                                            </p>
+                                            <p className="text-gray-600 dark:text-gray-400">
+                                                Parent Email: {s.parent_email}
+                                            </p>
+                                            <p className="text-gray-600 dark:text-gray-400">
+                                                Parent Phone: {s.parent_phone}
+                                            </p>
                                         </div>
                                         <button
                                             onClick={() => toggleExpand(s.usn)}

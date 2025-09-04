@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, send_from_directory
-from models import Mentor, MentorStudent, StudentAuth
+from models import Mentor, StudentAuth
 from models import Student  # reuse your existing Student class logic
 from visuals import create_student_report
 from models.paths import db_path, pdf_dir
@@ -7,9 +7,9 @@ import os
 import io
 import base64
 
+
 mentor_bp = Blueprint('mentor', __name__)
 
-# Route to get all mentees' results for a given mentor
 @mentor_bp.route("/auth/Staff/Mentor/result", methods=["GET"])
 def get_mentor_students():
     mentor_id = request.args.get("mentor_id")
@@ -22,21 +22,24 @@ def get_mentor_students():
         mentor = Mentor.query.filter_by(id=mentor_id).first()
         if not mentor:
             return jsonify({"error": "Mentor not found"}), 404
-        
+
+        students = StudentAuth.query.filter_by(mentor_id=mentor_id).all()
         results = []
 
-        for ms in mentor.students:
-            usn = ms.student_usn
-            # print(f"Fetching student data for USN: {usn}, Semester: {semester}")
-
+        for s in students:
             try:
-                student = Student(usn=usn, semester=semester, db_path=db_path)
-                # print("student name: ", student.name)
+                student = Student(usn=s.username, semester=semester, db_path=db_path)
 
-                # Generate PDF
+                # Keep exact filename as create_student_report uses it
                 filename = f"{student.name}_{semester}_report.pdf"
                 file_path = os.path.join(pdf_dir, filename)
-                create_student_report(student, file_path=file_path)
+
+                # ✅ generate PDF only if it doesn't exist
+                if not os.path.exists(file_path):
+                    create_student_report(student, file_path=file_path)
+                    print(f"PDF created: {file_path}")
+                else:
+                    print(f"PDF exists: {file_path}, skipping generation")
 
                 results.append({
                     "name": student.name,
@@ -66,18 +69,18 @@ def get_mentor_students():
                 })
 
             except Exception as e:
-                print(f"[WARNING] Student data not found for USN {usn}: {e}")
+                print(f"[WARNING] Student data not found for USN {s.username}: {e}")
                 results.append({
-                    "usn": usn,
+                    "usn": s.username,
                     "error": "Student data not found"
                 })
 
         return jsonify(results)
 
-
     except Exception as e:
         print(f"[ERROR] {e}")
         return jsonify({"error": str(e)}), 400
+
 
 
 # Route to download mentee PDF reports
@@ -98,7 +101,7 @@ def get_mentee_chart():
     try:
         student = Student(usn=usn, semester=semester, db_path=db_path)
         fig = student.plot_subject_marks()[0]
-
+        # print("fig", fig) 
         buf = io.BytesIO()
         fig.savefig(buf, format="png")
         buf.seek(0)
