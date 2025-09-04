@@ -3,7 +3,7 @@ import { BarChart3, Users, CalendarDays } from "lucide-react";
 import MentorResults from "./MentorResults";
 import MentorSendEmails from "./MentorSendEmails";
 import { useLocation, useParams } from "react-router-dom";
-
+import MentorMeetings from "./MentorMeetings";
 export default function MentorDashboard() {
     const [activeTab, setActiveTab] = useState("results");
     const [date, setDate] = useState("");
@@ -11,9 +11,21 @@ export default function MentorDashboard() {
     let { finalId } = useParams();
 
     const tabs = [
-        { id: "results", label: "Results", icon: <BarChart3 className="w-4 h-4" /> },
-        { id: "communication", label: "Comm.", icon: <Users className="w-4 h-4" /> },
-        { id: "meetings", label: "Meetings", icon: <CalendarDays className="w-4 h-4" /> },
+        {
+            id: "results",
+            label: "Results",
+            icon: <BarChart3 className="w-4 h-4" />,
+        },
+        {
+            id: "communication",
+            label: "Comm.",
+            icon: <Users className="w-4 h-4" />,
+        },
+        {
+            id: "meetings",
+            label: "Meetings",
+            icon: <CalendarDays className="w-4 h-4" />,
+        },
     ];
 
     return (
@@ -46,7 +58,9 @@ export default function MentorDashboard() {
 
                 {/* Content */}
                 <div className="p-4 mt-12 rounded-lg bg-gray-50 dark:bg-gray-900">
-                    {activeTab === "results" && <MentorResults mentor_id={mentor_id} />}
+                    {activeTab === "results" && (
+                        <MentorResults mentor_id={mentor_id} />
+                    )}
 
                     {activeTab === "communication" && (
                         <MentorSendEmails mentorId={mentor_id} />
@@ -54,21 +68,7 @@ export default function MentorDashboard() {
 
                     {activeTab === "meetings" && (
                         <div className="flex flex-col gap-3">
-                            <h2 className="text-2xl font-bold mb-6">Set Meeting Reminder</h2>
-                            <input
-                                type="date"
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}
-                                className="border rounded p-2 w-full md:w-1/2"
-                            />
-                            <textarea
-                                placeholder="Agenda / Notes..."
-                                className="w-full border p-2 rounded"
-                                rows="3"
-                            />
-                            <button className="self-start px-4 py-2 bg-purple-600 text-white rounded-md flex items-center gap-2 hover:bg-purple-700 transition-colors duration-200">
-                                <CalendarDays className="w-4 h-4" /> Save Reminder
-                            </button>
+                            <MentorMeetings mentorId={mentor_id} />
                         </div>
                     )}
                 </div>
