@@ -19,13 +19,20 @@ class MentorMessage(db.Model):
     recipient_type = db.Column(db.String)  # student/parent
     subject = db.Column(db.String)
     message = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(
+        db.DateTime,  
+        default=lambda: datetime.now(timezone.utc)
+    )
+
     email_failed = db.Column(db.Boolean, default=False)
 
     mentor = db.relationship("Mentor", backref=db.backref("messages", lazy=True))
     student = db.relationship("StudentAuth", backref=db.backref("messages", lazy=True))
 
     def to_dict(self):
+        dt = self.created_at
+        if dt and dt.tzinfo is None:  # SQLite returned naive
+            dt = dt.replace(tzinfo=timezone.utc)
         return {
             "id": self.id,
             "mentor_id": self.mentor_id,
@@ -36,7 +43,7 @@ class MentorMessage(db.Model):
             "recipient_type": self.recipient_type,
             "subject": self.subject,
             "message": self.message,
-            "created_at": self.created_at.isoformat(),
+            "created_at": dt.isoformat(),  # now ends with +00:00
             "email_failed": self.email_failed,
         }
 
