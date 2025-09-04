@@ -1,13 +1,11 @@
-from models import Mentor, StudentAuth
-from models import Student
+import os
+from flask import Blueprint, request, jsonify
+from models import Mentor, StudentAuth, Student
 from models.paths import db_path, pdf_dir
 from visuals import create_student_report
-from flask import Blueprint, request, jsonify, send_from_directory
-import os, io, base64
 
 mentor_bp = Blueprint('mentor', __name__)
 
-# Route to get all mentees' results for a given mentor
 @mentor_bp.route("/auth/Staff/Mentor/result", methods=["GET"])
 def get_mentor_students():
     mentor_id = request.args.get("mentor_id")
@@ -21,18 +19,23 @@ def get_mentor_students():
         if not mentor:
             return jsonify({"error": "Mentor not found"}), 404
 
-        # ✅ get students directly from StudentAuth (new design)
         students = StudentAuth.query.filter_by(mentor_id=mentor_id).all()
-
         results = []
 
         for s in students:
             try:
                 student = Student(usn=s.username, semester=semester, db_path=db_path)
 
+                # Keep exact filename as create_student_report uses it
                 filename = f"{student.name}_{semester}_report.pdf"
                 file_path = os.path.join(pdf_dir, filename)
-                create_student_report(student, file_path=file_path)
+
+                # ✅ generate PDF only if it doesn't exist
+                if not os.path.exists(file_path):
+                    create_student_report(student, file_path=file_path)
+                    print(f"PDF created: {file_path}")
+                else:
+                    print(f"PDF exists: {file_path}, skipping generation")
 
                 results.append({
                     "name": student.name,
