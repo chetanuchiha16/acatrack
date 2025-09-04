@@ -30,6 +30,7 @@ class MentorMessage(db.Model):
             "id": self.id,
             "mentor_id": self.mentor_id,
             "mentor_name": self.mentor.name if self.mentor else None,
+            "mentor_email": getattr(self.mentor, "email", None),  # optional
             "student_usn": self.student_usn,
             "student_name": self.student.name if self.student else None,
             "recipient_type": self.recipient_type,
@@ -38,6 +39,7 @@ class MentorMessage(db.Model):
             "created_at": self.created_at.isoformat(),
             "email_failed": self.email_failed,
         }
+
 
 
 class StudentMessageStatus(db.Model):
@@ -80,17 +82,25 @@ def send_email(to_email, subject, body):
 
 # ---------------- Save Message ----------------
 def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=False):
+    mentor = Mentor.query.get(mentor_id)
+    sender_info = f"\n\n--\nMessage sent by {mentor.name}"
+    if hasattr(mentor, "email"):
+        sender_info += f"\nEmail: {mentor.email}"
+    if hasattr(mentor, "phone"):
+        sender_info += f"\nPhone: {mentor.phone}"
+
     msg = MentorMessage(
         mentor_id=mentor_id,
         student_usn=usn,
         recipient_type=recipient_type,
         subject=subject,
-        message=message,
+        message=message + sender_info,
         email_failed=email_failed,
     )
     db.session.add(msg)
     db.session.commit()
     return msg
+
 
 
 def serialize_message_with_read_status(msg):
@@ -170,7 +180,16 @@ def send_email_student(mentor_id):
         to_email = getattr(student, "student_email", None)
         name = student.name
 
-    success = send_email(to_email, subject, f"Hello {name},\n\n{message}")
+    mentor = Mentor.query.get(mentor_id)
+    sender_info = f"\n\n--\nMessage sent by {mentor.name} (Mentor)"
+    if hasattr(mentor, "email"):
+        sender_info += f"\nEmail: {mentor.email}"
+    if hasattr(mentor, "phone"):
+        sender_info += f"\nPhone: {mentor.phone}"
+
+    success = send_email(to_email, subject, f"Hello {name},\n\n{message}{sender_info}")
+
+
     return jsonify({"success": success}), (200 if success else 500)
 
 
@@ -195,7 +214,15 @@ def send_email_all(mentor_id):
             name = s.name
 
 
-        success = send_email(to_email, subject, f"Hello {name},\n\n{message}")
+        mentor = Mentor.query.get(mentor_id)
+        sender_info = f"\n\n--\nMessage sent by {mentor.name}"
+        if hasattr(mentor, "email"):
+            sender_info += f"\nEmail: {mentor.email}"
+        if hasattr(mentor, "phone"):
+            sender_info += f"\nPhone: {mentor.phone}"
+
+        success = send_email(to_email, subject, f"Hello {name},\n\n{message}{sender_info}")
+
         results.append({"usn": s.username, "success": success})
 
     return jsonify(results), 200
