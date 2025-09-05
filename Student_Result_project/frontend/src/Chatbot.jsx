@@ -96,6 +96,7 @@ export default function ChatBot() {
             const res = await fetch(`${API_BASE}/report/${encodeURIComponent(name)}`);
             const data = await res.json();
 
+
             if (data.error) {
                 setMessages(prev => [...prev, { sender: "bot", text: data.error }]);
                 speak(data.error);
@@ -103,14 +104,26 @@ export default function ChatBot() {
             }
 
             setMessages(prev => [...prev,
-                { sender: "bot", type: "header", text: `📄 Report for ${data.student_name}` },
-                { sender: "bot", type: "semesters", data: data.semesters },
-                { sender: "bot", type: "backlogs", data: data.backlogs, total_backlog_credits: data.total_backlog_credits },
-                { sender: "bot", type: "downloads", downloadUrls: {
+            { sender: "bot", type: "header", text: `📄 Report for ${data.student_name}` },
+            { sender: "bot", type: "semesters", data: data.semesters },
+            { sender: "bot", type: "backlogs", data: data.backlogs, total_backlog_credits: data.total_backlog_credits },
+            {
+                sender: "bot", type: "downloads", downloadUrls: {
                     full: `${API_BASE}/report/${encodeURIComponent(data.student_name)}/pdf`,
                     backlog: `${API_BASE}/report/${encodeURIComponent(data.student_name)}/pdf?type=backlog`
-                }},
-                { sender: "bot", type: "thank", text: "✅ The reports have been generated successfully. Thank you for using JssTrack360 chatbot. Have a great day!!" }
+                }
+            },
+            {
+                sender: "bot",
+                type: "ai_insights",
+                data: {
+                    ai_summary: data.ai_summary,
+                    ai_profile: data.ai_profile,
+                    trend: data.trend,
+                    cgpa_prediction: data.cgpa_prediction
+                }
+            },
+            { sender: "bot", type: "thank", text: "✅ The reports have been generated successfully. Thank you for using JssTrack360 chatbot. Have a great day!!" }
             ]);
 
             let speechText = `Here is the report for ${data.student_name}. `;
@@ -189,7 +202,7 @@ export default function ChatBot() {
                 {messages.map((msg, i) => (
                     <div key={i} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                         <div className={`rounded-2xl px-4 py-2 shadow-md max-w-[85%] whitespace-pre-line transition-all duration-300 ${msg.sender === "user" ? "bg-blue-500 text-white" : "bg-gray-800 text-white"}`}>
-                            
+
                             {!msg.type && msg.text && msg.text.split("\n").map((line, idx) => <p key={idx}>{line}</p>)}
                             {msg.type === "header" && <h3 className="font-bold mb-2 text-lg">{msg.text}</h3>}
                             {msg.type === "downloads" && <DownloadSection downloadUrls={msg.downloadUrls} />}
@@ -204,31 +217,34 @@ export default function ChatBot() {
                                             acc[letter].push(student.student_name);
                                             return acc;
                                         }, {})
-                                    ).map(([letter, names]) => (
-                                        <div key={letter} className="mb-2">
-                                            <button
-                                                onClick={() => toggleAlphabet(letter)}
-                                                className="w-full text-left bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 mb-1 transition-transform transform hover:scale-105"
-                                            >
-                                                {letter} {openAlphabet[letter] ? "▲" : "▼"}
-                                            </button>
-                                            {openAlphabet[letter] && (
-                                                <div className="grid grid-cols-4 gap-2 p-2 bg-gray-100 rounded">
-                                                    {names.map((s, idx) => (
-                                                        <div
-                                                            key={idx}
-                                                            onClick={() => fetchReport(s)}
-                                                            className="cursor-pointer border border-gray-300 rounded px-2 py-1 text-sm text-gray-700 bg-white hover:bg-blue-100 shadow transition-transform transform hover:scale-105"
-                                                        >
-                                                            {s}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
+                                    )
+                                        .sort(([a], [b]) => a.localeCompare(b)) // Sort letters A-Z
+                                        .map(([letter, names]) => (
+                                            <div key={letter} className="mb-2">
+                                                <button
+                                                    onClick={() => toggleAlphabet(letter)}
+                                                    className="w-full text-left bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 mb-1 transition-transform transform hover:scale-105"
+                                                >
+                                                    {letter} {openAlphabet[letter] ? "▲" : "▼"}
+                                                </button>
+                                                {openAlphabet[letter] && (
+                                                    <div className="grid grid-cols-4 gap-2 p-2 bg-gray-100 rounded">
+                                                        {names.sort((a, b) => a.localeCompare(b)).map((s, idx) => ( // Sort names A-Z
+                                                            <div
+                                                                key={idx}
+                                                                onClick={() => fetchReport(s)}
+                                                                className="cursor-pointer border border-gray-300 rounded px-2 py-1 text-sm text-gray-700 bg-white hover:bg-blue-100 shadow transition-transform transform hover:scale-105"
+                                                            >
+                                                                {s}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
                                 </div>
                             )}
+
 
                             {msg.type === "semesters" && Object.entries(msg.data).map(([sem, data]) => (
                                 <div key={sem} className="mb-2">
@@ -314,34 +330,254 @@ export default function ChatBot() {
                                 </div>
                             )}
 
+                            {msg.type === "ai_insights" && (
+                                <div className="p-2 rounded mb-2">
+                                    <button
+                                        onClick={() => setOpenSemesters(prev => ({ ...prev, ai: !prev.ai }))}
+                                        className="w-full text-left bg-purple-500 text-white px-3 py-2 rounded hover:bg-purple-600 transition-transform transform hover:scale-105"
+                                    >
+                                        ✨ AI Insights {openSemesters.ai ? "▲" : "▼"}
+                                    </button>
+
+                                    {openSemesters.ai && (
+                                        <div className="mt-3 space-y-4 bg-gray-50 p-4 rounded-lg shadow-inner text-gray-800">
+
+                                            {/* AI Summary */}
+                                            <div className="bg-white p-3 rounded-lg shadow">
+                                                <h4 className="font-semibold text-purple-600">🧠 AI Summary</h4>
+                                                <p className="mt-1">{msg.data.ai_summary || "No summary available"}</p>
+                                            </div>
+
+                                            {/* AI Profile */}
+                                            <div className="bg-white p-3 rounded-lg shadow space-y-2">
+                                                <h4 className="font-semibold text-purple-600">📊 AI Profile</h4>
+
+                                                {/* Subject-level Strengths & Weaknesses */}
+                                                <div className="mt-4">
+                                                    <b>📌 Subject-level Strengths & Weaknesses:</b>
+                                                    <div className="grid grid-cols-2 gap-2 mt-2">
+                                                        {/* Strengths */}
+                                                        {(msg.data.ai_profile?.latest_strong_subjects || []).length > 0 ? (
+                                                            (msg.data.ai_profile.latest_strong_subjects).map((subj, i) => (
+                                                                <div key={`strong-${i}`} className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
+                                                                    {subj}
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <div className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">None</div>
+                                                        )}
+
+                                                        {/* Weaknesses */}
+                                                        {(msg.data.ai_profile?.latest_weak_subjects || []).length > 0 ? (
+                                                            (msg.data.ai_profile.latest_weak_subjects).map((subj, i) => (
+                                                                <div key={`weak-${i}`} className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">
+                                                                    {subj}
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <div className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">None</div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Tag-level Strengths & Weaknesses */}
+                                                <div className="mt-4">
+                                                    <b>📚 Tag-level Strengths & Weaknesses:</b>
+                                                    <div className="grid grid-cols-3 gap-2 mt-2">
+                                                        {/* Strong Tags */}
+                                                        {(msg.data.ai_profile?.strong_tags || []).length > 0 ? (
+                                                            (msg.data.ai_profile.strong_tags).map((tag, i) => (
+                                                                <div key={`tag-strong-${i}`} className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
+                                                                    {tag}
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <div className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">None</div>
+                                                        )}
+
+                                                        {/* Moderate Tags */}
+                                                        {(msg.data.ai_profile?.mid_tags || []).length > 0 ? (
+                                                            (msg.data.ai_profile.mid_tags).map((tag, i) => (
+                                                                <div key={`tag-mid-${i}`} className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">
+                                                                    {tag}
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">None</div>
+                                                        )}
+
+                                                        {/* Weak Tags */}
+                                                        {(msg.data.ai_profile?.weak_tags || []).length > 0 ? (
+                                                            (msg.data.ai_profile.weak_tags).map((tag, i) => (
+                                                                <div key={`tag-weak-${i}`} className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">
+                                                                    {tag}
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <div className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">None</div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+
+                                                {/* Subject Averages */}
+                                                {msg.data.ai_profile?.tag_avgs && (
+                                                    <div>
+                                                        <b>📚 Subject Area Averages:</b>
+                                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                                            {Object.entries(msg.data.ai_profile.tag_avgs).map(([tag, avg], i) => (
+                                                                <div key={i} className="bg-gray-100 px-2 py-1 rounded text-sm">
+                                                                    {tag}: <span className="font-semibold">{avg.toFixed(2)}%</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Learning Plan */}
+                                                {msg.data.ai_profile?.learning_plan?.length > 0 && (
+                                                    <div className="mt-4">
+                                                        <b>📝 Learning Plan:</b>
+                                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                                            {msg.data.ai_profile.learning_plan.map((tip, index) => (
+                                                                <div key={index} className="bg-gray-100 px-2 py-1 rounded text-sm">
+                                                                    {tip}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Placement Advice */}
+                                                {msg.data.ai_profile?.placement_advice && (
+                                                    <div className="mt-4">
+                                                        <b>🎯 Placement Advice:</b>
+                                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                                            {msg.data.ai_profile.placement_advice.length > 0 ? (
+                                                                msg.data.ai_profile.placement_advice.map((advice, index) => (
+                                                                    <div key={index} className="bg-gray-100 px-2 py-1 rounded text-sm">
+                                                                        {advice}
+                                                                    </div>
+                                                                ))
+                                                            ) : (
+                                                                <div className="bg-gray-100 px-2 py-1 rounded text-sm">None</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+
+
+                                            {/* Trend Section */}
+                                            <div className="bg-white p-3 rounded-lg shadow mt-4">
+                                                <h4 className="font-semibold text-purple-600">📈 SGPA Trend</h4>
+
+                                                {/* Trend & Average SGPA */}
+                                                <div className="mt-2 space-y-1">
+                                                    <p>
+                                                        <b>Trend:</b> {msg.data.trend?.trend || "N/A"}
+                                                    </p>
+                                                    <p>
+                                                        <b>Average SGPA:</b>{" "}
+                                                        {msg.data.trend?.avg_sgpa !== undefined
+                                                            ? Number(msg.data.trend.avg_sgpa).toFixed(2)
+                                                            : "N/A"}
+                                                    </p>
+                                                </div>
+
+                                                {/* Conditional Advice based on Trend */}
+                                                {msg.data.trend?.trend && (
+                                                    <div className="mt-2">
+                                                        {msg.data.trend.trend === "Declining" ? (
+                                                            <div className="bg-red-100 text-red-800 p-2 rounded">
+                                                                ⚠️ SGPA is declining — identify root causes (attendance, exam prep, fundamentals).
+                                                                <br />
+                                                                📝 Recommended: Strengthen fundamentals, follow structured weekly study plan, seek mentoring or extra classes.
+                                                            </div>
+                                                        ) : msg.data.trend.trend === "Improving" ? (
+                                                            <div className="bg-green-100 text-green-800 p-2 rounded">
+                                                                ✅ SGPA is improving — maintain study routine and strengthen project-based learning.
+                                                            </div>
+                                                        ) : null}
+                                                    </div>
+                                                )}
+
+                                                {/* Trend History */}
+                                                {msg.data.trend?.history && Object.keys(msg.data.trend.history).length > 0 && (
+                                                    <div className="mt-3">
+                                                        <b>History:</b>
+                                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                                            {Object.entries(msg.data.trend.history).map(([sem, sgpa]) => (
+                                                                <div key={sem} className="bg-gray-100 px-2 py-1 rounded text-sm">
+                                                                    {sem}: <span className="font-semibold">{Number(sgpa).toFixed(2)}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+
+
+                                            {/* Prediction */}
+                                            <div className="bg-white p-3 rounded-lg shadow">
+                                                <h4 className="font-semibold text-purple-600">🔮 CGPA Prediction</h4>
+                                                <p><b>Predicted Next SGPA:</b> {msg.data.cgpa_prediction?.predicted_next_sgpa || "N/A"}</p>
+                                                <p><b>Predicted Final CGPA:</b> {msg.data.cgpa_prediction?.predicted_final_cgpa || "N/A"}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+
                         </div>
                     </div>
                 ))}
                 <div ref={messagesEndRef}></div>
             </div>
 
-            <div className="flex w-full max-w-3xl px-3 py-2">
+            {/* Input + Buttons */}
+            <div className="w-full max-w-3xl p-3 border-t flex gap-2">
+                {/* Text input */}
                 <input
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    className="flex-1 border rounded-l px-3 py-2 outline-none"
-                    placeholder="Type student name or 'list'"
-                    onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }}
+                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                    placeholder="Type student name or 'list' to see all"
+                    className="flex-1 border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
+
+                {/* Send button */}
                 <button
                     onClick={() => handleSend()}
-                    className="bg-blue-500 text-white px-4 py-2 rounded-r hover:bg-blue-600 transition-transform transform hover:scale-105"
+                    className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-transform transform hover:scale-105"
                 >
                     Send
                 </button>
-                <button
-                    onClick={listening ? stopListening : startVoiceFlow}
-                    className={`ml-2 px-4 py-2 rounded ${listening ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"} text-white transition-transform transform hover:scale-105`}
-                >
-                    {listening ? "Stop 🎤" : "Voice 🎙️"}
-                </button>
+
+                {/* Voice button + listening indicator */}
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={startVoiceFlow}
+                        className={`px-4 py-2 rounded-xl text-white ${listening ? "bg-red-500" : "bg-green-500"} transition-colors duration-200`}
+                    >
+                        {listening ? "🎙️ Listening..." : "🎤 Voice"}
+                    </button>
+
+                    {listening && (
+                        <div
+                            onClick={stopListening}
+                            className="flex items-center justify-center w-12 h-12 bg-red-500 rounded-full shadow-md animate-pulse cursor-pointer"
+                        >
+                            <span className="text-white text-xl">🎙️</span>
+                        </div>
+                    )}
+                </div>
             </div>
+
         </div>
     );
 }
