@@ -51,7 +51,7 @@ class Teacher(db.Model):
     password = db.Column(db.String(128), nullable=True)
 
     # Contact info
-    email = db.Column(db.String(100), nullable=True, default = f"chetan16ck@gmaail.com")
+    email = db.Column(db.String(100), nullable=True, default = f"chetan16ck@gmail.com")
     phone = db.Column(db.String(20), nullable=True, default = "123456789")
 
 
@@ -70,3 +70,13 @@ class Meeting(db.Model):
     date = db.Column(db.Date, nullable=False)
     venue = db.Column(db.String(200), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+class PasswordResetToken(db.Model):
+    __tablename__ = "password_reset_tokens"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    token = db.Column(db.String(128), unique=True, nullable=False, index=True)
+    usn = db.Column(db.String(10), nullable=False)
+    role = db.Column(db.String(20), nullable=False)  # student, parent, teacher
+    expires_at = db.Column(db.DateTime, nullable=False)  # store naive UTC
+    used = db.Column(db.Boolean, default=False)

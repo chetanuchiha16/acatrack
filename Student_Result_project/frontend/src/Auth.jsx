@@ -71,9 +71,9 @@ export default function Auth() {
       });
   };
 
-  function handleForgot(email) {
+  function handleForgot(username) {
     axios
-      .post(`${API_BASE}/auth/forgot-password`, { email })
+      .post(`${API_BASE}/auth/forgot/request`, { username })
       .then((res) => alert(res.data.message))
       .catch((err) => alert(err.response?.data?.error || "Error"));
     setShowForgot(false);

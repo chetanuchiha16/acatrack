@@ -14,6 +14,6 @@ def create_app():
     app.config.from_object(Config)
     db.init_app(app)
     migrate = Migrate(app, db)
-    from models import StudentAuth,Teacher,StudentAuth, Mentor
+    from models import StudentAuth,Teacher,StudentAuth, Mentor, ParentAuth, Meeting, PasswordResetToken
     CORS(app, supports_credentials=True)
     return app
