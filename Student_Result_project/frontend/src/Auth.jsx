@@ -71,13 +71,7 @@ export default function Auth() {
       });
   };
 
-  function handleForgot(username) {
-    axios
-      .post(`${API_BASE}/auth/forgot/request`, { username })
-      .then((res) => alert(res.data.message))
-      .catch((err) => alert(err.response?.data?.error || "Error"));
-    setShowForgot(false);
-  }
+  
 
   if (loading) {
     return <div className="text-white text-center mt-10">Loading...</div>;
@@ -183,7 +177,7 @@ export default function Auth() {
 
           {showForgot && (
             <ForgotPassword
-              onSubmit={handleForgot}
+              
               onClose={() => setShowForgot(false)}
             />
           )}
