@@ -5,7 +5,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 email_bp = Blueprint("email", __name__)
 
@@ -24,7 +24,7 @@ class Message(db.Model):
     recipient_type = db.Column(db.String(20), nullable=False)  # student/parent
     subject = db.Column(db.String(255), nullable=False)
     message = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
         return {
