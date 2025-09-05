@@ -12,9 +12,8 @@ export default function ChatBot() {
     const [recognitionRef, setRecognitionRef] = useState(null);
     const [showConfetti, setShowConfetti] = useState(false);
     useEffect(() => {
-        // This runs when component unmounts (page refresh or navigation)
         return () => {
-            window.speechSynthesis.cancel(); // stops all ongoing speech
+            window.speechSynthesis.cancel();
         };
     }, []);
     const messagesEndRef = useRef(null);
@@ -22,12 +21,10 @@ export default function ChatBot() {
     const [openBacklogs, setOpenBacklogs] = useState({});
     const [openAlphabet, setOpenAlphabet] = useState({});
 
-    // Auto-scroll messages
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    // --- SPEECH FUNCTION ---
     const speak = (text, callback = null) => {
         if (!text) return;
         const utter = new SpeechSynthesisUtterance(text);
@@ -36,13 +33,11 @@ export default function ChatBot() {
         window.speechSynthesis.speak(utter);
     };
 
-    // --- VOICE INTRO & LISTENING ---
     const startVoiceFlow = () => {
         if (!introPlayed) {
             const introText = "🙏 Welcome to JSSTrack360 🎓. Please tell me your ward's name to get the full report. 📖";
             const speechText = "Welcome to JSSTrack360. Please tell me your ward's name to get the full report.";
             setMessages(prev => [...prev, { sender: "bot", text: introText }]);
-
             setIntroPlayed(true);
             speak(speechText, startListening);
         } else {
@@ -82,7 +77,6 @@ export default function ChatBot() {
         setListening(false);
     };
 
-    // --- FETCH STUDENTS ---
     const fetchStudents = async () => {
         try {
             const res = await fetch(`${API_BASE}/students`);
@@ -97,7 +91,6 @@ export default function ChatBot() {
         }
     };
 
-    // --- FETCH REPORT ---
     const fetchReport = async (name) => {
         try {
             const res = await fetch(`${API_BASE}/report/${encodeURIComponent(name)}`);
@@ -109,21 +102,17 @@ export default function ChatBot() {
                 return;
             }
 
-            // Add report, semesters, backlogs, downloads
             setMessages(prev => [...prev,
                 { sender: "bot", type: "header", text: `📄 Report for ${data.student_name}` },
-                { sender: "bot", type: "semesters", data: data.semester_results },
-                { sender: "bot", type: "backlogs", data: data.backlogs, totalCredits: data.total_backlog_credits },
-                {
-                    sender: "bot", type: "downloads", downloadUrls: {
-                        full: `${API_BASE}/report/${encodeURIComponent(data.student_name)}/pdf?type=full`,
-                        backlog: `${API_BASE}/report/${encodeURIComponent(data.student_name)}/pdf?type=backlog`
-                    }
-                },
+                { sender: "bot", type: "semesters", data: data.semesters },
+                { sender: "bot", type: "backlogs", data: data.backlogs, total_backlog_credits: data.total_backlog_credits },
+                { sender: "bot", type: "downloads", downloadUrls: {
+                    full: `${API_BASE}/report/${encodeURIComponent(data.student_name)}/pdf`,
+                    backlog: `${API_BASE}/report/${encodeURIComponent(data.student_name)}/pdf?type=backlog`
+                }},
                 { sender: "bot", type: "thank", text: "✅ The reports have been generated successfully. Thank you for using JssTrack360 chatbot. Have a great day!!" }
             ]);
 
-            // Speech + confetti
             let speechText = `Here is the report for ${data.student_name}. `;
             const totalBacklogCredits = data.total_backlog_credits;
 
@@ -137,7 +126,6 @@ export default function ChatBot() {
                 speechText += `Some backlogs are present. Total credits: ${totalBacklogCredits}.`;
             }
 
-        
             speechText += " The reports have been generated successfully. Thank you for using JssTrack360 chatbot. Have a great day!!";
             speak(speechText);
 
@@ -147,7 +135,6 @@ export default function ChatBot() {
         }
     };
 
-    // --- HANDLE USER INPUT ---
     const handleSend = (msgText = null) => {
         const text = msgText || input.trim();
         if (!text) return;
@@ -165,12 +152,10 @@ export default function ChatBot() {
         }
     };
 
-    // --- COLLAPSIBLE HANDLERS ---
     const toggleSemester = (sem) => setOpenSemesters(prev => ({ ...prev, [sem]: !prev[sem] }));
     const toggleBacklog = (sem) => setOpenBacklogs(prev => ({ ...prev, [sem]: !prev[sem] }));
     const toggleAlphabet = (letter) => setOpenAlphabet(prev => ({ ...prev, [letter]: !prev[letter] }));
 
-    // --- DOWNLOAD SECTION COMPONENT ---
     const DownloadSection = ({ downloadUrls }) => (
         <div className="flex gap-2 mt-2">
             <a href={downloadUrls.full} target="_blank" className="bg-blue-500 px-3 py-1 rounded text-white hover:bg-blue-600 transition-transform transform hover:scale-105">Download Full Report🔽</a>
@@ -178,27 +163,19 @@ export default function ChatBot() {
         </div>
     );
 
-
     return (
         <div className="flex flex-col items-center w-full h-screen">
-            {/* 🎉 Confetti celebration */}
             {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} />}
 
             <div className="flex items-center justify-between w-full max-w-3xl p-2 shadow-sm">
-                {/* Left spacer (empty div keeps title centered) */}
                 <div className="w-1/3"></div>
-
-                {/* Title in center */}
-                <h1 className="w-1/3 text-center font-semibold text-lg">
-                    🎓 Student Result Chatbot
-                </h1>
-
-                {/* Back button on right */}
+                <h1 className="w-1/3 text-center font-semibold text-lg">🎓 Student Result Chatbot</h1>
                 <div className="w-1/3 flex justify-end">
                     <button
                         onClick={() => {
-                            const currentPath = window.location.pathname; 
-                            const newPath = currentPath.replace(/\/ChatBot$/, ""); 
+                            window.speechSynthesis.cancel();
+                            const currentPath = window.location.pathname;
+                            const newPath = currentPath.replace(/\/ChatBot$/, "");
                             window.location.href = newPath;
                         }}
                         className="px-3 py-1 bg-gray-700 text-white rounded-lg hover:bg-gray-900 transition-transform transform hover:scale-105"
@@ -208,34 +185,23 @@ export default function ChatBot() {
                 </div>
             </div>
 
-
-            {/* Chat window */}
             <div className="flex flex-col flex-1 w-full max-w-3xl overflow-y-auto px-3 py-4 space-y-3">
-                {/* Messages */}
                 {messages.map((msg, i) => (
                     <div key={i} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                         <div className={`rounded-2xl px-4 py-2 shadow-md max-w-[85%] whitespace-pre-line transition-all duration-300 ${msg.sender === "user" ? "bg-blue-500 text-white" : "bg-gray-800 text-white"}`}>
-
-                            {/* Normal messages */}
+                            
                             {!msg.type && msg.text && msg.text.split("\n").map((line, idx) => <p key={idx}>{line}</p>)}
-
-                            {/* Report header */}
                             {msg.type === "header" && <h3 className="font-bold mb-2 text-lg">{msg.text}</h3>}
-
-                            {/* Download links */}
                             {msg.type === "downloads" && <DownloadSection downloadUrls={msg.downloadUrls} />}
-
-                            {/* Thank note */}
                             {msg.type === "thank" && <p className="mt-2 font-semibold text-white">{msg.text}</p>}
 
-                            {/* Students list */}
                             {msg.type === "students" && (
                                 <div className="mt-2">
                                     {Object.entries(
-                                        msg.data.reduce((acc, name) => {
-                                            const letter = name.charAt(0).toUpperCase();
+                                        msg.data.reduce((acc, student) => {
+                                            const letter = student.student_name.charAt(0).toUpperCase();
                                             if (!acc[letter]) acc[letter] = [];
-                                            acc[letter].push(name);
+                                            acc[letter].push(student.student_name);
                                             return acc;
                                         }, {})
                                     ).map(([letter, names]) => (
@@ -264,16 +230,15 @@ export default function ChatBot() {
                                 </div>
                             )}
 
-                            {/* Semesters */}
-                            {msg.type === "semesters" && Object.entries(msg.data).map(([sem, subjects]) => (
+                            {msg.type === "semesters" && Object.entries(msg.data).map(([sem, data]) => (
                                 <div key={sem} className="mb-2">
                                     <button onClick={() => toggleSemester(sem)} className="w-full text-left bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 mb-1 transition-transform transform hover:scale-105">
                                         {sem} {openSemesters[sem] ? "▲" : "▼"}
                                     </button>
                                     {openSemesters[sem] && (
-                                        <table className="table-auto border-collapse border border-gray-500 w-full text-sm mb-2">
+                                        <table className="table-auto border-collapse border border border-gray-400 w-full text-sm mb-2">
                                             <thead>
-                                                <tr className="bg-blue-300">
+                                                <tr className="bg-blue-300 border-white border">
                                                     <th className="border border-gray-400 px-3 py-2">Subject</th>
                                                     <th className="border border-gray-400 px-3 py-2">Internal</th>
                                                     <th className="border border-gray-400 px-3 py-2">External</th>
@@ -282,18 +247,20 @@ export default function ChatBot() {
                                                     <th className="border border-gray-400 px-3 py-2">Result</th>
                                                 </tr>
                                             </thead>
-                                            <tbody>
-                                                {subjects.map((sub, idx) => {
-                                                    const internal = sub.internal ?? 0;
-                                                    const external = sub.external ?? 0;
-                                                    const result = (internal >= 18 && external >= 18) || external === 0 ? "Pass" : "Fail";
+                                            <tbody className="border-white border">
+                                                {data.subject_names.map((subject, idx) => {
+                                                    const internal = data.ia_marks[idx] ?? 0;
+                                                    const external = data.see_marks[idx] ?? 0;
+                                                    const total = internal + external;
+                                                    const credits = data.credits[idx] ?? 0;
+                                                    const result = data.pass_fail[idx] ?? "Pass";
                                                     return (
                                                         <tr key={idx} className={result === "Fail" ? "bg-red-200" : ""}>
-                                                            <td className="border border-gray-400 px-3 py-2">{sub.subject}</td>
+                                                            <td className="border border-gray-400 px-3 py-2">{subject} ({data.subject_codes[idx]})</td>
                                                             <td className="border border-gray-400 px-3 py-2">{internal}</td>
                                                             <td className="border border-gray-400 px-3 py-2">{external}</td>
-                                                            <td className="border border-gray-400 px-3 py-2">{sub.total ?? "-"}</td>
-                                                            <td className="border border-gray-400 px-3 py-2">{sub.credits}</td>
+                                                            <td className="border border-gray-400 px-3 py-2">{total}</td>
+                                                            <td className="border border-gray-400 px-3 py-2">{credits}</td>
                                                             <td className="border border-gray-400 px-3 py-2">{result}</td>
                                                         </tr>
                                                     );
@@ -304,15 +271,14 @@ export default function ChatBot() {
                                 </div>
                             ))}
 
-                            {/* Backlogs */}
                             {msg.type === "backlogs" && (
                                 <div className="mt-2">
                                     <h4 className="font-semibold underline">Backlogs</h4>
-                                    {msg.totalCredits === 0 ? (
+                                    {msg.total_backlog_credits === 0 ? (
                                         <p className="font-bold text-green-600">✅ No backlogs</p>
                                     ) : (
                                         <>
-                                            {msg.totalCredits > 18 && <p className="text-red-600 font-bold">⚠️ Backlog credits exceed 18. Risk of year back</p>}
+                                            {msg.total_backlog_credits > 18 && <p className="text-red-600 font-bold">⚠️ Backlog credits exceed 18. Risk of year back</p>}
                                             {Object.entries(msg.data).map(([sem, subjects]) => (
                                                 <div key={sem} className="mb-2">
                                                     <button onClick={() => toggleBacklog(sem)} className="w-full text-left bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 mb-1 transition-transform transform hover:scale-105">
@@ -329,12 +295,12 @@ export default function ChatBot() {
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
-                                                                {subjects.map((sub, idx) => (
+                                                                {subjects.map((s, idx) => (
                                                                     <tr key={idx}>
-                                                                        <td className="border border-gray-400 px-3 py-2">{sub.subject}</td>
-                                                                        <td className="border border-gray-400 px-3 py-2">{sub.internal}</td>
-                                                                        <td className="border border-gray-400 px-3 py-2">{sub.external}</td>
-                                                                        <td className="border border-gray-400 px-3 py-2">{sub.credits}</td>
+                                                                        <td className="border border-gray-400 px-3 py-2">{s.subject}</td>
+                                                                        <td className="border border-gray-400 px-3 py-2">{s.internal}</td>
+                                                                        <td className="border border-gray-400 px-3 py-2">{s.external}</td>
+                                                                        <td className="border border-gray-400 px-3 py-2">{s.credits}</td>
                                                                     </tr>
                                                                 ))}
                                                             </tbody>
@@ -342,54 +308,40 @@ export default function ChatBot() {
                                                     )}
                                                 </div>
                                             ))}
-                                            <p><b>Total Backlog Credits:</b> {msg.totalCredits}</p>
+                                            <p><b>Total Backlog Credits:</b> {msg.total_backlog_credits}</p>
                                         </>
                                     )}
                                 </div>
                             )}
+
                         </div>
                     </div>
                 ))}
-                <div ref={messagesEndRef} />
+                <div ref={messagesEndRef}></div>
             </div>
 
-            {/* Input + Buttons */}
-            <div className="w-full max-w-3xl p-3 border-t flex gap-2">
+            <div className="flex w-full max-w-3xl px-3 py-2">
                 <input
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                    placeholder="Type a message..."
-                    className="flex-1 border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="flex-1 border rounded-l px-3 py-2 outline-none"
+                    placeholder="Type student name or 'list'"
+                    onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }}
                 />
                 <button
                     onClick={() => handleSend()}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-transform transform hover:scale-105"
+                    className="bg-blue-500 text-white px-4 py-2 rounded-r hover:bg-blue-600 transition-transform transform hover:scale-105"
                 >
                     Send
                 </button>
-
-                {/* Voice button + listening indicator */}
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={startVoiceFlow}
-                        className={`px-4 py-2 rounded-xl ${listening ? "bg-red-500" : "bg-green-500"} text-white`}
-                    >
-                        {listening ? "🎙️ Listening..." : "🎤 Voice"}
-                    </button>
-
-                    {listening && (
-                        <div
-                            onClick={stopListening}
-                            className="flex items-center justify-center w-12 h-12 bg-red-500 rounded-full shadow-md animate-pulse cursor-pointer"
-                        >
-                            <span className="text-white text-xl">🎙️</span>
-                        </div>
-                    )}
-                </div>
+                <button
+                    onClick={listening ? stopListening : startVoiceFlow}
+                    className={`ml-2 px-4 py-2 rounded ${listening ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"} text-white transition-transform transform hover:scale-105`}
+                >
+                    {listening ? "Stop 🎤" : "Voice 🎙️"}
+                </button>
             </div>
         </div>
     );
 }
-
