@@ -1,29 +1,58 @@
 from app_init import db
-
-class User(db.Model):
-    __tablename__ = 'users'
+from datetime import datetime, timezone
+class StudentAuth(db.Model):
+    __tablename__ = 'students'
     username = db.Column(db.String(10), primary_key=True, unique=True)
     name = db.Column(db.String(100))
-    password = db.Column(db.String(128), nullable=True)   # use larger length for bcrypt hashes
+    password = db.Column(db.String(128), nullable=True)   # bcrypt hash
+    student_email = db.Column(db.String(100), nullable=True)
+    student_phno = db.Column(db.String(20), nullable=True)
+
+    # Link to mentor (one-to-many: one mentor, many students)
+    mentor_id = db.Column(db.Integer, db.ForeignKey("mentors.id"), nullable=True)
+    mentor = db.relationship("Mentor", backref=db.backref("students", lazy=True))
+
+
+class ParentAuth(db.Model):
+    __tablename__ = "parents"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    # Credentials
+    username = db.Column(db.String(10), unique=True, nullable=False)
+    password = db.Column(db.String(128), nullable=False)
+
+    # Contact info
+    email = db.Column(db.String(100), nullable=True)
+    phone = db.Column(db.String(20), nullable=True)
+
+    # Relation info
+    name = db.Column(db.String(100), nullable=True)   # actual parent name if available
+    relation = db.Column(db.String(50), nullable=True, default="Guardian")  # Father/Mother/Guardian
+
+    # Link to student (one parent per student account)
+    student_usn = db.Column(
+        db.String(10),
+        db.ForeignKey("students.username"),
+        nullable=False,
+        unique=True
+    )
+    student = db.relationship("StudentAuth", backref=db.backref("parent_account", uselist=False))
 
 
 class Teacher(db.Model):
     __tablename__ = 'teachers'
     username = db.Column(db.String(10), primary_key=True, unique=True)
+    mentor_id = db.Column(
+        db.Integer,
+        db.ForeignKey('mentors.id', name='fk_teachers_mentor_id'),  # give it a name
+        nullable=True
+    )
     name = db.Column(db.String(100))
     password = db.Column(db.String(128), nullable=True)
 
-
-class StudentEmail(db.Model):
-    __tablename__ = 'student_emails'   # fixed from _tablename_
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    usn = db.Column(db.String(50), unique=True, nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    parent_email = db.Column(db.String(100), nullable=False)
-    student_email = db.Column(db.String(100), nullable=False)
-    parent_phno = db.Column(db.String(100), nullable=True)
-    student_phno = db.Column(db.String(100), nullable=True)
-    
+    # Contact info
+    email = db.Column(db.String(100), nullable=True, default = f"chetan16ck@gmail.com")
+    phone = db.Column(db.String(20), nullable=True, default = "123456789")
 
 
 class Mentor(db.Model):
@@ -32,12 +61,22 @@ class Mentor(db.Model):
     name = db.Column(db.String(100), unique=True, nullable=False)
 
 
-class MentorStudent(db.Model):
-    __tablename__ = 'mentor_students'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    mentor_id = db.Column(db.Integer, db.ForeignKey('mentors.id'), nullable=False)
-    student_usn = db.Column(db.String(50), db.ForeignKey('student_emails.usn'), nullable=False)
+class Meeting(db.Model):
+    __tablename__ = 'meetings'
+    id = db.Column(db.Integer, primary_key=True)
+    mentor_id = db.Column(db.Integer, nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    agenda = db.Column(db.Text, nullable=True)
+    date = db.Column(db.Date, nullable=False)
+    venue = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
-    # Relationships
-    mentor = db.relationship('Mentor', backref=db.backref('students', lazy=True))
-    student = db.relationship('StudentEmail', backref=db.backref('mentors', lazy=True))
+class PasswordResetToken(db.Model):
+    __tablename__ = "password_reset_tokens"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    token = db.Column(db.String(128), unique=True, nullable=False, index=True)
+    usn = db.Column(db.String(10), nullable=False)
+    role = db.Column(db.String(20), nullable=False)  # student, parent, teacher
+    expires_at = db.Column(db.DateTime, nullable=False)  # store naive UTC
+    used = db.Column(db.Boolean, default=False)

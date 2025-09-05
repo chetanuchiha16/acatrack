@@ -1,7 +1,7 @@
 import sqlite3
 from models.paths import db_path
 from app_init import bcrypt
-from models import db, User, Teacher, StudentEmail
+from models import db, StudentAuth, Teacher, StudentAuth
 import pandas as pd
 from models.paths import email_excel_path, mentor_excel_path
 from app_init import create_app
@@ -28,8 +28,8 @@ if __name__ == "__main__":
             for username, name in stus:
                 password = name[0:4] + username[-3:]
                 pw_hash = bcrypt.generate_password_hash(password=password).decode("utf-8")
-                if not User.query.filter_by(username = username).first():
-                    db.session.add(User(username = username, name = name, password = pw_hash))
+                if not StudentAuth.query.filter_by(username = username).first():
+                    db.session.add(StudentAuth(username = username, name = name, password = pw_hash))
                     f.write(f"{username}          {name}           {password}          {pw_hash}\n")
 
         db.session.commit()
@@ -71,10 +71,10 @@ if __name__ == "__main__":
             student_email = str(row["Student_Email"]).strip()
 
             # Check if USN already exists
-            if not StudentEmail.query.filter_by(usn=usn).first():
+            if not StudentAuth.query.filter_by(username=usn).first():
                 db.session.add(
-                    StudentEmail(
-                        usn=usn,
+                    StudentAuth(
+                        username=usn,
                         name=name,
                         parent_email=parent_email,
                         student_email=student_email

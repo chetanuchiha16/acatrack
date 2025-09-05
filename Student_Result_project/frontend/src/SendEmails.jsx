@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import API_BASE from "./config";
 
@@ -14,6 +14,41 @@ export default function SendEmails() {
   const [messageInd, setMessageInd] = useState("");
   const [feedbackInd, setFeedbackInd] = useState({ text: "", type: "" });
 
+  // Stored messages
+  const [messages, setMessages] = useState([]);
+
+  // fetch messages initially
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const fetchMessages = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/messages`);
+      setMessages(res.data);
+    } catch (err) {
+      console.error("Failed to fetch messages", err);
+    }
+  };
+
+  const saveMessage = async (data) => {
+    try {
+      await axios.post(`${API_BASE}/messages`, data);
+      fetchMessages(); // refresh after saving
+    } catch (err) {
+      console.error("Failed to save message", err);
+    }
+  };
+
+  const deleteMessage = async (id) => {
+    try {
+      await axios.delete(`${API_BASE}/messages/${id}`);
+      setMessages(messages.filter((m) => m.id !== id));
+    } catch (err) {
+      console.error("Failed to delete message", err);
+    }
+  };
+
   const sendEmailToAllStudents = async () => {
     if (!subjectAll.trim() || !messageAll.trim()) {
       setFeedbackAll({ text: "Subject and message are required.", type: "error" });
@@ -25,6 +60,7 @@ export default function SendEmails() {
         subject: subjectAll,
         message: messageAll,
       });
+      await saveMessage({ recipientType: "student", subject: subjectAll, message: messageAll });
       setFeedbackAll({ text: "Email sent to all students successfully!", type: "success" });
     } catch (err) {
       setFeedbackAll({ text: "Failed to send email to all students.", type: "error" });
@@ -43,6 +79,7 @@ export default function SendEmails() {
         subject: subjectAll,
         message: messageAll,
       });
+      await saveMessage({ recipientType: "parent", subject: subjectAll, message: messageAll });
       setFeedbackAll({ text: "Email sent to all parents successfully!", type: "success" });
     } catch (err) {
       setFeedbackAll({ text: "Failed to send email to all parents.", type: "error" });
@@ -50,7 +87,6 @@ export default function SendEmails() {
     }
   };
 
-  // Send email to individual student
   const sendEmailToStudent = async () => {
     if (!usn.trim()) {
       setFeedbackInd({ text: "Please enter a valid USN.", type: "error" });
@@ -67,6 +103,7 @@ export default function SendEmails() {
         subject: subjectInd,
         message: messageInd,
       });
+      await saveMessage({ usn, recipientType: "student", subject: subjectInd, message: messageInd });
       setFeedbackInd({ text: `Email sent to student with USN: ${usn}`, type: "success" });
     } catch (err) {
       setFeedbackInd({ text: `Failed to send email to student with USN: ${usn}`, type: "error" });
@@ -74,7 +111,6 @@ export default function SendEmails() {
     }
   };
 
-  // Send email to individual parent
   const sendEmailToParent = async () => {
     if (!usn.trim()) {
       setFeedbackInd({ text: "Please enter a valid USN.", type: "error" });
@@ -91,6 +127,7 @@ export default function SendEmails() {
         subject: subjectInd,
         message: messageInd,
       });
+      await saveMessage({ usn, recipientType: "parent", subject: subjectInd, message: messageInd });
       setFeedbackInd({ text: `Email sent to parent of student with USN: ${usn}`, type: "success" });
     } catch (err) {
       setFeedbackInd({ text: `Failed to send email to parent of student with USN: ${usn}`, type: "error" });
@@ -99,13 +136,13 @@ export default function SendEmails() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 mt-10">
+    <div className="max-w-7xl mx-auto p-6 space-y-10 shadow-2xl mt-10">
       <div className="flex flex-col md:flex-row gap-10">
         {/* Left: Email to Everyone */}
         <section className="flex-1 rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-semibold mb-6 ">Send Email to Everyone</h2>
+          <h2 className="text-2xl font-semibold mb-6">Send Email to Everyone</h2>
 
-          <label className="block mb-2 font-medium ">Subject</label>
+          <label className="block mb-2 font-medium">Subject</label>
           <input
             type="text"
             placeholder="Enter email subject"
@@ -114,13 +151,13 @@ export default function SendEmails() {
             className="w-full mb-4 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
 
-          <label className="block mb-2 font-medium ">Message</label>
+          <label className="block mb-2 font-medium">Message</label>
           <textarea
             placeholder="Enter your message here..."
             value={messageAll}
             onChange={(e) => setMessageAll(e.target.value)}
             rows={7}
-            className="w-full mb-4 px-4 py-2 border rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="w-full mb-4 px-4 py-2 border rounded-md resize-y h-70 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
 
           <div className="flex gap-4">
@@ -155,9 +192,9 @@ export default function SendEmails() {
 
         {/* Right: Email to Individual Student */}
         <section className="flex-1 rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-semibold mb-6 ">Send Email to Individual Student</h2>
+          <h2 className="text-2xl font-semibold mb-6">Send Email to Individual Student</h2>
 
-          <label className="block mb-2 font-medium ">USN</label>
+          <label className="block mb-2 font-medium">USN</label>
           <input
             type="text"
             placeholder="Enter USN"
@@ -166,7 +203,7 @@ export default function SendEmails() {
             className="w-full mb-4 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
 
-          <label className="block mb-2 font-medium ">Subject</label>
+          <label className="block mb-2 font-medium">Subject</label>
           <input
             type="text"
             placeholder="Enter email subject"
@@ -175,7 +212,7 @@ export default function SendEmails() {
             className="w-full mb-4 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
 
-          <label className="block mb-2 font-medium ">Message</label>
+          <label className="block mb-2 font-medium">Message</label>
           <textarea
             placeholder="Enter your message here..."
             value={messageInd}
@@ -214,6 +251,38 @@ export default function SendEmails() {
           )}
         </section>
       </div>
+
+      {/* Message Manager Section */}
+      <section className="rounded-lg p-6">
+        <h2 className="text-2xl font-semibold mb-6">Message Manager</h2>
+        {messages.length === 0 ? (
+          <p className="text-gray-500">No messages yet.</p>
+        ) : (
+          <ul className="space-y-4">
+            {messages.map((msg) => (
+              <li
+                key={msg.id}
+                className="border p-4 rounded-lg flex justify-between items-start"
+              >
+                <div>
+                  <h3 className="font-semibold">{msg.subject}</h3>
+                  <p className="text-gray-700">{msg.message}</p>
+                  <span className="text-xs text-gray-500">
+                    To: {msg.recipientType}{" "}
+                    {msg.usn ? `(USN: ${msg.usn})` : ""}
+                  </span>
+                </div>
+                <button
+                  onClick={() => deleteMessage(msg.id)}
+                  className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition"
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

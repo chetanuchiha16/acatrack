@@ -1,55 +1,10 @@
 import React, { useState } from "react";
 import API_BASE from "./config";
+import { semesterOptions, subjectMapping } from "./config";
 export default function SubjectResults() {
     const [semester, setSemester] = useState("");
     const [subject, setSubject] = useState("");
     const [data, setData] = useState(null);
-
-    const semesterOptions = ["SEM1", "SEM2", "SEM3", "SEM4"];
-    const subjectMapping = {
-        SEM1: {
-            BMATS101: "Mathematics for CSE Stream-I",
-            BCHES102: "Applied Chemistry for CSE Stream",
-            BCEDK103: "Computer-Aided Engineering Drawing",
-            BENGK106: "Communicative English",
-            BICOK107: "Indian Constitution",
-            BIDTK158: "Innovation and Design Thinking",
-            BESCK104A: "Introduction to Civil Engineering",
-            BETCK105H: "Introduction to Internet of Things (IoT)",
-        },
-        SEM2: {
-            BMAT201: "Mathematics for CSE Stream-II",
-            BPHYS202: "Applied Physics for CSE Stream",
-            BPOPS203: "Principles of Programming Using C",
-            BPWSK206: "Professional Writing Skills in English",
-            BKSKK207: "Samskrutika Kannada / Balake Kannada",
-            BSFHK258: "Scientific Foundations of Health",
-            BPLCK205B: "Introduction to Python Programming",
-            BESCK204C: "Introduction to Electronics Engineering",
-        },
-        SEM3: {
-            BCS301: "Mathematics for Computer Science",
-            BCS302: "Digital Design & Computer Organization",
-            BCS303: "Operating Systems",
-            BCS304: "Data Structures and Applications",
-            BCSL305: "Data Structures Lab",
-            BSCK307: "Soft Skills and Aptitude",
-            BNSK359: "National Service Scheme (NSS)",
-            BCS306A: "Object Oriented Programming with Java",
-            BCS358D: "Data Visualization with Python",
-        },
-        SEM4: {
-            BCS401: "Analysis & Design of Algorithms",
-            BCS402: "Microcontrollers",
-            BCS403: "Database Management Systems",
-            BCSL404: "Analysis & Design of Algorithms Lab",
-            BBOC407: "Biology for Computer Engineers",
-            BUHK408: "Universal Human Values",
-            BPEK459_PhysicalEducation_OR_BNSK459_NSS_:
-                "Physical Education or NSS",
-            BCS405B: "Graph Theory",
-        },
-    };
 
     const fetchData = async () => {
         if (!semester || !subject) return;
@@ -73,7 +28,7 @@ export default function SubjectResults() {
     };
 
     return (
-        <div className="max-w-3xl mx-auto p-6 shadow rounded-lg bg-[var(--background)] text-[var(--foreground)] transition-colors">
+        <div className="max-w-3xl mx-auto p-6 rounded-lg bg-[var(--background)] text-[var(--foreground)] transition-colors">
             <h2 className="text-2xl font-bold mb-4">Subject Results</h2>
 
             {/* Controls */}

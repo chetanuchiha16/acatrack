@@ -14,19 +14,20 @@ export default function StaffResults() {
 
   return (
     <div className="min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-6xl mx-auto shadow-lg rounded-lg bg-white dark:bg-gray-800">
+      <div className="max-w-6xl mx-auto shadow-xl rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
         
         {/* Tabs */}
-        <div className="flex flex-col sm:flex-row border-b">
+        <div className="flex flex-col sm:flex-row">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 p-3 sm:p-4 text-center font-medium text-sm sm:text-base transition-colors duration-200 ${
-                activeTab === tab.id
-                  ? "bg-blue-500 text-white"
-                  : "hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
-              }`}
+              className={`flex-1 px-4 py-3 text-center font-medium text-sm sm:text-base transition-all duration-200
+                ${
+                  activeTab === tab.id
+                    ? "bg-blue-500 text-white shadow-inner"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
             >
               {tab.label}
             </button>
@@ -34,7 +35,7 @@ export default function StaffResults() {
         </div>
 
         {/* Tab Content */}
-        <div className="p-4 sm:p-6 text-gray-800 dark:text-gray-100">
+        <div className="p-5 sm:p-6 text-gray-800 dark:text-gray-100">
           {activeTab === "semester" && <SemesterResults />}
           {activeTab === "subject" && <SubjectResults />}
           {activeTab === "overall" && <OverallResults />}

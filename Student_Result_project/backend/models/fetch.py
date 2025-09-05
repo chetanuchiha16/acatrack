@@ -28,7 +28,7 @@ sem_subjects = {
         "BCS303": "Operating Systems",
         "BCS304": "Data Structures and Applications",
         "BCSL305": "Data Structures Lab",
-        "BSCK307": "Soft Skills and Aptitude",
+        "BSCK307": "Social Connect and Responsibility",
         "BNSK359": "National Service Scheme (NSS)",
         "BCS306A": "Object Oriented Programming with Java",
         "BCS358D": "Data Visualization with Python"
@@ -41,9 +41,49 @@ sem_subjects = {
         "BBOC407": "Biology for Computer Engineers",
         "BUHK408": "Universal Human Values",
         "BPEK459_PhysicalEducation_OR_BNSK459_NSS_": "Physical Education or NSS",
-        "BCS405B": "Graph Theory"
+        "BCS405B": "Graph Theory",
+        "BCSL456D": "Technical Writing using LaTeX"
+    },
+    "SEM5": {
+        "BCS501": "Software Engineering and Project Management",
+        "BCS502": "Computer Networks",
+        "BCS503": "Theory of Computation",
+        "BCSL504": "Web Technology Lab",
+        "BAI515A": "Computer Graphics",
+        "BCS515B": "Artificial Intelligence",
+        "BCS515C": "Unix System Programming",
+        "BCS515D": "Distributed Systems",
+        "BAIL504": "Data Visualization Lab",
+        "BRMK557": "Research Methodology & IPR",
+        "BES508": "Environmental Studies",
+        "BCS586": "Mini Project",
+        "BPEK459_PhysicalEducation_OR_BNSK459_NSS_": "Physical Education or NSS"
+    },
+    "SEM6": {
+        # Sem 6 subjects not found explicitly; placeholders
+        "BCS601": "<Professional Core Course 6-1>",
+        "BCS602": "<Professional Core Course 6-2>",
+        "BCS603": "<Professional Core Course 6-3>",
+        "BCSL604": "<PCCL Lab for Sem 6>",
+        "PEC605x": "Professional Elective",
+        "OEC606x": "Open Elective",
+        "BSK6xx": "Skill Development Activity / NSS / Physical Education"
+    },
+    "SEM7": {
+        "PEC701x": "Professional Elective",
+        "PEC702x": "Professional Elective",
+        "PEC703x": "Professional Elective",
+        "OEC704x": "Open Elective",
+        "OEC705x": "Open Elective",
+        "PROJ786": "Major Project Phase II"  # includes practical/project work
+    },
+    "SEM8": {
+        "PEC801x": "Professional Elective (Online Courses)",
+        "OEC802x": "Open Elective (Online Courses)",
+        "INT803": "Internship (Industry / Research / Rural – 14-20 weeks)"
     }
 }
+
 def fetch_student_data(usn, semester, db_path=db_path):
     try:
         conn = sqlite3.connect(db_path)
