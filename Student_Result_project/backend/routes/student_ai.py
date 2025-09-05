@@ -117,7 +117,8 @@ def ai_profile():
     scores = np.array(student.ia_marks) + np.array(student.see_marks)
 
     strong = [sub for sub, mark in zip(student.subject_names, scores) if mark >= 70]
-    weak = [sub for sub, mark in zip(student.subject_names, scores) if mark < 40]
+    weak = [sub for sub, status in zip(student.subject_names, student.pass_fail) if status != "Pass"]
+
 
     advice = []
     if weak:
