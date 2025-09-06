@@ -13,7 +13,12 @@ DOWNLOAD_DIR = os.path.abspath("VTU_Results")  # Folder to save PDFs
 USN_PREFIX = "1JS23CS"
 USN_START = 1
 USN_END = 25
-RESULTS_URL = "https://results.vtu.ac.in/DJcbcs24/index.php"
+
+# Ask user which exam session to fetch
+EXAM_SESSION = input("Enter exam session (DJ for Dec-Jan / JJE for Jun-Jul): ").strip().upper()
+EXAM_YEAR = input("Enter exam year (last two digits, e.g. 24 for 2024): ").strip()
+
+RESULTS_URL = f"https://results.vtu.ac.in/{EXAM_SESSION}cbcs{EXAM_YEAR}/index.php"
 
 # Create download folder if it doesn't exist
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
@@ -84,6 +89,7 @@ def fetch_results(usn_number):
 
 # --- MAIN FUNCTION ---
 def main():
+    print(f"\nFetching results from: {RESULTS_URL}")
     usn_list = [f"{USN_PREFIX}{str(i).zfill(3)}" for i in range(USN_START, USN_END + 1)]
     
     for usn in usn_list:
