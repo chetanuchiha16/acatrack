@@ -31,18 +31,32 @@
 # from flask import Flask, request, jsonify
 # from backend.models.users import db
 # app.py
-from models.data_prep import prepare_data
-from app_init import db, create_app
+from models.paths import set_current_batch_db
+from models.batch_manager import BatchManager, db
 from routes import register_routes
 
-batch_year = 2023  # Or get this from user/admin input
-prepare_data(batch_year=batch_year)
+batch_year = 2022  # Can be dynamic later
 
-app = create_app(batch_year=batch_year)
+# Set DB path for this batch
+set_current_batch_db(batch_year)
+
+# Initialize batch manager
+bm = BatchManager()
+
+# Create batch DB from Excel if not exists
+if batch_year not in bm.list_batches():
+    bm.create_batch(batch_year, excel_path=None)  # `prepare_data` internally uses batch_year
+
+# Get Flask app for this batch
+app = bm.get_flask_app(batch_year)
+
 with app.app_context():
-    db.create_all()  # Creates auth tables in this batch's DB
+    db.create_all()  # Create auth tables for this batch
 
+# Register routes
 register_routes(app)
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
+
+

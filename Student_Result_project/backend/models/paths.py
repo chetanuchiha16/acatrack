@@ -23,6 +23,16 @@ def get_excel_path(batch_year: int) -> str:
 def get_db_path(batch_year: int) -> str:
     return str(db_dir / f"student_data_{batch_year}.db")
 
+from models.batch_manager import BatchManager
+
+current_batch_db_path = None
+
+def set_current_batch_db(batch_year: int):
+    global current_batch_db_path
+    current_batch_db_path = BatchManager().get_db_path(batch_year)
+
+def get_current_db_path():
+    return current_batch_db_path
 
 # print(excel_path)
 # print(logo_path)
