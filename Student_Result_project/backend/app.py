@@ -22,26 +22,27 @@
 # from logic import display_subjectwise_result
 # from logic import display_semesterwise_results
 
-from models.data_prep import prepare_data
 
-prepare_data()
 # from gui import build_app
     
 # widgets = build_app()
 # Run the GUI
 # widgets["root"].mainloop()
-
-
 # from flask import Flask, request, jsonify
-from routes import register_routes
-from app_init import db, create_app
 # from backend.models.users import db
-app = create_app()
+# app.py
+from models.data_prep import prepare_data
+from app_init import db, create_app
+from routes import register_routes
 
+batch_year = 2023  # Or get this from user/admin input
+prepare_data(batch_year=batch_year)
+
+app = create_app(batch_year=batch_year)
 with app.app_context():
-    db.create_all()
-register_routes(app)
+    db.create_all()  # Creates auth tables in this batch's DB
 
+register_routes(app)
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
