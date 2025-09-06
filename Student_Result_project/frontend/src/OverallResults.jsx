@@ -35,16 +35,21 @@ export default function OverallResults() {
     document.body.removeChild(a);
   };
 
-  const filteredData = data
-    .filter(
-      (student) =>
-        student.name.toLowerCase().includes(search.toLowerCase()) ||
-        student.usn.toLowerCase().includes(search.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sortDir === "asc") return a[sortBy] > b[sortBy] ? 1 : -1;
-      else return a[sortBy] < b[sortBy] ? 1 : -1;
-    });
+  // Filter out invalid entries first
+const validData = data.filter(student => student.name && student.usn);
+
+// Then apply search and sorting
+const filteredData = validData
+  .filter(
+    (student) =>
+      student.name.toLowerCase().includes(search.toLowerCase()) ||
+      student.usn.toLowerCase().includes(search.toLowerCase())
+  )
+  .sort((a, b) => {
+    if (sortDir === "asc") return a[sortBy] > b[sortBy] ? 1 : -1;
+    else return a[sortBy] < b[sortBy] ? 1 : -1;
+  });
+
 
   const toggleSort = (column) => {
     if (sortBy === column) {

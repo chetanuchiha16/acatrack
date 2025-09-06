@@ -32,6 +32,7 @@ def set_current_batch_db(batch_year: int):
     current_batch_db_path = BatchManager().get_db_path(batch_year)
 
 def get_current_db_path():
+    print(current_batch_db_path)
     return current_batch_db_path
 
 # print(excel_path)

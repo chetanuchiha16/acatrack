@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify, send_from_directory
 from models import Student
 from visuals import create_student_report
-from models.paths import db_path, pdf_dir
+from models.paths import db_path, pdf_dir, get_current_db_path
 import os
+
+
 
 student_bp = Blueprint('student', __name__)
 
@@ -16,6 +18,7 @@ def get_student_info():
 
 
     try:
+        db_path = get_current_db_path()
         student = Student(usn=usn, semester=semester, db_path=db_path)
 
         # Generate PDF

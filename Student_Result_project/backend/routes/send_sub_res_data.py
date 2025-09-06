@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_file, Blueprint
 from models import University, SubjectResult
-from models.paths import db_path, pdf_dir
+from models.paths import db_path, pdf_dir, get_current_db_path
 from visuals import create_subject_report
 import os
 
@@ -13,7 +13,8 @@ def get_subject_results():
 
     if not semester or not subject_code:
         return jsonify({"error": "semester and subject are required"}), 400
-
+    
+    db_path = get_current_db_path()
     university = University(db_path)
     university.add_students(selected_semester=semester)
     subject_result = SubjectResult(subject_code, semester, university)

@@ -35,7 +35,7 @@ from models.paths import set_current_batch_db
 from models.batch_manager import BatchManager, db
 from routes import register_routes
 
-batch_year = 2022  # Can be dynamic later
+batch_year = 2023  # Can be dynamic later
 
 # Set DB path for this batch
 set_current_batch_db(batch_year)

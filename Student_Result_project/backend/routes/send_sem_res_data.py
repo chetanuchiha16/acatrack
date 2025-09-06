@@ -1,9 +1,10 @@
 from flask import Flask, jsonify, request,Blueprint,send_file
 from models import University, SubjectResult
-from models.paths import db_path, pdf_dir
+from models.paths import db_path, pdf_dir, get_current_db_path
 from visuals import generate_sem_pdf
 import os
 from models.fetch import sem_subjects
+
 
 sem_bp = Blueprint('sem_res',__name__)
 
@@ -14,6 +15,7 @@ def get_semester_results():
         return jsonify({"error": "Missing semester parameter"}), 400
     
     try:
+        db_path = get_current_db_path()
         university = University(db_path)
         university.add_students(selected_semester=semester)
 

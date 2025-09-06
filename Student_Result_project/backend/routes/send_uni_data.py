@@ -1,7 +1,8 @@
 from flask import Flask, jsonify, request, send_file, Blueprint
 from models import University
 from visuals import create_toppers_list_pdf, create_university_report
-from models.paths import db_path, pdf_dir
+from models.paths import db_path, pdf_dir, get_current_db_path
+
 
 uni_bp = Blueprint('uni', __name__)
 
@@ -12,6 +13,7 @@ def get_academic_performance():
     show_failed = request.args.get('show_failed', 'false').lower() == 'true'
 
     try:
+        db_path = get_current_db_path()
         university = University(db_path=db_path)
         university.add_students(semester)
         result = university.calculate_academic_performance_by_semester(semester)
