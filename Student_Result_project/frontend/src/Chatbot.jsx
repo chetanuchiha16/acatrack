@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import API_BASE from "./config";
 import Confetti from "react-confetti";
+import { detectIntent, extractStudentName, extractSemester, isBacklogRequest, isAiSummaryRequest } from "./nlp";
+// import React, { useState } from react;
+import { HelpCircle } from "lucide-react";
+import HelpCard from "./helpcard";
+
 
 export default function ChatBot() {
     const [messages, setMessages] = useState([
@@ -64,8 +69,12 @@ export default function ChatBot() {
             setInput(transcript);
             setListening(false);
 
+            // Show user message
             setMessages(prev => [...prev, { sender: "user", text: `You said: ${transcript}` }]);
+
+            // Process via NLP
             handleSend(transcript);
+
         };
 
         recognition.onerror = (e) => { console.error(e.error); setListening(false); };
@@ -113,46 +122,55 @@ export default function ChatBot() {
 
     const [disambiguationOptions, setDisambiguationOptions] = useState([]);
 
-    const fetchReport = async (name) => {
-        try {
-            const res = await fetch(`${API_BASE}/report/${encodeURIComponent(name)}`);
-            const data = await res.json();
+    const fetchReport = async (name, semester = null, intent = "fetch_report") => {
+    try {
+        // Build URL
+        let url = `${API_BASE}/report/${encodeURIComponent(name)}`;
+        if (semester) url += `?semester=${encodeURIComponent(semester)}`;
 
+        const res = await fetch(url);
+        const data = await res.json();
 
-            if (data.error) {
-                setMessages(prev => [...prev, { sender: "bot", text: data.error }]);
-                speak(data.error);
-                return;
+        if (data.error) {
+            setMessages(prev => [...prev, { sender: "bot", text: data.error }]);
+            speak(data.error);
+            return;
+        }
+
+        // Handle disambiguation
+        if (data.type === "disambiguation" && data.options?.length > 0) {
+            setMessages(prev => [
+                ...prev,
+                { sender: "bot", text: data.message, options: data.options }
+            ]);
+            speak(data.message || "Multiple students found. Please select from the options displayed.");
+            return;
+        }
+
+        setDisambiguationOptions([]);
+
+        const newMessages = [
+            { sender: "bot", type: "header", text: `📄 Report for ${data.student_name}${semester ? ` (${semester})` : ""}` },
+        ];
+
+        // ------------------ INTENT HANDLING ------------------
+
+        if (intent === "fetch_report") {
+            // Full report content
+            if (semester && data.semesters?.[semester]) {
+                newMessages.push({ sender: "bot", type: "semesters", data: { [semester]: data.semesters[semester] } });
+            } else {
+                newMessages.push({ sender: "bot", type: "semesters", data: data.semesters });
             }
 
-            if (data.type === "disambiguation" && data.options?.length > 0) {
-                setMessages(prev => [
-                    ...prev,
-                    {
-                        sender: "bot",
-                        text: data.message,
-                        options: data.options
-                    }
-                ]);
-                // setDisambiguationOptions(data.options);
-                speak(data.message || "Multiple students found. Please select from the options displayed.");
-                return;
-            }
+            newMessages.push({
+                sender: "bot",
+                type: "backlogs",
+                data: data.backlogs,
+                total_backlog_credits: data.total_backlog_credits
+            });
 
-            // Clear any previous disambiguation options
-            setDisambiguationOptions([]);
-
-            setMessages(prev => [...prev,
-            { sender: "bot", type: "header", text: `📄 Report for ${data.student_name}` },
-            { sender: "bot", type: "semesters", data: data.semesters },
-            { sender: "bot", type: "backlogs", data: data.backlogs, total_backlog_credits: data.total_backlog_credits },
-            {
-                sender: "bot", type: "downloads", downloadUrls: {
-                    full: `${API_BASE}/report/${encodeURIComponent(name)}/pdf`,
-                    backlog: `${API_BASE}/report/${encodeURIComponent(name)}/pdf?type=backlog`
-                }
-            },
-            {
+            newMessages.push({
                 sender: "bot",
                 type: "ai_insights",
                 data: {
@@ -161,32 +179,115 @@ export default function ChatBot() {
                     trend: data.trend,
                     cgpa_prediction: data.cgpa_prediction
                 }
-            },
-            { sender: "bot", type: "thank", text: "✅ The reports have been generated successfully. Thank you for using JssTrack360 chatbot. Have a great day!!" }
-            ]);
+            });
 
-            let speechText = `Here is the report for ${data.student_name}. `;
+            newMessages.push({
+                sender: "bot",
+                type: "downloads",
+                downloadUrls: {
+                    full: `${API_BASE}/report/${encodeURIComponent(name)}/pdf`,
+                    backlog: `${API_BASE}/report/${encodeURIComponent(name)}/pdf?type=backlog${semester ? `&semester=${encodeURIComponent(semester)}` : ""}`
+                }
+            });
+
+            // Speech for full report
+            let speechText = `Here is the report for ${data.student_name}.`;
             const totalBacklogCredits = data.total_backlog_credits;
-
             if (totalBacklogCredits === 0) {
-                speechText += "No backlogs. Excellent!";
+                speechText += " No backlogs. Excellent!";
+                setShowConfetti(true);
+                setTimeout(() => setShowConfetti(false), 7000);
+            } else if (totalBacklogCredits > 18) {
+                speechText += " ⚠️ Backlog credits exceed 18. Risk of year back.";
+            } else {
+                speechText += ` Some backlogs are present. Total Backlog credits: ${totalBacklogCredits}.`;
+            }
+            speechText += " Thank you for using JssTrack360 chatbot. Have a great day!!";
+            speak(speechText);
+
+        } else if (intent === "check_backlogs") {
+            newMessages.push({
+                sender: "bot",
+                type: "backlogs",
+                data: data.backlogs,
+                total_backlog_credits: data.total_backlog_credits
+            });
+
+            newMessages.push({
+                sender: "bot",
+                type: "downloads",
+                downloadUrls: {
+                    backlog: `${API_BASE}/report/${encodeURIComponent(name)}/pdf?type=backlog${semester ? `&semester=${encodeURIComponent(semester)}` : ""}`
+                }
+            });
+
+            // Speech for backlog check
+            let speechText = `Here is the backlog report for ${data.student_name}.`;
+            const totalBacklogCredits = data.total_backlog_credits;
+            if (totalBacklogCredits === 0) {
+                speechText += " No backlogs. Excellent!";
                 setShowConfetti(true);
                 setTimeout(() => setShowConfetti(false), 5000);
             } else if (totalBacklogCredits > 18) {
-                speechText += "⚠️ Backlog credits exceed 18. Risk of year back.";
+                speechText += " ⚠️ Backlog credits exceed 18. Risk of year back.";
             } else {
-                speechText += `Some backlogs are present. Total credits: ${totalBacklogCredits}.`;
+                speechText += ` Some backlogs are present. Total credits: ${totalBacklogCredits}.`;
             }
-
-            speechText += " The reports have been generated successfully. Thank you for using JssTrack360 chatbot. Have a great day!!";
+            speechText += " Thank you for using JssTrack360 chatbot. Have a great day!!";
             speak(speechText);
 
-        } catch {
-            setMessages(prev => [...prev, { sender: "bot", text: "❌ Error fetching report" }]);
-            speak("Sorry, there was an error fetching the report.");
-        }
-    };
+        } else if (intent === "ai_summary") {
+            newMessages.push({
+                sender: "bot",
+                type: "ai_insights",
+                data: {
+                    ai_summary: data.ai_summary,
+                    ai_profile: data.ai_profile,
+                    trend: data.trend,
+                    cgpa_prediction: data.cgpa_prediction
+                }
+            });
 
+            // Speech for AI summary
+            speak(`AI summary for ${data.student_name} is generated. Thank you for using JssTrack360 chatbot. Have a great day!!`);
+
+        } else if (intent === "download_pdf") {
+            try {
+                const downloadRes = await fetch(`${API_BASE}/report/${encodeURIComponent(name)}/downloads`);
+                const downloadData = await downloadRes.json();
+
+                if (downloadData.error) {
+                    newMessages.push({ sender: "bot", text: downloadData.error });
+                    speak(downloadData.error);
+                } else {
+                    newMessages.push({
+                        sender: "bot",
+                        type: "downloads",
+                        downloadUrls: downloadData.downloadUrls
+                    });
+                    speak(`Download links for ${data.student_name} are generated. Thank you for using JssTrack360 chatbot. Have a great day!!`);
+                }
+            } catch (err) {
+                console.error(err);
+                newMessages.push({ sender: "bot", text: "❌ Error fetching download links." });
+                speak("Sorry, there was an error fetching the download links.");
+            }
+        }
+
+        // Thank you message (optional)
+        newMessages.push({ sender: "bot", type: "thank", text: "✅ Generated! Thank you for using JssTrack360 chatbot." });
+        setMessages(prev => [...prev, ...newMessages]);
+
+    } catch {
+        setMessages(prev => [...prev, { sender: "bot", text: "❌ Error fetching report" }]);
+        speak("Sorry, there was an error fetching the report.");
+    }
+};
+
+
+
+
+    const [pendingStudent, setPendingStudent] = useState(null);
 
     const handleSend = (msgText = null) => {
         const text = msgText || input.trim();
@@ -195,18 +296,83 @@ export default function ChatBot() {
         if (!msgText) setMessages(prev => [...prev, { sender: "user", text: `You said: ${text}` }]);
         setInput("");
 
-        // Clear old disambiguation options if user types new input
+        // Clear any old disambiguation options
         setDisambiguationOptions([]);
 
-        const lcText = text.toLowerCase();
-        if (lcText === "list") {
-            speak("Fetching all students...");
-            fetchStudents();
-        } else {
-            speak(`Fetching report for ${text}...`);
-            fetchReport(text);
+        // Detect intent
+        let intent = detectIntent(text);
+
+        // NLP overrides for more robust intent detection
+        if (isBacklogRequest(text)) intent = "check_backlogs";
+        if (isAiSummaryRequest(text)) intent = "ai_summary";
+
+        // Extract student name and optional semester
+        const studentName = extractStudentName(text, students);
+        const semester = extractSemester(text);
+
+        switch (intent) {
+            case "list_students":
+                speak("Fetching all students...");
+                fetchStudents();
+                break;
+
+            case "fetch_report":
+                if (studentName) {
+                    speak(`Fetching report for ${studentName}...`);
+                    fetchReport(studentName, semester, "fetch_report");
+                } else {
+                    speak("Please provide a valid student name.");
+                    setMessages(prev => [...prev, { sender: "bot", text: "Please provide a valid student name." }]);
+                }
+                break;
+
+            case "check_backlogs":
+                if (studentName) {
+                    speak(`Fetching backlog report for ${studentName}...`);
+                    fetchReport(studentName, semester, "check_backlogs");
+                } else {
+                    speak("Please provide a student name to check backlogs.");
+                    setMessages(prev => [...prev, { sender: "bot", text: "Please provide a student name to check backlogs." }]);
+                }
+                break;
+
+            case "ai_summary":
+                if (studentName) {
+                    speak(`Fetching AI summary for ${studentName}...`);
+                    fetchReport(studentName, semester, "ai_summary");
+                } else {
+                    speak("Please provide a student name to see AI summary.");
+                    setMessages(prev => [...prev, { sender: "bot", text: "Please provide a student name to see AI summary." }]);
+                }
+                break;
+
+            case "download_pdf":
+                if (studentName) {
+                    speak(`Preparing download links for ${studentName}...`);
+                    // For download request, show full + backlog links
+                    fetchReport(studentName, semester, "download_pdf");
+                } else {
+                    speak("Please provide the student name to download the report.");
+                    setMessages(prev => [...prev, { sender: "bot", text: "Please provide the student name to download the report." }]);
+                }
+                break;
+
+            default:
+                // Fallback: treat text as student name
+                if (studentName) {
+                    speak(`Fetching report for ${studentName}...`);
+                    fetchReport(studentName, semester, "fetch_report");
+                } else {
+                    speak("Sorry, I did not understand that. You can type 'list' to see all students.");
+                    setMessages(prev => [...prev, { sender: "bot", text: "❌ Sorry, I did not understand that. You can type 'list' to see all students." }]);
+                }
+                break;
         }
     };
+
+
+
+
 
     const toggleSemester = (sem) => setOpenSemesters(prev => ({ ...prev, [sem]: !prev[sem] }));
     const toggleBacklog = (sem) => setOpenBacklogs(prev => ({ ...prev, [sem]: !prev[sem] }));
@@ -214,10 +380,29 @@ export default function ChatBot() {
 
     const DownloadSection = ({ downloadUrls }) => (
         <div className="flex gap-2 mt-2">
-            <a href={downloadUrls.full} target="_blank" className="bg-blue-500 px-3 py-1 rounded text-white hover:bg-blue-600 transition-transform transform hover:scale-105">Download Full Report🔽</a>
-            <a href={downloadUrls.backlog} target="_blank" className="bg-red-500 px-3 py-1 rounded text-white hover:bg-red-600 transition-transform transform hover:scale-105">Download Backlog Report🔽</a>
+            {downloadUrls.full && (
+                <a
+                    href={downloadUrls.full}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-blue-500 px-3 py-1 rounded text-white hover:bg-blue-600 transition-transform transform hover:scale-105"
+                >
+                    Download Full Report 🔽
+                </a>
+            )}
+            {downloadUrls.backlog && (
+                <a
+                    href={downloadUrls.backlog}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-red-500 px-3 py-1 rounded text-white hover:bg-red-600 transition-transform transform hover:scale-105"
+                >
+                    Download Backlog Report 🔽
+                </a>
+            )}
         </div>
     );
+
 
     const [suggestions, setSuggestions] = useState([]);
 
@@ -234,6 +419,28 @@ export default function ChatBot() {
             setSuggestions([]);
         }
     };
+
+    const [showHelp, setShowHelp] = useState(false);
+    const helpRef = useRef(null);
+
+    // Close when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (helpRef.current && !helpRef.current.contains(event.target)) {
+                setShowHelp(false);
+            }
+        };
+
+        if (showHelp) {
+            document.addEventListener("mousedown", handleClickOutside);
+        } else {
+            document.removeEventListener("mousedown", handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showHelp]);
+
 
 
 
@@ -256,8 +463,27 @@ export default function ChatBot() {
                     >
                         ⬅ Back
                     </button>
+
                 </div>
             </div>
+            {/* Help button fixed at top-right */}
+            <div ref={helpRef} className="fixed top-4 right-4 z-50">
+                <button
+                    onClick={() => setShowHelp(!showHelp)}
+                    className="px-3 py-2 bg-purple-500 text-white rounded-xl shadow-lg hover:bg-purple-600 transition-transform transform hover:scale-105"
+                >
+                    Help❓
+                </button>
+
+                {/* Show Help card when toggled */}
+                {showHelp && (
+                    <div className="absolute right-0 mt-2 w-72 bg-white border rounded-xl shadow-lg p-4">
+                        <HelpCard />
+                    </div>
+                )}
+            </div>
+
+
 
             <div className="flex flex-col flex-1 w-full max-w-3xl overflow-y-auto px-3 py-4 space-y-3">
                 {messages.map((msg, i) => (
@@ -673,7 +899,7 @@ export default function ChatBot() {
             </div>
 
             {/* Input + Buttons */}
-            <div className="w-full max-w-3xl p-3 border-t flex gap-2">
+            <div className="w-full max-w-3xl p-3 border-t flex gap-2 items-center">
                 <div className="relative flex-1">
                     {/* Suggestions dropdown above input */}
                     {suggestions.length > 0 && (
@@ -725,7 +951,8 @@ export default function ChatBot() {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={startVoiceFlow}
-                        className={`px-4 py-2 rounded-xl text-white ${listening ? "bg-red-500" : "bg-green-500"} transition-colors duration-200`}
+                        className={`px-4 py-2 rounded-xl text-white ${listening ? "bg-red-500" : "bg-green-500"
+                            } transition-colors duration-200`}
                     >
                         {listening ? "🎙️ Listening..." : "🎤 Voice"}
                     </button>
@@ -739,7 +966,10 @@ export default function ChatBot() {
                         </div>
                     )}
                 </div>
+
+
             </div>
+
 
         </div >
     );

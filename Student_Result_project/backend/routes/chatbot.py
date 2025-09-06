@@ -581,3 +581,47 @@ def download_pdf_report(student_query):
         as_attachment=True,
         download_name=filename
     )
+
+
+@chatbot_bp.route("/report/<student_query>/downloads", methods=["GET"])
+def get_download_links(student_query):
+    students = fetch_student_data_from_university()
+    matched_name = _fuzzy_find_student(student_query, students.keys())
+    
+    if not matched_name:
+        return jsonify({"error": "Student not found"}), 404
+
+    student_name = students[matched_name]["student_name"]
+
+    
+
+    return jsonify({
+        "type": "downloads",
+        "downloadUrls": {
+            "full": f"/api/report/{student_name}/pdf?type=full",
+            "backlog": f"/api/report/{student_name}/pdf?type=backlog"
+        }
+    })
+
+@chatbot_bp.route("/chatbot/intent", methods=["POST"])
+def handle_intent():
+    """
+    Handles chatbot intents like 'download_pdf'.
+    Expects JSON: { "intent": "<intent_name>", "query": "<student_name>" }
+    """
+    data = request.json
+    intent = data.get("intent")
+    query = data.get("query", "").strip()
+
+    if intent == "download_pdf":
+        # Extract student name if user typed: "download report <student_name>"
+        student_name = query.replace("download report", "").strip()
+        if not student_name:
+            return jsonify({
+                "message": "Please provide the student name to download the report."
+            })
+
+        # Fetch download links from backend route
+
+    return jsonify({"message": "Intent not recognized."})
+
