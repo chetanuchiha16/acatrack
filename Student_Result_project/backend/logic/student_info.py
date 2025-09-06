@@ -11,7 +11,6 @@ if __name__ == "__main__":
             
             info_text.configure(state="normal")
             info_text.delete("1.0", ctk.END)
-            
             info_text.insert(ctk.END, f"Name: {student.name}\n")
             info_text.insert(ctk.END, f"USN: {student.usn}\n")
             info_text.insert(ctk.END, f"Total Marks: {student.total_marks}\n")

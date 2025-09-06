@@ -104,7 +104,7 @@ def generate_backlog_pdf(student_name, backlogs, total_credits):
 
         story.append(Paragraph(f"<b>Total Backlog Credits:</b> {total_credits}", styles['Normal']))
 
-    doc.build(buffer)
+    doc.build(story)
     buffer.seek(0)
     return buffer
 
@@ -139,21 +139,30 @@ def fetch_student_data_from_university():
 def _calculate_backlogs(student_data):
     backlogs = {}
     total_credits = 0.0
-    for sem, subjects in student_data.get("semesters", {}).items():
-        failed = []
-        # subjects here might be a list of dicts or flattened items depending on upstream data.
-        for s in subjects:
-            try:
-                external = float(s.get("external") or 0)
-                credits = float(s.get("credits") or 0)
-            except:
-                continue
-            if external != 0 and external < 18:
-                failed.append(s)
-                total_credits += credits
-        if failed:
-            backlogs[sem] = failed
+
+    for sem, data in student_data.get("semesters", {}).items():
+        sem_backlogs = []
+        for ia, see, credit, subject, status in zip(
+            data.get("ia_marks", []),
+            data.get("see_marks", []),
+            data.get("credits", []),
+            data.get("subject_names", []),
+            data.get("pass_fail", [])
+        ):
+            if status == "Fail":
+                sem_backlogs.append({
+                    "subject": subject,
+                    "internal": ia,
+                    "external": see,
+                    "credits": credit
+                })
+                total_credits += credit
+
+        if sem_backlogs:
+            backlogs[sem] = sem_backlogs
+
     return backlogs, total_credits
+
 
 def _fuzzy_find_student(name, students, cutoff=70):
     lowered_map = {s.lower(): s for s in students}
@@ -397,6 +406,27 @@ def list_students():
 @chatbot_bp.route("/report/<student_query>", methods=["GET"])
 def get_student_report(student_query):
     students = fetch_student_data_from_university()
+
+    # --- Disambiguation handling ---
+    # lowered_map = {s.lower(): s for s in students.keys()}
+    query_lower = student_query.lower()
+
+# Find all students whose name starts with the given query (first word match)
+    possible_matches = [
+        name for name in students.keys()
+        if name.lower().startswith(query_lower)
+    ]
+
+    if len(possible_matches) > 1:
+        formatted_matches = [name.upper() for name in possible_matches]  # ✅ UPPERCASE
+        return jsonify({
+            "type": "disambiguation",
+            "message": f"Multiple students found for '{student_query}'. Please specify the full name\nor choose from the dropdown",
+            "options": formatted_matches
+        })
+
+
+    # Otherwise fall back to fuzzy match
     matched_name = _fuzzy_find_student(student_query, students.keys())
     if not matched_name:
         return jsonify({"error": "Student not found"}), 404
@@ -437,16 +467,24 @@ def get_student_report(student_query):
         subjects = sem_data.get("subject_names", [])
         pass_fail = sem_data.get("pass_fail", [])
 
-    total_marks = sum([ia + see for ia, see in zip(ia_marks, see_marks)])
-    max_total_marks = sum([100]*len(subjects))  # assuming 100 marks per subject
-    ai_summary = (
-            f"{student_data['student_name']} has completed {latest_sem}"
-            f"\nTotal Marks: {total_marks}/{max_total_marks} \nSGPA: {sem_data.get('sgpa',0):.2f}"
-            f"\nPercentage: {sem_data.get('percentage',0):.2f}% \n",
-            f"Total backlog credits: {total_backlog_credits}. Backlogs need to be cleared for better academic standing." 
-            if total_backlog_credits > 0 
-            else "No backlogs — academic record is clear."
+    total_marks = sum([ia + see for ia, see in zip(ia_marks, see_marks)]) 
+    max_total_marks = sum([100]*len(subjects)) # assuming 100 marks per subject
+    ai_summary = {
+    "student_name": student_data["student_name"],
+    "usn": sem_data.get("usn", "N/A"),
+    "obtained_credits": sem_data.get("obtained_credits","N/A"),
+    "semester": latest_sem,
+    "total_marks": f"{total_marks}/{max_total_marks}",
+    "sgpa": f"{sem_data.get('sgpa', 0):.2f}",
+    "cgpa": f"{sem_data.get('cgpa', 0):.2f}",
+    "percentage": f"{sem_data.get('percentage', 0):.2f}%",
+    "backlog_status": (
+        f"⚠️ Total backlog credits: {total_backlog_credits}. Backlogs need to be cleared."
+        if total_backlog_credits > 0
+        else "✅ No backlogs — academic record is clear."
     )
+}
+
 
         # Tag aggregation (auto)
     tag_avgs, tag_counts, subject_tags = aggregate_tag_scores(student_data)

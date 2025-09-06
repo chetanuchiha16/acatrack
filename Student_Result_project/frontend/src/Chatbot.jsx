@@ -77,11 +77,13 @@ export default function ChatBot() {
         setListening(false);
     };
 
+    const [students, setStudents] = useState([]);
     const fetchStudents = async () => {
         try {
             const res = await fetch(`${API_BASE}/students`);
             const data = await res.json();
             if (data.students) {
+                setStudents(data.students.map(s => s.student_name)); // store only names for suggestions
                 setMessages(prev => [...prev, { sender: "bot", type: "students", data: data.students }]);
                 speak("Here is the list of students.");
             }
@@ -90,6 +92,26 @@ export default function ChatBot() {
             speak("Sorry, I could not fetch the students.");
         }
     };
+
+
+    useEffect(() => {
+        const fetchAllStudents = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/students`);
+                const data = await res.json();
+                if (data.students) {
+                    setStudents(data.students.map(s => s.student_name)); // for auto-suggestions
+                }
+            } catch (err) {
+                console.error("Error fetching students:", err);
+            }
+        };
+        fetchAllStudents();
+    }, []);
+
+
+
+    const [disambiguationOptions, setDisambiguationOptions] = useState([]);
 
     const fetchReport = async (name) => {
         try {
@@ -103,14 +125,31 @@ export default function ChatBot() {
                 return;
             }
 
+            if (data.type === "disambiguation" && data.options?.length > 0) {
+                setMessages(prev => [
+                    ...prev,
+                    {
+                        sender: "bot",
+                        text: data.message,
+                        options: data.options
+                    }
+                ]);
+                // setDisambiguationOptions(data.options);
+                speak(data.message || "Multiple students found. Please select from the options displayed.");
+                return;
+            }
+
+            // Clear any previous disambiguation options
+            setDisambiguationOptions([]);
+
             setMessages(prev => [...prev,
             { sender: "bot", type: "header", text: `📄 Report for ${data.student_name}` },
             { sender: "bot", type: "semesters", data: data.semesters },
             { sender: "bot", type: "backlogs", data: data.backlogs, total_backlog_credits: data.total_backlog_credits },
             {
                 sender: "bot", type: "downloads", downloadUrls: {
-                    full: `${API_BASE}/report/${encodeURIComponent(data.student_name)}/pdf`,
-                    backlog: `${API_BASE}/report/${encodeURIComponent(data.student_name)}/pdf?type=backlog`
+                    full: `${API_BASE}/report/${encodeURIComponent(name)}/pdf`,
+                    backlog: `${API_BASE}/report/${encodeURIComponent(name)}/pdf?type=backlog`
                 }
             },
             {
@@ -148,12 +187,16 @@ export default function ChatBot() {
         }
     };
 
+
     const handleSend = (msgText = null) => {
         const text = msgText || input.trim();
         if (!text) return;
 
         if (!msgText) setMessages(prev => [...prev, { sender: "user", text: `You said: ${text}` }]);
         setInput("");
+
+        // Clear old disambiguation options if user types new input
+        setDisambiguationOptions([]);
 
         const lcText = text.toLowerCase();
         if (lcText === "list") {
@@ -175,6 +218,24 @@ export default function ChatBot() {
             <a href={downloadUrls.backlog} target="_blank" className="bg-red-500 px-3 py-1 rounded text-white hover:bg-red-600 transition-transform transform hover:scale-105">Download Backlog Report🔽</a>
         </div>
     );
+
+    const [suggestions, setSuggestions] = useState([]);
+
+    const handleInputChange = (e) => {
+        const value = e.target.value;
+        setInput(value);
+
+        if (value.length > 0) {
+            const matches = students.filter((name) =>
+                name.toLowerCase().startsWith(value.toLowerCase()) // only match names starting with input
+            );
+            setSuggestions(matches.slice(0, 5)); // show only top 5 matches
+        } else {
+            setSuggestions([]);
+        }
+    };
+
+
 
     return (
         <div className="flex flex-col items-center w-full h-screen">
@@ -208,6 +269,7 @@ export default function ChatBot() {
                             {msg.type === "downloads" && <DownloadSection downloadUrls={msg.downloadUrls} />}
                             {msg.type === "thank" && <p className="mt-2 font-semibold text-white">{msg.text}</p>}
 
+                            {/* Students list rendering */}
                             {msg.type === "students" && (
                                 <div className="mt-2">
                                     {Object.entries(
@@ -244,6 +306,22 @@ export default function ChatBot() {
                                         ))}
                                 </div>
                             )}
+
+                            {/* Disambiguation options rendering */}
+                            {msg.options && msg.options.length > 0 && (
+                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                    {msg.options.map((name, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => fetchReport(name)}
+                                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-transform transform hover:scale-105"
+                                        >
+                                            {name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
 
 
                             {msg.type === "semesters" && Object.entries(msg.data).map(([sem, data]) => (
@@ -343,10 +421,66 @@ export default function ChatBot() {
                                         <div className="mt-3 space-y-4 bg-gray-50 p-4 rounded-lg shadow-inner text-gray-800">
 
                                             {/* AI Summary */}
-                                            <div className="bg-white p-3 rounded-lg shadow">
-                                                <h4 className="font-semibold text-purple-600">🧠 AI Summary</h4>
-                                                <p className="mt-1">{msg.data.ai_summary || "No summary available"}</p>
+                                            <div className="bg-white p-4 rounded-lg shadow mt-4">
+                                                <h4 className="font-semibold text-purple-600 mb-2">🧠 AI Summary</h4>
+
+                                                {msg.data.ai_summary ? (
+                                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                                        {/* Student Name */}
+                                                        <div className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                                                            <span className="font-semibold">Student:</span> {msg.data.ai_summary.student_name}
+                                                        </div>
+
+                                                        {/* USN */}
+                                                        <div className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                                                            <span className="font-semibold">USN:</span> {msg.data.ai_summary.usn}
+                                                        </div>
+
+                                                        {/* Semester */}
+                                                        <div className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                                                            <span className="font-semibold">Current Semester:</span> {msg.data.ai_summary.semester}
+                                                        </div>
+
+                                                        {/* Total Marks */}
+                                                        <div className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                                                            <span className="font-semibold">Marks:</span> {msg.data.ai_summary.total_marks}
+                                                        </div>
+
+                                                        {/* Percentage */}
+                                                        <div className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                                                            <span className="font-semibold">Percentage:</span> {msg.data.ai_summary.percentage}
+                                                        </div>
+
+                                                        {/* Obtained Credits */}
+                                                        <div className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                                                            <span className="font-semibold">Obtained Credits:</span> {msg.data.ai_summary.obtained_credits}
+                                                        </div>
+
+                                                        {/* SGPA */}
+                                                        <div className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                                                            <span className="font-semibold">SGPA:</span> {msg.data.ai_summary.sgpa}
+                                                        </div>
+
+                                                        {/* CGPA */}
+                                                        <div className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                                                            <span className="font-semibold">CGPA:</span> {msg.data.ai_summary.cgpa}
+                                                        </div>
+
+                                                        {/* Backlog Status */}
+                                                        <div
+                                                            className={`col-span-2 px-2 py-1 rounded font-semibold text-center ${msg.data.ai_summary.backlog_status.includes("No backlogs")
+                                                                ? "bg-green-100 text-green-700"
+                                                                : "bg-red-100 text-red-700"
+                                                                }`}
+                                                        >
+                                                            {msg.data.ai_summary.backlog_status}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <p>No summary available</p>
+                                                )}
                                             </div>
+
 
                                             {/* AI Profile */}
                                             <div className="bg-white p-3 rounded-lg shadow space-y-2">
@@ -479,7 +613,7 @@ export default function ChatBot() {
                                                         <b>Trend:</b> {msg.data.trend?.trend || "N/A"}
                                                     </p>
                                                     <p>
-                                                        <b>Average SGPA:</b>{" "}
+                                                        <b>Average SGPA (CGPA):</b>{" "}
                                                         {msg.data.trend?.avg_sgpa !== undefined
                                                             ? Number(msg.data.trend.avg_sgpa).toFixed(2)
                                                             : "N/A"}
@@ -540,19 +674,48 @@ export default function ChatBot() {
 
             {/* Input + Buttons */}
             <div className="w-full max-w-3xl p-3 border-t flex gap-2">
-                {/* Text input */}
-                <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                    placeholder="Type student name or 'list' to see all"
-                    className="flex-1 border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
+                <div className="relative flex-1">
+                    {/* Suggestions dropdown above input */}
+                    {suggestions.length > 0 && (
+                        <ul className="absolute left-0 right-0 bottom-full mb-1 bg-white border rounded-lg shadow-lg max-h-40 overflow-y-auto z-50">
+                            {suggestions.map((s, idx) => (
+                                <li
+                                    key={idx}
+                                    onClick={() => {
+                                        setInput(s);       // fill input with selected suggestion
+                                        setSuggestions([]); // hide suggestions
+                                        handleSend(s);     // fetch report immediately
+                                    }}
+                                    className="px-3 py-2 cursor-pointer hover:bg-blue-100"
+                                >
+                                    {s}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+
+                    {/* Single input box */}
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={handleInputChange}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSend();
+                                setSuggestions([]); // clear suggestions on enter
+                            }
+                        }}
+                        placeholder="Type student name or 'list' to see all"
+                        className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                </div>
 
                 {/* Send button */}
                 <button
-                    onClick={() => handleSend()}
+                    onClick={() => {
+                        handleSend();
+                        setSuggestions([]); // clear suggestions on send
+                    }}
                     className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-transform transform hover:scale-105"
                 >
                     Send
@@ -578,6 +741,7 @@ export default function ChatBot() {
                 </div>
             </div>
 
-        </div>
+        </div >
     );
 }
+
