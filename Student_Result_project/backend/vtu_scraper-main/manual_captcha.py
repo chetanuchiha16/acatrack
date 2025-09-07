@@ -11,7 +11,7 @@ import os
 # --- CONFIGURATION ---
 DOWNLOAD_DIR = os.path.abspath("VTU_Results")  # Folder to save PDFs
 USN_PREFIX = "1JS23CS"
-USN_START = 1
+USN_START = 8
 USN_END = 25
 
 # Ask user which exam session to fetch
