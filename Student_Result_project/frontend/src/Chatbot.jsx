@@ -123,166 +123,167 @@ export default function ChatBot() {
     const [disambiguationOptions, setDisambiguationOptions] = useState([]);
 
     const fetchReport = async (name, semester = null, intent = "fetch_report") => {
-    try {
-        // Build URL
-        let url = `${API_BASE}/report/${encodeURIComponent(name)}`;
-        if (semester) url += `?semester=${encodeURIComponent(semester)}`;
+        try {
+            let url = `${API_BASE}/report/${encodeURIComponent(name)}`;
+            if (semester) url += `?semester=${encodeURIComponent(semester)}`;
 
-        const res = await fetch(url);
-        const data = await res.json();
+            const res = await fetch(url);
+            const data = await res.json();
 
-        if (data.error) {
-            setMessages(prev => [...prev, { sender: "bot", text: data.error }]);
-            speak(data.error);
-            return;
-        }
-
-        // Handle disambiguation
-        if (data.type === "disambiguation" && data.options?.length > 0) {
-            setMessages(prev => [
-                ...prev,
-                { sender: "bot", text: data.message, options: data.options }
-            ]);
-            speak(data.message || "Multiple students found. Please select from the options displayed.");
-            return;
-        }
-
-        setDisambiguationOptions([]);
-
-        const newMessages = [
-            { sender: "bot", type: "header", text: `📄 Report for ${data.student_name}${semester ? ` (${semester})` : ""}` },
-        ];
-
-        // ------------------ INTENT HANDLING ------------------
-
-        if (intent === "fetch_report") {
-            // Full report content
-            if (semester && data.semesters?.[semester]) {
-                newMessages.push({ sender: "bot", type: "semesters", data: { [semester]: data.semesters[semester] } });
-            } else {
-                newMessages.push({ sender: "bot", type: "semesters", data: data.semesters });
+            if (data.error) {
+                setMessages(prev => [...prev, { sender: "bot", text: data.error }]);
+                speak(data.error);
+                return;
             }
 
-            newMessages.push({
-                sender: "bot",
-                type: "backlogs",
-                data: data.backlogs,
-                total_backlog_credits: data.total_backlog_credits
-            });
-
-            newMessages.push({
-                sender: "bot",
-                type: "ai_insights",
-                data: {
-                    ai_summary: data.ai_summary,
-                    ai_profile: data.ai_profile,
-                    trend: data.trend,
-                    cgpa_prediction: data.cgpa_prediction
-                }
-            });
-
-            newMessages.push({
-                sender: "bot",
-                type: "downloads",
-                downloadUrls: {
-                    full: `${API_BASE}/report/${encodeURIComponent(name)}/pdf`,
-                    backlog: `${API_BASE}/report/${encodeURIComponent(name)}/pdf?type=backlog${semester ? `&semester=${encodeURIComponent(semester)}` : ""}`
-                }
-            });
-
-            // Speech for full report
-            let speechText = `Here is the report for ${data.student_name}.`;
-            const totalBacklogCredits = data.total_backlog_credits;
-            if (totalBacklogCredits === 0) {
-                speechText += " No backlogs. Excellent!";
-                setShowConfetti(true);
-                setTimeout(() => setShowConfetti(false), 7000);
-            } else if (totalBacklogCredits > 18) {
-                speechText += " ⚠️ Backlog credits exceed 18. Risk of year back.";
-            } else {
-                speechText += ` Some backlogs are present. Total Backlog credits: ${totalBacklogCredits}.`;
+            // Handle disambiguation
+            if (data.type === "disambiguation" && data.options?.length > 0) {
+                setMessages(prev => [
+                    ...prev,
+                    { sender: "bot", text: data.message, options: data.options }
+                ]);
+                speak(data.message || "Multiple students found. Please select from the options displayed.");
+                return;
             }
-            speechText += " Thank you for using JssTrack360 chatbot. Have a great day!!";
-            speak(speechText);
 
-        } else if (intent === "check_backlogs") {
-            newMessages.push({
-                sender: "bot",
-                type: "backlogs",
-                data: data.backlogs,
-                total_backlog_credits: data.total_backlog_credits
-            });
+            setDisambiguationOptions([]);
 
-            newMessages.push({
-                sender: "bot",
-                type: "downloads",
-                downloadUrls: {
-                    backlog: `${API_BASE}/report/${encodeURIComponent(name)}/pdf?type=backlog${semester ? `&semester=${encodeURIComponent(semester)}` : ""}`
+            const newMessages = [
+                { sender: "bot", type: "header", text: `📄 Report for ${data.student_name}${semester ? ` (${semester})` : ""}` },
+            ];
+
+            if (intent === "check_backlogs") {
+                // Filter backlogs for semester if specified
+                let backlogData = data.backlogs;
+                let totalCredits = data.total_backlog_credits;
+
+                if (semester && data.backlogs?.[semester]) {
+                    backlogData = { [semester]: data.backlogs[semester] };
+                    totalCredits = Object.values(data.backlogs[semester]).reduce((acc, val) => acc + val.credits, 0);
                 }
-            });
 
-            // Speech for backlog check
-            let speechText = `Here is the backlog report for ${data.student_name}.`;
-            const totalBacklogCredits = data.total_backlog_credits;
-            if (totalBacklogCredits === 0) {
-                speechText += " No backlogs. Excellent!";
-                setShowConfetti(true);
-                setTimeout(() => setShowConfetti(false), 5000);
-            } else if (totalBacklogCredits > 18) {
-                speechText += " ⚠️ Backlog credits exceed 18. Risk of year back.";
-            } else {
-                speechText += ` Some backlogs are present. Total credits: ${totalBacklogCredits}.`;
-            }
-            speechText += " Thank you for using JssTrack360 chatbot. Have a great day!!";
-            speak(speechText);
+                newMessages.push({
+                    sender: "bot",
+                    type: "backlogs",
+                    data: backlogData,
+                    total_backlog_credits: totalCredits
+                });
 
-        } else if (intent === "ai_summary") {
-            newMessages.push({
-                sender: "bot",
-                type: "ai_insights",
-                data: {
-                    ai_summary: data.ai_summary,
-                    ai_profile: data.ai_profile,
-                    trend: data.trend,
-                    cgpa_prediction: data.cgpa_prediction
-                }
-            });
+                // Provide download link for backlog only
+                newMessages.push({
+                    sender: "bot",
+                    type: "downloads",
+                    downloadUrls: {
+                        backlog: `${API_BASE}/report/${encodeURIComponent(name)}/pdf?type=backlog${semester ? `&semester=${encodeURIComponent(semester)}` : ""}`
+                    }
+                });
 
-            // Speech for AI summary
-            speak(`AI summary for ${data.student_name} is generated. Thank you for using JssTrack360 chatbot. Have a great day!!`);
-
-        } else if (intent === "download_pdf") {
-            try {
-                const downloadRes = await fetch(`${API_BASE}/report/${encodeURIComponent(name)}/downloads`);
-                const downloadData = await downloadRes.json();
-
-                if (downloadData.error) {
-                    newMessages.push({ sender: "bot", text: downloadData.error });
-                    speak(downloadData.error);
+                // Speech
+                let speechText = `Here is the backlog report for ${data.student_name}${semester ? ` (${semester})` : ""}.`;
+                if (totalCredits === 0) {
+                    speechText += " No backlogs. Excellent!";
+                    setShowConfetti(true);
+                    setTimeout(() => setShowConfetti(false), 5000);
+                } else if (totalCredits > 18) {
+                    speechText += " ⚠️ Backlog credits exceed 18. Risk of year back.";
                 } else {
+                    speechText += ` Some backlogs are present. Total credits: ${totalCredits}.`;
+                }
+                speechText += " Thank you for using JssTrack360 chatbot. Have a great day!";
+                speak(speechText);
+
+            } else if (intent === "fetch_semester_report") {
+                // Show semester grades
+                if (semester && data.semesters?.[semester]) {
                     newMessages.push({
                         sender: "bot",
-                        type: "downloads",
-                        downloadUrls: downloadData.downloadUrls
+                        type: "semesters",
+                        data: { [semester]: data.semesters[semester] }
                     });
-                    speak(`Download links for ${data.student_name} are generated. Thank you for using JssTrack360 chatbot. Have a great day!!`);
+
+                    // Semester-specific backlogs
+                    const semesterBacklogs = {};
+                    if (data.backlogs?.[semester]) {
+                        semesterBacklogs[semester] = data.backlogs[semester];
+                    }
+
+                    const totalCredits = Object.values(semesterBacklogs[semester] || {}).reduce((acc, val) => acc + val.credits, 0);
+
+                    newMessages.push({
+                        sender: "bot",
+                        type: "backlogs",
+                        data: semesterBacklogs,
+                        total_backlog_credits: totalCredits
+                    });
+
+                    // Speech
+                    let speechText = `Here is the report for ${data.student_name} for ${semester}.`;
+                    if (totalCredits === 0) {
+                        speechText += " No backlogs. Excellent!";
+                        setShowConfetti(true);
+                        setTimeout(() => setShowConfetti(false), 5000);
+                    } else if (totalCredits > 18) {
+                        speechText += " ⚠️ Backlog credits exceed 18. Risk of year back.";
+                    } else {
+                        speechText += ` Some backlogs are present. Total credits: ${totalCredits}.`;
+                    }
+                    speechText += " Thank you for using JssTrack360 chatbot. Have a great day!";
+                    speak(speechText);
                 }
-            } catch (err) {
-                console.error(err);
-                newMessages.push({ sender: "bot", text: "❌ Error fetching download links." });
-                speak("Sorry, there was an error fetching the download links.");
+            } else {
+                // Full report (all semesters + backlogs + AI + downloads)
+                newMessages.push({ sender: "bot", type: "semesters", data: data.semesters });
+                newMessages.push({
+                    sender: "bot",
+                    type: "backlogs",
+                    data: data.backlogs,
+                    total_backlog_credits: data.total_backlog_credits
+                });
+                newMessages.push({
+                    sender: "bot",
+                    type: "ai_insights",
+                    data: {
+                        ai_summary: data.ai_summary,
+                        ai_profile: data.ai_profile,
+                        trend: data.trend,
+                        cgpa_prediction: data.cgpa_prediction
+                    }
+                });
+                newMessages.push({
+                    sender: "bot",
+                    type: "downloads",
+                    downloadUrls: {
+                        full: `${API_BASE}/report/${encodeURIComponent(name)}/pdf`,
+                        backlog: `${API_BASE}/report/${encodeURIComponent(name)}/pdf?type=backlog`
+                    }
+                });
+
+                let speechText = `Here is the full report for ${data.student_name}.`;
+                const totalBacklogCredits = data.total_backlog_credits;
+                if (totalBacklogCredits === 0) {
+                    speechText += " No backlogs. Excellent!";
+                    setShowConfetti(true);
+                    setTimeout(() => setShowConfetti(false), 7000);
+                } else if (totalBacklogCredits > 18) {
+                    speechText += " ⚠️ Backlog credits exceed 18. Risk of year back.";
+                } else {
+                    speechText += ` Some backlogs are present. Total Backlog credits: ${totalBacklogCredits}.`;
+                }
+                speechText += " Thank you for using JssTrack360 chatbot. Have a great day!";
+                speak(speechText);
             }
+
+            // Thank you message
+            newMessages.push({ sender: "bot", type: "thank", text: "✅ Generated! Thank you for using JssTrack360 chatbot." });
+            setMessages(prev => [...prev, ...newMessages]);
+
+        } catch {
+            setMessages(prev => [...prev, { sender: "bot", text: "❌ Error fetching report" }]);
+            speak("Sorry, there was an error fetching the report.");
         }
+    };
 
-        // Thank you message (optional)
-        newMessages.push({ sender: "bot", type: "thank", text: "✅ Generated! Thank you for using JssTrack360 chatbot." });
-        setMessages(prev => [...prev, ...newMessages]);
 
-    } catch {
-        setMessages(prev => [...prev, { sender: "bot", text: "❌ Error fetching report" }]);
-        speak("Sorry, there was an error fetching the report.");
-    }
-};
 
 
 
@@ -310,6 +311,11 @@ export default function ChatBot() {
         const studentName = extractStudentName(text, students);
         const semester = extractSemester(text);
 
+        // Adjust intent for semester-specific requests
+        if (intent === "fetch_report" && semester) {
+            intent = "fetch_semester_report";
+        }
+
         switch (intent) {
             case "list_students":
                 speak("Fetching all students...");
@@ -318,18 +324,38 @@ export default function ChatBot() {
 
             case "fetch_report":
                 if (studentName) {
-                    speak(`Fetching report for ${studentName}...`);
-                    fetchReport(studentName, semester, "fetch_report");
+                    speak(`Fetching full report for ${studentName}...`);
+                    fetchReport(studentName, null, "fetch_report");
                 } else {
                     speak("Please provide a valid student name.");
                     setMessages(prev => [...prev, { sender: "bot", text: "Please provide a valid student name." }]);
                 }
                 break;
 
+            case "fetch_semester_report":
+                if (studentName && semester) {
+                    speak(`Fetching ${semester} report for ${studentName}...`);
+                    fetchReport(studentName, semester, "fetch_semester_report");
+                } else if (!studentName) {
+                    speak("Please provide a valid student name.");
+                    setMessages(prev => [...prev, { sender: "bot", text: "Please provide a valid student name." }]);
+                } else {
+                    speak("Please provide a semester to fetch the report for.");
+                    setMessages(prev => [...prev, { sender: "bot", text: "Please provide a semester to fetch the report for." }]);
+                }
+                break;
+
             case "check_backlogs":
                 if (studentName) {
-                    speak(`Fetching backlog report for ${studentName}...`);
-                    fetchReport(studentName, semester, "check_backlogs");
+                    if (semester) {
+                        // Semester-specific backlog
+                        speak(`Fetching backlog report for ${studentName} in ${semester}...`);
+                        fetchReport(studentName, semester, "check_backlogs");
+                    } else {
+                        // Full backlog report
+                        speak(`Fetching backlog report for ${studentName}...`);
+                        fetchReport(studentName, null, "check_backlogs");
+                    }
                 } else {
                     speak("Please provide a student name to check backlogs.");
                     setMessages(prev => [...prev, { sender: "bot", text: "Please provide a student name to check backlogs." }]);
@@ -349,7 +375,6 @@ export default function ChatBot() {
             case "download_pdf":
                 if (studentName) {
                     speak(`Preparing download links for ${studentName}...`);
-                    // For download request, show full + backlog links
                     fetchReport(studentName, semester, "download_pdf");
                 } else {
                     speak("Please provide the student name to download the report.");
@@ -361,7 +386,7 @@ export default function ChatBot() {
                 // Fallback: treat text as student name
                 if (studentName) {
                     speak(`Fetching report for ${studentName}...`);
-                    fetchReport(studentName, semester, "fetch_report");
+                    fetchReport(studentName, semester, semester ? "fetch_semester_report" : "fetch_report");
                 } else {
                     speak("Sorry, I did not understand that. You can type 'list' to see all students.");
                     setMessages(prev => [...prev, { sender: "bot", text: "❌ Sorry, I did not understand that. You can type 'list' to see all students." }]);
@@ -369,6 +394,8 @@ export default function ChatBot() {
                 break;
         }
     };
+
+
 
 
 
