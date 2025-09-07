@@ -6,7 +6,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 mentor_email_bp = Blueprint("mentor_email", __name__)
 
@@ -19,25 +19,34 @@ class MentorMessage(db.Model):
     recipient_type = db.Column(db.String)  # student/parent
     subject = db.Column(db.String)
     message = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(
+        db.DateTime,  
+        default=lambda: datetime.now(timezone.utc)
+    )
+
     email_failed = db.Column(db.Boolean, default=False)
 
     mentor = db.relationship("Mentor", backref=db.backref("messages", lazy=True))
     student = db.relationship("StudentAuth", backref=db.backref("messages", lazy=True))
 
     def to_dict(self):
+        dt = self.created_at
+        if dt and dt.tzinfo is None:  # SQLite returned naive
+            dt = dt.replace(tzinfo=timezone.utc)
         return {
             "id": self.id,
             "mentor_id": self.mentor_id,
             "mentor_name": self.mentor.name if self.mentor else None,
+            "mentor_email": getattr(self.mentor, "email", None),  # optional
             "student_usn": self.student_usn,
             "student_name": self.student.name if self.student else None,
             "recipient_type": self.recipient_type,
             "subject": self.subject,
             "message": self.message,
-            "created_at": self.created_at.isoformat(),
+            "created_at": dt.isoformat(),  # now ends with +00:00
             "email_failed": self.email_failed,
         }
+
 
 
 class StudentMessageStatus(db.Model):
@@ -80,17 +89,25 @@ def send_email(to_email, subject, body):
 
 # ---------------- Save Message ----------------
 def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=False):
+    mentor = Mentor.query.get(mentor_id)
+    sender_info = f"\n\n--\nMessage sent by {mentor.name}"
+    if hasattr(mentor, "email"):
+        sender_info += f"\nEmail: {mentor.email}"
+    if hasattr(mentor, "phone"):
+        sender_info += f"\nPhone: {mentor.phone}"
+
     msg = MentorMessage(
         mentor_id=mentor_id,
         student_usn=usn,
         recipient_type=recipient_type,
         subject=subject,
-        message=message,
+        message=message + sender_info,
         email_failed=email_failed,
     )
     db.session.add(msg)
     db.session.commit()
     return msg
+
 
 
 def serialize_message_with_read_status(msg):
@@ -170,7 +187,16 @@ def send_email_student(mentor_id):
         to_email = getattr(student, "student_email", None)
         name = student.name
 
-    success = send_email(to_email, subject, f"Hello {name},\n\n{message}")
+    mentor = Mentor.query.get(mentor_id)
+    sender_info = f"\n\n--\nMessage sent by {mentor.name} (Mentor)"
+    if hasattr(mentor, "email"):
+        sender_info += f"\nEmail: {mentor.email}"
+    if hasattr(mentor, "phone"):
+        sender_info += f"\nPhone: {mentor.phone}"
+
+    success = send_email(to_email, subject, f"Hello {name},\n\n{message}{sender_info}")
+
+
     return jsonify({"success": success}), (200 if success else 500)
 
 
@@ -195,7 +221,15 @@ def send_email_all(mentor_id):
             name = s.name
 
 
-        success = send_email(to_email, subject, f"Hello {name},\n\n{message}")
+        mentor = Mentor.query.get(mentor_id)
+        sender_info = f"\n\n--\nMessage sent by {mentor.name}"
+        if hasattr(mentor, "email"):
+            sender_info += f"\nEmail: {mentor.email}"
+        if hasattr(mentor, "phone"):
+            sender_info += f"\nPhone: {mentor.phone}"
+
+        success = send_email(to_email, subject, f"Hello {name},\n\n{message}{sender_info}")
+
         results.append({"usn": s.username, "success": success})
 
     return jsonify(results), 200

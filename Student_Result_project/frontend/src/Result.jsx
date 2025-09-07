@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import API_BASE from "./config";
 import ResultCardView from "./ResultCardView";
-
+import StudentAIInsights from "./StudentAIInsights";
 export default function Result({ usn, semester, view }) {
     const [data, setData] = useState(null);
     const [error, setError] = useState("");
@@ -52,155 +52,164 @@ export default function Result({ usn, semester, view }) {
                         </p>
                     </div>
                 )}
-                
-
                 {view === "cards" && data && !loading && (
-  <div className="space-y-5 hidden sm:block">
-    {/* Title */}
-    <h2 className="text-base sm:text-2xl font-bold text-center text-blue-600 dark:text-blue-400">
-      Student Report
-    </h2>
+                    <div className="space-y-5 hidden sm:block">
+                        {/* Title */}
+                        <h2 className="text-base sm:text-2xl font-bold text-center text-blue-600 dark:text-blue-400">
+                            Student Report
+                        </h2>
 
-    {/* Student Info Grid */}
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
-      <div>
-        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
-          Name
-        </p>
-        <p className="font-medium text-gray-800 dark:text-gray-100 truncate">
-          {data.name}
-        </p>
-      </div>
-      <div>
-        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
-          USN
-        </p>
-        <p className="font-medium text-gray-700 dark:text-gray-200 truncate">
-          {data.usn}
-        </p>
-      </div>
-      <div>
-        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
-          SGPA
-        </p>
-        <p className="font-medium text-gray-700 dark:text-gray-200">
-          {data.sgpa.toFixed(2)}
-        </p>
-      </div>
-      <div>
-        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
-          Percentage
-        </p>
-        <p className="font-medium text-gray-700 dark:text-gray-200">
-          {data.percentage.toFixed(2)}%
-        </p>
-      </div>
-      <div>
-        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
-          Total Marks
-        </p>
-        <p className="font-medium text-gray-700 dark:text-gray-200">
-          {data.total_marks}
-        </p>
-      </div>
-      <div>
-        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
-          Credits
-        </p>
-        <p className="font-medium text-gray-700 dark:text-gray-200">
-          {data.credits}
-        </p>
-      </div>
-      <div>
-        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
-          CGPA
-        </p>
-        <p className="font-medium text-gray-700 dark:text-gray-200">
-          {data.cgpa.toFixed(2)}
-        </p>
-      </div>
-      <div>
-        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
-          Status
-        </p>
-        <p className="font-medium">
-          <span
-            className={
-              data.status === "Pass"
-                ? "text-green-600 dark:text-green-400"
-                : "text-red-600 dark:text-red-400"
-            }
-          >
-            {data.status}
-          </span>
-        </p>
-      </div>
-    </div>
+                        {/* Student Info Grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
+                            <div>
+                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
+                                    Name
+                                </p>
+                                <p className="font-medium text-gray-800 dark:text-gray-100 truncate">
+                                    {data.name}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
+                                    USN
+                                </p>
+                                <p className="font-medium text-gray-700 dark:text-gray-200 truncate">
+                                    {data.usn}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
+                                    SGPA
+                                </p>
+                                <p className="font-medium text-gray-700 dark:text-gray-200">
+                                    {data.sgpa.toFixed(2)}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
+                                    Percentage
+                                </p>
+                                <p className="font-medium text-gray-700 dark:text-gray-200">
+                                    {data.percentage.toFixed(2)}%
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
+                                    Total Marks
+                                </p>
+                                <p className="font-medium text-gray-700 dark:text-gray-200">
+                                    {data.total_marks}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
+                                    Credits
+                                </p>
+                                <p className="font-medium text-gray-700 dark:text-gray-200">
+                                    {data.credits}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
+                                    CGPA
+                                </p>
+                                <p className="font-medium text-gray-700 dark:text-gray-200">
+                                    {data.cgpa.toFixed(2)}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-300">
+                                    Status
+                                </p>
+                                <p className="font-medium">
+                                    <span
+                                        className={
+                                            data.status === "Pass"
+                                                ? "text-green-600 dark:text-green-400"
+                                                : "text-red-600 dark:text-red-400"
+                                        }
+                                    >
+                                        {data.status}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
 
-    {/* Subjects Section */}
-    <div className="w-full max-w-6xl mx-auto mt-4 sm:mt-8 p-4 sm:p-6 rounded-xl bg-white dark:bg-slate-900 shadow-lg h-full flex flex-col gap-6">
+                        {/* Subjects Section */}
+                        <div className="w-full max-w-6xl mx-auto mt-4 sm:mt-8 p-4 sm:p-6 rounded-xl bg-white dark:bg-slate-900 shadow-lg h-full flex flex-col gap-6">
+                            <h3 className="text-sm sm:text-lg font-semibold text-blue-500 mb-2">
+                                Subjects
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {data.subjects.map((sub, idx) => (
+                                    <div
+                                    key={idx}
+                                    className="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-md p-3"
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
+                                                        {idx + 1}.{" "}
+                                                        {sub.subject_name}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                                                        {sub.code}
+                                                    </div>
+                                                </div>
+                                                <div className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                                                    IA:{" "}
+                                                    <span className="font-semibold">
+                                                        {sub.ia}
+                                                    </span>{" "}
+                                                    • SEE:{" "}
+                                                    <span className="font-semibold">
+                                                        {sub.see}
+                                                    </span>{" "}
+                                                    • Total:{" "}
+                                                    <span className="font-semibold">
+                                                        {sub.total}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="ml-3 text-right">
+                                                <div
+                                                    className={`text-xs font-semibold ${
+                                                        sub.status === "Pass"
+                                                            ? "text-green-600"
+                                                            : "text-red-600"
+                                                    }`}
+                                                >
+                                                    {sub.status}
+                                                </div>
+                                                <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                                                    {sub.credit} cr
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
 
-      <h3 className="text-sm sm:text-lg font-semibold text-blue-500 mb-2">
-        Subjects
-      </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {data.subjects.map((sub, idx) => (
-          <div
-            key={idx}
-            className="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-md p-3"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
-                    {idx + 1}. {sub.subject_name}
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                    {sub.code}
-                  </div>
-                </div>
-                <div className="mt-1 text-xs text-gray-600 dark:text-gray-300">
-                  IA: <span className="font-semibold">{sub.ia}</span> • SEE:{" "}
-                  <span className="font-semibold">{sub.see}</span> • Total:{" "}
-                  <span className="font-semibold">{sub.total}</span>
-                </div>
-              </div>
-              <div className="ml-3 text-right">
-                <div
-                  className={`text-xs font-semibold ${
-                    sub.status === "Pass" ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {sub.status}
-                </div>
-                <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-                  {sub.credit} cr
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    {/* Download Button */}
-    <div className="flex items-center justify-center mt-3 !text-white">
-      {data.pdf_url ? (
-        <a
-          href={data.pdf_url}
-          download
-          className="inline-block px-4 py-2 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
-        >
-          📄 Download Report
-        </a>
-      ) : (
-        <div className="text-sm text-gray-500 dark:text-gray-400">
-          No downloadable report available
-        </div>
-      )}
-    </div>
-  </div>
-)}
+                        {/* Download Button */}
+                        <div className="flex items-center justify-center mt-3 !text-white">
+                            {data.pdf_url ? (
+                                <a
+                                    href={data.pdf_url}
+                                    download
+                                    className="inline-block px-4 py-2 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
+                                >
+                                    📄 Download Report
+                                </a>
+                            ) : (
+                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                    No downloadable report available
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {view === "table" && data && !loading && (
                     <div className="space-y-5">
@@ -428,7 +437,7 @@ export default function Result({ usn, semester, view }) {
                                                             className={
                                                                 sub.status ===
                                                                 "Pass"
-                                                                    ? "text-green-600"
+                                                                ? "text-green-600"
                                                                     : "text-red-600"
                                                             }
                                                         >
@@ -455,6 +464,11 @@ export default function Result({ usn, semester, view }) {
                             </div>
                         </div>
 
+                            {data && !loading && (
+                                <div className="mt-6">
+                                    <StudentAIInsights usn={data.usn} semester={semester} />
+                                </div>
+                            )}
                         {/* Actions */}
                         <div className="flex items-center justify-center mt-3 !text-white">
                             {data.pdf_url ? (

@@ -190,7 +190,9 @@ export default function MentorSendEmails({ mentorId }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Broadcast */}
                 <div className="rounded-2xl p-6 shadow-xl border border-white/20 bg-white/40 dark:bg-gray-800/40 backdrop-blur-lg space-y-3">
-                    <h2 className="text-xl font-semibold mb-[-4]">Broadcast to All</h2>
+                    <h2 className="text-xl font-semibold mb-[-4]">
+                        Broadcast to All
+                    </h2>
                     <input
                         type="text"
                         placeholder="Subject"
@@ -454,7 +456,7 @@ export default function MentorSendEmails({ mentorId }) {
                                                         ].map((msg) => {
                                                             const status =
                                                                 msg.read_status?.find(
-                                                                    ({usn}) =>
+                                                                    ({ usn }) =>
                                                                         usn ===
                                                                         s.usn
                                                                 );
@@ -487,6 +489,21 @@ export default function MentorSendEmails({ mentorId }) {
                                                                                     : "📩 Unread"
                                                                                 : "📩 Unread"}
                                                                         </p>
+                                                                        <time
+                                                                            dateTime={
+                                                                                msg.created_at
+                                                                            }
+                                                                        >
+                                                                            {new Date(
+                                                                                msg.created_at
+                                                                            ).toLocaleString(
+                                                                                "en-IN",
+                                                                                {
+                                                                                    timeZone:
+                                                                                        "Asia/Kolkata",
+                                                                                }
+                                                                            )}
+                                                                        </time>
                                                                     </div>
                                                                     <button
                                                                         onClick={() =>

@@ -2,11 +2,8 @@ from flask import Blueprint, request, jsonify
 from models import StudentAuth, Mentor
 from app_init import db
 from .mentor_send_email import MentorMessage, StudentMessageStatus
-
+from datetime import datetime, timezone
 student_email_bp = Blueprint("student_email", __name__)
-
-
-
 
 
 # ✅ Utility to serialize MentorMessage with required fields
@@ -14,13 +11,19 @@ def serialize_message(msg, usn):
     status = StudentMessageStatus.query.filter_by(student_usn=usn, msg_id=msg.id).first()
     mentor = Mentor.query.filter_by(id=msg.mentor_id).first() if hasattr(msg, "mentor_id") else None
 
+    dt = msg.created_at
+    if dt and dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+
     return {
         "id": msg.id,
         "subject": getattr(msg, "subject", None),
         "message": getattr(msg, "message", None),
         "mentor_name": mentor.name if mentor else None,
         "read": status.read if status else False,
+        "created_at": dt.isoformat() if dt else None,  # ✅ add this
     }
+
 
 
 @student_email_bp.route("/student/<string:usn>/messages", methods=["GET"])

@@ -22,7 +22,7 @@ import MentorDashboard from "./MentorDashboard.jsx";
 import API_BASE from "./config.js";
 import ParentDashboard from "./ParentDashboard.jsx";
 import ParentResult from "./ParentResult.jsx";
-
+import ResetPassword from "./ResetPassword.jsx";
 function RootLayout({ children }) {
   
   return (
@@ -46,6 +46,7 @@ const route = createBrowserRouter([
     { path: "/auth/Staff/:id", element: <RootLayout><Staff /></RootLayout> },
     { path: "/auth/Student/:id", element: <RootLayout><Student /></RootLayout> },
     { path: "/auth/:who", element: <RootLayout><Auth /></RootLayout> },
+    { path: "/reset-password/:token", element: <RootLayout><ResetPassword /></RootLayout> },
     { path: "/auth/", element: <RootLayout><Auth /></RootLayout> },
     { path: "/auth", element: <RootLayout><Auth /></RootLayout> },
     { path: "/admin/panel", element: <RootLayout><AdminPanel /></RootLayout> },
