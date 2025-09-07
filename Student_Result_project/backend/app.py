@@ -31,32 +31,22 @@
 # from flask import Flask, request, jsonify
 # from backend.models.users import db
 # app.py
-from models.paths import set_current_batch_db
-from models.batch_manager import BatchManager, db
+from flask import Flask
+from flask_cors import CORS
+from models.batch_manager import BatchManager
 from routes import register_routes
 
-batch_year = 2023  # Can be dynamic later
-
-# Set DB path for this batch
-set_current_batch_db(batch_year)
-
-# Initialize batch manager
+# Initialize BatchManager (responsible for multiple batch DBs + apps)
 bm = BatchManager()
 
-# Create batch DB from Excel if not exists
-if batch_year not in bm.list_batches():
-    bm.create_batch(batch_year, excel_path=None)  # `prepare_data` internally uses batch_year
+# Create main Flask app (acts as entrypoint/gateway)
+app = Flask(__name__)
+CORS(app, supports_credentials=True)
+app.secret_key = "super-secret-key"  # should load from config/env
 
-# Get Flask app for this batch
-app = bm.get_flask_app(batch_year)
-
-with app.app_context():
-    db.create_all()  # Create auth tables for this batch
-
-# Register routes
+# Register all routes (auth, admin, etc.)
 register_routes(app)
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
-
 

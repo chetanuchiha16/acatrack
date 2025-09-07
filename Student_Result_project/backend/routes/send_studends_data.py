@@ -1,8 +1,9 @@
-from flask import Blueprint, request, jsonify, send_from_directory
+from flask import Blueprint, request, jsonify, send_from_directory, session
 from models import Student
 from visuals import create_student_report
-from models.paths import db_path, pdf_dir, get_current_db_path
+from models.paths import db_path, pdf_dir, get_current_db_path, get_db_path
 import os
+
 
 
 
@@ -13,12 +14,14 @@ student_bp = Blueprint('student', __name__)
 def get_student_info():
     usn = request.args.get("usn")
     semester = request.args.get("semester")
+    batch_year = session.get("batch_year")  # <-- pulled from session
+    print(f"batch year from student {batch_year}")
 
-    print(f"Received USN: {usn}, Semester: {semester}")
+    print(f"Received USN: {usn}, Semester: {semester}, Batch: {batch_year}")
 
 
     try:
-        db_path = get_current_db_path()
+        db_path = get_db_path(batch_year)  # <-- resolves correct DB
         student = Student(usn=usn, semester=semester, db_path=db_path)
 
         # Generate PDF

@@ -30,7 +30,7 @@ def convert_excel_to_sql(excel_path, db_path):
                     if numeric_series.notna().sum() > len(df) // 2:  # if over 50% is numeric
                         df[col] = numeric_series.fillna(0).astype(int)
                 except:
-                    pass  # If it's totally not convertible, Hina skips it gently~
+                    pass  
 
 
 

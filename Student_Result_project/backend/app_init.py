@@ -18,6 +18,7 @@ def create_app(batch_year=None):
         # Override DB path dynamically
         from models.paths import get_db_path
         app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{get_db_path(batch_year)}"
+        print(app.config['SQLALCHEMY_DATABASE_URI'])
     
     db.init_app(app)
     migrate = Migrate(app, db)

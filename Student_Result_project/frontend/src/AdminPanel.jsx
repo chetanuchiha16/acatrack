@@ -10,27 +10,57 @@ export default function AdminPanel() {
   const [mode, setMode] = useState("missing");
   const [status, setStatus] = useState("");
 
+  const [batchYear, setBatchYear] = useState(null);
+  const [availableBatches, setAvailableBatches] = useState([]);
+
   const [emailFile, setEmailFile] = useState(null);
   const [mentorFile, setMentorFile] = useState(null);
+  const [newBatchYear, setNewBatchYear] = useState("");
 
+  // Redirect if no secret
   useEffect(() => {
     if (!secret) {
       navigate("/admin");
     }
   }, [navigate, secret]);
 
+  // Fetch available batches from backend
+  const fetchBatches = () => {
+    if (!secret) return;
+    fetch(`${API_BASE}/admin/list-batches`, {
+      headers: { "X-Admin-Secret": secret },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.batches && data.batches.length > 0) {
+          setAvailableBatches(data.batches);
+          setBatchYear(data.batches[0]);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch batches:", err);
+        setStatus("❌ Failed to load batch list");
+      });
+  };
+
+  useEffect(() => {
+    fetchBatches();
+  }, [secret]);
+
   const handleSecretSubmit = () => {
     if (!secret) return alert("Enter admin secret");
     localStorage.setItem("admin_secret", secret);
     setStatus("✅ Secret saved. You can now generate accounts or upload files.");
+    fetchBatches();
   };
 
   const generateAccounts = async () => {
     if (!secret) return alert("Admin secret missing");
+    if (!batchYear) return alert("Select a batch first");
     setStatus("Generating accounts...");
     try {
       const res = await fetch(
-        `${API_BASE}/admin/generate-accounts?mode=${mode}`,
+        `${API_BASE}/admin/generate-accounts?mode=${mode}&batch_year=${parseInt(batchYear, 10)}`,
         { method: "POST", headers: { "X-Admin-Secret": secret } }
       );
       if (!res.ok) throw new Error(await res.text());
@@ -47,10 +77,7 @@ export default function AdminPanel() {
   };
 
   const uploadEmails = async () => {
-    if (!emailFile) {
-      setStatus("Please select an email file first.");
-      return;
-    }
+    if (!emailFile) return setStatus("Please select an email file first.");
     if (!secret) return alert("Admin secret missing");
 
     setStatus("Uploading emails...");
@@ -58,11 +85,14 @@ export default function AdminPanel() {
     formData.append("file", emailFile);
 
     try {
-      const res = await fetch(`${API_BASE}/admin/upload-emails`, {
-        method: "POST",
-        headers: { "X-Admin-Secret": secret },
-        body: formData,
-      });
+      const res = await fetch(
+        `${API_BASE}/admin/upload-emails?batch_year=${parseInt(batchYear, 10)}`,
+        {
+          method: "POST",
+          headers: { "X-Admin-Secret": secret },
+          body: formData,
+        }
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Unknown error");
       setStatus(`✅ Uploaded emails. Inserted ${data.emails_inserted} records.`);
@@ -72,10 +102,7 @@ export default function AdminPanel() {
   };
 
   const uploadMentors = async () => {
-    if (!mentorFile) {
-      setStatus("Please select a mentor file first.");
-      return;
-    }
+    if (!mentorFile) return setStatus("Please select a mentor file first.");
     if (!secret) return alert("Admin secret missing");
 
     setStatus("Uploading mentors...");
@@ -83,11 +110,14 @@ export default function AdminPanel() {
     formData.append("file", mentorFile);
 
     try {
-      const res = await fetch(`${API_BASE}/admin/upload-mentors`, {
-        method: "POST",
-        headers: { "X-Admin-Secret": secret },
-        body: formData,
-      });
+      const res = await fetch(
+        `${API_BASE}/admin/upload-mentors?batch_year=${parseInt(batchYear, 10)}`,
+        {
+          method: "POST",
+          headers: { "X-Admin-Secret": secret },
+          body: formData,
+        }
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Unknown error");
       setStatus(
@@ -98,12 +128,36 @@ export default function AdminPanel() {
     }
   };
 
+  const createBatch = async () => {
+    if (!newBatchYear) return setStatus("Enter a new batch year to create.");
+    if (!secret) return alert("Admin secret missing");
+
+    setStatus(`Creating batch ${newBatchYear}...`);
+    try {
+      const res = await fetch(`${API_BASE}/admin/create-batch`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Secret": secret,
+        },
+        body: JSON.stringify({ batch_year: parseInt(newBatchYear, 10) }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Unknown error");
+      setStatus(`✅ Batch ${newBatchYear} created successfully.`);
+      setNewBatchYear("");
+      fetchBatches();
+    } catch (err) {
+      setStatus("❌ Error: " + err.message);
+    }
+  };
+
   return (
     <div className="min-h-screen p-6 flex flex-col items-center">
       <div className="shadow-lg rounded-2xl p-6 w-full max-w-xl">
+
         <h1 className="text-2xl font-bold mb-4">Admin Control Panel</h1>
 
-        {/* Only show secret input if not saved */}
         {!savedSecret && (
           <>
             <label className="block mb-2 font-medium">Admin Secret</label>
@@ -123,7 +177,34 @@ export default function AdminPanel() {
           </>
         )}
 
-        {/* Mode selection */}
+        <label className="block mb-2 font-medium">Select Batch</label>
+        <select
+          value={batchYear || ""}
+          onChange={(e) => setBatchYear(parseInt(e.target.value, 10))}
+          className="w-full border rounded p-2 mb-4"
+        >
+          {availableBatches.map((b) => (
+            <option key={b} value={b}>{b}</option>
+          ))}
+        </select>
+
+        <label className="block mb-2 font-medium">Create New Batch</label>
+        <div className="flex gap-2 mb-4">
+          <input
+            type="number"
+            value={newBatchYear}
+            onChange={(e) => setNewBatchYear(e.target.value)}
+            placeholder="Enter new batch year"
+            className="flex-1 border rounded p-2"
+          />
+          <button
+            onClick={createBatch}
+            className="bg-orange-600 text-white py-2 px-4 rounded-xl hover:bg-orange-700"
+          >
+            Create Batch
+          </button>
+        </div>
+
         <label className="block mb-2 font-medium">Account Generation Mode</label>
         <select
           value={mode}
@@ -141,7 +222,6 @@ export default function AdminPanel() {
           Generate Accounts & Download CSV
         </button>
 
-        {/* File upload - Emails */}
         <label className="block mb-2 font-medium">Upload Email File (.xlsx or .csv)</label>
         <input
           type="file"
@@ -156,7 +236,6 @@ export default function AdminPanel() {
           Upload Emails
         </button>
 
-        {/* File upload - Mentors */}
         <label className="block mb-2 font-medium">Upload Mentor File (.xlsx)</label>
         <input
           type="file"

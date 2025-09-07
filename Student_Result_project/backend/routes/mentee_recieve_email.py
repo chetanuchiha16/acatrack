@@ -1,10 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from models import StudentAuth, Mentor
 from app_init import db
 from .mentor_send_email import MentorMessage, StudentMessageStatus
 from datetime import datetime, timezone
 student_email_bp = Blueprint("student_email", __name__)
-
+from models.batch_manager import BatchManager
 
 # ✅ Utility to serialize MentorMessage with required fields
 def serialize_message(msg, usn):
@@ -28,15 +28,19 @@ def serialize_message(msg, usn):
 
 @student_email_bp.route("/student/<string:usn>/messages", methods=["GET"])
 def get_student_messages(usn):
-    msgs = (
-        MentorMessage.query
-        .filter((MentorMessage.student_usn == usn) | (MentorMessage.student_usn == None))
-        .order_by(MentorMessage.id.desc())
-        .all()
-    )
+    batch_year = session.get("batch_year")  # however you infer it
+    bm = BatchManager()
+    app = bm.get_flask_app(batch_year)
+    with app.app_context():
+        msgs = (
+            MentorMessage.query
+            .filter((MentorMessage.student_usn == usn) | (MentorMessage.student_usn == None))
+            .order_by(MentorMessage.id.desc())
+            .all()
+        )
 
-    results = [serialize_message(m, usn) for m in msgs]
-    return jsonify(results)
+        results = [serialize_message(m, usn) for m in msgs]
+        return jsonify(results)
 
 
 @student_email_bp.route("/student/<string:usn>/messages/<int:msg_id>", methods=["GET"])

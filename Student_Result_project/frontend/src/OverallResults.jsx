@@ -18,7 +18,9 @@ export default function OverallResults() {
     if (view === "toppers") url += "&show_toppers=true";
     if (view === "failed") url += "&show_failed=true";
 
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      credentials: "include"   // <-- this ensures cookies/session are sent
+    });
     const json = await res.json();
     setData(json);
   };

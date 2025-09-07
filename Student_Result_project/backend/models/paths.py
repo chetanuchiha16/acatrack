@@ -21,6 +21,7 @@ def get_excel_path(batch_year: int) -> str:
     return str(excel_dir / f"result_list_{batch_year}.xlsx")
 
 def get_db_path(batch_year: int) -> str:
+    print(str(db_dir / f"student_data_{batch_year}.db"))
     return str(db_dir / f"student_data_{batch_year}.db")
 
 from models.batch_manager import BatchManager
