@@ -17,6 +17,14 @@ export default function AdminPanel() {
   const [mentorFile, setMentorFile] = useState(null);
   const [newBatchYear, setNewBatchYear] = useState("");
 
+  // Webscrape states
+  const [usnPrefix, setUsnPrefix] = useState("");
+  const [usnStart, setUsnStart] = useState("");
+  const [usnEnd, setUsnEnd] = useState("");
+  const [examSession, setExamSession] = useState("");
+  const [examYear, setExamYear] = useState("");
+  const [downloadDir, setDownloadDir] = useState("");
+
   // Redirect if no secret
   useEffect(() => {
     if (!secret) {
@@ -152,6 +160,35 @@ export default function AdminPanel() {
     }
   };
 
+  // New: Fetch VTU results
+  const fetchResults = async () => {
+    if (!secret) return alert("Admin secret missing");
+    if (!usnPrefix || !usnStart || !usnEnd || !examSession || !examYear)
+      return setStatus("Please fill all required fields.");
+
+    setStatus("Starting result fetch... (check console for CAPTCHA steps)");
+
+    try {
+      const res = await fetch(`${API_BASE}/webscrape/fetch-results`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          usn_prefix: usnPrefix,
+          usn_start: parseInt(usnStart, 10),
+          usn_end: parseInt(usnEnd, 10),
+          exam_session: examSession.toUpperCase(),
+          exam_year: examYear,
+          download_dir: downloadDir || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Unknown error");
+      setStatus(`✅ Fetch started: ${data.message}`);
+    } catch (err) {
+      setStatus("❌ Error: " + err.message);
+    }
+  };
+
   return (
     <div className="min-h-screen p-6 flex flex-col items-center">
       <div className="shadow-lg rounded-2xl p-6 w-full max-w-xl">
@@ -249,6 +286,61 @@ export default function AdminPanel() {
         >
           Upload Mentors
         </button>
+
+        {/* New Section: Fetch VTU Results */}
+        <h2 className="text-xl font-semibold mb-2 mt-6">Fetch VTU Results</h2>
+        <div className="flex flex-col gap-2 mb-4">
+          <input
+            type="text"
+            value={usnPrefix}
+            onChange={(e) => setUsnPrefix(e.target.value)}
+            placeholder="USN Prefix (e.g., 1JS23CS)"
+            className="w-full border rounded p-2"
+          />
+          <div className="flex gap-2">
+            <input
+              type="number"
+              value={usnStart}
+              onChange={(e) => setUsnStart(e.target.value)}
+              placeholder="Start USN"
+              className="flex-1 border rounded p-2"
+            />
+            <input
+              type="number"
+              value={usnEnd}
+              onChange={(e) => setUsnEnd(e.target.value)}
+              placeholder="End USN"
+              className="flex-1 border rounded p-2"
+            />
+          </div>
+          <input
+            type="text"
+            value={examSession}
+            onChange={(e) => setExamSession(e.target.value)}
+            placeholder="Exam Session (e.g., DJ)"
+            className="w-full border rounded p-2"
+          />
+          <input
+            type="text"
+            value={examYear}
+            onChange={(e) => setExamYear(e.target.value)}
+            placeholder="Exam Year (e.g., 24)"
+            className="w-full border rounded p-2"
+          />
+          <input
+            type="text"
+            value={downloadDir}
+            onChange={(e) => setDownloadDir(e.target.value)}
+            placeholder="Optional Download Directory"
+            className="w-full border rounded p-2"
+          />
+          <button
+            onClick={fetchResults}
+            className="w-full bg-indigo-600 text-white py-2 rounded-xl hover:bg-indigo-700"
+          >
+            Fetch Results
+          </button>
+        </div>
 
         {status && <p className="mt-4 text-sm text-gray-700">{status}</p>}
       </div>

@@ -110,8 +110,6 @@ def generate_accounts():
     
     batch_year = int(request.args.get("batch_year", 2022))  # default if not passed
 
-    
-    
 
     with bm.session_scope(batch_year) as db:
         students, teachers = _fetch_source_rows(batch_year)
