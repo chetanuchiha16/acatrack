@@ -65,7 +65,7 @@ def _fetch_source_rows(batch_year: int) -> Tuple[List[Tuple[str, str]], List[Tup
     conn, cur = _connect_sqlite(batch_year)
     try:
         teachers = cur.execute("SELECT Mentor_Name FROM Staffs").fetchall()
-        students = cur.execute("SELECT student_usn, student_name FROM SEM1").fetchall()
+        students = cur.execute("SELECT student_usn, student_name FROM SEM4").fetchall()
     finally:
         conn.close()
     return students, teachers

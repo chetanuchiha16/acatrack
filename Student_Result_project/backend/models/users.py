@@ -78,7 +78,8 @@ class PasswordResetToken(db.Model):
     token = db.Column(db.String(128), unique=True, nullable=False, index=True)
     usn = db.Column(db.String(10), nullable=False)
     role = db.Column(db.String(20), nullable=False)  # student, parent, teacher
-    expires_at = db.Column(db.DateTime, nullable=False)  # store naive UTC
+    batch_year = db.Column(db.Integer, nullable=False)  # NEW FIELD
+    expires_at = db.Column(db.DateTime, nullable=False)  # naive UTC
     used = db.Column(db.Boolean, default=False)
 
 

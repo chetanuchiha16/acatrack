@@ -12,7 +12,7 @@ export default function ForgotPassword({ onClose }) {
     setStatus(null); // clear previous messages
 
     try {
-      const res = await axios.post(`${API_BASE}/auth/forgot/request`, { username });
+      const res = await axios.post(`${API_BASE}/auth/forgot/request`, { username }, {withCredentials:true});
       setStatus({ type: "success", message: res.data.message || "Reset link sent successfully!" });
       setUsername(""); // optional: clear input
     } catch (err) {

@@ -22,7 +22,7 @@ def create_app(batch_year=None):
     
     db.init_app(app)
     migrate = Migrate(app, db)
-    from models import StudentAuth, Teacher, Mentor, ParentAuth, Meeting, PasswordResetToken
+    from models import StudentAuth,Teacher,StudentAuth, Mentor, ParentAuth, Meeting, PasswordResetToken, StudentMessageStatus, MentorMessage
     CORS(app, supports_credentials=True)
     return app
 
