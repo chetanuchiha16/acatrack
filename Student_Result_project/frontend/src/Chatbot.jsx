@@ -147,98 +147,13 @@ export default function ChatBot() {
             }
 
             setDisambiguationOptions([]);
+            const newMessages = [];
 
-            const newMessages = [
-                { sender: "bot", type: "header", text: `📄 Report for ${data.student_name}${semester ? ` (${semester})` : ""}` },
-            ];
-
-            if (intent === "check_backlogs") {
-                // Filter backlogs for semester if specified
-                let backlogData = data.backlogs;
-                let totalCredits = data.total_backlog_credits;
-
-                if (semester && data.backlogs?.[semester]) {
-                    backlogData = { [semester]: data.backlogs[semester] };
-                    totalCredits = Object.values(data.backlogs[semester]).reduce((acc, val) => acc + val.credits, 0);
-                }
-
-                newMessages.push({
-                    sender: "bot",
-                    type: "backlogs",
-                    data: backlogData,
-                    total_backlog_credits: totalCredits
-                });
-
-                // Provide download link for backlog only
-                newMessages.push({
-                    sender: "bot",
-                    type: "downloads",
-                    downloadUrls: {
-                        backlog: `${API_BASE}/report/${encodeURIComponent(name)}/pdf?type=backlog${semester ? `&semester=${encodeURIComponent(semester)}` : ""}`
-                    }
-                });
-
-                // Speech
-                let speechText = `Here is the backlog report for ${data.student_name}${semester ? ` (${semester})` : ""}.`;
-                if (totalCredits === 0) {
-                    speechText += " No backlogs. Excellent!";
-                    setShowConfetti(true);
-                    setTimeout(() => setShowConfetti(false), 5000);
-                } else if (totalCredits > 18) {
-                    speechText += " ⚠️ Backlog credits exceed 18. Risk of year back.";
-                } else {
-                    speechText += ` Some backlogs are present. Total credits: ${totalCredits}.`;
-                }
-                speechText += " Thank you for using JssTrack360 chatbot. Have a great day!";
-                speak(speechText);
-
-            } else if (intent === "fetch_semester_report") {
-                // Show semester grades
-                if (semester && data.semesters?.[semester]) {
-                    newMessages.push({
-                        sender: "bot",
-                        type: "semesters",
-                        data: { [semester]: data.semesters[semester] }
-                    });
-
-                    // Semester-specific backlogs
-                    const semesterBacklogs = {};
-                    if (data.backlogs?.[semester]) {
-                        semesterBacklogs[semester] = data.backlogs[semester];
-                    }
-
-                    const totalCredits = Object.values(semesterBacklogs[semester] || {}).reduce((acc, val) => acc + val.credits, 0);
-
-                    newMessages.push({
-                        sender: "bot",
-                        type: "backlogs",
-                        data: semesterBacklogs,
-                        total_backlog_credits: totalCredits
-                    });
-
-                    // Speech
-                    let speechText = `Here is the report for ${data.student_name} for ${semester}.`;
-                    if (totalCredits === 0) {
-                        speechText += " No backlogs. Excellent!";
-                        setShowConfetti(true);
-                        setTimeout(() => setShowConfetti(false), 5000);
-                    } else if (totalCredits > 18) {
-                        speechText += " ⚠️ Backlog credits exceed 18. Risk of year back.";
-                    } else {
-                        speechText += ` Some backlogs are present. Total credits: ${totalCredits}.`;
-                    }
-                    speechText += " Thank you for using JssTrack360 chatbot. Have a great day!";
-                    speak(speechText);
-                }
-            } else {
-                // Full report (all semesters + backlogs + AI + downloads)
-                newMessages.push({ sender: "bot", type: "semesters", data: data.semesters });
-                newMessages.push({
-                    sender: "bot",
-                    type: "backlogs",
-                    data: data.backlogs,
-                    total_backlog_credits: data.total_backlog_credits
-                });
+            // -----------------------------
+            // AI Insights
+            // -----------------------------
+            if (intent === "ai_summary") {
+                newMessages.push({ sender: "bot", type: "header", text: `🤖 AI Insights for ${data.student_name}` });
                 newMessages.push({
                     sender: "bot",
                     type: "ai_insights",
@@ -249,6 +164,139 @@ export default function ChatBot() {
                         cgpa_prediction: data.cgpa_prediction
                     }
                 });
+                newMessages.push({ sender: "bot", type: "thank", text: "✅ AI insights generated!" });
+                setMessages(prev => [...prev, ...newMessages]);
+                speak(`Here are the AI insights for ${data.student_name}.`);
+                return;
+            }
+
+            // -----------------------------
+            // Backlogs
+            // -----------------------------
+            if (intent === "check_backlogs") {
+                let backlogData = data.backlogs || {};
+                let totalCredits = data.total_backlog_credits || 0;
+
+                if (semester) {
+                    if (data.backlogs?.[semester]) {
+                        backlogData = { [semester]: data.backlogs[semester] };
+                        totalCredits = data.backlogs[semester].semester_backlog_credits || 0;
+                    } else {
+                        backlogData = {};
+                        totalCredits = 0;
+                    }
+                }
+
+                newMessages.push({
+                    sender: "bot",
+                    type: "backlogs",
+                    data: backlogData,
+                    total_backlog_credits: totalCredits
+                });
+
+                newMessages.push({
+                    sender: "bot",
+                    type: "downloads",
+                    downloadUrls: {
+                        backlog: `${API_BASE}/report/${encodeURIComponent(name)}/pdf?type=backlog${semester ? `&semester=${encodeURIComponent(semester)}` : ""}`
+                    }
+                });
+
+                let speechText = `Here is the backlog report for ${data.student_name}${semester ? ` (${semester})` : ""}.`;
+                if (totalCredits === 0) {
+                    speechText += " ✅ No backlogs.";
+                    setShowConfetti(true);
+                    setTimeout(() => setShowConfetti(false), 5000);
+                } else if (totalCredits > 18) {
+                    speechText += " ⚠️ Backlog credits exceed 18. Risk of year back.";
+                } else {
+                    speechText += ` Some backlogs are present. Total credits: ${totalCredits}.`;
+                }
+                speechText += " Thank you for using JssTrack360 chatbot. Have a great day!";
+                speak(speechText);
+
+                // -----------------------------
+                // Semester Report
+                // -----------------------------
+            } else if (intent === "fetch_semester_report") {
+                if (semester && data.semesters?.[semester]) {
+                    newMessages.push({
+                        sender: "bot",
+                        type: "semesters",
+                        data: { [semester]: data.semesters[semester] }
+                    });
+
+                    const semBacklog = data.backlogs?.[semester];
+                    const hasFailedSubjects = semBacklog?.failed_subjects?.length > 0;
+                    if (hasFailedSubjects) {
+                        const totalCredits = semBacklog.semester_backlog_credits || 0;
+                        newMessages.push({
+                            sender: "bot",
+                            type: "backlogs",
+                            data: { [semester]: semBacklog },
+                            total_backlog_credits: totalCredits
+                        });
+                    }
+
+                    const downloadUrls = {
+                        semester_report: `${API_BASE}/report/${encodeURIComponent(name)}/pdf?type=semester&semester=${encodeURIComponent(semester)}`
+                    };
+                    if (hasFailedSubjects) {
+                        downloadUrls.semester_backlog = `${API_BASE}/report/${encodeURIComponent(name)}/pdf?type=backlog&semester=${encodeURIComponent(semester)}`;
+                    }
+
+                    newMessages.push({ sender: "bot", type: "downloads", downloadUrls });
+
+                    let speechText = `Here is the report for ${data.student_name} for ${semester}.`;
+                    if (hasFailedSubjects) {
+                        const totalCredits = semBacklog.semester_backlog_credits || 0;
+                        if (totalCredits > 18) speechText += " ⚠️ Backlog credits exceed 18. Risk of year back.";
+                        else speechText += ` Some backlogs are present. Total credits: ${totalCredits}.`;
+                    } else {
+                        speechText += " ✅ No backlogs.";
+                        setShowConfetti(true);
+                        setTimeout(() => setShowConfetti(false), 5000);
+                    }
+                    speechText += " Thank you for using JssTrack360 chatbot. Have a great day!";
+                    speak(speechText);
+
+                } else {
+                    newMessages.push({ sender: "bot", type: "semesters", data: { [semester]: {} } });
+                    speak(`No data found for ${semester} for ${data.student_name}. ✅ No backlogs.`);
+                }
+
+                // -----------------------------
+                // Full Report
+                // -----------------------------
+            } else {
+                newMessages.push({ sender: "bot", type: "semesters", data: data.semesters });
+
+                const flattenedBacklogs = {};
+                Object.entries(data.backlogs || {}).forEach(([sem, semData]) => {
+                    flattenedBacklogs[sem] = {
+                        ...semData,
+                        summary: `${semData.failed_subjects.length} failed subjects, ${semData.semester_backlog_credits} credits`
+                    };
+                });
+
+                newMessages.push({
+                    sender: "bot",
+                    type: "backlogs",
+                    data: flattenedBacklogs,
+                    total_backlog_credits: data.total_backlog_credits || 0
+                });
+
+                newMessages.push({
+                    sender: "bot",
+                    type: "ai_insights",
+                    data: {
+                        ai_summary: data.ai_summary,
+                        ai_profile: data.ai_profile,
+                        trend: data.trend,
+                        cgpa_prediction: data.cgpa_prediction
+                    }
+                });
+
                 newMessages.push({
                     sender: "bot",
                     type: "downloads",
@@ -259,9 +307,9 @@ export default function ChatBot() {
                 });
 
                 let speechText = `Here is the full report for ${data.student_name}.`;
-                const totalBacklogCredits = data.total_backlog_credits;
+                const totalBacklogCredits = data.total_backlog_credits || 0;
                 if (totalBacklogCredits === 0) {
-                    speechText += " No backlogs. Excellent!";
+                    speechText += " ✅ No backlogs.";
                     setShowConfetti(true);
                     setTimeout(() => setShowConfetti(false), 7000);
                 } else if (totalBacklogCredits > 18) {
@@ -273,18 +321,15 @@ export default function ChatBot() {
                 speak(speechText);
             }
 
-            // Thank you message
             newMessages.push({ sender: "bot", type: "thank", text: "✅ Generated! Thank you for using JssTrack360 chatbot." });
             setMessages(prev => [...prev, ...newMessages]);
 
-        } catch {
+        } catch (err) {
+            console.error(err);
             setMessages(prev => [...prev, { sender: "bot", text: "❌ Error fetching report" }]);
             speak("Sorry, there was an error fetching the report.");
         }
     };
-
-
-
 
 
 
@@ -297,13 +342,13 @@ export default function ChatBot() {
         if (!msgText) setMessages(prev => [...prev, { sender: "user", text: `You said: ${text}` }]);
         setInput("");
 
-        // Clear any old disambiguation options
+        // Clear old disambiguation options
         setDisambiguationOptions([]);
 
         // Detect intent
         let intent = detectIntent(text);
 
-        // NLP overrides for more robust intent detection
+        // NLP overrides for robust intent detection
         if (isBacklogRequest(text)) intent = "check_backlogs";
         if (isAiSummaryRequest(text)) intent = "ai_summary";
 
@@ -316,6 +361,24 @@ export default function ChatBot() {
             intent = "fetch_semester_report";
         }
 
+        // -----------------------------
+        // Handle AI summary first (independent of semester)
+        // -----------------------------
+        if (intent === "ai_summary") {
+            if (studentName) {
+                speak(`Fetching AI summary for ${studentName}...`);
+                // setMessages(prev => [...prev, { sender: "bot", text: `Fetching AI summary for ${studentName}...` }]);
+                fetchReport(studentName, null, "ai_summary"); // Always null for semester
+            } else {
+                speak("Please provide a student name to see AI summary.");
+                setMessages(prev => [...prev, { sender: "bot", text: "Please provide a student name to see AI summary." }]);
+            }
+            return; // Important: prevent fallback logic from running
+        }
+
+        // -----------------------------
+        // Switch case for other intents
+        // -----------------------------
         switch (intent) {
             case "list_students":
                 speak("Fetching all students...");
@@ -348,27 +411,15 @@ export default function ChatBot() {
             case "check_backlogs":
                 if (studentName) {
                     if (semester) {
-                        // Semester-specific backlog
                         speak(`Fetching backlog report for ${studentName} in ${semester}...`);
                         fetchReport(studentName, semester, "check_backlogs");
                     } else {
-                        // Full backlog report
                         speak(`Fetching backlog report for ${studentName}...`);
                         fetchReport(studentName, null, "check_backlogs");
                     }
                 } else {
                     speak("Please provide a student name to check backlogs.");
                     setMessages(prev => [...prev, { sender: "bot", text: "Please provide a student name to check backlogs." }]);
-                }
-                break;
-
-            case "ai_summary":
-                if (studentName) {
-                    speak(`Fetching AI summary for ${studentName}...`);
-                    fetchReport(studentName, semester, "ai_summary");
-                } else {
-                    speak("Please provide a student name to see AI summary.");
-                    setMessages(prev => [...prev, { sender: "bot", text: "Please provide a student name to see AI summary." }]);
                 }
                 break;
 
@@ -383,20 +434,25 @@ export default function ChatBot() {
                 break;
 
             default:
-                // Fallback: treat text as student name
+                // Fallback logic: full or semester report
                 if (studentName) {
-                    speak(`Fetching report for ${studentName}...`);
-                    fetchReport(studentName, semester, semester ? "fetch_semester_report" : "fetch_report");
+                    if (semester) {
+                        speak(`Fetching ${semester} report for ${studentName}...`);
+                        fetchReport(studentName, semester, "fetch_semester_report");
+                    } else {
+                        speak(`Fetching full report for ${studentName}...`);
+                        fetchReport(studentName, null, "fetch_report");
+                    }
                 } else {
                     speak("Sorry, I did not understand that. You can type 'list' to see all students.");
-                    setMessages(prev => [...prev, { sender: "bot", text: "❌ Sorry, I did not understand that. You can type 'list' to see all students." }]);
+                    setMessages(prev => [
+                        ...prev,
+                        { sender: "bot", text: "❌ Sorry, I did not understand that. You can type 'list' to see all students." }
+                    ]);
                 }
                 break;
         }
     };
-
-
-
 
 
 
@@ -406,7 +462,7 @@ export default function ChatBot() {
     const toggleAlphabet = (letter) => setOpenAlphabet(prev => ({ ...prev, [letter]: !prev[letter] }));
 
     const DownloadSection = ({ downloadUrls }) => (
-        <div className="flex gap-2 mt-2">
+        <div className="flex gap-2 mt-2 flex-wrap">
             {downloadUrls.full && (
                 <a
                     href={downloadUrls.full}
@@ -427,8 +483,29 @@ export default function ChatBot() {
                     Download Backlog Report 🔽
                 </a>
             )}
+            {downloadUrls.semester_report && (
+                <a
+                    href={downloadUrls.semester_report}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-blue-500 px-3 py-1 rounded text-white hover:bg-blue-600 transition-transform transform hover:scale-105"
+                >
+                    Download Semester Report 🔽
+                </a>
+            )}
+            {downloadUrls.semester_backlog && (
+                <a
+                    href={downloadUrls.semester_backlog}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-red-500 px-3 py-1 rounded text-white hover:bg-red-600 transition-transform transform hover:scale-105"
+                >
+                    Download Semester Backlog 🔽
+                </a>
+            )}
         </div>
     );
+
 
 
     const [suggestions, setSuggestions] = useState([]);
@@ -579,87 +656,134 @@ export default function ChatBot() {
 
                             {msg.type === "semesters" && Object.entries(msg.data).map(([sem, data]) => (
                                 <div key={sem} className="mb-2">
-                                    <button onClick={() => toggleSemester(sem)} className="w-full text-left bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 mb-1 transition-transform transform hover:scale-105">
+                                    {/* Semester toggle button */}
+                                    <button
+                                        onClick={() => toggleSemester(sem)}
+                                        className="w-full text-left bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 mb-1 transition-transform transform hover:scale-105"
+                                    >
                                         {sem} {openSemesters[sem] ? "▲" : "▼"}
                                     </button>
+
                                     {openSemesters[sem] && (
-                                        <table className="table-auto border-collapse border border border-gray-400 w-full text-sm mb-2">
-                                            <thead>
-                                                <tr className="bg-blue-300 border-white border">
-                                                    <th className="border border-gray-400 px-3 py-2">Subject</th>
-                                                    <th className="border border-gray-400 px-3 py-2">Internal</th>
-                                                    <th className="border border-gray-400 px-3 py-2">External</th>
-                                                    <th className="border border-gray-400 px-3 py-2">Total</th>
-                                                    <th className="border border-gray-400 px-3 py-2">Credits</th>
-                                                    <th className="border border-gray-400 px-3 py-2">Result</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="border-white border">
-                                                {data.subject_names.map((subject, idx) => {
-                                                    const internal = data.ia_marks[idx] ?? 0;
-                                                    const external = data.see_marks[idx] ?? 0;
-                                                    const total = internal + external;
-                                                    const credits = data.credits[idx] ?? 0;
-                                                    const result = data.pass_fail[idx] ?? "Pass";
-                                                    return (
-                                                        <tr key={idx} className={result === "Fail" ? "bg-red-200" : ""}>
-                                                            <td className="border border-gray-400 px-3 py-2">{subject} ({data.subject_codes[idx]})</td>
-                                                            <td className="border border-gray-400 px-3 py-2">{internal}</td>
-                                                            <td className="border border-gray-400 px-3 py-2">{external}</td>
-                                                            <td className="border border-gray-400 px-3 py-2">{total}</td>
-                                                            <td className="border border-gray-400 px-3 py-2">{credits}</td>
-                                                            <td className="border border-gray-400 px-3 py-2">{result}</td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
+                                        <>
+                                            {/* Subjects Table */}
+                                            <table className="table-auto border-collapse border border-gray-400 w-full text-sm mb-2">
+                                                <thead>
+                                                    <tr className="bg-blue-300 border-white border">
+                                                        <th className="border border-gray-400 px-3 py-2">Subject</th>
+                                                        <th className="border border-gray-400 px-3 py-2">Internal</th>
+                                                        <th className="border border-gray-400 px-3 py-2">External</th>
+                                                        <th className="border border-gray-400 px-3 py-2">Total</th>
+                                                        <th className="border border-gray-400 px-3 py-2">Credits</th>
+                                                        <th className="border border-gray-400 px-3 py-2">Result</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="border-white border">
+                                                    {data.subject_names.map((subject, idx) => {
+                                                        const internal = data.ia_marks[idx] ?? 0;
+                                                        const external = data.see_marks[idx] ?? 0;
+                                                        const total = internal + external;
+                                                        const credits = data.credits[idx] ?? 0;
+                                                        const result = data.pass_fail[idx] ?? "Pass";
+                                                        return (
+                                                            <tr key={idx} className={result === "Fail" ? "bg-red-200" : ""}>
+                                                                <td className="border border-gray-400 px-3 py-2">
+                                                                    {subject} ({data.subject_codes[idx]})
+                                                                </td>
+                                                                <td className="border border-gray-400 px-3 py-2">{internal}</td>
+                                                                <td className="border border-gray-400 px-3 py-2">{external}</td>
+                                                                <td className="border border-gray-400 px-3 py-2">{total}</td>
+                                                                <td className="border border-gray-400 px-3 py-2">{credits}</td>
+                                                                <td className="border border-gray-400 px-3 py-2">{result}</td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+
+                                            {/* Dynamic Download Buttons */}
+                                            {msg.downloadUrls && (
+                                                <DownloadSection
+                                                    downloadUrls={Object.fromEntries(
+                                                        Object.entries(msg.downloadUrls)
+                                                            .filter(([key, url]) => url) // Only include URLs that exist
+                                                    )}
+                                                />
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             ))}
 
+
+
                             {msg.type === "backlogs" && (
                                 <div className="mt-2">
                                     <h4 className="font-semibold underline">Backlogs</h4>
+
                                     {msg.total_backlog_credits === 0 ? (
-                                        <p className="font-bold text-green-600">✅ No backlogs</p>
+                                        <p className="font-bold text-green-600 mt-2">✅ No backlogs</p>
                                     ) : (
                                         <>
-                                            {msg.total_backlog_credits > 18 && <p className="text-red-600 font-bold">⚠️ Backlog credits exceed 18. Risk of year back</p>}
-                                            {Object.entries(msg.data).map(([sem, subjects]) => (
-                                                <div key={sem} className="mb-2">
-                                                    <button onClick={() => toggleBacklog(sem)} className="w-full text-left bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 mb-1 transition-transform transform hover:scale-105">
+                                            {msg.total_backlog_credits > 18 && (
+                                                <p className="text-red-600 font-bold mt-2">
+                                                    ⚠️ Backlog credits exceed 18. Risk of year back
+                                                </p>
+                                            )}
+
+                                            {Object.entries(msg.data).map(([sem, semData]) => (
+                                                <div key={sem} className="mb-4">
+                                                    <button
+                                                        onClick={() => toggleBacklog(sem)}
+                                                        className="w-full text-left bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 mb-1 transition-transform transform hover:scale-105"
+                                                    >
                                                         {sem} {openBacklogs[sem] ? "▲" : "▼"}
                                                     </button>
+
                                                     {openBacklogs[sem] && (
-                                                        <table className="table-auto border-collapse border border-gray-500 w-full text-sm mb-2">
-                                                            <thead>
-                                                                <tr className="bg-red-300">
-                                                                    <th className="border border-gray-400 px-3 py-2">Subject</th>
-                                                                    <th className="border border-gray-400 px-3 py-2">Internal</th>
-                                                                    <th className="border border-gray-400 px-3 py-2">External</th>
-                                                                    <th className="border border-gray-400 px-3 py-2">Credits</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {subjects.map((s, idx) => (
-                                                                    <tr key={idx}>
-                                                                        <td className="border border-gray-400 px-3 py-2">{s.subject}</td>
-                                                                        <td className="border border-gray-400 px-3 py-2">{s.internal}</td>
-                                                                        <td className="border border-gray-400 px-3 py-2">{s.external}</td>
-                                                                        <td className="border border-gray-400 px-3 py-2">{s.credits}</td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
+                                                        <div className="pl-2">
+                                                            <h5 className="font-semibold mb-1">{sem}</h5>
+
+                                                            {semData.failed_subjects.length === 0 ? (
+                                                                <p className="px-3 py-2 font-bold text-green-600 mb-2">
+                                                                    ✅ No backlogs for {sem}
+                                                                </p>
+                                                            ) : (
+                                                                <table className="table-auto border-collapse border border-gray-500 w-full text-sm mb-2">
+                                                                    <thead>
+                                                                        <tr className="bg-red-300">
+                                                                            <th className="border border-gray-400 px-3 py-2">Subject</th>
+                                                                            <th className="border border-gray-400 px-3 py-2">Internal</th>
+                                                                            <th className="border border-gray-400 px-3 py-2">External</th>
+                                                                            <th className="border border-gray-400 px-3 py-2">Credits</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {semData.failed_subjects.map((s, idx) => (
+                                                                            <tr key={idx}>
+                                                                                <td className="border border-gray-400 px-3 py-2">{s.subject}</td>
+                                                                                <td className="border border-gray-400 px-3 py-2">{s.internal}</td>
+                                                                                <td className="border border-gray-400 px-3 py-2">{s.external}</td>
+                                                                                <td className="border border-gray-400 px-3 py-2">{s.credits}</td>
+                                                                            </tr>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </div>
                                             ))}
-                                            <p><b>Total Backlog Credits:</b> {msg.total_backlog_credits}</p>
+
+                                            <p className="font-semibold mt-2">
+                                                <b>Total Backlog Credits:</b> {msg.total_backlog_credits}
+                                            </p>
                                         </>
                                     )}
                                 </div>
                             )}
+
+
 
                             {msg.type === "ai_insights" && (
                                 <div className="p-2 rounded mb-2">

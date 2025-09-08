@@ -32,7 +32,7 @@ for sem in SEMESTERS:
 chatbot_bp = Blueprint("student_report", __name__)
 
 # ---------------- PDF GENERATION ----------------
-def generate_pdf_report(student_data):
+def generate_pdf_report(student_data, semester=None):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
     styles = getSampleStyleSheet()
@@ -43,7 +43,9 @@ def generate_pdf_report(student_data):
     story.append(Paragraph(f"<b>Student Name:</b> {student_data['student_name']}", styles['Heading2']))
     story.append(Spacer(1, 12))
 
-    for sem, data in student_data['semesters'].items():
+    semesters_to_include = {semester: student_data['semesters'][semester]} if semester else student_data['semesters']
+
+    for sem, data in semesters_to_include.items():
         story.append(Paragraph(f"<b>{sem}</b>", styles['Heading2']))
         story.append(Paragraph(
             f"SGPA: {data['sgpa']}, CGPA: {data['cgpa']:.2f}, Percentage: {data['percentage']:.2f}%, Credits Obtained: {data['obtained_credits']}",
@@ -69,44 +71,69 @@ def generate_pdf_report(student_data):
     buffer.seek(0)
     return buffer
 
+
+
 def generate_backlog_pdf(student_name, backlogs, total_credits):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
     styles = getSampleStyleSheet()
     story = []
 
-    story.append(Paragraph(f"<b>Backlog Report - {student_name}</b>", styles['Title']))
-    story.append(Spacer(1,12))
+    # Filter out semesters with 0 backlog credits
+    backlogs = {sem: sem_data for sem, sem_data in (backlogs or {}).items()
+                if sem_data.get("semester_backlog_credits", 0) > 0}
 
-    if not backlogs:
+    # Title
+    story.append(Paragraph(f"<b>Backlog Report - {student_name}</b>", styles['Title']))
+    story.append(Spacer(1, 12))
+
+    # No backlogs case
+    if not backlogs or total_credits == 0:
         story.append(Paragraph("<font color='green'><b>✅ No backlogs found.</b></font>", styles['Normal']))
     else:
+        # Has backlogs
         story.append(Paragraph("<font color='red'><b>⚠️ Student has backlogs!</b></font>", styles['Normal']))
-        story.append(Spacer(1,12))
+        story.append(Spacer(1, 12))
+
         if total_credits > 18:
             story.append(Paragraph("<font color='red'><b>⚠️ Backlog credits exceed 18. Risk of year back.</b></font>", styles['Normal']))
-            story.append(Spacer(1,12))
+            story.append(Spacer(1, 12))
 
-        for sem, subjects in backlogs.items():
+        # Iterate over each semester with actual backlogs
+        for sem, sem_data in backlogs.items():
+            failed_subjects = sem_data.get("failed_subjects", [])
+            sem_credits = sem_data.get("semester_backlog_credits", 0)
+
             story.append(Paragraph(f"<b>{sem}</b>", styles['Heading2']))
-            table_data = [["Subject","Internal","External","Credits"]]
-            for s in subjects:
-                table_data.append([s.get("subject","N/A"), s.get("internal",0), s.get("external",0), s.get("credits",0)])
+
+            # Table of failed subjects
+            table_data = [["Subject", "Internal", "External", "Credits"]]
+            for s in failed_subjects:
+                table_data.append([
+                    s.get("subject", "N/A"),
+                    s.get("internal", 0),
+                    s.get("external", 0),
+                    s.get("credits", 0)
+                ])
+
             table = Table(table_data, hAlign='LEFT')
             table.setStyle(TableStyle([
-                ('BACKGROUND',(0,0),(-1,0),colors.red),
-                ('TEXTCOLOR',(0,0),(-1,0),colors.white),
-                ('GRID',(0,0),(-1,-1),0.5,colors.black),
-                ('ALIGN',(0,0),(-1,-1),'CENTER')
+                ('BACKGROUND', (0,0), (-1,0), colors.red),
+                ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+                ('ALIGN', (0,0), (-1,-1), 'CENTER')
             ]))
             story.append(table)
-            story.append(Spacer(1,12))
+            story.append(Spacer(1, 12))
 
+        # Total backlog credits at the end
         story.append(Paragraph(f"<b>Total Backlog Credits:</b> {total_credits}", styles['Normal']))
 
+    # Build PDF
     doc.build(story)
     buffer.seek(0)
     return buffer
+
 
 
 # ---------------- HELPERS ----------------
@@ -142,6 +169,8 @@ def _calculate_backlogs(student_data):
 
     for sem, data in student_data.get("semesters", {}).items():
         sem_backlogs = []
+        sem_credit_sum = 0.0
+
         for ia, see, credit, subject, status in zip(
             data.get("ia_marks", []),
             data.get("see_marks", []),
@@ -156,13 +185,16 @@ def _calculate_backlogs(student_data):
                     "external": see,
                     "credits": credit
                 })
+                sem_credit_sum += credit
                 total_credits += credit
 
         if sem_backlogs:
-            backlogs[sem] = sem_backlogs
+            backlogs[sem] = {
+                "failed_subjects": sem_backlogs,
+                "semester_backlog_credits": sem_credit_sum
+            }
 
     return backlogs, total_credits
-
 
 def _fuzzy_find_student(name, students, cutoff=70):
     lowered_map = {s.lower(): s for s in students}
@@ -205,8 +237,6 @@ SUBJECT_TAG_KEYWORDS = {
         "english", "communication", "soft skills", "interpersonal"
     ],
 }
-
-
 
 
 def tag_subject_auto(subject):
@@ -436,8 +466,11 @@ def get_student_report(student_query):
     # ---------------- Backlogs ----------------
     backlogs = {}
     total_backlog_credits = 0
+
     for sem, data in student_data["semesters"].items():
         sem_backlogs = []
+        sem_credit_sum = 0
+
         for ia, see, credit, subject, status in zip(
             data["ia_marks"], data["see_marks"], data["credits"],
             data["subject_names"], data["pass_fail"]
@@ -449,9 +482,15 @@ def get_student_report(student_query):
                     "external": see,
                     "credits": credit
                 })
+                sem_credit_sum += credit
                 total_backlog_credits += credit
+
         if sem_backlogs:
-            backlogs[sem] = sem_backlogs
+            backlogs[sem] = {
+                "failed_subjects": sem_backlogs,
+                "semester_backlog_credits": sem_credit_sum
+            }
+
 
     # ---------------- AI INSIGHTS (adaptive) ----------------
     latest_sem = get_latest_semester(student_data)
@@ -472,14 +511,17 @@ def get_student_report(student_query):
     ai_summary = {
     "student_name": student_data["student_name"],
     "usn": sem_data.get("usn", "N/A"),
-    "obtained_credits": sem_data.get("obtained_credits","N/A"),
+    "obtained_credits": sem_data.get("obtained_credits", "N/A"),
     "semester": latest_sem,
     "total_marks": f"{total_marks}/{max_total_marks}",
     "sgpa": f"{sem_data.get('sgpa', 0):.2f}",
     "cgpa": f"{sem_data.get('cgpa', 0):.2f}",
     "percentage": f"{sem_data.get('percentage', 0):.2f}%",
     "backlog_status": (
-        f"⚠️ Total backlog credits: {total_backlog_credits}. Backlogs need to be cleared."
+        "⚠️ Backlogs detected.\n" + "\n".join(
+            f"{sem}: {details['semester_backlog_credits']} backlog credits"
+            for sem, details in backlogs.items()
+        )
         if total_backlog_credits > 0
         else "✅ No backlogs — academic record is clear."
     )
@@ -563,17 +605,32 @@ def download_pdf_report(student_query):
         return jsonify({"error": "Student not found"}), 404
 
     student_data = students[matched_name]
-    report_type = request.args.get("type", "full")
+    report_type = request.args.get("type", "full")  # "full" or "backlog"
+    semester = request.args.get("semester")  # optional
 
     if report_type == "backlog":
+        # Backlog PDF
         backlogs, total_credits = _calculate_backlogs(student_data)
-        pdf_buffer = generate_backlog_pdf(
-            student_data["student_name"], backlogs, total_credits
-        )
+
+        if semester:
+            sem_data = backlogs.get(semester)
+            if sem_data:
+                backlogs = {semester: sem_data}
+                total_credits = sem_data.get("semester_backlog_credits", 0)
+            else:
+                backlogs = {}
+                total_credits = 0
+
+        pdf_buffer = generate_backlog_pdf(student_data["student_name"], backlogs, total_credits)
         filename = f"{student_data['student_name'].replace(' ', '_')}_Backlog_Report.pdf"
+
     else:
-        pdf_buffer = generate_pdf_report(student_data)
-        filename = f"{student_data['student_name'].replace(' ', '_')}_Semester_Report.pdf"
+        # Semester or full report PDF
+        pdf_buffer = generate_pdf_report(student_data, semester=semester)  # <-- pass semester
+        if semester:
+            filename = f"{student_data['student_name'].replace(' ', '_')}_{semester}_Report.pdf"
+        else:
+            filename = f"{student_data['student_name'].replace(' ', '_')}_Full_Report.pdf"
 
     return send_file(
         pdf_buffer,
@@ -581,6 +638,9 @@ def download_pdf_report(student_query):
         as_attachment=True,
         download_name=filename
     )
+
+
+
 
 
 @chatbot_bp.route("/report/<student_query>/downloads", methods=["GET"])
@@ -593,15 +653,21 @@ def get_download_links(student_query):
 
     student_name = students[matched_name]["student_name"]
 
-    
+    download_urls = {
+        "full": f"/api/report/{student_name}/pdf?type=full",
+        "backlog": f"/api/report/{student_name}/pdf?type=backlog"
+    }
+
+    # Add semester-wise links
+    for sem in students[matched_name].get("semesters", {}):
+        download_urls[f"{sem}_report"] = f"/api/report/{student_name}/pdf?type=semester&semester={sem}"
+        download_urls[f"{sem}_backlog"] = f"/api/report/{student_name}/pdf?type=backlog&semester={sem}"
 
     return jsonify({
         "type": "downloads",
-        "downloadUrls": {
-            "full": f"/api/report/{student_name}/pdf?type=full",
-            "backlog": f"/api/report/{student_name}/pdf?type=backlog"
-        }
+        "downloadUrls": download_urls
     })
+
 
 @chatbot_bp.route("/chatbot/intent", methods=["POST"])
 def handle_intent():
