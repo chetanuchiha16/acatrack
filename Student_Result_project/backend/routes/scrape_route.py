@@ -1,10 +1,9 @@
-#scrape_route.py
 from flask import Blueprint, request, jsonify
 from threading import Thread
 import os
 import time
-
-from models.webscrape import setup_selenium, RESULTS_URL as BASE_RESULTS_URL, DOWNLOAD_DIR as BASE_DOWNLOAD_DIR
+from models.paths import excel_dir
+from models.webscrape import setup_selenium  # only need setup_selenium now
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -12,10 +11,14 @@ from selenium.webdriver.support import expected_conditions as EC
 # ---------- Blueprint ----------
 webscrape_bp = Blueprint("webscrape", __name__, url_prefix="/webscrape")
 
+# Base folder where results will be stored
+# BASE_DOWNLOAD_DIR = os.path.abspath("VTU_Results")
+BASE_DOWNLOAD_DIR = excel_dir
+
 # ---------- Helpers ----------
 def _fetch_single_result(usn, download_dir, exam_url):
     from selenium.common.exceptions import TimeoutException
-    driver = setup_selenium()
+    driver = setup_selenium(download_dir)
     try:
         print(f"Fetching results for USN: {usn}")
         driver.get(exam_url)
@@ -54,8 +57,23 @@ def _fetch_usn_range(usn_prefix, start, end, exam_session, exam_year, download_d
     for i in range(start, end + 1):
         usn = f"{usn_prefix}{str(i).zfill(3)}"
         _fetch_single_result(usn, download_dir, exam_url)
+        
+def batch_from_usn(usn_prefix: str) -> int:
+    year_suffix = usn_prefix[3:5]   # "23"
+    return 2000 + int(year_suffix)  # 2023
 
+def get_exam_session_and_year(usn_prefix: str, sem: int):
+    batch_year = batch_from_usn(usn_prefix)
 
+    if sem % 2 == 1:
+        exam_session = "DJ"   # odd sem → Dec–Jan
+    else:
+        exam_session = "JJE"  # even sem → Jun–Jul
+
+    exam_year = batch_year + (sem // 2)
+    exam_year_suffix = str(exam_year)[-2:]
+
+    return exam_session, exam_year_suffix, batch_year
 # ---------- Routes ----------
 @webscrape_bp.route("/fetch-results", methods=["POST"])
 def fetch_results_route():
@@ -65,30 +83,40 @@ def fetch_results_route():
         "usn_prefix": "1JS23CS",
         "usn_start": 8,
         "usn_end": 25,
-        "exam_session": "DJ",
-        "exam_year": "24",
+        "sem": 1,
         "download_dir": "custom/path"  # optional
     }
     """
     data = request.json
-    required_fields = ["usn_prefix", "usn_start", "usn_end", "exam_session", "exam_year"]
+    required_fields = ["usn_prefix", "usn_start", "usn_end", "sem"]
     missing = [f for f in required_fields if f not in data]
     if missing:
         return jsonify({"error": f"Missing fields: {', '.join(missing)}"}), 400
 
-    usn_prefix = data["usn_prefix"]
+    usn_prefix = data["usn_prefix"].upper()
     start = int(data["usn_start"])
     end = int(data["usn_end"])
-    exam_session = data["exam_session"].upper()
-    exam_year = str(data["exam_year"])
-    download_dir = data.get("download_dir", BASE_DOWNLOAD_DIR)
+    sem = int(data["sem"])
 
-    # Run scraping in a background thread to avoid blocking Flask
-    thread = Thread(target=_fetch_usn_range, args=(usn_prefix, start, end, exam_session, exam_year, download_dir))
+    exam_session, exam_year_suffix, batch_year = get_exam_session_and_year(usn_prefix, sem)
+
+    download_dir = data.get(
+        "download_dir",
+        os.path.join(BASE_DOWNLOAD_DIR, f"{exam_session}{exam_year_suffix}")
+    )
+
+    thread = Thread(
+        target=_fetch_usn_range,
+        args=(usn_prefix, start, end, exam_session, exam_year_suffix, download_dir)
+    )
     thread.start()
 
     return jsonify({
         "status": "started",
-        "message": f"Fetching results for USNs {usn_prefix}{start:03d} to {usn_prefix}{end:03d} in background.",
+        "message": (
+            f"Fetching results for batch {batch_year}, sem {sem} → "
+            f"{exam_session}{exam_year_suffix}, "
+            f"USNs {usn_prefix}{start:03d} to {usn_prefix}{end:03d}"
+        ),
         "download_dir": download_dir
     })

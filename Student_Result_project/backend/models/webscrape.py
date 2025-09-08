@@ -8,37 +8,28 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 import os
 
-# --- CONFIGURATION ---
-DOWNLOAD_DIR = os.path.abspath("VTU_Results")  # Folder to save PDFs
-USN_PREFIX = "1JS23CS"
-USN_START = 8
-USN_END = 25
-
-# Ask user which exam session to fetch
-# EXAM_SESSION = input("Enter exam session (DJ for Dec-Jan / JJE for Jun-Jul): ").strip().upper()
-# EXAM_YEAR = input("Enter exam year (last two digits, e.g. 24 for 2024): ").strip()
-
-# RESULTS_URL = f"https://results.vtu.ac.in/{EXAM_SESSION}cbcs{EXAM_YEAR}/index.php"
-
-# Create download folder if it doesn't exist
-os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-
 # --- SELENIUM SETUP ---
-def setup_selenium():
+def setup_selenium(download_dir: str):
+    """Initialize Selenium Chrome driver with a custom download directory."""
+    os.makedirs(download_dir, exist_ok=True)
+
     chrome_options = Options()
-    
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--disable-blink-features=AutomationControlled')
     chrome_options.add_argument('--start-maximized')
-    
+
+    # Configure downloads + PDF auto-saving
     prefs = {
-        "download.default_directory": DOWNLOAD_DIR,
-        "printing.print_preview_sticky_settings.appState": '{"recentDestinations":[{"id":"Save as PDF","origin":"local"}],"selectedDestinationId":"Save as PDF","version":2}',
-        "savefile.default_directory": DOWNLOAD_DIR,
+        "download.default_directory": download_dir,
+        "savefile.default_directory": download_dir,
         "profile.default_content_settings.popups": 0,
         "download.prompt_for_download": False,
         "download.directory_upgrade": True,
+        "printing.print_preview_sticky_settings.appState": (
+            '{"recentDestinations":[{"id":"Save as PDF","origin":"local"}],'
+            '"selectedDestinationId":"Save as PDF","version":2}'
+        ),
         "printing.default_destination_selection_rules": {
             "kind": "local",
             "namePattern": "Save as PDF"
@@ -52,50 +43,45 @@ def setup_selenium():
     driver = webdriver.Chrome(service=service, options=chrome_options)
     return driver
 
-# --- FETCH RESULTS ---
-def fetch_results(usn_number):
-    driver = setup_selenium()
+
+# --- FETCH SINGLE RESULT ---
+def fetch_single_result(usn: str, download_dir: str, exam_session: str, exam_year: str):
+    """Fetch result PDF for a single USN."""
+    RESULTS_URL = f"https://results.vtu.ac.in/{exam_session}cbcs{exam_year}/index.php"
+    driver = setup_selenium(download_dir)
     try:
-        print(f"\nFetching results for USN: {usn_number}")
+        print(f"Fetching results for USN: {usn}")
         driver.get(RESULTS_URL)
         time.sleep(2)
 
-        # Enter USN
+        # Input USN
         usn_input = WebDriverWait(driver, 10).until(
             EC.visibility_of_element_located((By.NAME, "lns"))
         )
-        usn_input.send_keys(usn_number)
+        usn_input.send_keys(usn)
 
-        # Wait for user to solve CAPTCHA manually
-        WebDriverWait(driver, 300).until(
-            EC.url_contains("resultpage.php")
-        )
-        print("CAPTCHA solved, result page loaded.")
+        # Wait for CAPTCHA to be solved manually
+        WebDriverWait(driver, 300).until(EC.url_contains("resultpage.php"))
+        print(f"CAPTCHA solved for {usn}")
 
-        # Click PRINT button to download PDF
+        # Click PRINT button
         print_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, "//input[@value='ಮುದ್ರಣ / PRINT']"))
         )
         print_button.click()
-        print("Print button clicked. PDF download started.")
-        
-        # Wait a few seconds to ensure download
         time.sleep(5)
+        print(f"Download triggered for {usn}")
 
     except Exception as e:
-        print(f"Error fetching results for USN {usn_number}: {e}")
+        print(f"Error fetching {usn}: {e}")
     finally:
         driver.quit()
 
-# --- MAIN FUNCTION ---
-def main():
-    print(f"\nFetching results from: {RESULTS_URL}")
-    usn_list = [f"{USN_PREFIX}{str(i).zfill(3)}" for i in range(USN_START, USN_END + 1)]
-    
-    for usn in usn_list:
-        fetch_results(usn)
 
-    print("\nAll results fetched successfully!")
-
-if __name__ == "__main__":
-    main()
+# --- FETCH RANGE OF USNs ---
+def fetch_usn_range(usn_prefix: str, start: int, end: int, exam_session: str, exam_year: str, download_dir: str):
+    """Fetch result PDFs for a range of USNs."""
+    os.makedirs(download_dir, exist_ok=True)
+    for i in range(start, end + 1):
+        usn = f"{usn_prefix}{str(i).zfill(3)}"
+        fetch_single_result(usn, download_dir, exam_session, exam_year)
