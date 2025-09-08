@@ -29,12 +29,12 @@ def auth():
         batch_year = int(batch_year)
     elif who == "Parent":
         # For parent, we will detect after loading student
-        pass
+        batch_year = batch_from_usn(username)
 
     # Get batch-specific app & enter context
     if batch_year is None:
         # fallback: could try default batch 2024
-        batch_year = 2024
+        batch_year = 2022
     
     with bm.session_scope(batch_year) as db:
         if who == "Student":
@@ -43,8 +43,12 @@ def auth():
             user = Teacher.query.filter_by(username=username).first()
         elif who == "Parent":
             user = ParentAuth.query.filter_by(username=username).first()
+            print(f"user parent")
+            print(f"user and user.student: {user and user.student} {user} {batch_from_usn(user.student.username)}")
             if user and user.student:
+
                 batch_year = batch_from_usn(user.student.username)
+                print(f"{batch_year} from parent auth")
         else:
             # fallback, try all
             user = (StudentAuth.query.filter_by(username=username).first() or
