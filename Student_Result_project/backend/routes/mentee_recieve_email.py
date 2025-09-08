@@ -4,7 +4,7 @@ from app_init import db
 from .mentor_send_email import MentorMessage, StudentMessageStatus
 from datetime import datetime, timezone
 student_email_bp = Blueprint("student_email", __name__)
-from models.batch_manager import BatchManager
+from models.batch_manager import BatchManager, bm
 
 # ✅ Utility to serialize MentorMessage with required fields
 def serialize_message(msg, usn):
@@ -29,9 +29,8 @@ def serialize_message(msg, usn):
 @student_email_bp.route("/student/<string:usn>/messages", methods=["GET"])
 def get_student_messages(usn):
     batch_year = session.get("batch_year")  # however you infer it
-    bm = BatchManager()
-    app = bm.get_flask_app(batch_year)
-    with app.app_context():
+    
+    with bm.session_scope(batch_year) as db:
         msgs = (
             MentorMessage.query
             .filter((MentorMessage.student_usn == usn) | (MentorMessage.student_usn == None))

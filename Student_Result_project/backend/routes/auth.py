@@ -1,10 +1,10 @@
 from flask import Blueprint, request, jsonify, session
 from app_init import bcrypt
 from models import StudentAuth, Teacher, ParentAuth
-from models.batch_manager import BatchManager
+from models.batch_manager import BatchManager, bm
 
 auth_bp = Blueprint("auth", __name__)
-bm = BatchManager()
+
 
 def batch_from_usn(usn: str) -> int:
     # Example: 1JS23CS001 → "23" → 2023
@@ -35,8 +35,8 @@ def auth():
     if batch_year is None:
         # fallback: could try default batch 2024
         batch_year = 2024
-    app = bm.get_flask_app(batch_year)
-    with app.app_context():
+    
+    with bm.session_scope(batch_year) as db:
         if who == "Student":
             user = StudentAuth.query.filter_by(username=username).first()
         elif who == "Staff":

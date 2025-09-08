@@ -26,7 +26,7 @@ from werkzeug.utils import secure_filename
 from app_init import bcrypt
 from models import Teacher, StudentAuth, Mentor, ParentAuth, db
 from models.paths import db_path, email_excel_path, mentor_excel_path, get_db_path
-from models.batch_manager import BatchManager
+from models.batch_manager import BatchManager, bm
 
 # ---------- Blueprint ----------
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -91,7 +91,7 @@ def list_batches():
     if not _check_secret(request):
         return jsonify({"error": "Unauthorized"}), 401
 
-    bm = BatchManager()
+    
     try:
         batches = bm.list_batches()  # should return list of integers, e.g. [2022, 2023, 2024]
     except Exception as e:
@@ -110,10 +110,10 @@ def generate_accounts():
     
     batch_year = int(request.args.get("batch_year", 2022))  # default if not passed
 
-    bm = BatchManager()
-    app = bm.get_flask_app(batch_year)   # 👈 get the Flask app for that batch
+    
+    
 
-    with app.app_context():  # 👈 ensure queries bind to the right DB
+    with bm.session_scope(batch_year) as db:
         students, teachers = _fetch_source_rows(batch_year)
 
         if mode == "all":
@@ -306,8 +306,7 @@ def upload_mentors():
         return jsonify({"error": "batch_year query param required"}), 400
     batch_year = int(batch_year)
 
-    bm = BatchManager()
-    app = bm.get_flask_app(batch_year)
+    
 
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
@@ -328,7 +327,7 @@ def upload_mentors():
     count_mappings = 0
     mentor_cache = {}
 
-    with app.app_context():  # <-- switch to correct batch DB
+    with bm.session_scope(batch_year) as db:
         for _, row in df.iterrows():
             mentor_name = str(row["Mentor_Name"]).strip()
             student_usn = str(row["student_usn"]).strip()
@@ -375,7 +374,7 @@ def create_batch():
         return jsonify({"error": "Missing batch_year"}), 400
     batch_year = int(batch_year)
 
-    bm = BatchManager()
+    
     if batch_year in bm.list_batches():
         return jsonify({"error": f"Batch {batch_year} already exists"}), 400
 
