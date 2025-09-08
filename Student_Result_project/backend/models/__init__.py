@@ -2,6 +2,6 @@
 from .student import Student
 from .university import University
 from .subject_results import SubjectResult
-from .users import StudentAuth,db,Teacher,StudentAuth, Mentor, ParentAuth, Meeting, PasswordResetToken
+from .users import db, StudentAuth,Teacher,StudentAuth, Mentor, ParentAuth, Meeting, PasswordResetToken, StudentMessageStatus, MentorMessage
 
 from .config import Config

@@ -18,7 +18,7 @@ export default function MentorResults({ mentor_id }) {
     setLoading(true);
     try {
       const res = await fetch(
-        `${API_BASE}/auth/Staff/Mentor/result?mentor_id=${mentor_id}&semester=${semester}`
+        `${API_BASE}/auth/Staff/Mentor/result?mentor_id=${mentor_id}&semester=${semester}`, {credentials: "include"}
       );
       const data = await res.json();
       setMentees(data);
@@ -33,7 +33,7 @@ export default function MentorResults({ mentor_id }) {
   const fetchChart = async (usn) => {
     try {
       const res = await fetch(
-        `${API_BASE}/auth/Staff/Mentor/chart?usn=${usn}&semester=${semester}`
+        `${API_BASE}/auth/Staff/Mentor/chart?usn=${usn}&semester=${semester}`, {credentials:"include"}
       );
       const data = await res.json();
       // console.log("Chart response:", data);  // <--- check this

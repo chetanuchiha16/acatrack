@@ -15,7 +15,7 @@ export default function MentorMeetings({ mentorId }) {
   // Fetch meetings from backend
   const fetchMeetings = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/auth/Staff/Mentor/meeting/${mentorId}`);
+      const res = await axios.get(`${API_BASE}/auth/Staff/Mentor/meeting/${mentorId}`, {withCredentials:true});
       setMeetings(res.data);
     } catch (err) {
       console.error(err);
@@ -42,7 +42,7 @@ export default function MentorMeetings({ mentorId }) {
         date,
         venue,
         agenda,
-      });
+      }, {withCredentials:true});
 
       // Reset form
       setTitle("");
