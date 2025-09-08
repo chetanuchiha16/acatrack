@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_file, Blueprint, session
 from models import University, SubjectResult
-from models.paths import db_path, pdf_dir, get_current_db_path, get_db_path
+from models.paths import db_path, pdf_dir  , get_db_path
 from visuals import create_subject_report
 import os
 
