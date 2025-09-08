@@ -2,7 +2,7 @@
 from pathlib import Path
 from models.data_prep import prepare_data as prep_data
 from app_init import create_app, db
-
+from contextlib import contextmanager
 class BatchManager:
     current_batch_year = None  # class-level variable
     current_db_path = None
@@ -60,3 +60,13 @@ class BatchManager:
     def set_current_batch(self, batch_year: int):
         self.current_batch_year = batch_year
         self.current_db_path = self.get_db_path(batch_year)
+
+    @contextmanager
+    def session_scope(self, batch_year: int):
+        """Provide a transactional scope for a given batch DB."""
+        app = self.get_flask_app(batch_year)
+        with app.app_context():
+            yield db
+
+
+bm = BatchManager()

@@ -24,7 +24,7 @@ export default function SendEmails() {
 
   const fetchMessages = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/messages`);
+      const res = await axios.get(`${API_BASE}/messages`, {withCredentials:true});
       setMessages(res.data);
     } catch (err) {
       console.error("Failed to fetch messages", err);
@@ -33,7 +33,7 @@ export default function SendEmails() {
 
   const saveMessage = async (data) => {
     try {
-      await axios.post(`${API_BASE}/messages`, data);
+      await axios.post(`${API_BASE}/messages`, data, {withCredentials:true});
       fetchMessages(); // refresh after saving
     } catch (err) {
       console.error("Failed to save message", err);
@@ -42,7 +42,7 @@ export default function SendEmails() {
 
   const deleteMessage = async (id) => {
     try {
-      await axios.delete(`${API_BASE}/messages/${id}`);
+      await axios.delete(`${API_BASE}/messages/${id}`, {withCredentials:true});
       setMessages(messages.filter((m) => m.id !== id));
     } catch (err) {
       console.error("Failed to delete message", err);
@@ -56,10 +56,11 @@ export default function SendEmails() {
     }
     try {
       await axios.post(`${API_BASE}/send-email/all`, {
+        
         recipientType: "student",
         subject: subjectAll,
         message: messageAll,
-      });
+      },{withCredentials:true});
       await saveMessage({ recipientType: "student", subject: subjectAll, message: messageAll });
       setFeedbackAll({ text: "Email sent to all students successfully!", type: "success" });
     } catch (err) {
@@ -78,7 +79,7 @@ export default function SendEmails() {
         recipientType: "parent",
         subject: subjectAll,
         message: messageAll,
-      });
+      }, {withCredentials:true});
       await saveMessage({ recipientType: "parent", subject: subjectAll, message: messageAll });
       setFeedbackAll({ text: "Email sent to all parents successfully!", type: "success" });
     } catch (err) {
@@ -102,7 +103,7 @@ export default function SendEmails() {
         recipientType: "student",
         subject: subjectInd,
         message: messageInd,
-      });
+      }, {withCredentials:true});
       await saveMessage({ usn, recipientType: "student", subject: subjectInd, message: messageInd });
       setFeedbackInd({ text: `Email sent to student with USN: ${usn}`, type: "success" });
     } catch (err) {
@@ -126,7 +127,7 @@ export default function SendEmails() {
         recipientType: "parent",
         subject: subjectInd,
         message: messageInd,
-      });
+      }, {withCredentials:true});
       await saveMessage({ usn, recipientType: "parent", subject: subjectInd, message: messageInd });
       setFeedbackInd({ text: `Email sent to parent of student with USN: ${usn}`, type: "success" });
     } catch (err) {
