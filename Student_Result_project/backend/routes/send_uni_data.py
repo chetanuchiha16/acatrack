@@ -15,6 +15,7 @@ def get_academic_performance():
 
     try:
         db_path = get_db_path(batch_year)  # <-- resolves correct DB
+        print(f"{db_path} from university 1")
         university = University(db_path=db_path)
         university.add_students(semester)
         result = university.calculate_academic_performance_by_semester(semester)

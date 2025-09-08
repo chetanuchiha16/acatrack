@@ -6,6 +6,7 @@ from app_init import create_app, db
 class BatchManager:
     current_batch_year = None  # class-level variable
     current_db_path = None
+    _apps = {}  # class variable shared across all instances
     def __init__(self):
         self.base_dir = Path(__file__).resolve().parent.parent
         self.db_dir = self.base_dir / "Outputs" / "Databases"
@@ -48,6 +49,7 @@ class BatchManager:
         """Return a Flask app connected to the correct batch DB (cached)."""
         if batch_year not in self._apps:
             self._apps[batch_year] = create_app(batch_year=batch_year)
+        print(f"apps: {self._apps} from batch manager")
         return self._apps[batch_year]
 
     def get_db_for_batch(self, batch_year: int):
