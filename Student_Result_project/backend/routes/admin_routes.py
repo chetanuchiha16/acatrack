@@ -67,7 +67,7 @@ def _fetch_source_rows() -> Tuple[List[Tuple[str, str]], List[Tuple[str]]]:
             "SELECT Mentor_Name FROM Staffs"
         ).fetchall()
         students = cur.execute(
-            "SELECT student_usn, student_name FROM SEM4"
+            "SELECT student_usn, student_name FROM SEM1"
         ).fetchall()
     finally:
         conn.close()

@@ -10,7 +10,7 @@ export default function OverallResults() {
   const [sortDir, setSortDir] = useState("desc");
   const [expandedRow, setExpandedRow] = useState(null);
 
-  const semesterOptions = ["SEM1", "SEM2", "SEM3", "SEM4"];
+  const semesterOptions = ["SEM1", "SEM2", "SEM3", "SEM4","SEM5","SEM6"];
 
   const fetchData = async () => {
     if (!semester) return;

@@ -2,7 +2,6 @@
 from flask import Blueprint, request, jsonify
 import numpy as np
 from models.paths import db_path
-import traceback
 from models import Student
 from .chatbot import (
     safe_marks, aggregate_tag_scores, classify_tag_strengths,
@@ -35,15 +34,13 @@ def ai_summary():
     semesters_list = ["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6"]
     student_data = {"student_name": "", "semesters": {}}
 
-    # ---------------- Fetch all semesters ---------------- #
+    # Fetch all semesters
     for sem in semesters_list:
         try:
             s = Student(usn=usn, semester=sem, db_path=db_path)
             if s.sgpa is None:
                 continue
-
             student_data["student_name"] = s.name or ""
-            # Ensure all lists are lists, ints become single-element lists
             def safe_list(val):
                 if val is None:
                     return []
@@ -75,41 +72,26 @@ def ai_summary():
             "ai_profile": {}
         }), 404
 
-    # ---------------- Latest semester ---------------- #
-    latest_sem = max(student_data["semesters"].keys(), key=lambda x: int(x.replace("SEM", "")))
+    latest_sem = get_latest_semester(student_data)
     sem_data = student_data["semesters"][latest_sem]
 
-    # ---------------- Calculate total marks ---------------- #
-    try:
-        ia_marks = sem_data.get("ia_marks") or []
-        see_marks = sem_data.get("see_marks") or []
-        # Pad shorter list with zeros if lengths mismatch
-        length = max(len(ia_marks), len(see_marks))
-        ia_marks += [0] * (length - len(ia_marks))
-        see_marks += [0] * (length - len(see_marks))
-        total_marks = sum([ia + see for ia, see in zip(ia_marks, see_marks)])
-        max_total_marks = len(sem_data.get("subject_names") or []) * 100
-    except Exception as e:
-        print(f"[AI_SUMMARY] Error calculating marks for USN={usn}, SEM={latest_sem}: {e}")
-        total_marks, max_total_marks = 0, 0
+    # Total marks
+    ia_marks = sem_data.get("ia_marks") or []
+    see_marks = sem_data.get("see_marks") or []
+    length = max(len(ia_marks), len(see_marks))
+    ia_marks += [0]*(length-len(ia_marks))
+    see_marks += [0]*(length-len(see_marks))
+    total_marks = sum([ia+see for ia, see in zip(ia_marks, see_marks)])
+    max_total_marks = len(sem_data.get("subject_names") or [])*100
 
-    # ---------------- Calculate backlogs ---------------- #
-    try:
-        backlogs, total_backlog_credits = _calculate_backlogs(student_data)
-    except Exception as e:
-        print(f"[AI_SUMMARY] Error calculating backlogs for USN={usn}: {e}")
-        backlogs, total_backlog_credits = {}, 0
+    # Backlogs
+    backlogs, total_backlog_credits = _calculate_backlogs(student_data)
 
-    # ---------------- Total credits ---------------- #
+    # Total credits
     credits = sem_data.get("credits", [])
-    if isinstance(credits, list):
-        total_credits = sum([c or 0 for c in credits])
-    elif isinstance(credits, int):
-        total_credits = credits
-    else:
-        total_credits = 0
+    total_credits = sum([c or 0 for c in credits]) if isinstance(credits, list) else (credits or 0)
 
-    # ---------------- Summary ---------------- #
+    # Summary
     summary = {
         "name": student_data.get("student_name", ""),
         "usn": usn,
@@ -126,7 +108,6 @@ def ai_summary():
         )
     }
 
-    # ---------------- Return ---------------- #
     return jsonify({
         "ai_summary": summary,
         "ai_profile": {
@@ -144,8 +125,6 @@ def ai_summary():
             "placement_advice": []
         }
     })
-
-
 
 # ------------------ 2. Trend Analysis ------------------ #
 @ai_bp.route("/ai/trend", methods=["GET"])
@@ -168,8 +147,15 @@ def ai_trend():
         return jsonify({"error": "No SGPA history found"}), 404
 
     sems_done, sgpas = zip(*history)
-    slope = np.polyfit(range(len(sgpas)), sgpas, 1)[0]
-    trend = "Improving" if slope > 0 else "Declining"
+    try:
+        if len(sgpas) > 1:
+            slope = np.polyfit(range(len(sgpas)), sgpas, 1)[0]
+            trend = "Improving" if slope > 0 else "Declining"
+        else:
+            trend = "Insufficient data"
+    except Exception as e:
+        print(f"[DEBUG] Error calculating trend for USN={usn}: {e}")
+        trend = "Error calculating trend"
 
     return jsonify({
         "usn": usn,
@@ -178,7 +164,6 @@ def ai_trend():
         "avg_sgpa": round(float(np.mean(sgpas)), 2)
     })
 
-
 # ------------------ 3. Predict Final CGPA ------------------ #
 @ai_bp.route("/ai/predict_cgpa", methods=["GET"])
 def ai_predict_cgpa():
@@ -186,24 +171,39 @@ def ai_predict_cgpa():
     sems = ["SEM1","SEM2","SEM3","SEM4","SEM5","SEM6","SEM7"]
     history = get_student_history_usn(usn, sems)
 
-    if len(history) < 2:
-        return jsonify({"error": "Not enough data to predict"}), 400
+    if not history:
+        return jsonify({"error": "No data found"}), 404
 
-    pred_info = predict_next_sgpa_with_confidence(history)
-    if not pred_info:
-        return jsonify({"error": "Prediction failed"}), 500
-
-    _, sgpas = zip(*history)
-    predicted_final_cgpa = round(float(np.mean(list(sgpas) + [pred_info["predicted_next_sgpa"]])), 2)
+    if len(history) == 1:
+        _, sgpas = zip(*history)
+        predicted_next_sgpa = round(float(sgpas[0]), 2)
+        predicted_final_cgpa = round(float(sgpas[0]), 2)
+        cgpa_pred = {
+            "predicted_next_sgpa": predicted_next_sgpa,
+            "predicted_final_cgpa": predicted_final_cgpa,
+            "ci_low": None,
+            "ci_high": None,
+            "model": "single_sem_fallback",
+            "resid_std": None
+        }
+    else:
+        pred_info = predict_next_sgpa_with_confidence(history)
+        if not pred_info:
+            return jsonify({"error": "Prediction failed"}), 500
+        _, sgpas = zip(*history)
+        predicted_final_cgpa = round(float(np.mean(list(sgpas) + [pred_info["predicted_next_sgpa"]])), 2)
+        cgpa_pred = {
+            "predicted_next_sgpa": pred_info["predicted_next_sgpa"],
+            "predicted_final_cgpa": predicted_final_cgpa,
+            "ci_low": pred_info["ci_low"],
+            "ci_high": pred_info["ci_high"],
+            "model": pred_info["model"],
+            "resid_std": pred_info["resid_std"]
+        }
 
     return jsonify({
         "usn": usn,
-        "predicted_next_sgpa": pred_info["predicted_next_sgpa"],
-        "predicted_final_cgpa": predicted_final_cgpa,
-        "ci_low": pred_info["ci_low"],
-        "ci_high": pred_info["ci_high"],
-        "model": pred_info["model"],
-        "resid_std": pred_info["resid_std"]
+        **cgpa_pred
     })
 
 # ------------------ 4. Strength/Weakness Profile + Backlogs ------------------ #
@@ -212,7 +212,6 @@ def ai_profile():
     usn = request.args.get("usn")
     semesters_list = ["SEM1","SEM2","SEM3","SEM4","SEM5","SEM6"]
 
-    # ---------------- Fetch all semesters for the student ----------------
     student_data = {"student_name": "", "semesters": {}}
     for sem in semesters_list:
         try:
@@ -236,39 +235,51 @@ def ai_profile():
     if not student_data["semesters"]:
         return jsonify({"error": "No data found for student"}), 404
 
-    # ---------------- Multi-semester backlogs ----------------
     backlogs, total_backlog_credits = _calculate_backlogs(student_data)
 
-    # ---------------- Trend & Prediction ----------------
+    # Trend & Prediction
     history = get_student_history(student_data)
     trend_data = {}
     cgpa_pred = {}
     if history:
         sems, sgpas = zip(*history)
-        slope = np.polyfit(range(len(sgpas)), sgpas, 1)[0]
-        trend_data = {
-            "trend": "Improving" if slope > 0 else "Declining",
-            "history": {sem: sgpa for sem, sgpa in history},
-            "avg_sgpa": round(float(np.mean(sgpas)), 2)
-        }
-        pred_info = predict_next_sgpa_with_confidence(history)
-        if pred_info:
-            predicted_next = pred_info["predicted_next_sgpa"]
-            predicted_final = round(float(np.mean(list(sgpas) + [predicted_next])), 2)
+        if len(sgpas) > 1:
+            slope = np.polyfit(range(len(sgpas)), sgpas, 1)[0]
+            trend_data = {
+                "trend": "Improving" if slope > 0 else "Declining",
+                "history": {sem: sgpa for sem, sgpa in history},
+                "avg_sgpa": round(float(np.mean(sgpas)), 2)
+            }
+            pred_info = predict_next_sgpa_with_confidence(history)
+            if pred_info:
+                predicted_next = pred_info["predicted_next_sgpa"]
+                predicted_final = round(float(np.mean(list(sgpas) + [predicted_next])), 2)
+                cgpa_pred = {
+                    "predicted_next_sgpa": predicted_next,
+                    "predicted_final_cgpa": predicted_final,
+                    "ci_low": pred_info["ci_low"],
+                    "ci_high": pred_info["ci_high"],
+                    "model": pred_info["model"],
+                    "resid_std": pred_info["resid_std"]
+                }
+        else:
+            trend_data = {
+                "trend": "Insufficient data",
+                "history": {sems[0]: sgpas[0]},
+                "avg_sgpa": round(float(sgpas[0]), 2)
+            }
             cgpa_pred = {
-                "predicted_next_sgpa": predicted_next,
-                "predicted_final_cgpa": predicted_final,
-                "ci_low": pred_info["ci_low"],
-                "ci_high": pred_info["ci_high"],
-                "model": pred_info["model"],
-                "resid_std": pred_info["resid_std"]
+                "predicted_next_sgpa": round(float(sgpas[0]), 2),
+                "predicted_final_cgpa": round(float(sgpas[0]), 2),
+                "ci_low": None,
+                "ci_high": None,
+                "model": "single_sem_fallback",
+                "resid_std": None
             }
 
-    # ---------------- Tag aggregation ----------------
     tag_avgs, tag_counts, subject_tags = aggregate_tag_scores(student_data)
     strong_tags, mid_tags, weak_tags = classify_tag_strengths(tag_avgs)
 
-    # ---------------- Latest semester subject strengths ----------------
     latest_sem = get_latest_semester(student_data)
     latest_scores = np.array(safe_marks(student_data["semesters"][latest_sem]["ia_marks"])) + \
                     np.array(safe_marks(student_data["semesters"][latest_sem]["see_marks"]))
@@ -277,7 +288,6 @@ def ai_profile():
     latest_mid = [sub for sub, mark in zip(subjects, latest_scores) if 40 <= mark < 70]
     latest_weak = [sub for sub, mark in zip(subjects, latest_scores) if mark < 40]
 
-    # ---------------- Placement & Learning Advice ----------------
     placement_advice, learning_plan = build_placement_and_skill_advice(
         strong_tags, mid_tags, weak_tags, trend_data, cgpa_pred, total_backlog_credits
     )
@@ -301,18 +311,4 @@ def ai_profile():
         "cgpa_prediction": cgpa_pred,
         "placement_advice": placement_advice,
         "learning_plan": learning_plan
-    })
-
-
-@ai_bp.route("/ai/debug_summary", methods=["GET"])
-def debug_summary():
-    usn = request.args.get("usn")
-    s = Student(usn=usn, semester="SEM4", db_path=db_path)
-    return jsonify({
-        "name": s.name,
-        "sgpa": s.sgpa,
-        "credits": s.credits,
-        "ia_marks": s.ia_marks,
-        "see_marks": s.see_marks,
-        "subject_names": s.subject_names
     })
