@@ -7,6 +7,7 @@ from models.webscrape import setup_selenium  # only need setup_selenium now
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from models import pdftoexcel
 
 # ---------- Blueprint ----------
 webscrape_bp = Blueprint("webscrape", __name__, url_prefix="/webscrape")
@@ -16,7 +17,7 @@ webscrape_bp = Blueprint("webscrape", __name__, url_prefix="/webscrape")
 BASE_DOWNLOAD_DIR = excel_dir
 
 # ---------- Helpers ----------
-def _fetch_single_result(usn, download_dir, exam_url):
+def _fetch_single_result(usn, download_dir, exam_url, batch_year):
     from selenium.common.exceptions import TimeoutException
     driver = setup_selenium(download_dir)
     try:
@@ -42,6 +43,17 @@ def _fetch_single_result(usn, download_dir, exam_url):
         print_button.click()
         print(f"Download triggered for {usn}")
         time.sleep(5)
+        # Wait for the PDF to download and rename it
+        latest_pdf = pdftoexcel.wait_and_rename_pdf(download_dir, usn)
+        # 🔥 Convert the latest PDF only
+        latest_pdf = os.path.join(download_dir, f"{usn}.pdf")  # make sure PDF is named by USN
+        excel_filename = f"result_list_{batch_year}.xlsx"
+        excel_path = os.path.join(excel_dir, excel_filename)
+
+        print(f"Updating Excel at {excel_path} for {usn}...")
+        pdftoexcel.process_single_pdf(latest_pdf, excel_path)
+        print(f"✅ Excel updated for {usn}")
+
     except TimeoutException:
         print(f"Timeout fetching results for {usn}")
     except Exception as e:
@@ -51,12 +63,13 @@ def _fetch_single_result(usn, download_dir, exam_url):
 
 
 def _fetch_usn_range(usn_prefix, start, end, exam_session, exam_year, download_dir):
+    batch_year = batch_from_usn(usn_prefix)
     exam_url = f"https://results.vtu.ac.in/{exam_session}cbcs{exam_year}/index.php"
     os.makedirs(download_dir, exist_ok=True)
 
     for i in range(start, end + 1):
         usn = f"{usn_prefix}{str(i).zfill(3)}"
-        _fetch_single_result(usn, download_dir, exam_url)
+        _fetch_single_result(usn, download_dir, exam_url, batch_year)
         
 def batch_from_usn(usn_prefix: str) -> int:
     year_suffix = usn_prefix[3:5]   # "23"
