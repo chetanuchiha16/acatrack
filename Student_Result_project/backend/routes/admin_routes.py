@@ -383,3 +383,19 @@ def create_batch():
         return jsonify({"status": "success", "batch_year": batch_year})
     except Exception as e:
         return jsonify({"error": f"Failed to create batch: {e}"}), 500
+
+@admin_bp.route("/refresh-batch", methods=["POST"])
+def refresh_batch():
+    if not _check_secret(request):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    batch_year = request.json.get("batch_year")
+    if not batch_year:
+        return jsonify({"error": "Missing batch_year"}), 400
+    batch_year = int(batch_year)
+
+    try:
+        bm.refresh_batch_data(batch_year)
+        return jsonify({"status": "success", "batch_year": batch_year})
+    except Exception as e:
+        return jsonify({"error": f"Failed to refresh batch: {e}"})

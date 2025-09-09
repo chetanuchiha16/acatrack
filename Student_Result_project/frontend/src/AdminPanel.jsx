@@ -152,6 +152,28 @@ export default function AdminPanel() {
     }
   };
 
+  const refreshBatch = async () => {
+    if (!batchYear) return setStatus("Select batch year to refresh.");
+    if (!secret) return alert("Admin secret missing");
+
+    setStatus(`Refreshing batch ${batchYear}...`);
+    try {
+      const res = await fetch(`${API_BASE}/admin/refresh-batch`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Secret": secret,
+        },
+        body: JSON.stringify({ batch_year: parseInt(batchYear, 10) }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Unknown error");
+      setStatus(`✅ Batch ${batchYear} refreshed successfully.`);
+    } catch (err) {
+      setStatus("❌ Error: " + err.message);
+    }
+  };
+
   return (
     <div className="min-h-screen p-6 flex flex-col items-center">
       <div className="shadow-lg rounded-2xl p-6 w-full max-w-xl">
@@ -202,6 +224,16 @@ export default function AdminPanel() {
             className="bg-orange-600 text-white py-2 px-4 rounded-xl hover:bg-orange-700"
           >
             Create Batch
+          </button>
+        </div>
+
+        <label className="block mb-2 font-medium">Refresh Batch</label>
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={refreshBatch}
+            className="bg-orange-600 text-white py-2 px-4 rounded-xl hover:bg-orange-700"
+          >
+            Refresh Selected Batch
           </button>
         </div>
 

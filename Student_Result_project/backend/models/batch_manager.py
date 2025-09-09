@@ -32,7 +32,15 @@ class BatchManager:
             print(f"[BatchManager] ❌ Failed to create batch {batch_year}: {e}")
             traceback.print_exc()
             raise
-
+    def refresh_batch_data(self, batch_year: int):
+        """Re-run data prep to update DB with latest Excel changes."""
+        try:
+            print(f"[BatchManager] Refreshing batch {batch_year}")
+            prep_data(batch_year=batch_year)  # re-import Excel
+            print(f"[BatchManager] ✅ Batch {batch_year} refreshed")
+        except Exception as e:
+            print(f"[BatchManager] ❌ Failed to refresh batch {batch_year}: {e}")
+            raise
     def list_batches(self):
         """List all available batch DBs."""
         batches = []
