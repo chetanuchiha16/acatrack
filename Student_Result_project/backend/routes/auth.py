@@ -11,6 +11,12 @@ def batch_from_usn(usn: str) -> int:
     year_suffix = usn[3:5]   # "23"
     return 2000 + int(year_suffix)
 
+@auth_bp.route("/batches", methods=["GET"])
+def list_batches():
+    batches = bm.list_batches()
+    return jsonify({"batches": batches})
+
+
 @auth_bp.route("/auth", methods=["POST"])
 def auth():
     who = request.json.get("who")

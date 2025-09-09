@@ -115,7 +115,7 @@ def fetch_results_route():
 
     download_dir = data.get(
         "download_dir",
-        os.path.join(BASE_DOWNLOAD_DIR, f"{exam_session}{exam_year_suffix}")
+        os.path.join(BASE_DOWNLOAD_DIR, f"{batch_year}_SEM{sem}")
     )
 
     thread = Thread(

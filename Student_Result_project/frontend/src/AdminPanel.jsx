@@ -214,8 +214,7 @@ export default function AdminPanel() {
         } catch (err) {
             setStatus("❌ Error: " + err.message);
         }
-    };
-
+    };  
     // New: Fetch VTU results
     const fetchResults = async () => {
         if (!secret) return alert("Admin secret missing");

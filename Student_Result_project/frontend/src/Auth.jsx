@@ -74,7 +74,15 @@ export default function Auth() {
         alert(err.response?.data?.error || "Login failed");
       });
   };
+const [batches, setBatches] = useState([]);
 
+useEffect(() => {
+  if (who === "Staff") {
+    axios.get(`${API_BASE}/batches`, { withCredentials: true })
+      .then(res => setBatches(res.data.batches))
+      .catch(() => setBatches([]));
+  }
+}, [who]);
   
 
   if (loading) {
@@ -139,10 +147,12 @@ export default function Auth() {
                 onChange={(e) => setBatchYear(e.target.value)}
                 className="mb-2 w-full rounded-lg bg-white/20 text-white p-2"
               >
-                  <option value="">Select Batch</option>
-                  <option value="2022">2022</option>
-                  <option value="2023">2023</option>
-                  {/* <option value="2024">2024</option> */}
+                <option value="">Select Batch</option>
+                {batches.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
               </select>
             )}
             <FaUser className="absolute left-3 top-3 text-white/70" />
