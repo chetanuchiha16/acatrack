@@ -6,10 +6,11 @@ from pathlib import Path
 import zipfile
 import rarfile  # pip install rarfile
 from models import pdftoexcel
+from models.paths import excel_dir
 
 pdftoexcel_bp = Blueprint("pdf", __name__, url_prefix="/pdf")
 
-UPLOAD_FOLDER = Path("uploaded_pdfs")
+UPLOAD_FOLDER = excel_dir
 UPLOAD_FOLDER.mkdir(exist_ok=True)
 ALLOWED_EXTENSIONS = {"zip", "rar"}
 
@@ -18,6 +19,9 @@ def allowed_file(filename):
 
 @pdftoexcel_bp.route("/upload_archive", methods=["POST"])
 def upload_archive():
+    excel_filename = request.form.get("excel_filename")
+    excel_path = pdftoexcel.process_pdfs(excel_filename, pdf_folder=UPLOAD_FOLDER)
+
     if "file" not in request.files:
         return jsonify({"error": "No file part"}), 400
 
@@ -43,7 +47,7 @@ def upload_archive():
 
         # Process all PDFs in folder
         try:
-            excel_path = pdftoexcel.process_pdfs(pdf_folder=UPLOAD_FOLDER)
+            excel_path = pdftoexcel.process_pdfs(excel_filename, pdf_folder=UPLOAD_FOLDER)
             print(f"Excel created at: {excel_path}")
         except Exception as e:
             print("PDF processing failed:", e)

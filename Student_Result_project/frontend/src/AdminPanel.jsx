@@ -24,7 +24,7 @@ export default function AdminPanel() {
     const [sem, setSem] = useState("");
     const [downloadDir, setDownloadDir] = useState("");
     const [pdfZipFile, setPdfZipFile] = useState(null);
-
+    const [pdfExcelFilename, setPdfExcelFilename] = useState("result_list_YEAR.xlsx");
     // Redirect if no secret
     useEffect(() => {
         if (!secret) {
@@ -234,13 +234,14 @@ export default function AdminPanel() {
 
   const formData = new FormData();
   formData.append("file", pdfZipFile);
+  formData.append("excel_filename", pdfExcelFilename); // send filename to backend
 
   try {
     const res = await fetch(`${API_BASE}/pdf/upload_archive`, {
-  method: "POST",
-  headers: { "X-Admin-Secret": secret },
-  body: formData,
-});
+      method: "POST",
+      headers: { "X-Admin-Secret": secret },
+      body: formData,
+    });
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Unknown error");
@@ -425,14 +426,23 @@ export default function AdminPanel() {
                     </button>
                 </div>
 
-                <h2 className="text-xl font-semibold mb-2 mt-6">Upload PDF Zip for Excel</h2>
+                <h2 className="text-xl font-semibold mb-2 mt-6">
+  Upload PDF Zip for Excel
+</h2>
 <div className="flex flex-col gap-2 mb-4">
   <input
-  type="file"
-  accept=".zip,.rar"
-  onChange={(e) => setPdfZipFile(e.target.files[0])}
-  className="w-full border rounded p-2"
-/>
+    type="text"
+    value={pdfExcelFilename}
+    onChange={(e) => setPdfExcelFilename(e.target.value)}
+    placeholder="Enter Excel filename (e.g., results.xlsx)"
+    className="w-full border rounded p-2"
+  />
+  <input
+    type="file"
+    accept=".zip,.rar"
+    onChange={(e) => setPdfZipFile(e.target.files[0])}
+    className="w-full border rounded p-2"
+  />
   <button
     onClick={uploadPdfZip}
     className="w-full bg-teal-600 text-white py-2 rounded-xl hover:bg-teal-700"

@@ -14,7 +14,7 @@ import time
 # ---------------- CONFIG ----------------
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 pdf_folder = excel_dir
-excel_path = pdf_folder / "result list project.xlsx"
+# excel_path = pdf_folder / "result list project.xlsx"
 
 # Semester-wise subject credits mapping
 sem_credits = {
@@ -163,9 +163,9 @@ def extract_from_pdf(pdf_path, subject_codes, columns):
     return student_data
 
 # ---------------- PROCESS PDFs ----------------
-def process_pdfs(pdf_folder=pdf_folder, excel_path=excel_path):
+def process_pdfs(excel_filename, pdf_folder=pdf_folder):
     subject_codes = scan_subject_codes(pdf_folder)
-
+    excel_path = pdf_folder / excel_filename  # dynamically set Excel path
     # build columns
     columns = ["student_usn", "student_name"]
     for code in subject_codes:
