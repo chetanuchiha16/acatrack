@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import API_BASE from "./config";
 import { useNavigate } from "react-router-dom";
+import { FaDownload, FaUpload, FaPlus, FaRedo } from "react-icons/fa";
 
 export default function AdminPanel() {
     const navigate = useNavigate();
@@ -245,182 +246,184 @@ export default function AdminPanel() {
 
     return (
         <div className="min-h-screen p-6 flex flex-col items-center">
-            <div className="shadow-lg rounded-2xl p-6 w-full max-w-xl">
-                <h1 className="text-2xl font-bold mb-4">Admin Control Panel</h1>
-
-                {!savedSecret && (
-                    <>
-                        <label className="block mb-2 font-medium">
-                            Admin Secret
-                        </label>
-                        <input
-                            type="password"
-                            value={secret}
-                            onChange={(e) => setSecret(e.target.value)}
-                            placeholder="Enter admin secret"
-                            className="w-full border rounded p-2 mb-4"
-                        />
-                        <button
-                            onClick={handleSecretSubmit}
-                            className="w-full bg-yellow-600 text-white py-2 rounded-xl mb-6 hover:bg-yellow-700"
-                        >
-                            Save Secret
-                        </button>
-                    </>
-                )}
-
-                <label className="block mb-2 font-medium">Select Batch</label>
-                <select
-                    value={batchYear || ""}
-                    onChange={(e) => setBatchYear(parseInt(e.target.value, 10))}
-                    className="w-full border rounded p-2 mb-4"
-                >
-                    {availableBatches.map((b) => (
-                        <option key={b} value={b}>
-                            {b}
-                        </option>
-                    ))}
-                </select>
-
-                <label className="block mb-2 font-medium">
-                    Create New Batch
-                </label>
-                <div className="flex gap-2 mb-4">
-                    <input
-                        type="number"
-                        value={newBatchYear}
-                        onChange={(e) => setNewBatchYear(e.target.value)}
-                        placeholder="Enter new batch year"
-                        className="flex-1 border rounded p-2"
-                    />
-                    <button
-                        onClick={createBatch}
-                        className="bg-orange-600 text-white py-2 px-4 rounded-xl hover:bg-orange-700"
-                    >
-                        Create Batch
-                    </button>
-                </div>
-
-                <label className="block mb-2 font-medium">Refresh Batch</label>
-                <div className="flex gap-2 mb-4">
-                    <button
-                        onClick={refreshBatch}
-                        className="bg-orange-600 text-white py-2 px-4 rounded-xl hover:bg-orange-700"
-                    >
-                        Refresh Selected Batch
-                    </button>
-                </div>
-
-                <label className="block mb-2 font-medium">
-                    Account Generation Mode
-                </label>
-                <select
-                    value={mode}
-                    onChange={(e) => setMode(e.target.value)}
-                    className="w-full border rounded p-2 mb-4"
-                >
-                    <option value="missing">Only Missing Accounts</option>
-                    <option value="all">Recreate All Accounts</option>
-                </select>
-
-                <button
-                    onClick={generateAccounts}
-                    className="w-full bg-blue-600 text-white py-2 rounded-xl mb-6 hover:bg-blue-700"
-                >
-                    Generate Accounts & Download CSV
-                </button>
-
-                <label className="block mb-2 font-medium">
-                    Upload Email File (.xlsx or .csv)
-                </label>
-                <input
-                    type="file"
-                    accept=".xlsx,.csv"
-                    onChange={(e) => setEmailFile(e.target.files[0])}
-                    className="w-full mb-4"
-                />
-                <button
-                    onClick={uploadEmails}
-                    className="w-full bg-green-600 text-white py-2 rounded-xl mb-6 hover:bg-green-700"
-                >
-                    Upload Emails
-                </button>
-
-                <label className="block mb-2 font-medium">
-                    Upload Mentor File (.xlsx)
-                </label>
-                <input
-                    type="file"
-                    accept=".xlsx"
-                    onChange={(e) => setMentorFile(e.target.files[0])}
-                    className="w-full mb-4"
-                />
-                <button
-                    onClick={uploadMentors}
-                    className="w-full bg-purple-600 text-white py-2 rounded-xl hover:bg-purple-700"
-                >
-                    Upload Mentors
-                </button>
-
-                {/* New Section: Fetch VTU Results */}
-                <h2 className="text-xl font-semibold mb-2 mt-6">
-                    Fetch VTU Results
-                </h2>
-                <div className="flex flex-col gap-2 mb-4">
-                    <input
-                        type="text"
-                        value={usnPrefix}
-                        onChange={(e) => setUsnPrefix(e.target.value)}
-                        placeholder="USN Prefix (e.g., 1JS23CS)"
-                        className="w-full border rounded p-2"
-                    />
-                    <div className="flex gap-2">
-                        <input
-                            type="number"
-                            value={usnStart}
-                            onChange={(e) => setUsnStart(e.target.value)}
-                            placeholder="Start USN"
-                            className="flex-1 border rounded p-2"
-                        />
-                        <input
-                            type="number"
-                            value={usnEnd}
-                            onChange={(e) => setUsnEnd(e.target.value)}
-                            placeholder="End USN"
-                            className="flex-1 border rounded p-2"
-                        />
-                    </div>
-                    <select
-                        value={sem}
-                        onChange={(e) => setSem(e.target.value)}
-                        className="w-full border rounded p-2"
-                    >
-                        <option value="">Select Semester</option>
-                        {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                            <option key={s} value={s}>
-                                {s}
-                            </option>
-                        ))}
-                    </select>
-                    <input
-                        type="text"
-                        value={downloadDir}
-                        onChange={(e) => setDownloadDir(e.target.value)}
-                        placeholder="Optional Download Directory"
-                        className="w-full border rounded p-2"
-                    />
-                    <button
-                        onClick={fetchResults}
-                        className="w-full bg-indigo-600 text-white py-2 rounded-xl hover:bg-indigo-700"
-                    >
-                        Fetch Results
-                    </button>
-                </div>
-
-                {status && (
-                    <p className="mt-4 text-sm text-gray-700">{status}</p>
-                )}
-            </div>
+  <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 gap-6">
+    {/* VTU Results Fetch */}
+    <div className="shadow-lg rounded-xl p-6 space-y-4">
+      <h2 className="text-2xl font-semibold">Fetch VTU Results</h2>
+      <p className="text-gray-500">Enter USN range and semester. CAPTCHA may appear for each student.</p>
+      <div className="grid grid-cols-1 gap-2">
+        <input
+          type="text"
+          placeholder="USN Prefix"
+          value={usnPrefix}
+          onChange={(e) => setUsnPrefix(e.target.value)}
+          className="border rounded p-2 w-full"
+        />
+        <div className="flex gap-2">
+          <input
+            type="number"
+            placeholder="Start USN"
+            value={usnStart}
+            onChange={(e) => setUsnStart(e.target.value)}
+            className="flex-1 border rounded p-2"
+          />
+          <input
+            type="number"
+            placeholder="End USN"
+            value={usnEnd}
+            onChange={(e) => setUsnEnd(e.target.value)}
+            className="flex-1 border rounded p-2"
+          />
         </div>
+        <select
+          value={sem}
+          onChange={(e) => setSem(e.target.value)}
+          className="border rounded p-2"
+        >
+          <option value="">Select Semester</option>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+        <input
+          type="text"
+          placeholder="Optional Download Directory"
+          value={downloadDir}
+          onChange={(e) => setDownloadDir(e.target.value)}
+          className="border rounded p-2 w-full"
+        />
+      </div>
+      <button
+        onClick={fetchResults}
+        className="w-full bg-indigo-600 text-white py-2 rounded-xl hover:bg-indigo-700"
+      >
+        Fetch Results
+      </button>
+    </div>
+
+    {/* Admin Secret */}
+    {!savedSecret && (
+      <div className="shadow-lg rounded-xl p-6 space-y-4">
+        <h2 className="text-2xl font-semibold">Enter Admin Secret</h2>
+        <p className="text-gray-500">Required to access admin functions.</p>
+        <div className="flex gap-2">
+          <input
+            type="password"
+            value={secret}
+            onChange={(e) => setSecret(e.target.value)}
+            placeholder="Admin Secret"
+            className="flex-1 border rounded p-2"
+          />
+          <button
+            onClick={handleSecretSubmit}
+            className="bg-yellow-600 text-white px-4 rounded hover:bg-yellow-700"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    )}
+
+    {/* Batch Management */}
+    <div className="shadow-lg rounded-xl p-6 space-y-4">
+      <h2 className="text-2xl font-semibold">Batch Management</h2>
+      <div className="flex flex-col md:flex-row gap-4 items-center">
+        <div className="flex items-center gap-2">
+          <label className="font-medium">Select Batch:</label>
+          <select
+            value={batchYear || ""}
+            onChange={(e) => setBatchYear(parseInt(e.target.value))}
+            className="border rounded p-2"
+          >
+            {availableBatches.map((b) => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
+          <button
+            onClick={refreshBatch}
+            className="flex items-center gap-1 bg-orange-600 text-white px-3 py-2 rounded hover:bg-orange-700"
+          >
+            <FaRedo /> Refresh
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            placeholder="New Batch Year"
+            value={newBatchYear}
+            onChange={(e) => setNewBatchYear(e.target.value)}
+            className="border rounded p-2"
+          />
+          <button
+            onClick={createBatch}
+            className="flex items-center gap-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
+            <FaPlus /> Create Batch
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {/* Mentor Upload */}
+    <div className="shadow-lg rounded-xl p-6 space-y-4">
+      <h2 className="text-2xl font-semibold">Upload Mentors & Auto-Create Teachers</h2>
+      <p className="text-gray-500">Upload mentor Excel → maps students → auto creates teacher accounts for each mentor. CSV of teachers will be auto downloaded.</p>
+      <input
+        type="file"
+        accept=".xlsx"
+        onChange={(e) => setMentorFile(e.target.files[0])}
+        className="border rounded p-2 w-full"
+      />
+      <button
+        onClick={uploadMentors}
+        className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+      >
+        <FaUpload /> Upload Mentors & Generate Teachers
+      </button>
+    </div>
+
+    {/* Student/Parent Account Generation */}
+    <div className="shadow-lg rounded-xl p-6 space-y-4">
+      <h2 className="text-2xl font-semibold">Generate Student & Parent Accounts</h2>
+      <p className="text-gray-500">Generates accounts. CSV download for credentials.</p>
+      <div className="flex items-center gap-2">
+        <label>Mode:</label>
+        <select
+          value={mode}
+          onChange={(e) => setMode(e.target.value)}
+          className="border rounded p-2"
+        >
+          <option value="missing">Only Missing Accounts</option>
+          <option value="all">Recreate All Accounts</option>
+        </select>
+        <button
+          onClick={generateAccounts}
+          className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          <FaDownload /> Generate & Download
+        </button>
+      </div>
+    </div>
+
+    {/* Emails Upload */}
+    <div className="shadow-lg rounded-xl p-6 space-y-4">
+      <h2 className="text-2xl font-semibold">Upload Student Emails</h2>
+      <p className="text-gray-500">Upload email Excel/CSV. Batch must be selected first.</p>
+      <input
+        type="file"
+        accept=".xlsx,.csv"
+        onChange={(e) => setEmailFile(e.target.files[0])}
+        className="border rounded p-2 w-full"
+      />
+      <button
+        onClick={uploadEmails}
+        className="flex items-center gap-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+      >
+        <FaUpload /> Upload Emails
+      </button>
+    </div>
+  </div>
+</div>
+
     );
 }
