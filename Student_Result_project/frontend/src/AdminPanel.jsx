@@ -140,9 +140,28 @@ export default function AdminPanel() {
             );
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Unknown error");
+
             setStatus(
                 `✅ Uploaded mentors. Inserted ${data.mentors_inserted} mentors and ${data.mappings_inserted} mappings.`
             );
+
+            // auto-download teacher CSV
+            if (data.csv_download_url) {
+                const csvRes = await fetch(
+                    `${API_BASE}${data.csv_download_url}`,
+                    {
+                        headers: { "X-Admin-Secret": secret },
+                    }
+                );
+                if (csvRes.ok) {
+                    const blob = await csvRes.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `generated_teachers_batch_${batchYear}.csv`;
+                    a.click();
+                }
+            }
         } catch (err) {
             setStatus("❌ Error: " + err.message);
         }
@@ -175,27 +194,27 @@ export default function AdminPanel() {
         }
     };
 
-  const refreshBatch = async () => {
-    if (!batchYear) return setStatus("Select batch year to refresh.");
-    if (!secret) return alert("Admin secret missing");
+    const refreshBatch = async () => {
+        if (!batchYear) return setStatus("Select batch year to refresh.");
+        if (!secret) return alert("Admin secret missing");
 
-    setStatus(`Refreshing batch ${batchYear}...`);
-    try {
-      const res = await fetch(`${API_BASE}/admin/refresh-batch`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Admin-Secret": secret,
-        },
-        body: JSON.stringify({ batch_year: parseInt(batchYear, 10) }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Unknown error");
-      setStatus(`✅ Batch ${batchYear} refreshed successfully.`);
-    } catch (err) {
-      setStatus("❌ Error: " + err.message);
-    }
-  };
+        setStatus(`Refreshing batch ${batchYear}...`);
+        try {
+            const res = await fetch(`${API_BASE}/admin/refresh-batch`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Admin-Secret": secret,
+                },
+                body: JSON.stringify({ batch_year: parseInt(batchYear, 10) }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Unknown error");
+            setStatus(`✅ Batch ${batchYear} refreshed successfully.`);
+        } catch (err) {
+            setStatus("❌ Error: " + err.message);
+        }
+    };
 
     // New: Fetch VTU results
     const fetchResults = async () => {
@@ -283,15 +302,15 @@ export default function AdminPanel() {
                     </button>
                 </div>
 
-        <label className="block mb-2 font-medium">Refresh Batch</label>
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={refreshBatch}
-            className="bg-orange-600 text-white py-2 px-4 rounded-xl hover:bg-orange-700"
-          >
-            Refresh Selected Batch
-          </button>
-        </div>
+                <label className="block mb-2 font-medium">Refresh Batch</label>
+                <div className="flex gap-2 mb-4">
+                    <button
+                        onClick={refreshBatch}
+                        className="bg-orange-600 text-white py-2 px-4 rounded-xl hover:bg-orange-700"
+                    >
+                        Refresh Selected Batch
+                    </button>
+                </div>
 
                 <label className="block mb-2 font-medium">
                     Account Generation Mode

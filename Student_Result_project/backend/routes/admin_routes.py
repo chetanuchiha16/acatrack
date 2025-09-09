@@ -25,8 +25,9 @@ from werkzeug.utils import secure_filename
 
 from app_init import bcrypt
 from models import Teacher, StudentAuth, Mentor, ParentAuth, db
-from models.paths import db_path, email_excel_path, mentor_excel_path, get_db_path
+from models.paths import db_path, email_excel_path, mentor_excel_path, get_db_path, excel_dir
 from models.batch_manager import BatchManager, bm
+from pathlib import Path
 
 # ---------- Blueprint ----------
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -64,11 +65,11 @@ def _fetch_source_rows(batch_year: int) -> Tuple[List[Tuple[str, str]], List[Tup
     """Fetch student(usn,name) and teacher(initials) tuples from SQLite for a specific batch."""
     conn, cur = _connect_sqlite(batch_year)
     try:
-        teachers = cur.execute("SELECT Mentor_Name FROM Staffs").fetchall()
+        # teachers = cur.execute("SELECT Mentor_Name FROM Staffs").fetchall()
         students = cur.execute("SELECT student_usn, student_name FROM SEM4").fetchall()
     finally:
         conn.close()
-    return students, teachers
+    return students
 
 
 def _unique_teacher_username() -> str:
@@ -112,7 +113,7 @@ def generate_accounts():
 
 
     with bm.session_scope(batch_year) as db:
-        students, teachers = _fetch_source_rows(batch_year)
+        students = _fetch_source_rows(batch_year)
 
         if mode == "all":
             StudentAuth.query.delete()
@@ -159,19 +160,30 @@ def generate_accounts():
                 )
                 db.session.add(new_parent)
                 out.write(f"{parent_username},Parent of {name},{plain_parent},{pw_hash_parent},parent,{usn}\n")
+        # --- Populate mentor_id for students from mentor Excel ---
+        if os.path.exists(mentor_excel_path):
+            df = pd.read_excel(mentor_excel_path)
+            for _, row in df.iterrows():
+                student_usn = str(row["student_usn"]).strip()
+                mentor_name = str(row["Mentor_Name"]).strip()
+                
+                student = StudentAuth.query.filter_by(username=student_usn).first()
+                mentor = Mentor.query.filter_by(name=mentor_name).first()
+                if student and mentor:
+                    student.mentor_id = mentor.id
+            db.session.commit()
+        # # --- Teachers
+        # for (teacher_name,) in teachers:
+        #     teacher_name = (teacher_name or "").strip()
+        #     if mode == "missing" and Teacher.query.filter_by(name=teacher_name).first():
+        #         continue
 
-        # --- Teachers
-        for (teacher_name,) in teachers:
-            teacher_name = (teacher_name or "").strip()
-            if mode == "missing" and Teacher.query.filter_by(name=teacher_name).first():
-                continue
-
-            username = _unique_teacher_username()
-            plain = f"{_safe_seed(teacher_name.split(' ', 1)[1])}{username[-3:]}"
-            pw_hash = bcrypt.generate_password_hash(password=plain).decode("utf-8")
-            if not Teacher.query.filter_by(name=teacher_name).first():
-                db.session.add(Teacher(username=username, name=teacher_name, password=pw_hash))
-                out.write(f"{username},{teacher_name},{plain},{pw_hash},teacher,\n")
+        #     username = _unique_teacher_username()
+        #     plain = f"{_safe_seed(teacher_name.split(' ', 1)[1])}{username[-3:]}"
+        #     pw_hash = bcrypt.generate_password_hash(password=plain).decode("utf-8")
+        #     if not Teacher.query.filter_by(name=teacher_name).first():
+        #         db.session.add(Teacher(username=username, name=teacher_name, password=pw_hash))
+        #         out.write(f"{username},{teacher_name},{plain},{pw_hash},teacher,\n")
 
         db.session.commit()
 
@@ -293,7 +305,8 @@ def upload_emails():
     })
 
 
-
+# simple in-memory cache
+mentor_csv_cache = {}
 @admin_bp.route("/upload-mentors", methods=["POST"])
 def upload_mentors():
     if not _check_secret(request):
@@ -303,8 +316,6 @@ def upload_mentors():
     if not batch_year:
         return jsonify({"error": "batch_year query param required"}), 400
     batch_year = int(batch_year)
-
-    
 
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
@@ -324,6 +335,9 @@ def upload_mentors():
     count_mentors = 0
     count_mappings = 0
     mentor_cache = {}
+    
+    out = io.StringIO()
+    out.write("username,name,plain_password,password_hash,role,linked_student\n")  # CSV header
 
     with bm.session_scope(batch_year) as db:
         for _, row in df.iterrows():
@@ -341,26 +355,66 @@ def upload_mentors():
                     db.session.add(mentor)
                     db.session.flush()
                     count_mentors += 1
+
+                # --- create Teacher account if not exists ---
+                teacher = Teacher.query.filter_by(name=mentor_name).first()
+                if not teacher:
+                    username = _unique_teacher_username()
+                    plain_pw = f"{_safe_seed(mentor_name.split(' ', 1)[-1])}{username[-3:]}"
+                    pw_hash = bcrypt.generate_password_hash(plain_pw).decode("utf-8")
+                    teacher = Teacher(
+                        username=username,
+                        name=mentor_name,
+                        password=pw_hash,
+                        mentor_id=mentor.id
+                    )
+                    db.session.add(teacher)
+                    out.write(f"{username},{mentor_name},{plain_pw},{pw_hash},teacher,\n")
+
                 mentor_cache[mentor_name] = mentor
 
+            # link student to mentor
             student = StudentAuth.query.filter_by(username=student_usn).first()
             if student:
                 student.mentor_id = mentor.id
                 count_mappings += 1
 
+            # ensure teacher's mentor_id is correct
             teacher = Teacher.query.filter_by(name=mentor_name).first()
             if teacher and teacher.mentor_id is None:
                 teacher.mentor_id = mentor.id
 
         db.session.commit()
 
+    # after generating CSV
+    out.seek(0)
+    mentor_csv_cache[batch_year] = out.getvalue()  # store in memory
+    
     return jsonify({
         "status": "success",
         "mentors_inserted": count_mentors,
         "mappings_inserted": count_mappings,
-        "file_saved_to": save_path,
-        "batch_year": batch_year
+        "batch_year": batch_year,
+        "csv_download_url": f"/admin/download-teachers-csv?batch_year={batch_year}"
     })
+
+
+@admin_bp.route("/download-teachers-csv", methods=["GET"])
+def download_teachers_csv():
+    if not _check_secret(request):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    batch_year = int(request.args.get("batch_year", 0))
+    csv_content = mentor_csv_cache.get(batch_year)
+    if not csv_content:
+        return jsonify({"error": "No CSV available, please re-upload mentors"}), 404
+    
+    return send_file(
+        io.BytesIO(csv_content.encode("utf-8")),
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name=f"generated_teachers_batch_{batch_year}.csv"
+    )
 
 @admin_bp.route("/create-batch", methods=["POST"])
 def create_batch():
