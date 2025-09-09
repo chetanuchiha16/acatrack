@@ -175,6 +175,28 @@ export default function AdminPanel() {
         }
     };
 
+  const refreshBatch = async () => {
+    if (!batchYear) return setStatus("Select batch year to refresh.");
+    if (!secret) return alert("Admin secret missing");
+
+    setStatus(`Refreshing batch ${batchYear}...`);
+    try {
+      const res = await fetch(`${API_BASE}/admin/refresh-batch`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Secret": secret,
+        },
+        body: JSON.stringify({ batch_year: parseInt(batchYear, 10) }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Unknown error");
+      setStatus(`✅ Batch ${batchYear} refreshed successfully.`);
+    } catch (err) {
+      setStatus("❌ Error: " + err.message);
+    }
+  };
+
     // New: Fetch VTU results
     const fetchResults = async () => {
         if (!secret) return alert("Admin secret missing");
@@ -260,6 +282,16 @@ export default function AdminPanel() {
                         Create Batch
                     </button>
                 </div>
+
+        <label className="block mb-2 font-medium">Refresh Batch</label>
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={refreshBatch}
+            className="bg-orange-600 text-white py-2 px-4 rounded-xl hover:bg-orange-700"
+          >
+            Refresh Selected Batch
+          </button>
+        </div>
 
                 <label className="block mb-2 font-medium">
                     Account Generation Mode
