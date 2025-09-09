@@ -23,6 +23,7 @@ export default function AdminPanel() {
     const [usnEnd, setUsnEnd] = useState("");
     const [sem, setSem] = useState("");
     const [downloadDir, setDownloadDir] = useState("");
+    const [pdfZipFile, setPdfZipFile] = useState(null);
 
     // Redirect if no secret
     useEffect(() => {
@@ -225,6 +226,31 @@ export default function AdminPanel() {
         }
     };
 
+    const uploadPdfZip = async () => {
+  if (!pdfZipFile) return setStatus("Please select a zip file of PDFs first.");
+  if (!secret) return alert("Admin secret missing");
+
+  setStatus("Uploading PDF zip...");
+
+  const formData = new FormData();
+  formData.append("file", pdfZipFile);
+
+  try {
+    const res = await fetch(`${API_BASE}/pdf/upload_archive`, {
+  method: "POST",
+  headers: { "X-Admin-Secret": secret },
+  body: formData,
+});
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Unknown error");
+
+    setStatus(`✅ Processed ${data.processed_files.length} PDFs. Excel saved at: ${data.excel_path}`);
+  } catch (err) {
+    setStatus("❌ Error: " + err.message);
+  }
+};
+
     return (
         <div className="min-h-screen p-6 flex flex-col items-center">
             <div className="shadow-lg rounded-2xl p-6 w-full max-w-xl">
@@ -398,6 +424,22 @@ export default function AdminPanel() {
                         Fetch Results
                     </button>
                 </div>
+
+                <h2 className="text-xl font-semibold mb-2 mt-6">Upload PDF Zip for Excel</h2>
+<div className="flex flex-col gap-2 mb-4">
+  <input
+  type="file"
+  accept=".zip,.rar"
+  onChange={(e) => setPdfZipFile(e.target.files[0])}
+  className="w-full border rounded p-2"
+/>
+  <button
+    onClick={uploadPdfZip}
+    className="w-full bg-teal-600 text-white py-2 rounded-xl hover:bg-teal-700"
+  >
+    Upload & Process PDFs
+  </button>
+</div>
 
                 {status && (
                     <p className="mt-4 text-sm text-gray-700">{status}</p>
