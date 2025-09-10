@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import API_BASE from "./config";
+import { onMessage } from "firebase/messaging";
+import { messaging } from "./firebase";  // your firebase.js
 
 export default function MenteeRecieveEmails({ usn }) {
     const [messages, setMessages] = useState([]);
@@ -7,7 +9,12 @@ export default function MenteeRecieveEmails({ usn }) {
     const [meetings, setMeetings] = useState([]);
     const [loadingMessages, setLoadingMessages] = useState(true);
     const [loadingMeetings, setLoadingMeetings] = useState(true);
+    
 
+    onMessage(messaging, (payload) => {
+  console.log("Message received. ", payload);
+  alert("📩 New notification: " + payload.notification.title);
+});
     // Fetch inbox messages
     const fetchMessages = async () => {
         setLoadingMessages(true);

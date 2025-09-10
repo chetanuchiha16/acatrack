@@ -44,31 +44,35 @@ def get_student_messages(usn):
 
 @student_email_bp.route("/student/<string:usn>/messages/<int:msg_id>", methods=["GET"])
 def get_student_message_detail(usn, msg_id):
-    msg = MentorMessage.query.filter_by(id=msg_id).first()
-    if not msg:
-        return jsonify({"error": "Message not found"}), 404
+    batch_year = session.get("batch_year")
+    with bm.session_scope(batch_year) as db:
+        msg = MentorMessage.query.filter_by(id=msg_id).first()
+        if not msg:
+            return jsonify({"error": "Message not found"}), 404
 
-    if msg.student_usn not in (None, usn):
-        return jsonify({"error": "Not authorized to view this message"}), 403
+        if msg.student_usn not in (None, usn):
+            return jsonify({"error": "Not authorized to view this message"}), 403
 
-    return jsonify(serialize_message(msg, usn))
+        return jsonify(serialize_message(msg, usn))
 
 
 @student_email_bp.route("/student/<string:usn>/messages/<int:msg_id>/read", methods=["POST"])
 def mark_message_read(usn, msg_id):
-    msg = MentorMessage.query.filter_by(id=msg_id).first()
-    if not msg:
-        return jsonify({"error": "Message not found"}), 404
+    batch_year = session.get("batch_year")
+    with bm.session_scope(batch_year) as db:
+        msg = MentorMessage.query.filter_by(id=msg_id).first()
+        if not msg:
+            return jsonify({"error": "Message not found"}), 404
 
-    if msg.student_usn not in (None, usn):
-        return jsonify({"error": "Not authorized to update this message"}), 403
+        if msg.student_usn not in (None, usn):
+            return jsonify({"error": "Not authorized to update this message"}), 403
 
-    status = StudentMessageStatus.query.filter_by(student_usn=usn, msg_id=msg_id).first()
-    if not status:
-        status = StudentMessageStatus(student_usn=usn, msg_id=msg_id, read=True)
-        db.session.add(status)
-    else:
-        status.read = True
+        status = StudentMessageStatus.query.filter_by(student_usn=usn, msg_id=msg_id).first()
+        if not status:
+            status = StudentMessageStatus(student_usn=usn, msg_id=msg_id, read=True)
+            db.session.add(status)
+        else:
+            status.read = True
 
-    db.session.commit()
-    return jsonify({"message": f"Message {msg_id} marked as read by {usn}"}), 200
+        db.session.commit()
+        return jsonify({"message": f"Message {msg_id} marked as read by {usn}"}), 200
