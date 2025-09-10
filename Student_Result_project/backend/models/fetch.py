@@ -14,13 +14,17 @@ sem_subjects = {
     },
     "SEM2": {
         "BMAT201": "Mathematics for CSE Stream-II",
+        "BMATS201": "Mathematics-II for CSE Stream",
         "BPHYS202": "Applied Physics for CSE Stream",
         "BPOPS203": "Principles of Programming Using C",
         "BPWSK206": "Professional Writing Skills in English",
-        "BKSKK207": "Samskrutika Kannada / Balake Kannada",
+        "BKSKK207": "Samskrutika Kannada",
+        "BKBKK207": "Balake Kannada",
         "BSFHK258": "Scientific Foundations of Health",
         "BPLCK205B": "Introduction to Python Programming",
-        "BESCK204C": "Introduction to Electronics Engineering"
+        "BESCK204C": "Introduction to Electronics Engineering",
+        "BESCK204D": "Introduction To Mechanical Engineering",
+        "BETCK205H": "Introduction to Internet of Things (IoT)"
     },
     "SEM3": {
         "BCS301": "Mathematics for Computer Science",

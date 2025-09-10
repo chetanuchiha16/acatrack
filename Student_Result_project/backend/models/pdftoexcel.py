@@ -30,13 +30,17 @@ sem_credits = {
     },
     "SEM2": {
         "BMAT201": 4,
+        "BMATS201": 4,
         "BPHYS202": 4,
         "BPOPS203": 3,
         "BPWSK206": 1,
         "BKSKK207": 1,
+        "BKBKK207": 1,
         "BSFHK258": 1,
         "BPLCK205B": 3,
-        "BESCK204C": 3
+        "BESCK204C": 3,
+        "BESCK204D": 3,
+        "BETCK205H": 3
     },
     "SEM3": {
         "BCS301": 3,
