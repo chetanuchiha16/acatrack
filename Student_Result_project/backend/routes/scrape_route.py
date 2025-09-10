@@ -78,14 +78,14 @@ def batch_from_usn(usn_prefix: str) -> int:
 def get_exam_session_and_year(usn_prefix: str, sem: int):
     batch_year = batch_from_usn(usn_prefix)
 
-    if sem % 2 == 1:
-        exam_session = "DJ"   # odd sem → Dec–Jan
-    else:
-        exam_session = "JJE"  # even sem → Jun–Jul
+    if sem % 2 == 1:  # odd sem
+        exam_session = "DJ"   # Dec–Jan
+        exam_year = batch_year + (sem // 2) + 1  # Jan of next year
+    else:  # even sem
+        exam_session = "JJE"  # Jun–Jul
+        exam_year = batch_year + (sem // 2)
 
-    exam_year = batch_year + (sem // 2)
     exam_year_suffix = str(exam_year)[-2:]
-
     return exam_session, exam_year_suffix, batch_year
 # ---------- Routes ----------
 @webscrape_bp.route("/fetch-results", methods=["POST"])

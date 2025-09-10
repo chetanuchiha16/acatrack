@@ -34,6 +34,7 @@ sem_credits = {
         "BPOPS203": 3,
         "BPWSK206": 1,
         "BKSKK207": 1,
+        "BKBKK207": 1,
         "BSFHK258": 1,
         "BPLCK205B": 3,
         "BESCK204C": 3
