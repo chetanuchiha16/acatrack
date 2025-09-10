@@ -21,7 +21,9 @@ export default function SemesterResults() {
         setData(null);
         try {
             const q = new URLSearchParams({ semester: selected }).toString();
-            const res = await fetch(`${API_BASE}/auth/Staff/sem_res?${q}`);
+            const res = await fetch(`${API_BASE}/auth/Staff/sem_res?${q}`, {
+                credentials: "include"   // <-- this ensures cookies/session are sent
+            });
             if (!res.ok) {
                 const json = await res.json().catch(() => null);
                 throw new Error(

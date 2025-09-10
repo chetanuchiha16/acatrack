@@ -1,6 +1,6 @@
 import sqlite3
 import pandas as pd
-from models.paths import db_path, excel_path
+from models.paths import db_path, excel_path, get_db_path, get_excel_path
 
 def convert_excel_to_sql(excel_path, db_path):
     # Load the Excel file
@@ -30,7 +30,7 @@ def convert_excel_to_sql(excel_path, db_path):
                     if numeric_series.notna().sum() > len(df) // 2:  # if over 50% is numeric
                         df[col] = numeric_series.fillna(0).astype(int)
                 except:
-                    pass  # If it's totally not convertible, Hina skips it gently~
+                    pass  
 
 
 
@@ -42,8 +42,8 @@ def convert_excel_to_sql(excel_path, db_path):
     print("All sheets processed and saved.")
 
 #Usage
-def prepare_data():
-    convert_excel_to_sql(
-        excel_path=excel_path,
-        db_path=db_path
-    )
+def prepare_data(batch_year: int):
+    excel_path = get_excel_path(batch_year)
+    db_path = get_db_path(batch_year)
+    convert_excel_to_sql(excel_path=excel_path, db_path=db_path)
+    return db_path

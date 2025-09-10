@@ -3,10 +3,14 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
 from models import Student
-from models.paths import db_path,img_dir,pdf_dir
+from models.paths import db_path,img_dir,pdf_dir  , get_db_path
 class University:
-    def __init__(self, db_path=db_path):
+    def __init__(self, db_path=None):
+        # if db_path is None:
+            # from models.paths import get_current_db_path
+            # db_path = get_current_db_path()
         self.db_path = db_path
+        print(f"{db_path} from uni class")
         self.students = []
 
     def fetch_semester_tables(self):
@@ -84,7 +88,10 @@ class University:
             student.calculate_sgpa()  # Ensure SGPA is calculated
             student.calculate_cgpa(previous_sgpas)
 
-    def calculate_academic_performance_by_semester(self, selected_semester, db_path=db_path):
+    def calculate_academic_performance_by_semester(self, selected_semester, db_path=None):
+        if db_path is None:
+            db_path = self.db_path
+
         """
         Calculates academic performance for all students in the selected semester.
 

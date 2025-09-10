@@ -16,6 +16,7 @@ export default function Result({ usn, semester, view }) {
         try {
             const res = await axios.get(`${API_BASE}/auth/Student/result`, {
                 params: { usn, semester },
+                withCredentials: true
             });
             setData(res.data);
             setError("");

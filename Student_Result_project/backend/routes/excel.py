@@ -1,6 +1,6 @@
-from flask import send_from_directory
+from flask import send_from_directory, session
 from flask import Blueprint, jsonify, request
-from models.paths import excel_path,base_dir
+from models.paths import excel_path,base_dir, get_excel_path
 
 excel_bp = Blueprint("excel", __name__)
 
@@ -14,4 +14,5 @@ def excel():
 
 @excel_bp.route("/excel/template.xlsx")
 def get_template():
-    return send_from_directory(base_dir / "Inputs/ExcelSheet/", "result list project.xlsx")
+    batch_year = session.get("batch_year")
+    return send_from_directory(base_dir / "Inputs/ExcelSheet/", f"result_list_{batch_year}.xlsx")

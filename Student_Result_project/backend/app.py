@@ -22,26 +22,31 @@
 # from logic import display_subjectwise_result
 # from logic import display_semesterwise_results
 
-from models.data_prep import prepare_data
 
-prepare_data()
 # from gui import build_app
     
 # widgets = build_app()
 # Run the GUI
 # widgets["root"].mainloop()
-
-
 # from flask import Flask, request, jsonify
-from routes import register_routes
-from app_init import db, create_app
 # from backend.models.users import db
-app = create_app()
+# app.py
+from flask import Flask
+from flask_cors import CORS
+from models.batch_manager import BatchManager
+from routes import register_routes
 
-with app.app_context():
-    db.create_all()
+# Initialize BatchManager (responsible for multiple batch DBs + apps)
+bm = BatchManager()
+
+# Create main Flask app (acts as entrypoint/gateway)
+app = Flask(__name__)
+CORS(app, supports_credentials=True)
+app.secret_key = "super-secret-key"  # should load from config/env
+
+# Register all routes (auth, admin, etc.)
 register_routes(app)
-
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
+

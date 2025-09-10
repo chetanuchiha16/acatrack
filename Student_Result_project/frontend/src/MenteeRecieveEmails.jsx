@@ -12,7 +12,7 @@ export default function MenteeRecieveEmails({ usn }) {
     const fetchMessages = async () => {
         setLoadingMessages(true);
         try {
-            const res = await fetch(`${API_BASE}/student/${usn}/messages`);
+            const res = await fetch(`${API_BASE}/student/${usn}/messages`, {credentials: "include"});
             const data = await res.json();
             setMessages(data);
         } catch (err) {
@@ -27,7 +27,7 @@ export default function MenteeRecieveEmails({ usn }) {
         setLoadingMeetings(true);
         try {
             const res = await fetch(
-                `${API_BASE}/auth/Student/Mentee/meeting/${usn}`
+                `${API_BASE}/auth/Student/Mentee/meeting/${usn}`, {credentials:"include"}
             );
             const data = await res.json();
             setMeetings(data);
@@ -41,7 +41,7 @@ export default function MenteeRecieveEmails({ usn }) {
     const fetchMessageDetail = async (msgId) => {
         try {
             const res = await fetch(
-                `${API_BASE}/student/${usn}/messages/${msgId}`
+                `${API_BASE}/student/${usn}/messages/${msgId}`, {credentials:"include"}
             );
             if (res.ok) {
                 const data = await res.json();
@@ -54,9 +54,9 @@ export default function MenteeRecieveEmails({ usn }) {
 
     const markAsRead = async (msgId) => {
         try {
-            await fetch(`${API_BASE}/student/${usn}/messages/${msgId}/read`, {
-                method: "POST",
-            });
+            await fetch(`${API_BASE}/student/${usn}/messages/${msgId}/read`,{credentials:"include"}, {
+                method: "POST", 
+            } );
             fetchMessages();
         } catch (err) {
             console.error("Error marking as read:", err);

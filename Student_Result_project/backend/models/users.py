@@ -78,5 +78,58 @@ class PasswordResetToken(db.Model):
     token = db.Column(db.String(128), unique=True, nullable=False, index=True)
     usn = db.Column(db.String(10), nullable=False)
     role = db.Column(db.String(20), nullable=False)  # student, parent, teacher
-    expires_at = db.Column(db.DateTime, nullable=False)  # store naive UTC
+    batch_year = db.Column(db.Integer, nullable=False)  # NEW FIELD
+    expires_at = db.Column(db.DateTime, nullable=False)  # naive UTC
     used = db.Column(db.Boolean, default=False)
+
+
+# ---------------- Mentor Message Model ----------------
+class MentorMessage(db.Model):
+    __tablename__ = "mentor_messages"
+    id = db.Column(db.Integer, primary_key=True)
+    mentor_id = db.Column(db.Integer, db.ForeignKey("mentors.id"))
+    student_usn = db.Column(db.String, db.ForeignKey("students.username"), nullable=True)  # null = broadcast
+    recipient_type = db.Column(db.String)  # student/parent
+    subject = db.Column(db.String)
+    message = db.Column(db.Text)
+    created_at = db.Column(
+        db.DateTime,  
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+    email_failed = db.Column(db.Boolean, default=False)
+
+    mentor = db.relationship("Mentor", backref=db.backref("messages", lazy=True))
+    student = db.relationship("StudentAuth", backref=db.backref("messages", lazy=True))
+
+    def to_dict(self):
+        dt = self.created_at
+        if dt and dt.tzinfo is None:  # SQLite returned naive
+            dt = dt.replace(tzinfo=timezone.utc)
+        return {
+            "id": self.id,
+            "mentor_id": self.mentor_id,
+            "mentor_name": self.mentor.name if self.mentor else None,
+            "mentor_email": getattr(self.mentor, "email", None),  # optional
+            "student_usn": self.student_usn,
+            "student_name": self.student.name if self.student else None,
+            "recipient_type": self.recipient_type,
+            "subject": self.subject,
+            "message": self.message,
+            "created_at": dt.isoformat(),  # now ends with +00:00
+            "email_failed": self.email_failed,
+        }
+
+
+
+class StudentMessageStatus(db.Model):
+    __tablename__ = "student_message_status"
+    id = db.Column(db.Integer, primary_key=True)
+    student_usn = db.Column(db.String(20), db.ForeignKey("students.username"))
+    msg_id = db.Column(db.Integer, db.ForeignKey("mentor_messages.id"))
+    read = db.Column(db.Boolean, default=False)
+
+    __table_args__ = (db.UniqueConstraint("student_usn", "msg_id", name="uq_student_msg"),)
+
+    def to_dict(self):
+        return {"id": self.id, "student_usn": self.student_usn, "msg_id": self.msg_id, "read": self.read}

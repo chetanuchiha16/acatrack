@@ -1,5 +1,6 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from models import StudentAuth  # your existing model
+from models.batch_manager import BatchManager, bm
 from app_init import db          # your DB instance
 import smtplib
 from email.mime.text import MIMEText
@@ -69,37 +70,40 @@ def send_email_to_all():
     recipient_type = data.get("recipientType", "student").lower()
     subject = data.get("subject")
     message = data.get("message")
-
+    
     if not subject or not message:
         return jsonify({"error": "Both 'subject' and 'message' are required"}), 400
 
     try:
-        if recipient_type == "parent":
-            recipients = StudentAuth.query.filter(StudentAuth.parent_email != None).all()
-            email_attr = "parent_email"
-            name_attr = "parent_name"
-        else:
-            recipients = StudentAuth.query.all()
-            email_attr = "student_email"
-            name_attr = "name"
+        batch_year = session.get("batch_year")  # <-- pulled from session
+        with bm.session_scope(batch_year) as db:
 
-        failed = []
-        for person in recipients:
-            to_email = getattr(person, email_attr, None)
-            if not to_email:
-                failed.append(getattr(person, "usn", "unknown"))
-                continue
+            if recipient_type == "parent":
+                recipients = StudentAuth.query.filter(StudentAuth.parent_email != None).all()
+                email_attr = "parent_email"
+                name_attr = "parent_name"
+            else:
+                recipients = StudentAuth.query.all()
+                email_attr = "student_email"
+                name_attr = "name"
 
-            name = getattr(person, name_attr, None) or getattr(person, "name", "Student")
-            personalized_body = f"Hello {name},\n\n{message}"
-            success = send_email(to_email, subject, personalized_body)
-            if not success:
-                failed.append(getattr(person, "usn", "unknown"))
+            failed = []
+            for person in recipients:
+                to_email = getattr(person, email_attr, None)
+                if not to_email:
+                    failed.append(getattr(person, "usn", "unknown"))
+                    continue
 
-        return jsonify({
-            "message": f"Emails sent to all {recipient_type}s",
-            "failed_usns": failed
-        }), (207 if failed else 200)
+                name = getattr(person, name_attr, None) or getattr(person, "name", "Student")
+                personalized_body = f"Hello {name},\n\n{message}"
+                success = send_email(to_email, subject, personalized_body)
+                if not success:
+                    failed.append(getattr(person, "usn", "unknown"))
+
+            return jsonify({
+                "message": f"Emails sent to all {recipient_type}s",
+                "failed_usns": failed
+            }), (207 if failed else 200)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -112,33 +116,35 @@ def send_email_to_student():
     subject = data.get("subject")
     message = data.get("message")
     recipient_type = data.get("recipientType", "student").lower()
+    batch_year = session.get("batch_year")  # <-- pulled from session
 
     if not usn or not subject or not message:
         return jsonify({"error": "USN, subject and message are required"}), 400
+    
+    with bm.session_scope(batch_year) as db:
+        student = StudentAuth.query.filter_by(username=usn).first()
+        if not student:
+            return jsonify({"error": "Student not found"}), 404
 
-    student = StudentAuth.query.filter_by(username=usn).first()
-    if not student:
-        return jsonify({"error": "Student not found"}), 404
-
-    if recipient_type == "parent":
-        to_email = getattr(student, "parent_email", None)
-        name = getattr(student, "parent_name", None) or student.name
-        if not to_email:
-            return jsonify({"error": "Parent email not found for this student"}), 404
-    else:
-        to_email = student.student_email
-        name = student.name
-
-    personalized_body = f"Hello {name},\n\n{message}"
-
-    try:
-        success = send_email(to_email, subject, personalized_body)
-        if success:
-            return jsonify({"message": f"Email sent to {recipient_type} with USN {usn}"}), 200
+        if recipient_type == "parent":
+            to_email = getattr(student, "parent_email", None)
+            name = getattr(student, "parent_name", None) or student.name
+            if not to_email:
+                return jsonify({"error": "Parent email not found for this student"}), 404
         else:
-            return jsonify({"error": "Failed to send email"}), 500
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+            to_email = student.student_email
+            name = student.name
+
+        personalized_body = f"Hello {name},\n\n{message}"
+
+        try:
+            success = send_email(to_email, subject, personalized_body)
+            if success:
+                return jsonify({"message": f"Email sent to {recipient_type} with USN {usn}"}), 200
+            else:
+                return jsonify({"error": "Failed to send email"}), 500
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
 
 
 # -----------------------------
@@ -147,26 +153,33 @@ def send_email_to_student():
 @email_bp.route("/messages", methods=["POST"])
 def save_message():
     data = request.get_json() or {}
-    new_msg = Message(
-        usn=data.get("usn"),
-        recipient_type=data.get("recipientType"),
-        subject=data.get("subject"),
-        message=data.get("message"),
-    )
-    db.session.add(new_msg)
-    db.session.commit()
-    return jsonify(new_msg.to_dict()), 201
+    batch_year = session.get("batch_year")  # <-- pulled from session
+    with bm.session_scope(batch_year) as db:
+        new_msg = Message(
+            usn=data.get("usn"),
+            recipient_type=data.get("recipientType"),
+            subject=data.get("subject"),
+            message=data.get("message"),
+        )
+        db.session.add(new_msg)
+        db.session.commit()
+        return jsonify(new_msg.to_dict()), 201
 
 
 @email_bp.route("/messages", methods=["GET"])
 def get_messages():
-    messages = Message.query.order_by(Message.created_at.desc()).all()
-    return jsonify([m.to_dict() for m in messages]), 200
+    batch_year = session.get("batch_year")  # <-- pulled from session
+    print(f"{batch_year} from get_messages")
+    with bm.session_scope(batch_year) as db:
+        messages = Message.query.order_by(Message.created_at.desc()).all()
+        return jsonify([m.to_dict() for m in messages]), 200
 
 
 @email_bp.route("/messages/<int:msg_id>", methods=["DELETE"])
 def delete_message(msg_id):
-    msg = Message.query.get_or_404(msg_id)
-    db.session.delete(msg)
-    db.session.commit()
-    return jsonify({"message": "Message deleted"}), 200
+    batch_year = session.get("batch_year")  # <-- pulled from session
+    with bm.session_scope(batch_year) as db:
+        msg = Message.query.get_or_404(msg_id)
+        db.session.delete(msg)
+        db.session.commit()
+        return jsonify({"message": "Message deleted"}), 200

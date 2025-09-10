@@ -9,7 +9,9 @@ export default function SubjectResults() {
     const fetchData = async () => {
         if (!semester || !subject) return;
         const res = await fetch(
-            `${API_BASE}/auth/Staff/sub_res?semester=${semester}&subject=${subject}`
+            `${API_BASE}/auth/Staff/sub_res?semester=${semester}&subject=${subject}`,{
+                credentials: "include"   // <-- this ensures cookies/session are sent
+                }
         );
         const json = await res.json();
         setData(json);

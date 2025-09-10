@@ -44,7 +44,7 @@ const Row = React.memo(function Row({ row, rowIndex, updateCell }) {
     );
 });
 
-export default function ExcelViewer({ excel_route }) {
+export default function ExcelViewer({excel_route}) {
     const [worksheets, setWorksheets] = useState(null);
     const workbookRef = useRef(null);
     const [sheetIndex, setSheetIndex] = useState(0);
@@ -52,7 +52,7 @@ export default function ExcelViewer({ excel_route }) {
 
     // Load Excel file once
     useEffect(() => {
-        fetch(`${excel_route}`)
+        fetch(`${excel_route}`,{credentials:"include"})
             .then((res) => res.arrayBuffer())
             .then(async (buffer) => {
                 const workbook = await new ExcelJs.Workbook().xlsx.load(buffer);

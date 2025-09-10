@@ -27,7 +27,7 @@ export default function MentorSendEmails({ mentorId }) {
         setLoading(true);
         try {
             const res = await axios.get(
-                `${API_BASE}/mentor/${mentorId}/students`
+                `${API_BASE}/mentor/${mentorId}/students`, {withCredentials:true}
             );
             setStudents(res.data.students || []);
         } catch (err) {
@@ -40,7 +40,7 @@ export default function MentorSendEmails({ mentorId }) {
     const fetchMessages = async () => {
         try {
             const res = await axios.get(
-                `${API_BASE}/mentor/${mentorId}/messages`
+                `${API_BASE}/mentor/${mentorId}/messages`, {withCredentials:true}
             );
             const grouped = {};
             res.data.forEach((msg) => {
@@ -72,7 +72,7 @@ export default function MentorSendEmails({ mentorId }) {
         try {
             const stored = await axios.post(
                 `${API_BASE}/mentor/${mentorId}/messages`,
-                { usn, recipientType, subject, message }
+                { usn, recipientType, subject, message }, {withCredentials:true}
             );
 
             setStudentMessages((prev) => {
@@ -96,7 +96,7 @@ export default function MentorSendEmails({ mentorId }) {
             if (usn) {
                 emailRes = await axios.post(
                     `${API_BASE}/mentor/${mentorId}/send-email/student`,
-                    { usn, recipientType, subject, message }
+                    { usn, recipientType, subject, message }, {withCredentials:true}
                 );
             } else {
                 emailRes = await axios.post(

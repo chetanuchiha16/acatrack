@@ -21,7 +21,7 @@ export default function ResetPassword() {
       return;
     }
     try {
-      const res = await axios.post(`${API_BASE}/auth/forgot/reset/${token}`, { password });
+      const res = await axios.post(`${API_BASE}/auth/forgot/reset/${token}`, { password }, {withCredentials:true});
       setStatus(res.data.message);
       setTimeout(() => navigate("/auth"), 2000);
     } catch (err) {
