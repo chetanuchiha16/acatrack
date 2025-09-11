@@ -181,12 +181,21 @@ def send_email_student(mentor_id):
             fcm_token = getattr(student, "fcm_token", None)
 
             if fcm_token:
+                print("FCM token for", student.username, ":", fcm_token)
                 notification = messaging.Message(
                     notification=messaging.Notification(
                         title=f"New message from {mentor.name}",
                         body=subject or "You have a new email",
                     ),
                     token=fcm_token,
+                    webpush=messaging.WebpushConfig(
+                        headers={"Urgency": "high"},
+                        notification=messaging.WebpushNotification(
+                            title=f"New message from {mentor.name}",
+                            body=subject or "You have a new email",
+                            icon="/firebase-logo.png"
+                        ),
+                    )
                 )
 
                 try:

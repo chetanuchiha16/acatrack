@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import API_BASE from "./config";
-import { onMessage } from "firebase/messaging";
-import { messaging } from "./firebase";  // your firebase.js
 
 export default function MenteeRecieveEmails({ usn }) {
     const [messages, setMessages] = useState([]);
@@ -11,10 +9,6 @@ export default function MenteeRecieveEmails({ usn }) {
     const [loadingMeetings, setLoadingMeetings] = useState(true);
     
 
-    onMessage(messaging, (payload) => {
-  console.log("Message received. ", payload);
-  alert("📩 New notification: " + payload.notification.title);
-});
     // Fetch inbox messages
     const fetchMessages = async () => {
         setLoadingMessages(true);
@@ -61,8 +55,9 @@ export default function MenteeRecieveEmails({ usn }) {
 
     const markAsRead = async (msgId) => {
         try {
-            await fetch(`${API_BASE}/student/${usn}/messages/${msgId}/read`,{credentials:"include"}, {
+            await fetch(`${API_BASE}/student/${usn}/messages/${msgId}/read`, {
                 method: "POST", 
+                credentials:"include"
             } );
             fetchMessages();
         } catch (err) {

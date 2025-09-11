@@ -15,34 +15,24 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const messaging = getMessaging(app);
 
+
 export async function requestForToken() {
   try {
-    // Service worker must exist in public folder
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-
     const currentToken = await getToken(messaging, {
       vapidKey: "BNHLEOEvdqu88loXLpemou1WIS-LoKgSsc7h8_OTKnqU_imMNYC_TdcbGDKMwacWIAxIulVGqtx7Aufv85UK0jk",
-      serviceWorkerRegistration: registration,
     });
 
-    return currentToken;
+    if (currentToken) {
+      console.log("FCM Token:", currentToken);
+      return currentToken;
+    } else {
+      console.warn("No registration token available. Request permission?");
+      return null;
+    }
   } catch (error) {
     console.error("Error getting FCM token", error);
     return null;
   }
 }
 
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
 
-  const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
