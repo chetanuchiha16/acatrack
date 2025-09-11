@@ -10,7 +10,9 @@ sem_subjects = {
         "BICOK107": "Indian Constitution",
         "BIDTK158": "Innovation and Design Thinking",
         "BESCK104A": "Introduction to Civil Engineering",
-        "BETCK105H": "Introduction to Internet of Things (IoT)"
+        "BETCK105H": "Introduction to Internet of Things (IoT)",
+        "BESCK104C": "Introduction TO Electronics Engineering",
+        "BPLCK105B": "Introduction TO to Python Programming"
     },
     "SEM2": {
         "BMAT201": "Mathematics for CSE Stream-II",
