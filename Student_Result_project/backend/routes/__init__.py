@@ -42,6 +42,5 @@ def register_routes(app):
     app.register_blueprint(webscrape_bp)
     app.register_blueprint(pdftoexcel_bp)
     app.register_blueprint(ai_bp)
-    print("✅ Registered ai_bp at /ai/*")
     app.register_blueprint(student_api_bp)
     

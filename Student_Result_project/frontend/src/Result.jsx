@@ -488,6 +488,8 @@ export default function Result({ usn, semester, view }) {
                         </div>
                     </div>
                 )}
+
+                {view === "ai" && data && !loading && <StudentAIInsights usn={data.usn} semester={semester} />}
             </div>
         </div>
     );
