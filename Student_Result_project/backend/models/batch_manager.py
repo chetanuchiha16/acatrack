@@ -55,6 +55,8 @@ class BatchManager:
 
     def get_flask_app(self, batch_year: int):
         """Return a Flask app connected to the correct batch DB (cached)."""
+        if batch_year is None:
+            raise ValueError("Batch year cannot be None when creating an app")
         if batch_year not in self._apps:
             self._apps[batch_year] = create_app(batch_year=batch_year)
         print(f"apps: {self._apps} from batch manager")

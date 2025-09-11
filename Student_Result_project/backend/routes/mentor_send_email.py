@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 from models import Mentor, StudentAuth, MentorMessage, StudentMessageStatus
-
+from sqlalchemy.orm import joinedload
 from email.utils import parseaddr
 import smtplib
 from email.mime.text import MIMEText
@@ -8,6 +8,7 @@ from email.mime.multipart import MIMEMultipart
 import os
 from datetime import datetime, timezone
 from models.batch_manager import BatchManager, bm
+from firebase_admin import messaging
 mentor_email_bp = Blueprint("mentor_email", __name__)
 
 
@@ -39,6 +40,7 @@ def send_email(to_email, subject, body):
 
 
 # ---------------- Save Message ----------------
+# ---------------- Save Message ----------------
 def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=False):
     batch_year = session.get("batch_year")
     with bm.session_scope(batch_year) as db:
@@ -49,6 +51,7 @@ def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=
         if hasattr(mentor, "phone"):
             sender_info += f"\nPhone: {mentor.phone}"
 
+        # 1️⃣ Create and save the message
         msg = MentorMessage(
             mentor_id=mentor_id,
             student_usn=usn,
@@ -59,14 +62,30 @@ def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=
         )
         db.session.add(msg)
         db.session.commit()
+
+        # 2️⃣ Requery with eager loading (student + mentor + students)
+        msg = (
+            db.session.query(MentorMessage)
+            .options(
+                joinedload(MentorMessage.student),
+                joinedload(MentorMessage.mentor).joinedload(Mentor.students),
+            )
+            .filter_by(id=msg.id)
+            .first()
+        )
+
         return msg
 
 
 
-def serialize_message_with_read_status(msg):
+def serialize_message_with_read_status(db, msg):
     students = []
-    for s in msg.mentor.students:  # now directly StudentAuth objects
-        status = StudentMessageStatus.query.filter_by(student_usn=s.username, msg_id=msg.id).first()
+    for s in msg.mentor.students:  # StudentAuth objects
+        status = (
+            db.session.query(StudentMessageStatus)
+            .filter_by(student_usn=s.username, msg_id=msg.id)
+            .first()
+        )
         students.append({
             "usn": s.username,
             "name": s.name,
@@ -101,30 +120,31 @@ def get_mentor_students(mentor_id):
 def get_messages(mentor_id):
     batch_year = session.get("batch_year")
     with bm.session_scope(batch_year) as db:
-        msgs = MentorMessage.query.filter_by(mentor_id=mentor_id).order_by(MentorMessage.id.desc()).all()
-        return jsonify([serialize_message_with_read_status(m) for m in msgs])
+        msgs = (
+            MentorMessage.query.filter_by(mentor_id=mentor_id)
+            .order_by(MentorMessage.id.desc())
+            .all()
+        )
+        return jsonify([serialize_message_with_read_status(db, m) for m in msgs])
 
 
 @mentor_email_bp.route("/mentor/<int:mentor_id>/messages", methods=["POST"])
 def create_message(mentor_id):
-    """Store message only (no email send here)."""
     data = request.get_json() or {}
     usn = data.get("usn")
     recipient_type = data.get("recipientType", "student").lower()
     subject = data.get("subject")
     message = data.get("message")
-    batch_year = session.get("batch_year")
-    
 
     if not subject or not message:
         return jsonify({"error": "Subject and message required"}), 400
-    with bm.session_scope(batch_year) as db:
-        mentor = Mentor.query.get(mentor_id)
-        if not mentor:
-            return jsonify({"error": "Mentor not found"}), 404
 
+    batch_year = session.get("batch_year")
+    with bm.session_scope(batch_year) as db:
         msg = save_message(mentor_id, usn, recipient_type, subject, message)
-        return jsonify(serialize_message_with_read_status(msg)), 200
+        result = serialize_message_with_read_status(db, msg)   # ✅ pass db
+
+    return jsonify(result), 200
 
 
 @mentor_email_bp.route("/mentor/<int:mentor_id>/send-email/student", methods=["POST"])
@@ -156,6 +176,33 @@ def send_email_student(mentor_id):
             sender_info += f"\nPhone: {mentor.phone}"
 
         success = send_email(to_email, subject, f"Hello {name},\n\n{message}{sender_info}")
+        if success:
+            # Get the student's FCM token from DB (you must store it when they log in from frontend)
+            fcm_token = getattr(student, "fcm_token", None)
+
+            if fcm_token:
+                print("FCM token for", student.username, ":", fcm_token)
+                notification = messaging.Message(
+                    notification=messaging.Notification(
+                        title=f"New message from {mentor.name}",
+                        body=subject or "You have a new email",
+                    ),
+                    token=fcm_token,
+                    webpush=messaging.WebpushConfig(
+                        headers={"Urgency": "high"},
+                        notification=messaging.WebpushNotification(
+                            title=f"New message from {mentor.name}",
+                            body=subject or "You have a new email",
+                            icon="/firebase-logo.png"
+                        ),
+                    )
+                )
+
+                try:
+                    response = messaging.send(notification)
+                    print("Notification sent:", response)
+                except Exception as e:
+                    print("Error sending FCM:", e)
 
 
         return jsonify({"success": success}), (200 if success else 500)
@@ -200,7 +247,11 @@ def send_email_all(mentor_id):
 @mentor_email_bp.route("/mentor/<int:mentor_id>/messages/<int:msg_id>", methods=["DELETE"])
 def delete_message(mentor_id, msg_id):
     batch_year = session.get("batch_year")
+    print(f"from del message {batch_year}")
     with bm.session_scope(batch_year) as db:
+        all_msgs = MentorMessage.query.all()
+        print("Existing messages:", [ (m.id, m.mentor_id) for m in all_msgs ])
+
         msg = MentorMessage.query.filter_by(id=msg_id, mentor_id=mentor_id).first()
         if not msg:
             return jsonify({"error": "Message not found"}), 404

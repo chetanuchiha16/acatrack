@@ -1,5 +1,5 @@
 const API_BASE = window.location.hostname.includes("devtunnels.ms")
-    ? "https://ck9g3vf8-5000.inc1.devtunnels.ms"
+    ? "https://wr0cjgnx-5000.inc1.devtunnels.ms"
     : `http://${window.location.hostname}:5000`;
 
 export default API_BASE;
@@ -15,6 +15,8 @@ export const subjectMapping = {
         BIDTK158: "Innovation and Design Thinking",
         BESCK104A: "Introduction to Civil Engineering",
         BETCK105H: "Introduction to Internet of Things (IoT)",
+        BESCK104C: "Introduction TO Electronics Engineering",
+        BPLCK105B: "Introduction TO to Python Programming"
     },
     SEM2: {
         BMAT201: "Mathematics for CSE Stream-II",

@@ -101,7 +101,7 @@ export default function MentorSendEmails({ mentorId }) {
             } else {
                 emailRes = await axios.post(
                     `${API_BASE}/mentor/${mentorId}/send-email/all`,
-                    { recipientType, subject, message }
+                    { recipientType, subject, message }, {withCredentials:true}
                 );
             }
 
@@ -149,7 +149,7 @@ export default function MentorSendEmails({ mentorId }) {
     const deleteMessage = async (msgId, usn) => {
         try {
             await axios.delete(
-                `${API_BASE}/mentor/${mentorId}/messages/${msgId}`
+                `${API_BASE}/mentor/${mentorId}/messages/${msgId}`, {withCredentials:true}
             );
             setStudentMessages((prev) => {
                 const key = usn || "all";

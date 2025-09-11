@@ -5,6 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import ForgotPassword from "./ForgotPassword";
 import API_BASE from "./config";
+import { requestForToken } from "./firebase";
 
 export default function Auth() {
   let { who } = useParams();
@@ -48,31 +49,49 @@ export default function Auth() {
       .finally(() => setLoading(false));
   }, [navigate, who]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    axios.post(
-      `${API_BASE}/auth`,
-      { who, username, password, batch_year: who === "Staff" ? batchYear : null },
-      { withCredentials: true }
-    )
-      .then((res) => {
-        const { data } = res;
-        if (who === "Staff" && !batchYear) {
-          alert("Please select a batch year");
-          return;
+
+    try {
+      const res = await axios.post(
+        `${API_BASE}/auth`,
+        { who, username, password, batch_year: who === "Staff" ? batchYear : null },
+        { withCredentials: true }
+      );
+
+      const data = res.data;
+
+      if (who === "Staff" && !batchYear) {
+        alert("Please select a batch year");
+        return;
+      }
+
+      if (data.message) {
+        setUser({ username: data.id, name: data.name, role: who });
+
+        // 🔹 request FCM token
+        try {
+          const fcmToken = await requestForToken();
+          if (fcmToken) {
+            try {
+              await axios.post(`${API_BASE}/student/${data.id}/fcm-token`, { fcm_token: fcmToken }, { withCredentials: true });
+            } catch (err) {
+              console.warn("Failed to save FCM token:", err);
+            }
+          }
+        } catch (err) {
+          console.warn("FCM request failed:", err);
         }
-        if (data.message) {
-          setUser({ username: data.id, name: data.name, role: who });
-          navigate(`/auth/${who}/${data.id}`, {
-            state: { who, id: data.id, name: data.name , mentor_id:data.mentor_id},
-          });
-        } else {
-          alert(`${data.error}`);
-        }
-      })
-      .catch((err) => {
-        alert(err.response?.data?.error || "Login failed");
-      });
+
+        navigate(`/auth/${who}/${data.id}`, {
+          state: { who, id: data.id, name: data.name, mentor_id: data.mentor_id },
+        });
+      } else {
+        alert(`${data.error}`);
+      }
+    } catch (err) {
+      alert(err.response?.data?.error || "Login failed");
+    }
   };
 const [batches, setBatches] = useState([]);
 
