@@ -1,6 +1,9 @@
 from flask import Blueprint, request, jsonify
 from .student_services import get_student_result
 import numpy as np
+import matplotlib.pyplot as plt
+import io
+from flask import Blueprint, request, jsonify
 from sklearn.linear_model import LinearRegression
 
 student_api_bp = Blueprint('student_api', __name__)
@@ -33,10 +36,14 @@ def analyze_student_performance(usn, semester):
         "subject_analysis": [],
     }
 
-    low_marks = []
-    mid_marks = []
-    good_marks = []
-    high_marks = []
+    critical_marks = []
+    urgent_marks = []
+    below_avg_marks = []
+    avg_marks = []
+    good_marks_list = []
+    very_good_marks = []
+    excellent_marks = []
+    outstanding_marks = []
 
     for sub in subjects:
         marks = sub.get("total") or 0
@@ -46,22 +53,40 @@ def analyze_student_performance(usn, semester):
         advice_list = []
 
         # More granular performance categorization
-        if marks < 40:
+                # More granular performance categorization
+        if marks < 30:
             analysis["weak_subjects"].append(name)
-            advice_list.append(f"Focus intensively on {name} (score {marks}).")
-            low_marks.append(name)
-        elif 40 <= marks < 55:
+            advice_list.append(f"Critical attention needed in {name} (score {marks}). Revisit fundamentals.")
+            critical_marks.append(name)
+        elif 30 <= marks < 40:
+            analysis["weak_subjects"].append(name)
+            advice_list.append(f"Urgent improvement required in {name} (score {marks}). Focus on practice.")
+            urgent_marks.append(name)
+        elif 40 <= marks < 50:
             analysis["average_subjects"].append(name)
-            advice_list.append(f"Improve understanding in {name} (score {marks}).")
-            mid_marks.append(name)
-        elif 55 <= marks < 70:
+            advice_list.append(f"Below average in {name} (score {marks}). Consistent effort needed.")
+            below_avg_marks.append(name)
+        elif 50 <= marks < 60:
+            analysis["average_subjects"].append(name)
+            advice_list.append(f"Passable in {name} (score {marks}). Push beyond basics.")
+            avg_marks.append(name)
+        elif 60 <= marks < 70:
             analysis["good_subjects"].append(name)
-            advice_list.append(f"Solid performance in {name} (score {marks}), but room to improve.")
-            good_marks.append(name)
-        else:  # 70+
+            advice_list.append(f"Good performance in {name} (score {marks}). Refine concepts further.")
+            good_marks_list.append(name)
+        elif 70 <= marks < 80:
             analysis["strong_subjects"].append(name)
-            advice_list.append(f"Maintain your excellent performance in {name} (score {marks}).")
-            high_marks.append(name)
+            advice_list.append(f"Very good in {name} (score {marks}). Aim for excellence.")
+            very_good_marks.append(name)
+        elif 80 <= marks < 90:
+            analysis["strong_subjects"].append(name)
+            advice_list.append(f"Excellent in {name} (score {marks}). Maintain consistency.")
+            excellent_marks.append(name)
+        else:  # 90+
+            analysis["strong_subjects"].append(name)
+            advice_list.append(f"Outstanding in {name} (score {marks}). Consider advanced challenges.")
+            outstanding_marks.append(name)
+
 
         if credit >= 3 and marks < 60:
             advice_list.append("High credit weight: allocate extra study hours.")
@@ -82,26 +107,41 @@ def analyze_student_performance(usn, semester):
 
     # Summary based on SGPA
     sgpa = student.get("sgpa") or 0
-    if sgpa >= 8:
-        analysis["summary"] = "Excellent performance! Maintain your grades and aim higher."
-    elif 6.5 <= sgpa < 8:
-        analysis["summary"] = "Good performance. Focus on weak and average subjects."
-    else:
-        analysis["summary"] = "Performance needs improvement. Focus on critical subjects."
+    if sgpa < 5:
+        analysis["summary"] = "Performance is critically low. Immediate academic support needed."
+    elif 5 <= sgpa < 6:
+        analysis["summary"] = "Needs significant improvement. Focus on fundamentals."
+    elif 6 <= sgpa < 7:
+        analysis["summary"] = "Moderate performance. With extra effort, can improve."
+    elif 7 <= sgpa < 8:
+        analysis["summary"] = "Good progress. Strengthen weaker areas for higher SGPA."
+    elif 8 <= sgpa < 9:
+        analysis["summary"] = "Very good performance. Maintain consistency and aim higher."
+    else:  # 9+
+        analysis["summary"] = "Excellent performance! Keep up and explore advanced learning opportunities."
 
     # Generate concise 2-3 sentence study summary
     summary_parts = []
-    if low_marks:
-        summary_parts.append(f"Focus intensively on {', '.join(low_marks)} to strengthen your fundamentals.")
-    if mid_marks:
-        summary_parts.append(f"Improve understanding in {', '.join(mid_marks)} through practice and revision.")
-    if good_marks:
-        summary_parts.append(f"Keep refining {', '.join(good_marks)} to achieve higher mastery.")
-    if high_marks:
-        summary_parts.append(f"Maintain performance in {', '.join(high_marks)} and challenge yourself further.")
+    if critical_marks:
+        summary_parts.append(f"Critical attention needed in {', '.join(critical_marks)}. Revisit basics thoroughly.")
+    if urgent_marks:
+        summary_parts.append(f"Urgent improvement required in {', '.join(urgent_marks)}. Focus on practice and revisions.")
+    if below_avg_marks:
+        summary_parts.append(f"Work steadily on {', '.join(below_avg_marks)} to lift performance above average.")
+    if avg_marks:
+        summary_parts.append(f"Push beyond the basics in {', '.join(avg_marks)} to achieve better results.")
+    if good_marks_list:
+        summary_parts.append(f"Good grasp in {', '.join(good_marks_list)}. Refine concepts to aim higher.")
+    if very_good_marks:
+        summary_parts.append(f"Very good performance in {', '.join(very_good_marks)}. Aim for excellence.")
+    if excellent_marks:
+        summary_parts.append(f"Excellent in {', '.join(excellent_marks)}. Maintain consistency.")
+    if outstanding_marks:
+        summary_parts.append(f"Outstanding work in {', '.join(outstanding_marks)}. Consider advanced challenges.")
 
-    # Take only top 2-3 parts for a concise summary
+    # Keep concise: only top 3 sentences
     analysis["study_summary"] = " ".join(summary_parts[:3]) if summary_parts else "Focus on overall improvement."
+
 
     # Predict future SGPA
     previous_sgpas = [student.get("sgpa") or 0]  # Extend with historical SGPA if available
@@ -115,6 +155,40 @@ def analyze_student_performance(usn, semester):
     return {**student, **analysis}
 
 
+
+
+def generate_subject_marks_plot(subjects):
+    """
+    Generate a plot of marks vs subjects using subject codes instead of full names.
+    Returns a BytesIO buffer containing the PNG image.
+    """
+    if not subjects:
+        return None
+
+    subject_codes = [sub.get("code") or "N/A" for sub in subjects]
+    marks = [sub.get("total") or 0 for sub in subjects]
+
+    fig, ax = plt.subplots(figsize=(10, 6), dpi=80)
+    ax.bar(subject_codes, marks, color="skyblue", edgecolor="black")
+
+    ax.set_title("Marks vs Subjects", fontsize=14, weight="bold")
+    ax.set_xlabel("Subjects (Code)", fontsize=12)
+    ax.set_ylabel("Marks", fontsize=12)
+
+    ax.set_xticks(range(len(subject_codes)))
+    ax.set_xticklabels(subject_codes, rotation=45, ha="right")
+
+    for i, val in enumerate(marks):
+        ax.text(i, val + 1, str(val), ha="center", fontsize=9)
+
+    plt.tight_layout()
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    plt.close(fig)
+
+    return buf
 
 @student_api_bp.route("/auth/Student/analysis", methods=["GET"])
 def get_student_analysis():
@@ -137,3 +211,4 @@ def get_student_analysis():
         return jsonify(analysis)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+

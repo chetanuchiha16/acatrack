@@ -309,7 +309,7 @@ export default function ChatBot() {
                 let speechText = `Here is the full report for ${data.student_name}.`;
                 const totalBacklogCredits = data.total_backlog_credits || 0;
                 if (totalBacklogCredits === 0) {
-                    speechText += " ✅ No backlogs.";
+                    speechText += "No backlogs.";
                     setShowConfetti(true);
                     setTimeout(() => setShowConfetti(false), 7000);
                 } else if (totalBacklogCredits > 18) {
@@ -1061,7 +1061,7 @@ export default function ChatBot() {
                                     onClick={() => {
                                         setInput(s);       // fill input with selected suggestion
                                         setSuggestions([]); // hide suggestions
-                                        handleSend(s);     // fetch report immediately
+                                        // Do NOT call handleSend here
                                     }}
                                     className="px-3 py-2 cursor-pointer hover:bg-blue-100"
                                 >
@@ -1078,8 +1078,8 @@ export default function ChatBot() {
                         onChange={handleInputChange}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
-                                handleSend();
-                                setSuggestions([]); // clear suggestions on enter
+                                handleSend();        // send report using current input
+                                setSuggestions([]);  // clear suggestions on enter
                             }
                         }}
                         placeholder="Type student name or 'list' to see all"
@@ -1090,8 +1090,8 @@ export default function ChatBot() {
                 {/* Send button */}
                 <button
                     onClick={() => {
-                        handleSend();
-                        setSuggestions([]); // clear suggestions on send
+                        handleSend();        // send report using current input
+                        setSuggestions([]);  // clear suggestions on send
                     }}
                     className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-transform transform hover:scale-105"
                 >
@@ -1117,8 +1117,6 @@ export default function ChatBot() {
                         </div>
                     )}
                 </div>
-
-
             </div>
 
 

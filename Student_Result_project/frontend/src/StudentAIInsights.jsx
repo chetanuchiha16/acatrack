@@ -89,11 +89,14 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
     }
   };
 
+
+
+
   // Get subject color based on marks
   const getSubjectColor = (subject) => {
     const marks = subject.total || 0;
     if (marks < 50) return "bg-red-200";
-    if (marks < 70) return "bg-yellow-200";
+    if (marks >= 50 && marks <= 80) return "bg-yellow-200";
     return "bg-green-200";
   };
 
@@ -368,7 +371,6 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
           )}
         </div>
       )}
-
     </div>
   );
 }
