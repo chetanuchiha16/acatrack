@@ -1,12 +1,61 @@
 from flask import Blueprint, request, jsonify
-from .student_services import get_student_result
+# from .student_services import get_student_result
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import io
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from sklearn.linear_model import LinearRegression
 
 student_api_bp = Blueprint('student_api', __name__)
+
+# student_service.py
+from models import Student
+from visuals import create_student_report
+from models.paths import get_db_path, pdf_dir
+import os
+
+def get_student_result(usn: str, semester: str, batch_year: int):
+    """
+    Returns student result as dictionary (same structure as /result API)
+    """
+    db_path = get_db_path(batch_year)  # <-- resolves correct DB
+    student = Student(usn=usn, semester=semester, db_path=db_path)
+
+    # Generate PDF (optional, can skip if only analysis needed)
+    filename = f"{student.name}_{semester}_report.pdf"
+    file_path = os.path.join(pdf_dir, filename)
+    create_student_report(student, file_path=file_path)
+    pdf_url = f"http://localhost:5000/auth/Student/report/{filename}"
+
+    result = {
+        "name": student.name,
+        "usn": student.usn,
+        "total_marks": student.total_marks,
+        "percentage": student.percentage,
+        "credits": student.obtained_credits,
+        "sgpa": student.sgpa,
+        "cgpa": student.cgpa,
+        "subjects": [
+            {
+                "subject_name": subject_name,
+                "code": code,
+                "ia": ia,
+                "see": see,
+                "total": ia + see,
+                "credit": credit,
+                "status": status
+            }
+            for code, subject_name, ia, see, credit, status in zip(
+                student.subject_codes, student.subject_names, student.ia_marks, student.see_marks,
+                student.credits, student.pass_fail
+            )
+        ],
+        "pdf_url": pdf_url
+    }
+    return result
+
 
 def predict_future_sgpa(previous_sgpas, num_semesters_completed, total_semesters=8):
     """
@@ -21,8 +70,8 @@ def predict_future_sgpa(previous_sgpas, num_semesters_completed, total_semesters
     next_sem = np.array([[num_semesters_completed + 1]])
     return float(model.predict(next_sem)[0])
 
-def analyze_student_performance(usn, semester):
-    student = get_student_result(usn, semester) or {}
+def analyze_student_performance(usn, semester, batch_year):
+    student = get_student_result(usn, semester, batch_year=batch_year) or {}
     subjects = student.get("subjects") or []
 
     analysis = {
@@ -194,12 +243,13 @@ def generate_subject_marks_plot(subjects):
 def get_student_analysis():
     usn = request.args.get("usn")
     semester = request.args.get("semester")
+    batch_year = session.get("batch_year")  # <-- pulled from session
 
     if not usn or not semester:
         return jsonify({"error": "USN and semester are required"}), 400
 
     try:
-        analysis = analyze_student_performance(usn, semester)
+        analysis = analyze_student_performance(usn, semester, batch_year=batch_year)
 
         # Optionally remove 'study_tips' to avoid confusion
         analysis.pop("study_tips", None)

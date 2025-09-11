@@ -72,6 +72,8 @@ import base64
 def get_student_chart():
     usn = request.args.get("usn")
     semester = request.args.get("semester")
+    batch_year = session.get("batch_year")  # <-- pulled from session
+    db_path = get_db_path(batch_year)  # <-- resolves correct DB
     student = Student(usn=usn, semester=semester, db_path=db_path)
     fig = student.plot_subject_marks()[0]
 

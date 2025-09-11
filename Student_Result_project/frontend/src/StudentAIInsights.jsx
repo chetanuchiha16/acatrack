@@ -22,10 +22,10 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
 
     try {
       const [summaryRes, profileRes, trendRes, predictRes] = await Promise.all([
-        fetch(`${API_BASE}/ai/summary?usn=${usn}&semester=${semester}`),
-        fetch(`${API_BASE}/ai/profile?usn=${usn}&semester=${semester}`),
-        fetch(`${API_BASE}/ai/trend?usn=${usn}`),
-        fetch(`${API_BASE}/ai/predict_cgpa?usn=${usn}`)
+        fetch(`${API_BASE}/ai/summary?usn=${usn}&semester=${semester}`, {credentials:"include"}),
+        fetch(`${API_BASE}/ai/profile?usn=${usn}&semester=${semester}`, {credentials:"include"}),
+        fetch(`${API_BASE}/ai/trend?usn=${usn}`, {credentials:"include"}),
+        fetch(`${API_BASE}/ai/predict_cgpa?usn=${usn}`, {credentials:"include"})
       ]);
 
       const summaryJson = await summaryRes.json();
@@ -55,7 +55,7 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
     setLoadingPerf(true);
 
     try {
-      const res = await fetch(`${API_BASE}/auth/Student/analysis?usn=${usn}&semester=${semester}`);
+      const res = await fetch(`${API_BASE}/auth/Student/analysis?usn=${usn}&semester=${semester}`, {credentials:"include"});
       const data = await res.json();
 
       if (res.ok) {
@@ -80,7 +80,7 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
   // Fetch Chart
   const fetchChart = async () => {
     try {
-      const res = await fetch(`${API_BASE}/auth/Student/chart?usn=${usn}&semester=${semester}`);
+      const res = await fetch(`${API_BASE}/auth/Student/chart?usn=${usn}&semester=${semester}`, {credentials:"include"});
       if (!res.ok) return;
       const data = await res.json();
       setChartUrl(data.image || "");

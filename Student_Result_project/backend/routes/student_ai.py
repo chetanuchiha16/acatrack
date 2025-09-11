@@ -1,7 +1,7 @@
 # ai_blueprint.py
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 import numpy as np
-from models.paths import db_path
+from models.paths import  get_db_path
 from models import Student
 from .chatbot import (
     safe_marks, aggregate_tag_scores, classify_tag_strengths,
@@ -13,9 +13,11 @@ ai_bp = Blueprint("ai", __name__)
 
 # ------------------ Helper: Multi-Semester History ------------------ #
 def get_student_history_usn(usn, semesters):
+    batch_year = session.get("batch_year")  # <-- pulled from session
     sgpas = []
     for sem in semesters:
         try:
+            db_path = get_db_path(batch_year)  # <-- resolves correct DB
             s = Student(usn=usn, semester=sem, db_path=db_path)
             s.calculate_sgpa()
             if s.sgpa is not None:
@@ -28,6 +30,7 @@ def get_student_history_usn(usn, semesters):
 @ai_bp.route("/ai/summary", methods=["GET"])
 def ai_summary():
     usn = request.args.get("usn")
+    batch_year = session.get("batch_year")  # <-- pulled from session
     if not usn:
         return jsonify({"error": "USN is required"}), 400
 
@@ -37,6 +40,7 @@ def ai_summary():
     # Fetch all semesters
     for sem in semesters_list:
         try:
+            db_path = get_db_path(batch_year)  # <-- resolves correct DB
             s = Student(usn=usn, semester=sem, db_path=db_path)
             if s.sgpa is None:
                 continue
@@ -130,11 +134,13 @@ def ai_summary():
 @ai_bp.route("/ai/trend", methods=["GET"])
 def ai_trend():
     usn = request.args.get("usn")
+    batch_year = session.get("batch_year")  # <-- pulled from session
     semesters_list = ["SEM1","SEM2","SEM3","SEM4","SEM5","SEM6"]
 
     student_data = {"semesters": {}}
     for sem in semesters_list:
         try:
+            db_path = get_db_path(batch_year)  # <-- resolves correct DB
             s = Student(usn=usn, semester=sem, db_path=db_path)
             if s.sgpa is None:
                 continue
@@ -210,11 +216,13 @@ def ai_predict_cgpa():
 @ai_bp.route("/ai/profile", methods=["GET"])
 def ai_profile():
     usn = request.args.get("usn")
+    batch_year = session.get("batch_year")  # <-- pulled from session
     semesters_list = ["SEM1","SEM2","SEM3","SEM4","SEM5","SEM6"]
 
     student_data = {"student_name": "", "semesters": {}}
     for sem in semesters_list:
         try:
+            db_path = get_db_path(batch_year)  # <-- resolves correct DB
             s = Student(usn=usn, semester=sem, db_path=db_path)
             if s.sgpa is None:
                 continue
