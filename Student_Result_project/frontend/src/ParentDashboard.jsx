@@ -49,9 +49,9 @@ export default function ParentDashboard() {
                         onChange={(e) => changeLanguage(e.target.value)}
                         className="px-2 py-1 border rounded-md text-sm dark:bg-gray-800 dark:text-gray-100"
                     >
-                        <option value="en">English</option>
-                        <option value="hi">हिंदी</option>
-                        <option value="kan">ಕನ್ನಡ</option>
+                        <option value="en">English&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>
+                        <option value="hi">हिंदी&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>
+                        <option value="kan">ಕನ್ನಡ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>
                     </select>
                 </div>
                 <LogoutButton />
