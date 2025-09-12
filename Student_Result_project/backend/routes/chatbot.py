@@ -1,5 +1,5 @@
 # student_report_blueprint.py
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, request, jsonify, send_file, session
 from io import BytesIO
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.pagesizes import letter
@@ -10,22 +10,16 @@ from collections import defaultdict
 from models.paths import db_path
 from models.fetch import sem_subjects
 from models.university import University
+from models.batch_manager import bm, BatchManager
 from transformers import pipeline
 import numpy as np
 from sklearn.linear_model import LinearRegression, Ridge
 import re
 
 
-# ---------------- UNIVERSITY INIT ----------------
-SEMESTERS = ["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6"]
-university = University(db_path=db_path)
 
-for sem in SEMESTERS:
-    try:
-        university.add_students(selected_semester=sem)
-    except TypeError as e:
-        print(f"Skipping some students in {sem} due to error: {e}")
-        continue
+# ---------------- UNIVERSITY INIT ----------------
+
 
 
 
@@ -138,7 +132,8 @@ def generate_backlog_pdf(student_name, backlogs, total_credits):
 
 
 # ---------------- HELPERS ----------------
-def fetch_student_data_from_university():
+def fetch_student_data_from_university(batch_year):
+    university = bm.get_university(batch_year)
     data_map = {}
     for student in university.students:
         student_name_key = student.name.lower()
@@ -448,7 +443,8 @@ def build_placement_and_skill_advice(strong_tags, mid_tags, weak_tags, trend_dat
 # ---------------- ROUTES ----------------
 @chatbot_bp.route("/students", methods=["GET"])
 def list_students():
-    students_data = fetch_student_data_from_university()
+    batch_year = session.get("batch_year")
+    students_data = fetch_student_data_from_university(batch_year=batch_year)
     students_list = []
 
     for student_name, data in students_data.items():
@@ -475,7 +471,8 @@ def list_students():
 
 @chatbot_bp.route("/report/<student_query>", methods=["GET"])
 def get_student_report(student_query):
-    students = fetch_student_data_from_university()
+    batch_year = session.get("batch_year")
+    students = fetch_student_data_from_university(batch_year=batch_year)
 
     query_lower = student_query.lower()
     possible_matches = [
@@ -675,7 +672,8 @@ def get_student_report(student_query):
 
 @chatbot_bp.route("/report/<student_query>/pdf", methods=["GET"])
 def download_pdf_report(student_query):
-    students = fetch_student_data_from_university()
+    batch_year = session.get("batch_year")
+    students = fetch_student_data_from_university(batch_year=batch_year)
     matched_name = _fuzzy_find_student(student_query, students.keys())
     
     if not matched_name:
@@ -722,7 +720,8 @@ def download_pdf_report(student_query):
 
 @chatbot_bp.route("/report/<student_query>/downloads", methods=["GET"])
 def get_download_links(student_query):
-    students = fetch_student_data_from_university()
+    batch_year = session.get("batch_year")
+    students = fetch_student_data_from_university(batch_year=batch_year)
     matched_name = _fuzzy_find_student(student_query, students.keys())
     
     if not matched_name:

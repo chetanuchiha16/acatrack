@@ -89,7 +89,7 @@ export default function ChatBot() {
     const [students, setStudents] = useState([]);
     const fetchStudents = async () => {
         try {
-            const res = await fetch(`${API_BASE}/students`);
+            const res = await fetch(`${API_BASE}/students`, {credentials:"include"});
             const data = await res.json();
             if (data.students) {
                 setStudents(data.students.map(s => s.student_name)); // store only names for suggestions
@@ -106,7 +106,7 @@ export default function ChatBot() {
     useEffect(() => {
         const fetchAllStudents = async () => {
             try {
-                const res = await fetch(`${API_BASE}/students`);
+                const res = await fetch(`${API_BASE}/students`, {credentials:"include"});
                 const data = await res.json();
                 if (data.students) {
                     setStudents(data.students.map(s => s.student_name)); // for auto-suggestions
@@ -127,7 +127,7 @@ export default function ChatBot() {
             let url = `${API_BASE}/report/${encodeURIComponent(name)}`;
             if (semester) url += `?semester=${encodeURIComponent(semester)}`;
 
-            const res = await fetch(url);
+            const res = await fetch(url, {credentials:"include"});
             const data = await res.json();
 
             if (data.error) {

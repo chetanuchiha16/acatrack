@@ -3,10 +3,13 @@ from pathlib import Path
 from models.data_prep import prepare_data as prep_data
 from app_init import create_app, db
 from contextlib import contextmanager
+from models.fetch import SEMESTERS
+from models import University
 class BatchManager:
     current_batch_year = None  # class-level variable
     current_db_path = None
     _apps = {}  # class variable shared across all instances
+    _universities = {}
     def __init__(self):
         self.base_dir = Path(__file__).resolve().parent.parent
         self.db_dir = self.base_dir / "Outputs" / "Databases"
@@ -70,6 +73,18 @@ class BatchManager:
     def set_current_batch(self, batch_year: int):
         self.current_batch_year = batch_year
         self.current_db_path = self.get_db_path(batch_year)
+
+    def get_university(self, batch_year):
+        if batch_year not in self._universities:
+            db_file = self.get_db_path(batch_year)
+            uni = University(db_path=db_file)
+            for sem in SEMESTERS:
+                try:
+                    uni.add_students(selected_semester=sem)
+                except:
+                    continue
+            self._universities[batch_year] = uni
+        return self._universities[batch_year]
 
     @contextmanager
     def session_scope(self, batch_year: int):
