@@ -158,7 +158,7 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {openAI && aiData && (
-                    <div className="mt-2 space-y-4 bg-gray-50 p-4 rounded-lg shadow-inner text-gray-800">
+                    <div className="mt-2 space-y-4  p-4 rounded-lg shadow-inner text-gray-800">
                         {/* 🧠 AI Summary */}
                         <div className="bg-white p-4 rounded-lg shadow">
                             <h4 className="font-semibold text-purple-600 mb-2">
