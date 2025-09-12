@@ -10,17 +10,23 @@ sem_subjects = {
         "BICOK107": "Indian Constitution",
         "BIDTK158": "Innovation and Design Thinking",
         "BESCK104A": "Introduction to Civil Engineering",
-        "BETCK105H": "Introduction to Internet of Things (IoT)"
+        "BETCK105H": "Introduction to Internet of Things (IoT)",
+        "BESCK104C": "Introduction TO Electronics Engineering",
+        "BPLCK105B": "Introduction TO to Python Programming"
     },
     "SEM2": {
         "BMAT201": "Mathematics for CSE Stream-II",
+        "BMATS201": "Mathematics-II for CSE Stream",
         "BPHYS202": "Applied Physics for CSE Stream",
         "BPOPS203": "Principles of Programming Using C",
         "BPWSK206": "Professional Writing Skills in English",
-        "BKSKK207": "Samskrutika Kannada / Balake Kannada",
+        "BKSKK207": "Samskrutika Kannada",
+        "BKBKK207": "Balake Kannada",
         "BSFHK258": "Scientific Foundations of Health",
         "BPLCK205B": "Introduction to Python Programming",
-        "BESCK204C": "Introduction to Electronics Engineering"
+        "BESCK204C": "Introduction to Electronics Engineering",
+        "BESCK204D": "Introduction To Mechanical Engineering",
+        "BETCK205H": "Introduction to Internet of Things (IoT)"
     },
     "SEM3": {
         "BCS301": "Mathematics for Computer Science",

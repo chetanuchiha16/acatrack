@@ -123,3 +123,22 @@ def auth_status():
 def logout():
     session.clear()
     return jsonify({"message": "Logged out"})
+
+
+@auth_bp.route("/student/<usn>/fcm-token", methods=["POST"])
+def save_fcm_token(usn):
+    token = request.json.get("fcm_token")
+    batch_year = session.get("batch_year")
+
+    if not token:
+        return jsonify({"error": "Missing token"}), 400
+
+    with bm.session_scope(batch_year) as db:
+        student = StudentAuth.query.filter_by(username=usn).first()
+        if not student:
+            return jsonify({"error": "Student not found"}), 404
+
+        student.fcm_token = token
+        db.session.commit()
+
+    return jsonify({"success": True})

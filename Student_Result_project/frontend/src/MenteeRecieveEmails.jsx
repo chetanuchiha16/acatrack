@@ -7,6 +7,7 @@ export default function MenteeRecieveEmails({ usn }) {
     const [meetings, setMeetings] = useState([]);
     const [loadingMessages, setLoadingMessages] = useState(true);
     const [loadingMeetings, setLoadingMeetings] = useState(true);
+    
 
     // Fetch inbox messages
     const fetchMessages = async () => {
@@ -54,8 +55,9 @@ export default function MenteeRecieveEmails({ usn }) {
 
     const markAsRead = async (msgId) => {
         try {
-            await fetch(`${API_BASE}/student/${usn}/messages/${msgId}/read`,{credentials:"include"}, {
+            await fetch(`${API_BASE}/student/${usn}/messages/${msgId}/read`, {
                 method: "POST", 
+                credentials:"include"
             } );
             fetchMessages();
         } catch (err) {

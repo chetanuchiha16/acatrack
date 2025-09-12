@@ -120,34 +120,48 @@ export default function AdminPanel() {
     };
 
     const uploadMentors = async () => {
-        if (!mentorFile) return setStatus("Please select a mentor file first.");
-        if (!secret) return alert("Admin secret missing");
+  if (!mentorFile) return setStatus("Please select a mentor file first.");
+  if (!secret) return alert("Admin secret missing");
 
-        setStatus("Uploading mentors...");
-        const formData = new FormData();
-        formData.append("file", mentorFile);
+  setStatus("Uploading mentors...");
+  const formData = new FormData();
+  formData.append("file", mentorFile);
 
-        try {
-            const res = await fetch(
-                `${API_BASE}/admin/upload-mentors?batch_year=${parseInt(
-                    batchYear,
-                    10
-                )}`,
-                {
-                    method: "POST",
-                    headers: { "X-Admin-Secret": secret },
-                    body: formData,
-                }
-            );
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Unknown error");
-            setStatus(
-                `✅ Uploaded mentors. Inserted ${data.mentors_inserted} mentors and ${data.mappings_inserted} mappings.`
-            );
-        } catch (err) {
-            setStatus("❌ Error: " + err.message);
-        }
-    };
+  try {
+    const res = await fetch(
+      `${API_BASE}/admin/upload-mentors?batch_year=${parseInt(batchYear, 10)}`,
+      {
+        method: "POST",
+        headers: { "X-Admin-Secret": secret },
+        body: formData,
+      }
+    );
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Unknown error");
+
+    setStatus(
+      `✅ Uploaded mentors. Inserted ${data.mentors_inserted} mentors and ${data.mappings_inserted} mappings.`
+    );
+
+    // 🔽 NEW: fetch and download CSV automatically
+    if (data.csv_download_url) {
+      const csvRes = await fetch(`${API_BASE}${data.csv_download_url}`, {
+        headers: { "X-Admin-Secret": secret },
+      });
+      if (csvRes.ok) {
+        const blob = await csvRes.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `generated_teachers_batch_${batchYear}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      }
+    }
+  } catch (err) {
+    setStatus("❌ Error: " + err.message);
+  }
+};
 
     const createBatch = async () => {
         if (!newBatchYear)
