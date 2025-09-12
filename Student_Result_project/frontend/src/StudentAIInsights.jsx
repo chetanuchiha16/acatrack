@@ -127,7 +127,7 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
                     onClick={() => {
                         if (!aiData) fetchAIInsights();
                         setOpenAI(true); 
-                        setOpenAI(!openAI);
+                        setOpenPerf(false);
                     }}
                     disabled={loadingAI}
                     className="flex-1 bg-purple-500 text-white px-3 py-2 rounded hover:bg-purple-600 transition-transform transform hover:scale-102"
@@ -143,7 +143,7 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
                     onClick={() => {
                         if (!performanceData) fetchPerformance();
                         setOpenAI(false); 
-                        setOpenPerf(!openPerf);
+                        setOpenPerf(true);
                     }}
                     disabled={loadingPerf}
                     className="flex-1 bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 transition-transform transform hover:scale-102"
