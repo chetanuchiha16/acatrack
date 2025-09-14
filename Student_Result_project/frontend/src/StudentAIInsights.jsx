@@ -113,11 +113,16 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
 
     // Get subject color based on marks
     const getSubjectColor = (subject) => {
-        const marks = subject.total || 0;
-        if (marks < 50) return "bg-red-200";
-        if (marks >= 50 && marks <= 80) return "bg-yellow-200";
-        return "bg-green-200";
-    };
+  const marks = subject.total || 0;
+
+  if (marks < 50) 
+    return "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300";
+
+  if (marks >= 50 && marks <= 80) 
+    return "bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-300";
+
+  return "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300";
+};
 
     return (
         <div className="p-2 rounded space-y-2">

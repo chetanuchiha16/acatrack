@@ -465,11 +465,11 @@ export default function Result({ usn, semester, view }) {
                             </div>
                         </div>
 
-                            {data && !loading && (
+                            {/* {data && !loading && (
                                 <div className="mt-6">
                                     <StudentAIInsights usn={data.usn} semester={semester} />
                                 </div>
-                            )}
+                            )} */}
                         {/* Actions */}
                         <div className="flex items-center justify-center mt-3 !text-white">
                             {data.pdf_url ? (
