@@ -61,12 +61,23 @@ def _connect_sqlite(batch_year: int) -> Tuple[sqlite3.Connection, sqlite3.Cursor
     return conn, cur
 
 
-def _fetch_source_rows(batch_year: int) -> Tuple[List[Tuple[str, str]], List[Tuple[str]]]:
-    """Fetch student(usn,name) and teacher(initials) tuples from SQLite for a specific batch."""
+def _fetch_source_rows(batch_year: int) -> List[Tuple[str, str]]:
+    """Fetch unique students across all SEM tables for a batch."""
     conn, cur = _connect_sqlite(batch_year)
     try:
-        # teachers = cur.execute("SELECT Mentor_Name FROM Staffs").fetchall()
-        students = cur.execute("SELECT student_usn, student_name FROM SEM4").fetchall()
+        # 1. Detect SEM tables dynamically
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'SEM%'")
+        sem_tables = [row[0] for row in cur.fetchall()]
+
+        # 2. Collect all students, avoiding duplicates
+        students_set = set()
+        for sem in sem_tables:
+            cur.execute(f"SELECT student_usn, student_name FROM {sem}")
+            for student in cur.fetchall():
+                students_set.add(student)  # set automatically deduplicates
+
+        # 3. Convert to list if needed
+        students = list(students_set)
     finally:
         conn.close()
     return students
