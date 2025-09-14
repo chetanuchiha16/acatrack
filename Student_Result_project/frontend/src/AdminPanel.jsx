@@ -258,11 +258,29 @@ export default function AdminPanel() {
     });
 
     const data = await res.json();
+    pollJobStatus(data.job_id);
     if (!res.ok) throw new Error(data.error || "Unknown error");
 
     setStatus(`✅ Processed ${data.processed_files.length} PDFs. Excel saved at: ${data.excel_path}`);
   } catch (err) {
     setStatus("❌ Error: " + err.message);
+  }
+};
+
+const pollJobStatus = async (jobId) => {
+  try {
+    const res = await fetch(`${API_BASE}/pdf/job_status/${jobId}`);
+    const data = await res.json();
+    console.log(data);
+    if (data.status === "done") {
+      setStatus(`✅ Done! Excel at ${data.excel_path}`);
+    } else {
+      setStatus(`Processing... ${data.progress} PDFs done`);
+      setTimeout(() => pollJobStatus(jobId), 1000); // poll every second
+    }
+  } catch (err) {
+    console.error(err);
+    setStatus("❌ Error fetching job status: " + err.message);
   }
 };
 
