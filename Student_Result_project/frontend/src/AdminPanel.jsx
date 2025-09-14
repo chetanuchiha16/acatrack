@@ -114,7 +114,7 @@ export default function AdminPanel() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Unknown error");
             setStatus(
-                `✅ Uploaded emails. Inserted ${data.emails_inserted} records.`
+                `✅ Uploaded emails. Inserted ${data.emails_inserted} records and Updated ${data.emails_updated} records.`
             );
         } catch (err) {
             setStatus("❌ Error: " + err.message);

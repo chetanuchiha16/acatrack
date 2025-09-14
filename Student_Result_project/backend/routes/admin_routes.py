@@ -242,9 +242,10 @@ def upload_emails():
     if missing:
         return jsonify({"error": f"Missing required columns: {', '.join(missing)}"}), 400
 
-    count_inserted = 0
-    count_updated = 0
+    
     with bm.session_scope(batch_year) as db:
+        count_inserted = 0
+        count_updated = 0
         for _, row in df.iterrows():
             usn = str(row["student_usn"]).strip()
             if not usn:
