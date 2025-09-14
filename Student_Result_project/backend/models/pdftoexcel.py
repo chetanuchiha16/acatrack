@@ -26,7 +26,9 @@ sem_credits = {
         "BICOK107": 1,
         "BIDTK158": 1,
         "BESCK104A": 3,
-        "BETCK105H": 3
+        "BETCK105H": 3,
+        "BPLCK105B": 3,
+        "BESCK104C": 3
     },
     "SEM2": {
         "BMAT201": 4,
@@ -51,7 +53,8 @@ sem_credits = {
         "BSCK307": 1,
         "BNSK359": 0,
         "BCS306A": 4,
-        "BCS358D": 0
+        "BCS358D": 0,
+        "BCS358D": 1
     },
     "SEM4": {
         "BCS401": 3,

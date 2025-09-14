@@ -8,6 +8,9 @@ class StudentAuth(db.Model):
     student_email = db.Column(db.String(100), nullable=True)
     student_phno = db.Column(db.String(20), nullable=True)
 
+    # NEW: store latest Firebase device token
+    fcm_token = db.Column(db.String(256), nullable=True)
+
     # Link to mentor (one-to-many: one mentor, many students)
     mentor_id = db.Column(db.Integer, db.ForeignKey("mentors.id"), nullable=True)
     mentor = db.relationship("Mentor", backref=db.backref("students", lazy=True))
@@ -37,6 +40,8 @@ class ParentAuth(db.Model):
         unique=True
     )
     student = db.relationship("StudentAuth", backref=db.backref("parent_account", uselist=False))
+
+    fcm_token = db.Column(db.String(256), nullable=True)
 
 
 class Teacher(db.Model):

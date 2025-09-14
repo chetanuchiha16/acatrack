@@ -5,6 +5,8 @@ import Result from "./Result";
 import Classroom from "./Classroom";
 import LogoutButton from "./LogoutButton";
 import MenteeRecieveEmails from "./MenteeRecieveEmails";
+import { onMessage } from "firebase/messaging";
+import { messaging } from "./firebase";  // your firebase.js
 
 export default function Student() {
   const navigate = useNavigate();
@@ -28,6 +30,11 @@ const [view, setView] = useState("table");
   useEffect(() => {
     if (selectedTab !== "result") setCurrentSem("");
   }, [selectedTab]);
+
+  onMessage(messaging, (payload) => {
+  console.log("Message received. ", payload);
+  alert("📩 New notification: " + payload.notification.title);
+});
 
   return (
 

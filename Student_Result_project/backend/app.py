@@ -35,6 +35,20 @@ from flask import Flask
 from flask_cors import CORS
 from models.batch_manager import BatchManager
 from routes import register_routes
+import firebase_admin
+from firebase_admin import credentials, messaging
+import os 
+from dotenv import load_dotenv
+
+load_dotenv()  # load .env variables
+cred_path = os.environ.get("FIREBASE_CRED_PATH")
+
+if not cred_path:
+    raise Exception("FIREBASE_CRED_PATH not set!")
+
+if not firebase_admin._apps:  # avoid re-initialization
+    cred = credentials.Certificate(cred_path)
+    firebase_admin.initialize_app(cred)
 
 # Initialize BatchManager (responsible for multiple batch DBs + apps)
 bm = BatchManager()
