@@ -211,6 +211,7 @@ def generate_accounts():
 
 @admin_bp.route("/upload-emails", methods=["POST"])
 def upload_emails():
+    batch_year = int(request.args.get("batch_year", 2022))  # default if not passed
     """Upload Excel/CSV with student+parent emails (insert or update)."""
     if not _check_secret(request):
         return jsonify({"error": "Unauthorized"}), 401
@@ -241,79 +242,80 @@ def upload_emails():
     if missing:
         return jsonify({"error": f"Missing required columns: {', '.join(missing)}"}), 400
 
-    count_inserted = 0
-    count_updated = 0
+    
+    with bm.session_scope(batch_year) as db:
+        count_inserted = 0
+        count_updated = 0
+        for _, row in df.iterrows():
+            usn = str(row["student_usn"]).strip()
+            if not usn:
+                continue
 
-    for _, row in df.iterrows():
-        usn = str(row["student_usn"]).strip()
-        if not usn:
-            continue
+            student = StudentAuth.query.filter_by(username=usn).first()
+            
 
-        student = StudentAuth.query.filter_by(username=usn).first()
-        
+            if student:
+                # update existing student record
+                student.student_email = str(row["Student_Email"]).strip()
+                student.student_phno = str(row.get("Student_PHNO", "")).strip()
 
-        if student:
-            # update existing student record
-            student.student_email = str(row["Student_Email"]).strip()
-            student.student_phno = str(row.get("Student_PHNO", "")).strip()
+                # update parent (via relationship)
+                if student.parent_account:
+                    student.parent_account.email = str(row["Parent_Email"]).strip()
+                    student.parent_account.phone = str(row.get("Parent_PHNO", "")).strip()
+                else:
+                    # create parent if missing
+                    parent_username = f"{student.username}_parent"
+                    plain_parent_pw = "default123"
+                    pw_hash = bcrypt.generate_password_hash(plain_parent_pw).decode("utf-8")
 
-            # update parent (via relationship)
-            if student.parent_account:
-                student.parent_account.email = str(row["Parent_Email"]).strip()
-                student.parent_account.phone = str(row.get("Parent_PHNO", "")).strip()
+                    parent = ParentAuth(
+                        username=parent_username,
+                        password=pw_hash,
+                        email=str(row["Parent_Email"]).strip(),
+                        phone=str(row.get("Parent_PHNO", "")).strip(),
+                        student_usn=student.username
+                    )
+                    db.session.add(parent)
+
+                count_updated += 1
+
             else:
-                # create parent if missing
-                parent_username = f"{student.username}_parent"
+                # insert new student + parent record
+                new_student = StudentAuth(
+                    username=usn,
+                    name=str(row["student_name"]).strip(),
+                    student_email=str(row["Student_Email"]).strip(),
+                    student_phno=str(row.get("Student_PHNO", "")).strip(),
+                )
+                db.session.add(new_student)
+
+                parent_username = f"{usn}_parent"
                 plain_parent_pw = "default123"
                 pw_hash = bcrypt.generate_password_hash(plain_parent_pw).decode("utf-8")
 
-                parent = ParentAuth(
+                new_parent = ParentAuth(
                     username=parent_username,
                     password=pw_hash,
                     email=str(row["Parent_Email"]).strip(),
                     phone=str(row.get("Parent_PHNO", "")).strip(),
-                    student_usn=student.username
+                    student_usn=usn,
+                    name=str(row.get("Parent_Name", f"Parent of {row['student_name']}")).strip(),
+                    relation=str(row.get("Parent_Relation", "Guardian")).strip()
                 )
-                db.session.add(parent)
 
-            count_updated += 1
+                db.session.add(new_parent)
 
-        else:
-            # insert new student + parent record
-            new_student = StudentAuth(
-                username=usn,
-                name=str(row["student_name"]).strip(),
-                student_email=str(row["Student_Email"]).strip(),
-                student_phno=str(row.get("Student_PHNO", "")).strip(),
-            )
-            db.session.add(new_student)
-
-            parent_username = f"{usn}_parent"
-            plain_parent_pw = "default123"
-            pw_hash = bcrypt.generate_password_hash(plain_parent_pw).decode("utf-8")
-
-            new_parent = ParentAuth(
-                username=parent_username,
-                password=pw_hash,
-                email=str(row["Parent_Email"]).strip(),
-                phone=str(row.get("Parent_PHNO", "")).strip(),
-                student_usn=usn,
-                name=str(row.get("Parent_Name", f"Parent of {row['student_name']}")).strip(),
-                relation=str(row.get("Parent_Relation", "Guardian")).strip()
-            )
-
-            db.session.add(new_parent)
-
-            count_inserted += 1
+                count_inserted += 1
 
 
-    db.session.commit()
-    return jsonify({
-        "status": "success",
-        "emails_inserted": count_inserted,
-        "emails_updated": count_updated,
-        "file_saved_to": save_path
-    })
+        db.session.commit()
+        return jsonify({
+            "status": "success",
+            "emails_inserted": count_inserted,
+            "emails_updated": count_updated,
+            "file_saved_to": save_path
+        })
 
 
 # simple in-memory cache
