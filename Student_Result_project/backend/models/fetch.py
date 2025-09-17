@@ -89,7 +89,7 @@ sem_subjects = {
         "INT803": "Internship (Industry / Research / Rural – 14-20 weeks)"
     }
 }
-
+SEMESTERS = ["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6"]
 def fetch_student_data(usn, semester, db_path=db_path):
     try:
         conn = sqlite3.connect(db_path)

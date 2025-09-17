@@ -18,6 +18,8 @@ from .mentee_meetings import mentee_meetings_bp
 from .forgot_password import forgot_bp
 from .scrape_route import webscrape_bp
 from .pdftoexcel_route import pdftoexcel_bp
+from .student_ai import ai_bp
+from .student_analysis import student_api_bp
 def register_routes(app):
     app.register_blueprint(auth_bp)
     app.register_blueprint(student_bp)
@@ -39,4 +41,6 @@ def register_routes(app):
     app.register_blueprint(forgot_bp)
     app.register_blueprint(webscrape_bp)
     app.register_blueprint(pdftoexcel_bp)
+    app.register_blueprint(ai_bp)
+    app.register_blueprint(student_api_bp)
     

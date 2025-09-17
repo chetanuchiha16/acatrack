@@ -10,7 +10,7 @@ export default function OverallResults() {
   const [sortDir, setSortDir] = useState("desc");
   const [expandedRow, setExpandedRow] = useState(null);
 
-  const semesterOptions = ["SEM1", "SEM2", "SEM3", "SEM4"];
+  const semesterOptions = ["SEM1", "SEM2", "SEM3", "SEM4","SEM5","SEM6"];
 
   const fetchData = async () => {
     if (!semester) return;
@@ -173,7 +173,8 @@ const filteredData = validData
                             <strong>IA Marks:</strong>
                             <ul className="list-disc list-inside">
                               {student.ia_marks.map((mark, i) => (
-                                <li key={i}>Subject {i + 1}: {mark}</li>
+                                // <li key={i}>Subject {i + 1}: {mark}</li>
+                                <li key={i}>{student.subject_names[i]}: {mark}</li>
                               ))}
                             </ul>
                           </div>
@@ -181,7 +182,8 @@ const filteredData = validData
                             <strong>SEE Marks:</strong>
                             <ul className="list-disc list-inside">
                               {student.see_marks.map((mark, i) => (
-                                <li key={i}>Subject {i + 1}: {mark}</li>
+                                // <li key={i}>Subject {i + 1}: {mark}</li>
+                                <li key={i}>{student.subject_names[i]}: {mark}</li>
                               ))}
                             </ul>
                           </div>
@@ -189,7 +191,8 @@ const filteredData = validData
                             <strong>Pass/Fail:</strong>
                             <ul className="list-disc list-inside">
                               {student.pass_fail.map((pf, i) => (
-                                <li key={i}>Subject {i + 1}: {pf}</li>
+                                // <li key={i}>Subject {i + 1}: {pf}</li>
+                                <li key={i}>{student.subject_names[i]}: {pf}</li>
                               ))}
                             </ul>
                           </div>

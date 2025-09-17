@@ -28,6 +28,25 @@ class Student:
         self.percentage = self.calculate_percentage()
         self.pass_fail = self.calculate_pass_fail()
 
+    # def calculate_pass_fail(self):
+    #     """
+    #     Calculates pass/fail status for each subject and handles edge cases like SCR and No Credits.
+    #     """
+    #     pass_fail_subjects = []
+    #     for ia, see, credits in zip(self.ia_marks, self.see_marks, self.credits):
+    #         if credits == 0:
+    #             pass_fail_subjects.append("No Credits")  # Subject has no credits
+    #         elif see == 0:
+    #             pass_fail_subjects.append("SCR")  # Student skipped SEE
+    #         elif ia >= 20 and see >= 18:
+    #             pass_fail_subjects.append("Pass")  # Passed both IA and SEE
+    #         else:
+    #             pass_fail_subjects.append("Fail")  # Failed IA or SEE
+    #     self.pass_fail = pass_fail_subjects
+    #     return pass_fail_subjects
+
+    #new code updated logic
+
     def calculate_pass_fail(self):
         status_list = []
         for ia, see, credit in zip(self.ia_marks, self.see_marks, self.credits):

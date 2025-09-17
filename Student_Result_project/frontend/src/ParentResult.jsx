@@ -42,6 +42,7 @@ export default function ParentResult() {
       {/* Header */}
       <div className="max-w-6xl mx-auto w-full mb-6">
         <div className="flex items-center justify-between">
+          {/* Logo */}
           <div className="flex items-center">
             <img
               src={jssLogo}
@@ -50,23 +51,37 @@ export default function ParentResult() {
             />
           </div>
 
+          {/* Title */}
           <div className="text-[22px] sm:text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center">
             {t("title")}
           </div>
 
-          <div>
+          {/* Language + Back button side by side */}
+          <div className="flex items-center gap-2">
             <select
               value={i18n.language}
               onChange={(e) => changeLanguage(e.target.value)}
-              className="px-2 py-1 border rounded-md text-sm dark:bg-gray-800 dark:text-gray-100"
+              className="px-2 py-1 border rounded-md text-sm dark:bg-gray-800 dark:text-gray-100 ml-[-4px]"
             >
               <option value="en">English</option>
               <option value="hi">हिंदी</option>
               <option value="kan">ಕನ್ನಡ</option>
             </select>
+
+            <button
+              onClick={() => {
+                const currentPath = window.location.pathname;
+                const newPath = currentPath.replace(/\/ParentResult$/, "");
+                window.location.href = newPath;
+              }}
+              className="px-3 py-1 bg-gray-700 text-white rounded-lg hover:bg-gray-900 transition-transform transform hover:scale-105 h-10 w-37"
+            >
+              ⬅ Back
+            </button>
           </div>
         </div>
       </div>
+
 
       {/* Divider */}
       <div className="w-[95%] mx-auto h-[2px] bg-gray-300 my-4 mt-[-4] rounded shadow-sm"></div>
@@ -102,23 +117,30 @@ export default function ParentResult() {
                 <div className="overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 shadow-sm hidden sm:inline-flex">
                   <button
                     onClick={() => setView("cards")}
-                    className={`px-3 py-2 text-xs sm:text-sm transition ${
-                      view === "cards"
+                    className={`px-3 py-2 text-xs sm:text-sm transition ${view === "cards"
                         ? "bg-slate-900 text-white"
                         : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    }`}
+                      }`}
                   >
                     {t("card")}
                   </button>
                   <button
                     onClick={() => setView("table")}
-                    className={`px-3 py-2 text-xs sm:text-sm transition ${
-                      view === "table"
+                    className={`px-3 py-2 text-xs sm:text-sm transition ${view === "table"
                         ? "bg-slate-900 text-white"
                         : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    }`}
+                      }`}
                   >
                     {t("table")}
+                  </button>
+                  <button
+                    onClick={() => setView("ai")}
+                    className={`px-3 py-2 text-xs sm:text-sm transition ${view === "ai"
+                        ? "bg-slate-900 text-white"
+                        : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                  >
+                    {t("AI")}
                   </button>
                 </div>
               </>

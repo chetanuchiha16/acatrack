@@ -189,6 +189,15 @@ const [view, setView] = useState("table");
         >
           Table
         </button>
+        <button
+                    onClick={() => setView("ai")}
+                    className={`px-3 py-2 text-xs sm:text-sm transition ${view === "ai"
+                        ? "bg-slate-900 text-white"
+                        : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                  >
+                    {("AI")}
+                  </button>
       </div>
     </>
   ) : (

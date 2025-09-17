@@ -1,26 +1,60 @@
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('TkAgg')   # must be TkAgg for interactive Tk GUI
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from models.paths import db_path, pdf_dir, img_dir
-# Function to generate and display a chart in Tkinter for Student class
+import mplcursors
+import textwrap
+from models.paths import img_dir
+
 def plot_student_marks(student, root):
     fig, ax = plt.subplots()
-    subjects = [f"Subject {i + 1}" for i in range(len(student['ia_marks']))]
-    ia_marks = student['ia_marks']
-    see_marks = student['see_marks']
 
-    ax.bar(subjects, ia_marks, label="IA Marks", color='b')
-    ax.bar(subjects, see_marks, bottom=ia_marks, label="SEE Marks", color='r')
-    ax.set_title("Subject-wise Marks")
+    # subject labels
+    subjects = student.get("subject_codes") or [f"Sub {i+1}" for i in range(len(student["ia_marks"]))]
+    ia_marks = student["ia_marks"]
+    see_marks = student["see_marks"]
+    total_marks = [ia + see for ia, see in zip(ia_marks, see_marks)]
+
+    # stacked bars
+    bars_ia = ax.bar(range(len(subjects)), ia_marks, label="IA Marks")
+    bars_see = ax.bar(range(len(subjects)), see_marks, bottom=ia_marks, label="SEE Marks")
+
+    # wrap long labels and set ticks
+    wrapped = [textwrap.fill(s, 18) for s in subjects]
+    ax.set_xticks(range(len(subjects)))
+    ax.set_xticklabels(wrapped, rotation=30, ha="right", fontsize=8)
+
     ax.set_ylabel("Marks")
+    ax.set_title(f"Subject-wise IA and SEE Marks for {student.get('name','Student')}")
     ax.legend()
+    fig.tight_layout()
 
-    # Embed plot in Tkinter window
+    # -----------------------
+    # Explicit callback style
+    # -----------------------
+    cursor = mplcursors.cursor([bars_ia, bars_see], hover=True)
+
+    def on_hover(sel):
+        idx = sel.index
+        # safe lookups with defaults
+        subject_name = (student.get("subject_names") or subjects)[idx]
+        ia = ia_marks[idx]
+        see = see_marks[idx]
+        total = total_marks[idx]
+        credit = (student.get("credits") or ["N/A"] * len(subjects))[idx]
+        status = (student.get("pass_fail") or ["N/A"] * len(subjects))[idx]
+
+        sel.annotation.set_text(
+            f"{subject_name}\nIA: {ia}, SEE: {see}, Total: {total}\nCredits: {credit}, Status: {status}"
+        )
+
+    cursor.connect("add", on_hover)   # ← THIS registers the handler
+
+    # embed in Tkinter
     canvas = FigureCanvasTkAgg(fig, master=root)
     canvas.draw()
     canvas.get_tk_widget().pack()
 
-    # Save plot as image for PDF export
+    # save for PDF (OK to save) — but DO NOT close the figure if you want tooltips to work
     fig.savefig(f"{img_dir}/student_subject_marks.png")
-    plt.close(fig)  # Close the figure to free memory
+    # plt.close(fig)  # <-- do NOT close here if you want hover interactivity
