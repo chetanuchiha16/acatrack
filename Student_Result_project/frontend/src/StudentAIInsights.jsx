@@ -544,7 +544,7 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
                                                 </td>
                                                 <td className="border px-2 py-1 text-left text-sm">
                                                     {sub.advice && (
-                                                        <p className="text-red-600 font-medium">
+                                                        <p className="text-black dark:text-white font-medium">
                                                             {sub.advice}
                                                         </p>
                                                     )}
