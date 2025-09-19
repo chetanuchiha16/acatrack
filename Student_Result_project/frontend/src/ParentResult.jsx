@@ -3,7 +3,7 @@ import Result from "./Result";
 import { semesterOptions } from "./config";
 import jssLogo from "./assets/jssLogo.png";
 import { useTranslation } from "react-i18next";
-import useStudentStore from "./parent_student_details";
+import useStudentStore from "./useStudentStore";
 
 export default function ParentResult() {
   const [sem, setSem] = useState("");

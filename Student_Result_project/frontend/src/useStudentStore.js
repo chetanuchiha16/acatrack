@@ -5,7 +5,7 @@ const useStudentStore = create((set) => ({
   studentData: null,
   loading: false,
   error: null,
-
+  
   fetchStudentData: async () => {
     set({ loading: true, error: null });
     try {

@@ -89,6 +89,8 @@ def auth():
             mentor_id = getattr(user, "mentor_id", None)
         elif who == "Parent" and user.student and user.student.mentor:
             mentor_id = user.student.mentor.id
+        
+        session["mentor_id"] = mentor_id
 
     return jsonify({
         "message": "Login success",
@@ -109,7 +111,8 @@ def auth_status():
             "id": session["user_id"],
             "name": session["name"],
             "who": session["who"],
-            "batch_year": session.get("batch_year")  # <-- return batch
+            "batch_year": session.get("batch_year"),  # <-- return batch
+            "mentor_id": session.get("mentor_id")
         })
     else:
         return jsonify({

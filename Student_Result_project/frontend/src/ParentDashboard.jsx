@@ -6,49 +6,58 @@ import API_BASE from "./config";
 import LogoutButton from "./LogoutButton";
 import { useTranslation } from "react-i18next";
 import useAuthStore from "./useAuthStore";
-import useStudentStore from "./parent_student_details";
+import useStudentStore from "./useStudentStore";
+import useProtectedPage from "./useProtectedPage";
 export default function ParentDashboard() {
     let navigate = useNavigate();
+    const { t, i18n } = useTranslation();
     // const location = useLocation();
     // const params = useParams();
-    const { user, fetchAuthStatus, loading: authLoading } = useAuthStore();
-    const {
-        studentData,
-        fetchStudentData,
-        loading: studentLoading,
-    } = useStudentStore();
+    // const { user, fetchAuthStatus, loading: authLoading } = useAuthStore();
+    // const {
+    //     studentData,
+    //     fetchStudentData,
+    //     loading: studentLoading,
+    // } = useStudentStore();
 
-    // const { who, id, name, mentor_id } = location.state || {};
-    // const finalWho = who || params.who;
-    // const finalId = id || params.id;
+    // // const { who, id, name, mentor_id } = location.state || {};
+    // // const finalWho = who || params.who;
+    // // const finalId = id || params.id;
 
-    // console.log("finalId:", finalId);
-    // console.log("mentor_id", mentor_id);
-    // const [isDark, setIsDark] = useState(false);
+    // // console.log("finalId:", finalId);
+    // // console.log("mentor_id", mentor_id);
+    // // const [isDark, setIsDark] = useState(false);
 
-    const { t, i18n } = useTranslation();
-    // Fetch student details
-    // const { studentData, fetchStudentData, loading } = useStudentStore();
-    // Fetch auth status on mount
-    useEffect(() => {
-        if (!user) fetchAuthStatus();
-    }, [user, fetchAuthStatus]);
+    // // Fetch student details
+    // // const { studentData, fetchStudentData, loading } = useStudentStore();
+    // // Fetch auth status on mount
+    // useEffect(() => {
+    //     if (!user) fetchAuthStatus();
+    // }, [user, fetchAuthStatus]);
+
+    // // useEffect(() => {
+    // //     if (!studentData) fetchStudentData();
+    // // }, [studentData, fetchStudentData]);
+    // // Fetch student details after auth is ready
+    // useEffect(() => {
+    //     if (user && !studentData) fetchStudentData();
+    // }, [user, studentData, fetchStudentData]);
 
     // useEffect(() => {
-    //     if (!studentData) fetchStudentData();
-    // }, [studentData, fetchStudentData]);
-    // Fetch student details after auth is ready
-    useEffect(() => {
-        if (user && !studentData) fetchStudentData();
-    }, [user, studentData, fetchStudentData]);
+    //     if (!authLoading && !user) {
+    //         navigate("/auth");
+    //     }
+    // }, [authLoading, user, navigate]);
+    // // if (loading) return <div>Loading...</div>;
+    // if (authLoading || studentLoading) return <div>Loading...</div>;
+    const { user, studentData, loading } = useProtectedPage("Parent");
 
-    // if (loading) return <div>Loading...</div>;
-    if (authLoading || studentLoading) return <div>Loading...</div>;
-    if (!user) return <div>Not logged in</div>;
+    if (loading) return <div>Loading...</div>;
+
     // Switch language function
     const changeLanguage = (lng) => i18n.changeLanguage(lng);
 
-    const { id, name, who } = user;
+    const { id, name, who } = user || {};
     return (
         <div className="min-h-screen w-screen dark:bg-gray-900 px-4 sm:px-8 md:px-16 py-4 sm:py-6">
             {/* Header */}
@@ -139,9 +148,7 @@ export default function ParentDashboard() {
                 {/* Result Card */}
                 <div
                     className="bg-red-300 dark:bg-red-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-red-400 dark:hover:bg-red-700 transition-all duration-200"
-                    onClick={() =>
-                        navigate(`/auth/Parent/${id}/ParentResult`)
-                    }
+                    onClick={() => navigate(`/auth/Parent/${id}/ParentResult`)}
                 >
                     <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-2">
                         {t("result")}

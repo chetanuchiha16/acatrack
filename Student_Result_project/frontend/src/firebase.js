@@ -18,6 +18,7 @@ export const messaging = getMessaging(app);
 
 export async function requestForToken() {
   try {
+    await navigator.serviceWorker.ready;
     const currentToken = await getToken(messaging, {
       vapidKey: "BNHLEOEvdqu88loXLpemou1WIS-LoKgSsc7h8_OTKnqU_imMNYC_TdcbGDKMwacWIAxIulVGqtx7Aufv85UK0jk",
     });
