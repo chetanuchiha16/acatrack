@@ -1,8 +1,8 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify, session, current_app
 from app_init import bcrypt
 from models import StudentAuth, Teacher, ParentAuth
 from models.batch_manager import BatchManager, bm
-
+import jwt
 auth_bp = Blueprint("auth", __name__)
 
 
@@ -92,15 +92,16 @@ def auth():
         
         session["mentor_id"] = mentor_id
 
-    return jsonify({
-        "message": "Login success",
+    payload = {
         "id": username,
-        "name": session["name"],
+        "name": getattr(user, "name", username),
         "who": who,
         "batch_year": batch_year,
         "mentor_id": mentor_id,
-        "relation": getattr(user, "relation", None) if who == "Parent" else None
-    })
+    }
+
+    token = jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
+    return jsonify({"token": token})
 
 
 @auth_bp.route("/auth/status", methods=["GET"])
