@@ -3,6 +3,8 @@ from app_init import bcrypt
 from models import StudentAuth, Teacher, ParentAuth
 from models.batch_manager import BatchManager, bm
 import jwt
+import datetime
+from models.helpers import get_batch_year, get_jwt_payload
 auth_bp = Blueprint("auth", __name__)
 
 
@@ -98,6 +100,7 @@ def auth():
         "who": who,
         "batch_year": batch_year,
         "mentor_id": mentor_id,
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=8)  # expires in 8h
     }
 
     token = jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
@@ -106,20 +109,23 @@ def auth():
 
 @auth_bp.route("/auth/status", methods=["GET"])
 def auth_status():
-    if "user_id" in session and "who" in session:
+    payload = get_jwt_payload()  # decode JWT from Authorization header
+    if payload:
         return jsonify({
             "logged_in": True,
-            "id": session["user_id"],
-            "name": session["name"],
-            "who": session["who"],
-            "batch_year": session.get("batch_year"),  # <-- return batch
-            "mentor_id": session.get("mentor_id")
+            "id": payload.get("id"),
+            "name": payload.get("name"),
+            "who": payload.get("who"),
+            "batch_year": payload.get("batch_year"),
+            "mentor_id": payload.get("mentor_id"),
+            
+
         })
     else:
         return jsonify({
             "logged_in": False,
             "message": "Not logged in"
-        }), 200  # 200 instead of 401 so frontend doesn’t treat it as an error
+        }), 401  # <- important
 
 
 
@@ -132,7 +138,7 @@ def logout():
 @auth_bp.route("/student/<usn>/fcm-token", methods=["POST"])
 def save_fcm_token(usn):
     token = request.json.get("fcm_token")
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
 
     if not token:
         return jsonify({"error": "Missing token"}), 400

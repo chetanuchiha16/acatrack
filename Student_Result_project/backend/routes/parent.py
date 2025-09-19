@@ -1,17 +1,21 @@
 from flask import Blueprint, session, jsonify
 from models import ParentAuth
 from models.batch_manager import bm, BatchManager
+from models.helpers import get_batch_year, get_jwt_payload, get_user_id
 parent_bp = Blueprint("parent", __name__)
+  # decode JWT from Authorization header
 
 @parent_bp.route("/parent/student-details", methods=["GET"])
 def get_student_details():
-    batch_year = session.get("batch_year")
+    payload = get_jwt_payload()
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         # Check if parent is logged in
-        if "user_id" not in session or session.get("who") != "Parent":
+        
+        if not payload or payload.get("who") != "Parent":
             return jsonify({"error": "Unauthorized"}), 403
 
-        parent = ParentAuth.query.filter_by(username=session["user_id"]).first()
+        parent = ParentAuth.query.filter_by(username= get_user_id()).first()
         if not parent or not parent.student:
             return jsonify({"error": "Student not linked"}), 404
 

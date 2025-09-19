@@ -3,7 +3,7 @@ from models import Student
 from visuals import create_student_report
 from models.paths import db_path, pdf_dir  , get_db_path
 import os
-
+from models.helpers import get_batch_year
 
 
 
@@ -14,7 +14,7 @@ student_bp = Blueprint('student', __name__)
 def get_student_info():
     usn = request.args.get("usn")
     semester = request.args.get("semester")
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    batch_year = get_batch_year()   
     print(f"batch year from student {batch_year}")
 
     print(f"Received USN: {usn}, Semester: {semester}, Batch: {batch_year}")
@@ -72,7 +72,7 @@ import base64
 def get_student_chart():
     usn = request.args.get("usn")
     semester = request.args.get("semester")
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    batch_year = get_batch_year()   
     db_path = get_db_path(batch_year)  # <-- resolves correct DB
     student = Student(usn=usn, semester=semester, db_path=db_path)
     fig = student.plot_subject_marks()[0]

@@ -9,6 +9,7 @@ import os
 from datetime import datetime, timezone
 from models.batch_manager import BatchManager, bm
 from firebase_admin import messaging
+from models.helpers import get_batch_year
 mentor_email_bp = Blueprint("mentor_email", __name__)
 
 
@@ -42,7 +43,7 @@ def send_email(to_email, subject, body):
 # ---------------- Save Message ----------------
 # ---------------- Save Message ----------------
 def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=False):
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         mentor = Mentor.query.get(mentor_id)
         sender_info = f"\n\n--\nMessage sent by {mentor.name}"
@@ -98,7 +99,7 @@ def serialize_message_with_read_status(db, msg):
 # ---------------- Mentor APIs ----------------
 @mentor_email_bp.route("/mentor/<int:mentor_id>/students", methods=["GET"])
 def get_mentor_students(mentor_id):
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         mentor = Mentor.query.get(mentor_id)
         if not mentor:
@@ -118,7 +119,7 @@ def get_mentor_students(mentor_id):
 
 @mentor_email_bp.route("/mentor/<int:mentor_id>/messages", methods=["GET"])
 def get_messages(mentor_id):
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         msgs = (
             MentorMessage.query.filter_by(mentor_id=mentor_id)
@@ -139,7 +140,7 @@ def create_message(mentor_id):
     if not subject or not message:
         return jsonify({"error": "Subject and message required"}), 400
 
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         msg = save_message(mentor_id, usn, recipient_type, subject, message)
         result = serialize_message_with_read_status(db, msg)   # ✅ pass db
@@ -155,7 +156,7 @@ def send_email_student(mentor_id):
     recipient_type = data.get("recipientType", "student").lower()
     subject = data.get("subject")
     message = data.get("message")
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         student = StudentAuth.query.filter_by(username=usn).first()
         if not student:
@@ -214,7 +215,7 @@ def send_email_all(mentor_id):
     recipient_type = data.get("recipientType", "student").lower()
     subject = data.get("subject")
     message = data.get("message")
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         mentor = Mentor.query.get(mentor_id)
         if not mentor:
@@ -246,7 +247,7 @@ def send_email_all(mentor_id):
 
 @mentor_email_bp.route("/mentor/<int:mentor_id>/messages/<int:msg_id>", methods=["DELETE"])
 def delete_message(mentor_id, msg_id):
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     print(f"from del message {batch_year}")
     with bm.session_scope(batch_year) as db:
         all_msgs = MentorMessage.query.all()

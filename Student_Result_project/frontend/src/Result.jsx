@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
 import ResultCardView from "./ResultCardView";
 import StudentAIInsights from "./StudentAIInsights";
@@ -14,10 +15,13 @@ export default function Result({ usn, semester, view }) {
         setLoading(true);
         setError("");
         try {
-            const res = await axios.get(`${API_BASE}/auth/Student/result`, {
-                params: { usn, semester },
-                withCredentials: true
-            });
+            const res = await axiosInstance.get(
+                `${API_BASE}/auth/Student/result`,
+                {
+                    params: { usn, semester },
+                    withCredentials: true,
+                }
+            );
             setData(res.data);
             setError("");
         } catch (err) {
@@ -144,8 +148,8 @@ export default function Result({ usn, semester, view }) {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {data.subjects.map((sub, idx) => (
                                     <div
-                                    key={idx}
-                                    className="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-md p-3"
+                                        key={idx}
+                                        className="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-md p-3"
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="flex-1 min-w-0">
@@ -438,7 +442,7 @@ export default function Result({ usn, semester, view }) {
                                                             className={
                                                                 sub.status ===
                                                                 "Pass"
-                                                                ? "text-green-600"
+                                                                    ? "text-green-600"
                                                                     : "text-red-600"
                                                             }
                                                         >
@@ -465,7 +469,7 @@ export default function Result({ usn, semester, view }) {
                             </div>
                         </div>
 
-                            {/* {data && !loading && (
+                        {/* {data && !loading && (
                                 <div className="mt-6">
                                     <StudentAIInsights usn={data.usn} semester={semester} />
                                 </div>
@@ -489,7 +493,9 @@ export default function Result({ usn, semester, view }) {
                     </div>
                 )}
 
-                {view === "ai" && data && !loading && <StudentAIInsights usn={data.usn} semester={semester} />}
+                {view === "ai" && data && !loading && (
+                    <StudentAIInsights usn={data.usn} semester={semester} />
+                )}
             </div>
         </div>
     );

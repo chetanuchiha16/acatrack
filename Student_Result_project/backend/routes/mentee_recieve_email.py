@@ -3,6 +3,7 @@ from models import StudentAuth, Mentor
 from app_init import db
 from .mentor_send_email import MentorMessage, StudentMessageStatus
 from datetime import datetime, timezone
+from models.helpers import get_batch_year
 student_email_bp = Blueprint("student_email", __name__)
 from models.batch_manager import BatchManager, bm
 
@@ -28,7 +29,7 @@ def serialize_message(msg, usn):
 
 @student_email_bp.route("/student/<string:usn>/messages", methods=["GET"])
 def get_student_messages(usn):
-    batch_year = session.get("batch_year")  # however you infer it
+    batch_year = get_batch_year()  # however you infer it
     
     with bm.session_scope(batch_year) as db:
         msgs = (
@@ -44,7 +45,7 @@ def get_student_messages(usn):
 
 @student_email_bp.route("/student/<string:usn>/messages/<int:msg_id>", methods=["GET"])
 def get_student_message_detail(usn, msg_id):
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         msg = MentorMessage.query.filter_by(id=msg_id).first()
         if not msg:
@@ -58,7 +59,7 @@ def get_student_message_detail(usn, msg_id):
 
 @student_email_bp.route("/student/<string:usn>/messages/<int:msg_id>/read", methods=["POST"])
 def mark_message_read(usn, msg_id):
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         msg = MentorMessage.query.filter_by(id=msg_id).first()
         if not msg:

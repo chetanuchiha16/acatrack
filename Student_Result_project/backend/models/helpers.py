@@ -1,18 +1,38 @@
-# helpers.py
 import jwt
 from flask import request, current_app
 
+def sanitize_jwt_header(auth_header: str) -> str:
+    if not auth_header:
+        raise ValueError("Authorization header missing")
+    
+    if not auth_header.lower().startswith("bearer "):
+        raise ValueError("Authorization header must start with 'Bearer '")
+    
+    # Remove "Bearer " prefix
+    token = auth_header[len("Bearer "):].strip()
+    
+    # Aggressively remove any quotes or whitespace around the token
+    token = token.strip(" '\"")
+    
+    if not token:
+        raise ValueError("JWT token is empty after sanitization")
+    
+    return token
+
 def get_jwt_payload():
     auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Bearer "):
-        token = auth_header.replace("Bearer ", "")
-        try:
-            return jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
-        except jwt.ExpiredSignatureError:
-            return None
-        except jwt.InvalidTokenError:
-            return None
-    return None
+    token = auth_header.split(" ")[1] if " " in auth_header else None
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
+        return payload
+    except jwt.ExpiredSignatureError:
+        print("JWT expired")
+        return None
+    except jwt.InvalidTokenError:
+        print("JWT decode error: Signature verification failed")
+        return None
 
 def get_batch_year():
     payload = get_jwt_payload()

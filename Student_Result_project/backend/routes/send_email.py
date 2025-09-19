@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 from datetime import datetime, timezone
-
+from models.helpers import get_batch_year
 email_bp = Blueprint("email", __name__)
 
 EMAIL_ADDRESS = os.getenv("EMAIL_USER", "abhishek.r0605@gmail.com")
@@ -75,7 +75,7 @@ def send_email_to_all():
         return jsonify({"error": "Both 'subject' and 'message' are required"}), 400
 
     try:
-        batch_year = session.get("batch_year")  # <-- pulled from session
+        batch_year = get_batch_year()   
         with bm.session_scope(batch_year) as db:
 
             if recipient_type == "parent":
@@ -116,7 +116,7 @@ def send_email_to_student():
     subject = data.get("subject")
     message = data.get("message")
     recipient_type = data.get("recipientType", "student").lower()
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    batch_year = get_batch_year()   
 
     if not usn or not subject or not message:
         return jsonify({"error": "USN, subject and message are required"}), 400
@@ -153,7 +153,7 @@ def send_email_to_student():
 @email_bp.route("/messages", methods=["POST"])
 def save_message():
     data = request.get_json() or {}
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    batch_year = get_batch_year()   
     with bm.session_scope(batch_year) as db:
         new_msg = Message(
             usn=data.get("usn"),
@@ -168,7 +168,7 @@ def save_message():
 
 @email_bp.route("/messages", methods=["GET"])
 def get_messages():
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    batch_year = get_batch_year()   
     print(f"{batch_year} from get_messages")
     with bm.session_scope(batch_year) as db:
         messages = Message.query.order_by(Message.created_at.desc()).all()
@@ -177,7 +177,7 @@ def get_messages():
 
 @email_bp.route("/messages/<int:msg_id>", methods=["DELETE"])
 def delete_message(msg_id):
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    batch_year = get_batch_year()   
     with bm.session_scope(batch_year) as db:
         msg = Message.query.get_or_404(msg_id)
         db.session.delete(msg)

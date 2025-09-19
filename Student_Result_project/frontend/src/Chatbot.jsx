@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import API_BASE from "./config";
 import Confetti from "react-confetti";
+import { fetchWithAuth } from "./fetchWithAuth";
 import {
     detectIntent,
     extractStudentName,
@@ -113,9 +114,7 @@ export default function ChatBot() {
     const [students, setStudents] = useState([]);
     const fetchStudents = async () => {
         try {
-            const res = await fetch(`${API_BASE}/students`, {
-                credentials: "include",
-            });
+            const res = await fetchWithAuth(`${API_BASE}/students`, {});
             const data = await res.json();
             if (data.students) {
                 setStudents(data.students.map((s) => s.student_name)); // store only names for suggestions
@@ -137,9 +136,7 @@ export default function ChatBot() {
     useEffect(() => {
         const fetchAllStudents = async () => {
             try {
-                const res = await fetch(`${API_BASE}/students`, {
-                    credentials: "include",
-                });
+                const res = await fetchWithAuth(`${API_BASE}/students`, {});
                 const data = await res.json();
                 if (data.students) {
                     setStudents(data.students.map((s) => s.student_name)); // for auto-suggestions
@@ -162,7 +159,7 @@ export default function ChatBot() {
             let url = `${API_BASE}/report/${encodeURIComponent(name)}`;
             if (semester) url += `?semester=${encodeURIComponent(semester)}`;
 
-            const res = await fetch(url, { credentials: "include" });
+            const res = await fetchWithAuth(url, {});
             const data = await res.json();
 
             if (data.error) {
@@ -632,7 +629,8 @@ export default function ChatBot() {
            hover:bg-blue-600 
            transition-all duration-200 ease-in-out 
            transform hover:scale-105 active:scale-95
-           shadow hover:shadow-lg">
+           shadow hover:shadow-lg"
+                >
                     Download Full Report 🔽
                 </a>
             )}
@@ -645,7 +643,8 @@ export default function ChatBot() {
            hover:bg-red-600 
            transition-all duration-200 ease-in-out 
            transform hover:scale-105 active:scale-95
-           shadow hover:shadow-lg">
+           shadow hover:shadow-lg"
+                >
                     Download Backlog Report 🔽
                 </a>
             )}
@@ -657,7 +656,8 @@ export default function ChatBot() {
                     className="bg-blue-500 px-3 py-1 rounded text-white 
            hover:bg-blue-600 hover:shadow-lg 
            transition-all duration-200 ease-in-out 
-           transform hover:scale-105 active:scale-95">
+           transform hover:scale-105 active:scale-95"
+                >
                     Download Semester Report 🔽
                 </a>
             )}

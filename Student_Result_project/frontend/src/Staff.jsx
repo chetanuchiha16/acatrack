@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import jssLogo from "./assets/jssLogo.png";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
 import LogoutButton from "./LogoutButton";
 import useAuthStore from "./useAuthStore";

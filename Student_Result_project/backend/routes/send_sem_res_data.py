@@ -5,14 +5,14 @@ from visuals import generate_sem_pdf
 import os
 from models.fetch import sem_subjects
 from flask import session
-
+from models.helpers import get_batch_year
 
 sem_bp = Blueprint('sem_res',__name__)
 
 @sem_bp.route('/auth/Staff/sem_res', methods=['GET'])
 def get_semester_results():
     semester = request.args.get('semester')
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    batch_year = get_batch_year()   
     if not semester:
         return jsonify({"error": "Missing semester parameter"}), 400
     

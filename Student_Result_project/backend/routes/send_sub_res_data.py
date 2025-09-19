@@ -3,14 +3,14 @@ from models import University, SubjectResult
 from models.paths import db_path, pdf_dir  , get_db_path
 from visuals import create_subject_report
 import os
-
+from models.helpers import get_batch_year
 sub_bp = Blueprint('sub_res', __name__)
 
 @sub_bp.route('/auth/Staff/sub_res', methods=['GET'])
 def get_subject_results():
     semester = request.args.get('semester')
     subject_code = request.args.get('subject')
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    batch_year = get_batch_year()   
     if not semester or not subject_code:
         return jsonify({"error": "semester and subject are required"}), 400
     

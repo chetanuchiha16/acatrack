@@ -56,7 +56,7 @@ bm = BatchManager()
 # Create main Flask app (acts as entrypoint/gateway)
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
-app.secret_key = "super-secret-key"  # should load from config/env
+app.secret_key = "supersecretkey"  # should load from config/env
 
 # Register all routes (auth, admin, etc.)
 register_routes(app)

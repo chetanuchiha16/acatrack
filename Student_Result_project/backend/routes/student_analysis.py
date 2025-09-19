@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import io
 from flask import Blueprint, request, jsonify, session
 from sklearn.linear_model import LinearRegression
-
+from models.helpers import get_batch_year
 student_api_bp = Blueprint('student_api', __name__)
 
 # student_service.py
@@ -243,7 +243,7 @@ def generate_subject_marks_plot(subjects):
 def get_student_analysis():
     usn = request.args.get("usn")
     semester = request.args.get("semester")
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    batch_year = get_batch_year()   
 
     if not usn or not semester:
         return jsonify({"error": "USN and semester are required"}), 400

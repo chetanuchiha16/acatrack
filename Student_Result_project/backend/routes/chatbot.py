@@ -1,5 +1,6 @@
 # student_report_blueprint.py
 from flask import Blueprint, request, jsonify, send_file, session
+from models.helpers import get_batch_year
 from io import BytesIO
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.pagesizes import letter
@@ -443,7 +444,7 @@ def build_placement_and_skill_advice(strong_tags, mid_tags, weak_tags, trend_dat
 # ---------------- ROUTES ----------------
 @chatbot_bp.route("/students", methods=["GET"])
 def list_students():
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     students_data = fetch_student_data_from_university(batch_year=batch_year)
     students_list = []
 
@@ -471,7 +472,7 @@ def list_students():
 
 @chatbot_bp.route("/report/<student_query>", methods=["GET"])
 def get_student_report(student_query):
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     students = fetch_student_data_from_university(batch_year=batch_year)
 
     query_lower = student_query.lower()
@@ -672,7 +673,7 @@ def get_student_report(student_query):
 
 @chatbot_bp.route("/report/<student_query>/pdf", methods=["GET"])
 def download_pdf_report(student_query):
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     students = fetch_student_data_from_university(batch_year=batch_year)
     matched_name = _fuzzy_find_student(student_query, students.keys())
     
@@ -720,7 +721,7 @@ def download_pdf_report(student_query):
 
 @chatbot_bp.route("/report/<student_query>/downloads", methods=["GET"])
 def get_download_links(student_query):
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     students = fetch_student_data_from_university(batch_year=batch_year)
     matched_name = _fuzzy_find_student(student_query, students.keys())
     

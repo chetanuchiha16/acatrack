@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FaFolder, FaFilePdf } from "react-icons/fa";
 import API_BASE from "./config";
-
+import { fetchWithAuth } from "./fetchWithAuth";
 function FileItem({ name, isFolder, onClick }) {
     return (
         <div
@@ -10,7 +10,11 @@ function FileItem({ name, isFolder, onClick }) {
             onClick={onClick}
         >
             <div className="text-3xl mb-2 text-amber-500">
-                {isFolder ? <FaFolder /> : <FaFilePdf className="text-red-500" />}
+                {isFolder ? (
+                    <FaFolder />
+                ) : (
+                    <FaFilePdf className="text-red-500" />
+                )}
             </div>
             <div className="text-sm text-center break-words text-gray-800 dark:text-gray-200">
                 {name}
@@ -73,7 +77,7 @@ export default function FileExplorer() {
     const [currentPath, setCurrentPath] = useState("");
 
     useEffect(() => {
-        fetch(`${API_BASE}/auth/Student/notes`)
+        fetchWithAuth(`${API_BASE}/auth/Student/notes`)
             .then((res) => res.json())
             .then(setFileTree)
             .catch((err) => console.error("Failed to load notes:", err));
@@ -90,7 +94,6 @@ export default function FileExplorer() {
     return (
         <div className="w-full flex justify-center p-4">
             <div className="w-full max-w-7xl flex flex-col border border-gray-300 dark:border-gray-700 rounded-xl shadow-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4">
-                
                 {/* Header */}
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">

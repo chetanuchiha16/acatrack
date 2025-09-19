@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
 import API_BASE from "./config";
-
+import { fetchWithAuth } from "./fetchWithAuth";
 export default function MenteeRecieveEmails({ usn }) {
     const [messages, setMessages] = useState([]);
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [meetings, setMeetings] = useState([]);
     const [loadingMessages, setLoadingMessages] = useState(true);
     const [loadingMeetings, setLoadingMeetings] = useState(true);
-    
 
     // Fetch inbox messages
     const fetchMessages = async () => {
         setLoadingMessages(true);
         try {
-            const res = await fetch(`${API_BASE}/student/${usn}/messages`, {credentials: "include"});
+            const res = await fetchWithAuth(
+                `${API_BASE}/student/${usn}/messages`,
+                {}
+            );
             const data = await res.json();
             setMessages(data);
         } catch (err) {
@@ -27,8 +29,9 @@ export default function MenteeRecieveEmails({ usn }) {
     const fetchMeetings = async () => {
         setLoadingMeetings(true);
         try {
-            const res = await fetch(
-                `${API_BASE}/auth/Student/Mentee/meeting/${usn}`, {credentials:"include"}
+            const res = await fetchWithAuth(
+                `${API_BASE}/auth/Student/Mentee/meeting/${usn}`,
+                {}
             );
             const data = await res.json();
             setMeetings(data);
@@ -41,8 +44,9 @@ export default function MenteeRecieveEmails({ usn }) {
 
     const fetchMessageDetail = async (msgId) => {
         try {
-            const res = await fetch(
-                `${API_BASE}/student/${usn}/messages/${msgId}`, {credentials:"include"}
+            const res = await fetchWithAuth(
+                `${API_BASE}/student/${usn}/messages/${msgId}`,
+                {}
             );
             if (res.ok) {
                 const data = await res.json();
@@ -55,10 +59,12 @@ export default function MenteeRecieveEmails({ usn }) {
 
     const markAsRead = async (msgId) => {
         try {
-            await fetch(`${API_BASE}/student/${usn}/messages/${msgId}/read`, {
-                method: "POST", 
-                credentials:"include"
-            } );
+            await fetchWithAuth(
+                `${API_BASE}/student/${usn}/messages/${msgId}/read`,
+                {
+                    method: "POST",
+                }
+            );
             fetchMessages();
         } catch (err) {
             console.error("Error marking as read:", err);
