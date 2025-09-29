@@ -25,17 +25,37 @@ export default function OverallResults() {
         setData(json);
     };
 
-    const downloadPDF = () => {
-        if (!semester) return;
-        const url = `${API_BASE}/auth/Staff/report/${semester}`;
+    const downloadPDF = async () => {
+    if (!semester) return;
+
+    // const token = localStorage.getItem("jwt"); // wherever you store your JWT
+    const url = `${API_BASE}/auth/Staff/report/${semester}`;
+
+    try {
+        const response = await fetchWithAuth(url, {
+            
+        });
+
+        if (!response.ok) {
+            console.error("PDF download failed", response.status);
+            return;
+        }
+
+        const blob = await response.blob();
         const a = document.createElement("a");
-        a.href = url;
+        a.href = URL.createObjectURL(blob);
         a.download = `${semester}_report.pdf`;
-        a.style.display = "none";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-    };
+
+        // Optional: release the blob object
+        URL.revokeObjectURL(a.href);
+    } catch (err) {
+        console.error("Error downloading PDF:", err);
+    }
+};
+
 
     // Filter out invalid entries first
     const validData = data.filter((student) => student.name && student.usn);
