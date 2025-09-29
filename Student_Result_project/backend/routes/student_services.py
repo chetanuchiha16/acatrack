@@ -1,14 +1,14 @@
 # student_service.py
 from models import Student
 from visuals import create_student_report
-from models.paths import db_path, pdf_dir
+from models.paths import  pdf_dir
 import os
 
 def get_student_result(usn: str, semester: str):
     """
     Returns student result as dictionary (same structure as /result API)
     """
-    student = Student(usn=usn, semester=semester, db_path=db_path)
+    student = Student(usn=usn, semester=semester, db_path=None)
 
     # Generate PDF (optional, can skip if only analysis needed)
     filename = f"{student.name}_{semester}_report.pdf"

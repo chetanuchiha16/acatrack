@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, send_file, Blueprint, session
 from models import University
 from visuals import create_toppers_list_pdf, create_university_report
-from models.paths import db_path, pdf_dir  , get_db_path
+from models.paths import  pdf_dir  , get_db_path
 from models.helpers import get_batch_year
 
 uni_bp = Blueprint('uni', __name__)

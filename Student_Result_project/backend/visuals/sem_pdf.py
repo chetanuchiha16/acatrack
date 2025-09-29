@@ -9,7 +9,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 import pathlib
 from models import SubjectResult
-from models.paths import db_path,pdf_dir,img_dir, logo_path
+from models.paths import pdf_dir,img_dir, logo_path
 from models.fetch import sem_subjects
 styles = getSampleStyleSheet()
 normal_style = styles["Normal"]
@@ -119,7 +119,7 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping, ou
         elements.append(totals_table)
         elements.append(Spacer(1, 20))
 
-        result = university.calculate_academic_performance_by_semester(selected_semester, db_path=db_path)
+        result = university.calculate_academic_performance_by_semester(selected_semester, db_path=None)
         toppers = sorted(result, key=lambda x: x['percentage'], reverse=True)[:10]  # Get top 10 students by percentage
 
         topper_title = Paragraph(f"<b> Toppers  {selected_semester}</b>", styles['Heading2'])

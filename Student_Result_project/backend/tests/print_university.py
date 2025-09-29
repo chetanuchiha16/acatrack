@@ -1,5 +1,5 @@
 from models import University
-from models.paths import db_path
+from models.paths import 
 
 #temp function to print university class data
 def test_university_class(selected_semester, db_path=db_path):

@@ -1,5 +1,5 @@
 import sqlite3
-from models.paths import db_path
+from models.paths import 
 from app_init import bcrypt
 from models import db, StudentAuth, Teacher, StudentAuth
 import pandas as pd

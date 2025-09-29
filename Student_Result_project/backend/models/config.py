@@ -1,8 +1,8 @@
 import os
-from models.paths import db_path
+
 class Config:
     # Database
-    SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_path}"
+    # SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_path}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Flask secret key

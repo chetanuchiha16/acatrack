@@ -25,7 +25,7 @@ from werkzeug.utils import secure_filename
 
 from app_init import bcrypt
 from models import Teacher, StudentAuth, Mentor, ParentAuth, db
-from models.paths import db_path, email_excel_path, mentor_excel_path, get_db_path, excel_dir
+from models.paths import email_excel_path, mentor_excel_path, get_db_path, excel_dir
 from models.batch_manager import BatchManager, bm
 from pathlib import Path
 

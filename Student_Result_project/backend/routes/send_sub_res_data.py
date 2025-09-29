@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_file, Blueprint, session
 from models import University, SubjectResult
-from models.paths import db_path, pdf_dir  , get_db_path
+from models.paths import  pdf_dir  , get_db_path
 from visuals import create_subject_report
 import os
 from models.helpers import get_batch_year
@@ -25,12 +25,15 @@ def get_subject_results():
 
 @sub_bp.route('/auth/Staff/sub_res/report', methods=['GET'])
 def get_subject_report_pdf():
+    token = request.headers.get("Authorization")
+    print("DEBUG: Authorization header =", token)
+    batch_year = get_batch_year()
     semester = request.args.get('semester')
     subject_code = request.args.get('subject')
 
     if not semester or not subject_code:
         return jsonify({"error": "semester and subject are required"}), 400
-
+    db_path = get_db_path(batch_year)
     university = University(db_path)
     university.add_students(selected_semester=semester)
     subject_result = SubjectResult(subject_code, semester, university)

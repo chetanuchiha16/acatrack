@@ -9,7 +9,7 @@
 
 # os.chdir(r"C:\Users\CHEKI\Documents\VS coding\Python\Student Result python project")
 
-# from models.config import db_path
+# from models.config import 
 # import models.data_prep #noqa
 # from models.fetch import fetch_student_data
 # from models import Student, University, SubjectResult

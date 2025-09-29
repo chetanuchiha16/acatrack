@@ -8,7 +8,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from rapidfuzz import process, fuzz
 from collections import defaultdict
-from models.paths import db_path
+ 
 from models.fetch import sem_subjects
 from models.university import University
 from models.batch_manager import bm, BatchManager

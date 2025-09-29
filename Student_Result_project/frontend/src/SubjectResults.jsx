@@ -19,13 +19,25 @@ export default function SubjectResults() {
         setData(json);
     };
 
-    const downloadPDF = () => {
+    const downloadPDF = async () => {
         if (!semester) return;
+
+        // const token = sessionStorage.getItem("jwt"); // or wherever you store it
         const url = `${API_BASE}/auth/Staff/sub_res/report?semester=${semester}&subject=${subject}`;
+
+        const response = await fetchWithAuth(url, {
+            
+        });
+
+        if (!response.ok) {
+            console.error("PDF download failed");
+            return;
+        }
+
+        const blob = await response.blob();
         const a = document.createElement("a");
-        a.href = url;
+        a.href = URL.createObjectURL(blob);
         a.download = `${semester}_report.pdf`;
-        a.style.display = "none";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

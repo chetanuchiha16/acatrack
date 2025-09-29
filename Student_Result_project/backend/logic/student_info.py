@@ -3,7 +3,7 @@ if __name__ == "__main__":
     from visuals import create_student_report
     import customtkinter as ctk
     from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from models.paths import db_path, pdf_dir
+    from models.paths import , pdf_dir
     import mplcursors
 
     def display_student_info(usn, semester, info_text, student_info_graph):

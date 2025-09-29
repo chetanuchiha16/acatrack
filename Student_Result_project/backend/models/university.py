@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
 from models import Student
-from models.paths import db_path,img_dir,pdf_dir  , get_db_path
+from models.paths import img_dir,pdf_dir  , get_db_path
 class University:
     def __init__(self, db_path=None):
         # if db_path is None:

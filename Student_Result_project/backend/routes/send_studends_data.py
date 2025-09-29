@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, send_from_directory, session
 from models import Student
 from visuals import create_student_report
-from models.paths import db_path, pdf_dir  , get_db_path
+from models.paths import pdf_dir  , get_db_path
 import os
 from models.helpers import get_batch_year
 

@@ -1,5 +1,5 @@
 
-from models.paths import db_path, pdf_dir, img_dir
+from models.paths import pdf_dir, img_dir
 from models.fetch import sem_subjects
 # SubjectResult class
 class SubjectResult:
