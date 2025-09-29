@@ -263,7 +263,7 @@ export default function AdminPanel() {
         formData.append("excel_filename", pdfExcelFilename); // send filename to backend
 
         try {
-            const res = await fetchWithAuth(`${API_BASE}/pdf/upload_archive`, {
+            const res = await fetch(`${API_BASE}/pdf/upload_archive`, {
                 method: "POST",
                 headers: { "X-Admin-Secret": secret },
                 body: formData,
