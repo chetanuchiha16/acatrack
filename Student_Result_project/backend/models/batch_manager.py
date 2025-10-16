@@ -58,15 +58,34 @@ class BatchManager:
             raise
 
     def list_batches(self):
-        """Return all batches for which Excel data exists."""
-        batches = []
-        for file in self.excel_dir.glob("*.xlsx"):
+        """
+        Return all batch years present in PostgreSQL based on table names.
+        Looks for tables like SEM1_2022, SEM2_2022, etc.
+        """
+        postgres_url = self.get_postgres_url(0)  # batch_year is irrelevant here
+        from sqlalchemy import create_engine, text
+
+        engine = create_engine(postgres_url)
+        query = text("""
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema='public'
+            AND table_type='BASE TABLE'
+            AND table_name ~ '^SEM[1-6]_\\d{4}$'
+        """)
+        with engine.connect() as conn:
+            result = conn.execute(query).fetchall()
+
+        # Extract batch years
+        batch_years = set()
+        for (table_name,) in result:
             try:
-                year = int(file.stem.split("_")[-1])
-                batches.append(year)
+                year = int(table_name.split("_")[-1])
+                batch_years.add(year)
             except ValueError:
                 continue
-        return sorted(batches)
+
+        return sorted(batch_years)
 
     def get_flask_app(self, batch_year: int):
         """Return a Flask app (cached) for this batch."""

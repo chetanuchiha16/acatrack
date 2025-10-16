@@ -39,7 +39,7 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 import os 
 from dotenv import load_dotenv
-
+# from app_init import db
 load_dotenv()  # load .env variables
 cred_path = os.environ.get("FIREBASE_CRED_PATH")
 

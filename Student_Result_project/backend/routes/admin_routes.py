@@ -18,7 +18,7 @@ import os
 import random
 import sqlite3
 from typing import List, Tuple
-
+from sqlalchemy import text, inspect
 import pandas as pd
 from flask import Blueprint, current_app, jsonify, request, send_file
 from werkzeug.utils import secure_filename
@@ -28,7 +28,7 @@ from models import Teacher, StudentAuth, Mentor, ParentAuth, db
 from models.paths import email_excel_path, mentor_excel_path, get_db_path, excel_dir
 from models.batch_manager import BatchManager, bm
 from pathlib import Path
-
+from models.fetch import SEMESTERS
 # ---------- Blueprint ----------
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -61,26 +61,23 @@ def _connect_sqlite(batch_year: int) -> Tuple[sqlite3.Connection, sqlite3.Cursor
     return conn, cur
 
 
-def _fetch_source_rows(batch_year: int) -> List[Tuple[str, str]]:
-    """Fetch unique students across all SEM tables for a batch."""
-    conn, cur = _connect_sqlite(batch_year)
-    try:
-        # 1. Detect SEM tables dynamically
-        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'SEM%'")
-        sem_tables = [row[0] for row in cur.fetchall()]
+def _fetch_source_rows(batch_year: int) -> list[tuple[str,str]]:
+    students_set = set()
+    with bm.session_scope(batch_year) as db:
+        inspector = inspect(db.engine)
+        existing_tables = {t.lower() for t in inspector.get_table_names()}
 
-        # 2. Collect all students, avoiding duplicates
-        students_set = set()
-        for sem in sem_tables:
-            cur.execute(f"SELECT student_usn, student_name FROM {sem}")
-            for student in cur.fetchall():
-                students_set.add(student)  # set automatically deduplicates
+        for sem in SEMESTERS:
+            table_name = f"{sem}_{batch_year}".lower()
+            if table_name not in existing_tables:
+                print(f"[Warning] Table {table_name} does not exist, skipping")
+                continue
 
-        # 3. Convert to list if needed
-        students = list(students_set)
-    finally:
-        conn.close()
-    return students
+            result = db.session.execute(text(f'SELECT student_usn, student_name FROM "{table_name}"'))
+            for row in result:
+                students_set.add((row.student_usn, row.student_name))
+
+    return list(students_set)
 
 
 def _unique_teacher_username() -> str:
