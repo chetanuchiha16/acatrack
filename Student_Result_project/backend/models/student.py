@@ -14,8 +14,8 @@ class Student:
 
         # Default database connection
         # self.postgres_url = (
-        #     postgres_url
-        #     or "postgresql+psycopg2://chetan:chetan@localhost:5433/Group_Project"
+            
+        #     "postgresql+psycopg2://chetan:chetan@localhost:5433/Group_Project"
         # )
 
         # Fetch data using the new Postgres function
@@ -112,7 +112,8 @@ class Student:
 
         for sem in range(1, sem_no):
             try:
-                student_info = fetch_student_data(self.usn, f"SEM{sem}", self.batch_year)
+                
+                student_info = fetch_student_data(self.usn, f"SEM{sem}", self.batch_year, engine=self.engine)
                 if student_info:
                     ia_marks = [x or 0 for x in student_info.get("ia_marks", [])]
                     see_marks = [x or 0 for x in student_info.get("see_marks", [])]

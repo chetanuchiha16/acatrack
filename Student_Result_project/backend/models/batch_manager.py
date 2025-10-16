@@ -66,12 +66,12 @@ class BatchManager:
         from sqlalchemy import create_engine, text
 
         engine = create_engine(postgres_url)
-        query = text("""
+        query = text(r"""
             SELECT table_name
             FROM information_schema.tables
             WHERE table_schema='public'
             AND table_type='BASE TABLE'
-            AND table_name ~ '^SEM[1-6]_\\d{4}$'
+            AND table_name ~* '^sem[1-6]_\d{4}$'
         """)
         with engine.connect() as conn:
             result = conn.execute(query).fetchall()
