@@ -8,7 +8,7 @@ import React, {
 import * as ExcelJs from "exceljs";
 import API_BASE from "./config";
 import { subjectMapping } from "./config";
-
+import { fetchWithAuth } from "./fetchWithAuth";
 const EditableCell = React.memo(function EditableCell({
     value,
     rowIndex,
@@ -44,7 +44,7 @@ const Row = React.memo(function Row({ row, rowIndex, updateCell }) {
     );
 });
 
-export default function ExcelViewer({excel_route}) {
+export default function ExcelViewer({ excel_route }) {
     const [worksheets, setWorksheets] = useState(null);
     const workbookRef = useRef(null);
     const [sheetIndex, setSheetIndex] = useState(0);
@@ -52,7 +52,7 @@ export default function ExcelViewer({excel_route}) {
 
     // Load Excel file once
     useEffect(() => {
-        fetch(`${excel_route}`,{credentials:"include"})
+        fetchWithAuth(`${excel_route}`, {})
             .then((res) => res.arrayBuffer())
             .then(async (buffer) => {
                 const workbook = await new ExcelJs.Workbook().xlsx.load(buffer);
@@ -110,7 +110,7 @@ export default function ExcelViewer({excel_route}) {
         let formData = new FormData();
         formData.append("file", blob, `${excel_route.split("/").pop()}`);
 
-        const res = await fetch(`${API_BASE}/excel`, {
+        const res = await fetchWithAuth(`${API_BASE}/excel`, {
             method: "POST",
             body: formData,
         });

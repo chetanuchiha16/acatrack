@@ -2,7 +2,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from models.paths import db_path, pdf_dir, img_dir
+from models.paths import pdf_dir, img_dir
 # Function to generate and display a chart for SubjectResult class
 def plot_subject_result_performance(subject_result, root):
     fig, ax = plt.subplots()

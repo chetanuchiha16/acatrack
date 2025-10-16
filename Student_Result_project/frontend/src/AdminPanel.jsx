@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import API_BASE from "./config";
 import { useNavigate } from "react-router-dom";
-
+import { fetchWithAuth } from "./fetchWithAuth";
 export default function AdminPanel() {
     const navigate = useNavigate();
     const savedSecret = localStorage.getItem("admin_secret");
@@ -37,7 +37,7 @@ export default function AdminPanel() {
     // Fetch available batches from backend
     const fetchBatches = () => {
         if (!secret) return;
-        fetch(`${API_BASE}/admin/list-batches`, {
+        fetchWithAuth(`${API_BASE}/admin/list-batches`, {
             headers: { "X-Admin-Secret": secret },
         })
             .then((res) => res.json())
@@ -71,7 +71,7 @@ export default function AdminPanel() {
         if (!batchYear) return alert("Select a batch first");
         setStatus("Generating accounts...");
         try {
-            const res = await fetch(
+            const res = await fetchWithAuth(
                 `${API_BASE}/admin/generate-accounts?mode=${mode}&batch_year=${parseInt(
                     batchYear,
                     10
@@ -100,7 +100,7 @@ export default function AdminPanel() {
         formData.append("file", emailFile);
 
         try {
-            const res = await fetch(
+            const res = await fetchWithAuth(
                 `${API_BASE}/admin/upload-emails?batch_year=${parseInt(
                     batchYear,
                     10
@@ -130,7 +130,7 @@ export default function AdminPanel() {
         formData.append("file", mentorFile);
 
         try {
-            const res = await fetch(
+            const res = await fetchWithAuth(
                 `${API_BASE}/admin/upload-mentors?batch_year=${parseInt(
                     batchYear,
                     10
@@ -150,7 +150,7 @@ export default function AdminPanel() {
 
             // 🔽 NEW: fetch and download CSV automatically
             if (data.csv_download_url) {
-                const csvRes = await fetch(
+                const csvRes = await fetchWithAuth(
                     `${API_BASE}${data.csv_download_url}`,
                     {
                         headers: { "X-Admin-Secret": secret },
@@ -178,7 +178,7 @@ export default function AdminPanel() {
 
         setStatus(`Creating batch ${newBatchYear}...`);
         try {
-            const res = await fetch(`${API_BASE}/admin/create-batch`, {
+            const res = await fetchWithAuth(`${API_BASE}/admin/create-batch`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -204,7 +204,7 @@ export default function AdminPanel() {
 
         setStatus(`Refreshing batch ${batchYear}...`);
         try {
-            const res = await fetch(`${API_BASE}/admin/refresh-batch`, {
+            const res = await fetchWithAuth(`${API_BASE}/admin/refresh-batch`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -229,17 +229,20 @@ export default function AdminPanel() {
         setStatus("Starting result fetch... (check console for CAPTCHA steps)");
 
         try {
-            const res = await fetch(`${API_BASE}/webscrape/fetch-results`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    usn_prefix: usnPrefix,
-                    usn_start: parseInt(usnStart, 10),
-                    usn_end: parseInt(usnEnd, 10),
-                    sem: parseInt(sem, 10),
-                    download_dir: downloadDir || undefined,
-                }),
-            });
+            const res = await fetchWithAuth(
+                `${API_BASE}/webscrape/fetch-results`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        usn_prefix: usnPrefix,
+                        usn_start: parseInt(usnStart, 10),
+                        usn_end: parseInt(usnEnd, 10),
+                        sem: parseInt(sem, 10),
+                        download_dir: downloadDir || undefined,
+                    }),
+                }
+            );
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Unknown error");
             setStatus(`✅ Fetch started: ${data.message}`);
@@ -280,7 +283,9 @@ export default function AdminPanel() {
 
     const pollJobStatus = async (jobId) => {
         try {
-            const res = await fetch(`${API_BASE}/pdf/job_status/${jobId}`);
+            const res = await fetchWithAuth(
+                `${API_BASE}/pdf/job_status/${jobId}`
+            );
             const data = await res.json();
             console.log(data);
             if (data.status === "done") {

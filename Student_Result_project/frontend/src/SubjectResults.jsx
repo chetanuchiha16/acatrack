@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import API_BASE from "./config";
 import { semesterOptions, subjectMapping } from "./config";
+import { fetchWithAuth } from "./fetchWithAuth";
 export default function SubjectResults() {
     const [semester, setSemester] = useState("");
     const [subject, setSubject] = useState("");
@@ -8,22 +9,35 @@ export default function SubjectResults() {
 
     const fetchData = async () => {
         if (!semester || !subject) return;
-        const res = await fetch(
-            `${API_BASE}/auth/Staff/sub_res?semester=${semester}&subject=${subject}`,{
-                credentials: "include"   // <-- this ensures cookies/session are sent
-                }
+        const res = await fetchWithAuth(
+            `${API_BASE}/auth/Staff/sub_res?semester=${semester}&subject=${subject}`,
+            {
+                // <-- this ensures cookies/session are sent
+            }
         );
         const json = await res.json();
         setData(json);
     };
 
-    const downloadPDF = () => {
+    const downloadPDF = async () => {
         if (!semester) return;
+
+        // const token = sessionStorage.getItem("jwt"); // or wherever you store it
         const url = `${API_BASE}/auth/Staff/sub_res/report?semester=${semester}&subject=${subject}`;
+
+        const response = await fetchWithAuth(url, {
+            
+        });
+
+        if (!response.ok) {
+            console.error("PDF download failed");
+            return;
+        }
+
+        const blob = await response.blob();
         const a = document.createElement("a");
-        a.href = url;
+        a.href = URL.createObjectURL(blob);
         a.download = `${semester}_report.pdf`;
-        a.style.display = "none";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

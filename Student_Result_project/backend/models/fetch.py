@@ -1,6 +1,5 @@
 import sqlite3
 # Function to fetch data from the database with error handling for missing USN
-from models.paths import db_path
 sem_subjects = {
     "SEM1": {
         "BMATS101": "Mathematics for CSE Stream-I",
@@ -90,7 +89,7 @@ sem_subjects = {
     }
 }
 SEMESTERS = ["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6"]
-def fetch_student_data(usn, semester, db_path=db_path):
+def fetch_student_data(usn, semester, db_path=None):
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
 
 export default function MentorSendEmails({ mentorId }) {
@@ -26,8 +27,8 @@ export default function MentorSendEmails({ mentorId }) {
     const fetchStudents = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(
-                `${API_BASE}/mentor/${mentorId}/students`, {withCredentials:true}
+            const res = await axiosInstance.get(
+                `${API_BASE}/mentor/${mentorId}/students`
             );
             setStudents(res.data.students || []);
         } catch (err) {
@@ -39,8 +40,8 @@ export default function MentorSendEmails({ mentorId }) {
 
     const fetchMessages = async () => {
         try {
-            const res = await axios.get(
-                `${API_BASE}/mentor/${mentorId}/messages`, {withCredentials:true}
+            const res = await axiosInstance.get(
+                `${API_BASE}/mentor/${mentorId}/messages`
             );
             const grouped = {};
             res.data.forEach((msg) => {
@@ -70,11 +71,11 @@ export default function MentorSendEmails({ mentorId }) {
         }
 
         try {
-            const stored = await axios.post(
+            const stored = await axiosInstance.post(
                 `${API_BASE}/mentor/${mentorId}/messages`,
-                { usn, recipientType, subject, message }, {withCredentials:true}
+                { usn, recipientType, subject, message }
             );
-
+            
             setStudentMessages((prev) => {
                 const key = usn || "all";
                 const newMsg = {
@@ -94,14 +95,14 @@ export default function MentorSendEmails({ mentorId }) {
 
             let emailRes;
             if (usn) {
-                emailRes = await axios.post(
+                emailRes = await axiosInstance.post(
                     `${API_BASE}/mentor/${mentorId}/send-email/student`,
-                    { usn, recipientType, subject, message }, {withCredentials:true}
+                    { usn, recipientType, subject, message }
                 );
             } else {
-                emailRes = await axios.post(
+                emailRes = await axiosInstance.post(
                     `${API_BASE}/mentor/${mentorId}/send-email/all`,
-                    { recipientType, subject, message }, {withCredentials:true}
+                    { recipientType, subject, message }
                 );
             }
 
@@ -145,11 +146,12 @@ export default function MentorSendEmails({ mentorId }) {
             });
         }
     };
+console.log(sessionStorage.getItem("jwt_token"))
 
     const deleteMessage = async (msgId, usn) => {
         try {
-            await axios.delete(
-                `${API_BASE}/mentor/${mentorId}/messages/${msgId}`, {withCredentials:true}
+            await axiosInstance.delete(
+                `${API_BASE}/mentor/${mentorId}/messages/${msgId}`
             );
             setStudentMessages((prev) => {
                 const key = usn || "all";

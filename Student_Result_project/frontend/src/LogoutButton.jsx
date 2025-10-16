@@ -1,4 +1,5 @@
 import axios from "axios";
+import axiosInstance from "./axiosInstance";
 import { useNavigate } from "react-router-dom";
 import API_BASE from "./config";
 
@@ -6,23 +7,20 @@ export default function LogoutButton() {
     const navigate = useNavigate();
 
     const handleLogout = async () => {
-        try {
-            await axios.post(
-                `${API_BASE}/logout`,
-                {},
-                { withCredentials: true }
-            );
-            navigate("/auth", { replace: true });
-        } catch (err) {
-            console.error("Logout failed", err);
-        }
-    };
+    try {
+        // await axiosInstance.post(`${API_BASE}/logout`, {}); // optional now
+        sessionStorage.removeItem("jwt_token"); // kill JWT locally
+        navigate("/auth", { replace: true });
+    } catch (err) {
+        console.error("Logout failed", err);
+    }
+};
+
 
     return (
-        
-            <div
-                onClick={handleLogout}
-                className="
+        <div
+            onClick={handleLogout}
+            className="
         button
         !bg-red-500 hover:!bg-red-600 active:!bg-red-700 
         !text-white
@@ -34,10 +32,8 @@ export default function LogoutButton() {
         transition-all duration-200 ease-in-out
         text-sm sm:text-md md:text-lg font-medium
     "
-            >
-                Logout
-            </div>
-
-       
+        >
+            Logout
+        </div>
     );
 }

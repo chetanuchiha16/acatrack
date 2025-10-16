@@ -9,7 +9,7 @@
 
 # os.chdir(r"C:\Users\CHEKI\Documents\VS coding\Python\Student Result python project")
 
-# from models.config import db_path
+# from models.config import 
 # import models.data_prep #noqa
 # from models.fetch import fetch_student_data
 # from models import Student, University, SubjectResult
@@ -56,7 +56,7 @@ bm = BatchManager()
 # Create main Flask app (acts as entrypoint/gateway)
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
-app.secret_key = "super-secret-key"  # should load from config/env
+app.secret_key = "supersecretkey"  # should load from config/env
 
 # Register all routes (auth, admin, etc.)
 register_routes(app)

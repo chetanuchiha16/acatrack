@@ -2,7 +2,7 @@ if __name__ == "__main__":
     from models import University, SubjectResult
     from visuals import generate_sem_pdf
     import customtkinter as ctk
-    from models.paths import db_path, pdf_dir
+    from models.paths import , pdf_dir
 
 
     # Function to display semester-wise results

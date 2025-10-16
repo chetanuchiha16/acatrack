@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import API_BASE from "./config";
-
+import { fetchWithAuth } from "./fetchWithAuth";
 export default function StudentInsights({ usn = "", semester = "SEM1" }) {
     const [aiData, setAiData] = useState(null);
     const [performanceData, setPerformanceData] = useState(null);
@@ -21,20 +21,16 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
         try {
             const [summaryRes, profileRes, trendRes, predictRes] =
                 await Promise.all([
-                    fetch(
+                    fetchWithAuth(
                         `${API_BASE}/ai/summary?usn=${usn}&semester=${semester}`,
-                        { credentials: "include" }
+                        {}
                     ),
-                    fetch(
+                    fetchWithAuth(
                         `${API_BASE}/ai/profile?usn=${usn}&semester=${semester}`,
-                        { credentials: "include" }
+                        {}
                     ),
-                    fetch(`${API_BASE}/ai/trend?usn=${usn}`, {
-                        credentials: "include",
-                    }),
-                    fetch(`${API_BASE}/ai/predict_cgpa?usn=${usn}`, {
-                        credentials: "include",
-                    }),
+                    fetchWithAuth(`${API_BASE}/ai/trend?usn=${usn}`, {}),
+                    fetchWithAuth(`${API_BASE}/ai/predict_cgpa?usn=${usn}`, {}),
                 ]);
 
             const summaryJson = await summaryRes.json();
@@ -64,9 +60,9 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
         setLoadingPerf(true);
 
         try {
-            const res = await fetch(
+            const res = await fetchWithAuth(
                 `${API_BASE}/auth/Student/analysis?usn=${usn}&semester=${semester}`,
-                { credentials: "include" }
+                {}
             );
             const data = await res.json();
 
@@ -99,9 +95,9 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
     // Fetch Chart
     const fetchChart = async () => {
         try {
-            const res = await fetch(
+            const res = await fetchWithAuth(
                 `${API_BASE}/auth/Student/chart?usn=${usn}&semester=${semester}`,
-                { credentials: "include" }
+                {}
             );
             if (!res.ok) return;
             const data = await res.json();
@@ -113,16 +109,16 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
 
     // Get subject color based on marks
     const getSubjectColor = (subject) => {
-  const marks = subject.total || 0;
+        const marks = subject.total || 0;
 
-  if (marks < 50) 
-    return "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300";
+        if (marks < 50)
+            return "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300";
 
-  if (marks >= 50 && marks <= 80) 
-    return "bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-300";
+        if (marks >= 50 && marks <= 80)
+            return "bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-300";
 
-  return "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300";
-};
+        return "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300";
+    };
 
     return (
         <div className="p-2 rounded space-y-2">
@@ -131,7 +127,7 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
                 <button
                     onClick={() => {
                         if (!aiData) fetchAIInsights();
-                        setOpenAI(true); 
+                        setOpenAI(true);
                         setOpenPerf(false);
                     }}
                     disabled={loadingAI}
@@ -147,7 +143,7 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
                 <button
                     onClick={() => {
                         if (!performanceData) fetchPerformance();
-                        setOpenAI(false); 
+                        setOpenAI(false);
                         setOpenPerf(true);
                     }}
                     disabled={loadingPerf}
@@ -588,16 +584,18 @@ export default function StudentInsights({ usn = "", semester = "SEM1" }) {
 
                         {/* Overall Study Summary */}
                         {performanceData.study_summary && (
-                            <div className="bg-yellow-50 dark:bg-yellow-900/40 
+                            <div
+                                className="bg-yellow-50 dark:bg-yellow-900/40 
                 p-4 rounded-lg shadow-inner 
-                text-gray-800 dark:text-gray-200 mt-4">
-  <h4 className="font-semibold text-yellow-700 dark:text-yellow-300 mb-2">
-    📌 Overall Study Advice
-  </h4>
-  <p className="text-sm">
-    {performanceData.study_summary}
-  </p>
-</div>
+                text-gray-800 dark:text-gray-200 mt-4"
+                            >
+                                <h4 className="font-semibold text-yellow-700 dark:text-yellow-300 mb-2">
+                                    📌 Overall Study Advice
+                                </h4>
+                                <p className="text-sm">
+                                    {performanceData.study_summary}
+                                </p>
+                            </div>
                         )}
 
                         {/* Chart */}

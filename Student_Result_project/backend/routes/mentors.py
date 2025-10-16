@@ -7,14 +7,14 @@ import os
 import io
 import base64
 from models.batch_manager import BatchManager, bm
-
+from models.helpers import get_batch_year
 mentor_bp = Blueprint('mentor', __name__)
 
 @mentor_bp.route("/auth/Staff/Mentor/result", methods=["GET"])
 def get_mentor_students():
     mentor_id = request.args.get("mentor_id")
     semester = request.args.get("semester")
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     
     if not mentor_id or not semester:
         return jsonify({"error": "mentor_id and semester are required"}), 400
@@ -97,7 +97,7 @@ def download_mentee_report(filename):
 def get_mentee_chart():
     usn = request.args.get("usn")
     semester = request.args.get("semester")
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     
     if not usn or not semester:
         return jsonify({"error": "usn and semester are required"}), 400

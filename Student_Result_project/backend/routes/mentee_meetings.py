@@ -2,13 +2,14 @@ from flask import Blueprint, request, jsonify, session
 from models import db, Meeting, StudentAuth as Student
 from datetime import datetime
 from models.batch_manager import BatchManager, bm
+from models.helpers import get_batch_year
 mentee_meetings_bp = Blueprint(
     "mentee_meetings", __name__, url_prefix="/auth/Student/Mentee/meeting"
 )
 
 @mentee_meetings_bp.route("/<string:student_usn>", methods=["GET"])
 def get_mentee_meetings(student_usn):
-    batch_year = session.get("batch_year")
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         student = Student.query.filter_by(username=student_usn).first()
         if not student:

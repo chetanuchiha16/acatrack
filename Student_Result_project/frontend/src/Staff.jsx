@@ -2,19 +2,36 @@ import React, { useState } from "react";
 import jssLogo from "./assets/jssLogo.png";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
 import LogoutButton from "./LogoutButton";
+import useAuthStore from "./useAuthStore";
+import useProtectedPage from "./useProtectedPage";
 export default function Staff() {
     let navigate = useNavigate();
-    const location = useLocation();
-    const params = useParams();
+    // // const location = useLocation();
+    // // const params = useParams();
+    // const { user, fetchAuthStatus, loading: authLoading } = useAuthStore();
+    // // const { who, id, name, mentor_id } = location.state || {};
+    // // const finalWho = who || params.who;
+    // // const finalId = id || params.id;
 
-    const { who, id, name, mentor_id } = location.state || {};
-    const finalWho = who || params.who;
-    const finalId = id || params.id;
-    console.log(mentor_id)
-    console.log("finalId:", finalId);
-    const [isDark, setIsDark] = useState(false);
+    // // console.log("finalId:", finalId);
+    // // const [isDark, setIsDark] = useState(false);
+    // useEffect(() => {
+    //     if (!user) fetchAuthStatus();
+    // }, [user, fetchAuthStatus]);
+    // if (authLoading) return <div>Loading...</div>;
+    // useEffect(() => {
+    //     if (!authLoading && !user) {
+    //         navigate("/auth");
+    //     }
+    // }, [authLoading, user, navigate]);
+    const { user, loading } = useProtectedPage("Staff");
+
+    if (loading) return <div>Loading...</div>;
+    const { id, name, who, mentor_id } = user || {};
+    console.log(mentor_id);
     return (
         <div className="min-h-screen w-screen bg-gray-100 dark:bg-gray-900 px-4 sm:px-8 md:px-16 py-4 sm:py-6">
             {/* Header */}
@@ -43,7 +60,8 @@ export default function Staff() {
                 </p>
 
                 <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
-                    Manage results, classroom sessions, and communications efficiently from your dashboard.
+                    Manage results, classroom sessions, and communications
+                    efficiently from your dashboard.
                 </p>
             </div>
 
@@ -52,9 +70,7 @@ export default function Staff() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-5xl mx-auto">
                 <div
                     className="bg-red-300 dark:bg-red-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-red-400 dark:hover:bg-red-700 transition-all duration-200 "
-                    onClick={() =>
-                        navigate(`/auth/Staff/${finalId}/StaffResults`)
-                    }
+                    onClick={() => navigate(`/auth/Staff/${id}/StaffResults`)}
                 >
                     <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-2">
                         Result
@@ -64,14 +80,13 @@ export default function Staff() {
                     </p>
                 </div>
 
-                <div className="bg-blue-300 dark:bg-blue-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-blue-400 dark:hover:bg-blue-700 transition-all duration-200"
+                <div
+                    className="bg-blue-300 dark:bg-blue-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-blue-400 dark:hover:bg-blue-700 transition-all duration-200"
                     onClick={() => {
-                        navigate(`/auth/Staff/${finalId}/SendEmails`);
+                        navigate(`/auth/Staff/${id}/SendEmails`);
                     }}
                 >
-                    <h2
-                        className="text-lg sm:text-xl md:text-2xl font-semibold mb-2"
-                    >
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-2">
                         Email Upload
                     </h2>
 
@@ -82,9 +97,7 @@ export default function Staff() {
 
                 <div
                     className="bg-green-300 dark:bg-green-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-green-400 dark:hover:bg-green-700 transition-all duration-200"
-                    onClick={() =>
-                        navigate(`/auth/Staff/${finalId}/UploadResults`)
-                    }
+                    onClick={() => navigate(`/auth/Staff/${id}/UploadResults`)}
                 >
                     <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-2">
                         Upload results
@@ -97,9 +110,7 @@ export default function Staff() {
 
                 <div
                     className="bg-yellow-200 dark:bg-yellow-700 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-yellow-300 dark:hover:bg-yellow-600 transition-all duration-200"
-                    onClick={() =>
-                        navigate(`/auth/Staff/${finalId}/StaffClassroom`)
-                    }
+                    onClick={() => navigate(`/auth/Staff/${id}/StaffClassroom`)}
                 >
                     <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-2">
                         Classroom
@@ -112,7 +123,7 @@ export default function Staff() {
                 <div
                     className="bg-orange-200 dark:bg-orange-700 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-orange-300 dark:hover:bg-orange-600 transition-all duration-200"
                     onClick={() =>
-                        navigate(`/auth/Staff/${finalId}/MentorDashboard`, {
+                        navigate(`/auth/Staff/${id}/MentorDashboard`, {
                             state: { mentor_id },
                         })
                     }

@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify, session
 import numpy as np
 from models.paths import  get_db_path
 from models import Student
+from models.helpers import get_batch_year
 from .chatbot import (
     safe_marks, aggregate_tag_scores, classify_tag_strengths,
     predict_next_sgpa_with_confidence, build_placement_and_skill_advice,
@@ -13,7 +14,7 @@ ai_bp = Blueprint("ai", __name__)
 
 # ------------------ Helper: Multi-Semester History ------------------ #
 def get_student_history_usn(usn, semesters):
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    batch_year = get_batch_year()   
     sgpas = []
     for sem in semesters:
         try:
@@ -30,7 +31,7 @@ def get_student_history_usn(usn, semesters):
 @ai_bp.route("/ai/summary", methods=["GET"])
 def ai_summary():
     usn = request.args.get("usn")
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    batch_year = get_batch_year()   
     if not usn:
         return jsonify({"error": "USN is required"}), 400
 
@@ -134,7 +135,7 @@ def ai_summary():
 @ai_bp.route("/ai/trend", methods=["GET"])
 def ai_trend():
     usn = request.args.get("usn")
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    batch_year = get_batch_year()   
     semesters_list = ["SEM1","SEM2","SEM3","SEM4","SEM5","SEM6"]
 
     student_data = {"semesters": {}}
@@ -216,7 +217,7 @@ def ai_predict_cgpa():
 @ai_bp.route("/ai/profile", methods=["GET"])
 def ai_profile():
     usn = request.args.get("usn")
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    batch_year = get_batch_year()   
     semesters_list = ["SEM1","SEM2","SEM3","SEM4","SEM5","SEM6"]
 
     student_data = {"student_name": "", "semesters": {}}

@@ -1,8 +1,8 @@
 from flask import Flask, jsonify, request, send_file, Blueprint, session
 from models import University
 from visuals import create_toppers_list_pdf, create_university_report
-from models.paths import db_path, pdf_dir  , get_db_path
-
+from models.paths import  pdf_dir  , get_db_path
+from models.helpers import get_batch_year
 
 uni_bp = Blueprint('uni', __name__)
 
@@ -11,12 +11,12 @@ def get_academic_performance():
     semester = request.args.get('semester')
     show_toppers = request.args.get('show_toppers', 'false').lower() == 'true'
     show_failed = request.args.get('show_failed', 'false').lower() == 'true'
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    batch_year = get_batch_year()   
 
     try:
         db_path = get_db_path(batch_year)  # <-- resolves correct DB
         print(f"{db_path} from university 1")
-        print("Batch year in session:", session.get("batch_year"))
+        print("Batch year in session:", get_batch_year())
         university = University(db_path=db_path)
         university.add_students(semester)
         result = university.calculate_academic_performance_by_semester(semester)
@@ -41,8 +41,8 @@ def get_academic_performance():
 @uni_bp.route('/auth/Staff/report/<semester>')
 def get_report(semester):
     file_path = f"{pdf_dir}/{semester}_report.pdf"
-    print("Batch year in session:", session.get("batch_year"))
-    batch_year = session.get("batch_year")  # <-- pulled from session
+    print("Batch year in session:", get_batch_year())
+    batch_year = get_batch_year()   
     db_path = get_db_path(batch_year)  # <-- resolves correct DB
     # generate report PDF if not exists
     university = University(db_path=db_path)

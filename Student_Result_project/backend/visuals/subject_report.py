@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import pathlib
-from models.paths import db_path, pdf_dir, img_dir, logo_path
+from models.paths import  pdf_dir, img_dir, logo_path
 # import textwrap
 # from reportlab.lib import colors
 from reportlab.platypus import Image
@@ -17,7 +17,7 @@ from reportlab.pdfgen import canvas
 import pathlib
 from models.fetch import sem_subjects
 # from models import SubjectResult
-# from models.config import db_path
+# from models.config import 
 def create_subject_report(subject_result, file_path=f"{pdf_dir}/subject_report.pdf"):
     """
     Create a PDF report for subject-wise performance with graphs.

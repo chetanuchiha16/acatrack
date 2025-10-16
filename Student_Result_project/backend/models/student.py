@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 from models.fetch import fetch_student_data
-from models.paths import db_path, img_dir
+from models.paths import img_dir
 
 class Student:
-    def __init__(self, usn, semester, db_path=db_path):
+    def __init__(self, usn, semester, db_path=None):
         self.db_path = db_path
         self.semester = semester
 

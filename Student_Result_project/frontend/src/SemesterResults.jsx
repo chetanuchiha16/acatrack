@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import API_BASE from "./config";
-
+import { fetchWithAuth } from "./fetchWithAuth";
 export default function SemesterResults() {
     const [semester, setSemester] = useState("SEM1");
     const [data, setData] = useState(null);
@@ -21,9 +21,12 @@ export default function SemesterResults() {
         setData(null);
         try {
             const q = new URLSearchParams({ semester: selected }).toString();
-            const res = await fetch(`${API_BASE}/auth/Staff/sem_res?${q}`, {
-                credentials: "include"   // <-- this ensures cookies/session are sent
-            });
+            const res = await fetchWithAuth(
+                `${API_BASE}/auth/Staff/sem_res?${q}`,
+                {
+                    // <-- this ensures cookies/session are sent
+                }
+            );
             if (!res.ok) {
                 const json = await res.json().catch(() => null);
                 throw new Error(
@@ -42,7 +45,7 @@ export default function SemesterResults() {
     const downloadPDF = async () => {
         if (!semester) return;
         try {
-            const response = await fetch(
+            const response = await fetchWithAuth(
                 `${API_BASE}/auth/Staff/sem_res/report/${semester}`,
                 { method: "GET" }
             );
@@ -155,11 +158,10 @@ export default function SemesterResults() {
                                     Showing
                                 </div>
                                 <h2 className="text-base sm:text-lg font-semibold">
-                                    {data.semester} — {data.results.length} subjects
+                                    {data.semester} — {data.results.length}{" "}
+                                    subjects
                                 </h2>
                             </div>
-
-                            
                         </div>
 
                         {view === "cards" ? (
@@ -175,7 +177,8 @@ export default function SemesterResults() {
                                                     Subject
                                                 </div>
                                                 <div className="font-semibold text-base sm:text-lg break-words">
-                                                    {r.subject_name} ({r.subject_code})
+                                                    {r.subject_name} (
+                                                    {r.subject_code})
                                                 </div>
                                                 <div className="text-xs sm:text-sm text-slate-500 mt-1">
                                                     Students: {r.total_students}
@@ -276,7 +279,10 @@ export default function SemesterResults() {
                                     </thead>
                                     <tbody className="divide-y">
                                         {data.results.map((r) => (
-                                            <tr key={r.subject_code} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                            <tr
+                                                key={r.subject_code}
+                                                className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                                            >
                                                 <td className="px-2 sm:px-4 py-2 sm:py-3 font-medium break-words">
                                                     {r.subject_name}
                                                 </td>
