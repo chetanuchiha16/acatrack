@@ -1,4 +1,5 @@
-import sqlite3
+import pandas as pd
+from sqlalchemy import create_engine, text
 # Function to fetch data from the database with error handling for missing USN
 sem_subjects = {
     "SEM1": {
@@ -85,66 +86,69 @@ sem_subjects = {
     "SEM8": {
         "PEC801x": "Professional Elective (Online Courses)",
         "OEC802x": "Open Elective (Online Courses)",
-        "INT803": "Internship (Industry / Research / Rural – 14-20 weeks)"
+        "INT803": "Internship (Industry / Research / Rural - 14-20 weeks)"
     }
 }
+
+
 SEMESTERS = ["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6"]
-def fetch_student_data(usn, semester, db_path=None):
+
+def fetch_student_data(usn, semester, batch_year, engine):
+    """
+    Fetch student data from the given semester table in PostgreSQL.
+    Each batch has its own suffixed tables (e.g., SEM1_2024).
+    """
+    # if postgres_url is None:
+        # postgres_url = "postgresql+psycopg2://chetan:chetan@localhost:5433/Group_Project"
+
     try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        # Connect to PostgreSQL
+        # engine = create_engine(postgres_url)
+        table_name = f"{semester}_{batch_year}"
 
-        # Make sure the query uses the correct semester table
-        query = f"""
-        SELECT *
-        FROM {semester}
-        WHERE "student_usn" = ?
-        """
-        cursor.execute(query, (usn,))
-        rows = cursor.fetchall()
-        conn.close()
+        # Use pandas to safely query
+        query = text(f'SELECT * FROM "{table_name}" WHERE "student_usn" = :usn')
+        df = pd.read_sql(query, engine, params={"usn": usn})
 
-        # Check if rows are found
-        if not rows:
-            return None  # Return None if no data is found for the USN in that semester
+        # Return None if no data found
+        if df.empty:
+            return None
 
-        # Extract data from the row
-        student_data = rows[0]
+        # Extract the first row (one student per USN expected)
+        student_data = df.iloc[0]
 
-
-
-        # Extracting internal marks, external marks, and credits
-        subject_code=[]
+        # Extract marks and credits
+        subject_code = []
         ia_marks = []
         see_marks = []
         credits = []
 
-        # Iterate through the columns to extract marks and credits
-        for i in range(2, len(student_data)):  # Start from the 3rd column (index 2)
-            column_name = cursor.description[i][0]  # Get the column name
-
-            # Only check columns that contain marks or credits
-            if 'INTERNALS' in column_name:
-                ia_marks.append(student_data[i])
-                subject_code.append(column_name.split('_')[0])
-            elif 'EXTERNALS' in column_name:
-                see_marks.append(student_data[i])
-            elif 'CREDITS' in column_name:
-                credits.append(student_data[i])
+        for col in df.columns[2:]:  # Skip first two columns: (0: USN, 1: Name)
+            if "INTERNALS" in col:
+                ia_marks.append(student_data[col])
+                subject_code.append(col.split("_")[0])
+            elif "EXTERNALS" in col:
+                see_marks.append(student_data[col])
+            elif "CREDITS" in col:
+                credits.append(student_data[col])
 
         return {
-            "name": student_data[1],  # Student Name
-            "usn": usn,
+            "name": student_data.get("student_name", "Unknown"),
+            "usn": student_data["student_usn"],
             "subject_code": subject_code,
-            "subject_name": [sem_subjects[semester].get(code,"unknown_subject") for code in subject_code],
+            "subject_name": [
+                sem_subjects[semester].get(code, "unknown_subject")
+                for code in subject_code
+            ],
             "ia_marks": ia_marks,
             "see_marks": see_marks,
             "credits": credits,
         }
 
-    except sqlite3.Error as e:
-        print(f"Database error occurred in fetch.py : {e}")
+    except Exception as e:
+        print(f"Database error occurred in fetch_student_data: {e}")
         return None
+
     
 if(__name__) == ("__main__"):
         #test the above function

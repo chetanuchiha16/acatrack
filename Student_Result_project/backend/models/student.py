@@ -1,15 +1,28 @@
 import matplotlib.pyplot as plt
 from models.fetch import fetch_student_data
 from models.paths import img_dir
-
+from sqlalchemy import create_engine
 class Student:
-    def __init__(self, usn, semester, db_path=None):
-        self.db_path = db_path
+    def __init__(self, usn, semester, batch_year, engine):
+        """
+        Load student information from PostgreSQL for a given batch and semester.
+        """
+        self.usn = usn
         self.semester = semester
+        self.batch_year = batch_year
+        self.engine = engine
 
-        student_info = fetch_student_data(usn, semester, self.db_path)
+        # Default database connection
+        # self.postgres_url = (
+        #     postgres_url
+        #     or "postgresql+psycopg2://chetan:chetan@localhost:5433/Group_Project"
+        # )
+
+        # Fetch data using the new Postgres function
+        student_info = fetch_student_data(usn, semester, batch_year, self.engine)
+
         if student_info is None:
-            raise ValueError("Student data not found")
+            raise ValueError(f"No student data found for USN {usn} in {semester}_{batch_year}")
 
         self.usn = usn
         self.name = student_info.get("name", "")
@@ -99,7 +112,7 @@ class Student:
 
         for sem in range(1, sem_no):
             try:
-                student_info = fetch_student_data(self.usn, f"SEM{sem}", self.db_path)
+                student_info = fetch_student_data(self.usn, f"SEM{sem}", self.batch_year)
                 if student_info:
                     ia_marks = [x or 0 for x in student_info.get("ia_marks", [])]
                     see_marks = [x or 0 for x in student_info.get("see_marks", [])]
