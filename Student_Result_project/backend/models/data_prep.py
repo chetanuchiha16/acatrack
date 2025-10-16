@@ -2,7 +2,7 @@ import sqlite3
 import pandas as pd
 from models.paths import  excel_path, get_db_path, get_excel_path
 from sqlalchemy import create_engine
-
+from models.paths import postgres_db_url
 def convert_excel_to_postgres(excel_path: str, postgres_url: str, batch_year: int):
     """
     Convert Excel sheets to Postgres tables.
@@ -41,5 +41,5 @@ def convert_excel_to_postgres(excel_path: str, postgres_url: str, batch_year: in
 #Usage
 def prepare_data(batch_year: int):
     excel_path = get_excel_path(batch_year)
-    postgres_url = "postgresql+psycopg2://chetan:chetan@localhost:5433/Group_Project"
+    postgres_url = postgres_db_url
     convert_excel_to_postgres(excel_path, postgres_url, batch_year)

@@ -2,10 +2,10 @@
 
 import pandas as pd
 from models import University, Student
-
+from models.paths import postgres_db_url
 def test_university_postgres():
     # Replace with your actual Postgres URL and batch year
-    postgres_url = "postgresql+psycopg2://chetan:chetan@localhost:5433/Group_Project"
+    postgres_url = postgres_db_url
     batch_year = 2022
 
     # Create University instance

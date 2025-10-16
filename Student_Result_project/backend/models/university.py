@@ -6,9 +6,10 @@ from models import Student
 from models.paths import img_dir,pdf_dir  , get_db_path
 import pandas as pd
 from sqlalchemy import create_engine
+from models.paths import postgres_db_url
 class University:
     def __init__(self, postgres_url=None, batch_year=None):
-        self.postgres_url = postgres_url or "postgresql+psycopg2://chetan:chetan@localhost:5433/Group_Project"
+        self.postgres_url = postgres_url or postgres_db_url
         self.batch_year = batch_year
         self.engine = create_engine(self.postgres_url)
         self.students = []

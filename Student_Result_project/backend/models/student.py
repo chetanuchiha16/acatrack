@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from models.fetch import fetch_student_data
 from models.paths import img_dir
 from sqlalchemy import create_engine
+from models.paths import postgres_db_url
 class Student:
     def __init__(self, usn, semester, batch_year, engine):
         """
@@ -15,7 +16,7 @@ class Student:
         # Default database connection
         # self.postgres_url = (
             
-        #     "postgresql+psycopg2://chetan:chetan@localhost:5433/Group_Project"
+        #     postgres_db_url
         # )
 
         # Fetch data using the new Postgres function

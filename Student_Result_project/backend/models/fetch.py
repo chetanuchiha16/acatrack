@@ -1,5 +1,6 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
+from models.paths import postgres_db_url
 # Function to fetch data from the database with error handling for missing USN
 sem_subjects = {
     "SEM1": {
@@ -99,7 +100,7 @@ def fetch_student_data(usn, semester, batch_year, engine):
     Each batch has its own suffixed tables (e.g., SEM1_2024).
     """
     # if postgres_url is None:
-        # postgres_url = "postgresql+psycopg2://chetan:chetan@localhost:5433/Group_Project"
+        # postgres_url = postgres_db_url
 
     try:
         # Connect to PostgreSQL

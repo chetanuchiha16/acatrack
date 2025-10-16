@@ -24,6 +24,7 @@ def get_db_path(batch_year: int) -> str:
     print(str(db_dir / f"student_data_{batch_year}.db"))
     return str(db_dir / f"student_data_{batch_year}.db")
 
+postgres_db_url = "postgresql+psycopg2://chetan:chetan@localhost:5433/Group_Project"
 # from models.batch_manager import BatchManager
 
 # current_batch_db_path = None

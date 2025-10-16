@@ -5,7 +5,7 @@ from models.paths import pdf_dir  , get_db_path
 import os
 from models.helpers import get_batch_year
 from sqlalchemy import create_engine
-
+from models.paths import postgres_db_url
 
 student_bp = Blueprint('student', __name__)
 
@@ -22,7 +22,7 @@ def get_student_info():
 
     try:
         # db_path = get_db_path(batch_year)  # <-- resolves correct DB
-        engine = create_engine("postgresql+psycopg2://chetan:chetan@localhost:5433/Group_Project")
+        engine = create_engine(postgres_db_url)
         student = Student(usn=usn, semester=semester, batch_year=batch_year, engine=engine)
 
         # Generate PDF
