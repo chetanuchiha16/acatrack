@@ -16,8 +16,8 @@ mentor_email_bp = Blueprint("mentor_email", __name__)
 
 
 # ---------------- Email Helper ----------------
-EMAIL_ADDRESS = os.getenv("EMAIL_USER", "abhishek.r0605@gmail.com")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASS", "ithlbwrmeyajuenr")  # App password
+EMAIL_ADDRESS = os.getenv("A_EMAIL")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASS")  # App password
 
 
 def send_email(to_email, subject, body):

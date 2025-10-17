@@ -1,5 +1,10 @@
 from app_init import db
 from datetime import datetime, timezone
+import os
+def default_email():
+    return os.getenv("C_EMAIL")
+def default_number():
+    return os.getenv("DEFAULT_NUMBER")
 class StudentAuth(db.Model):
     __tablename__ = 'students'
     username = db.Column(db.String(10), primary_key=True, unique=True)
@@ -56,8 +61,8 @@ class Teacher(db.Model):
     password = db.Column(db.String(128), nullable=True)
 
     # Contact info
-    email = db.Column(db.String(100), nullable=True, default = f"chetan16ck@gmail.com")
-    phone = db.Column(db.String(20), nullable=True, default = "123456789")
+    email = db.Column(db.String(100), nullable=True, default = default_email)
+    phone = db.Column(db.String(20), nullable=True, default = default_number)
 
 
 class Mentor(db.Model):
