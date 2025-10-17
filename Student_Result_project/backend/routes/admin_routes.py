@@ -151,8 +151,8 @@ def generate_accounts():
                 username=usn,
                 name=name,
                 password=pw_hash_student,
-                student_email="chetan16ck@gmail.com",
-                student_phno="123456789"
+                student_email=os.getenv("C_EMAIL"),
+                student_phno=os.getenv("DEFAULT_NUMBER")
             )
             db.session.add(student)
             out.write(f"{usn},{name},{plain_student},{pw_hash_student},student,\n")
@@ -166,7 +166,7 @@ def generate_accounts():
                     password=pw_hash_parent,
                     student_usn=usn,
                     name=f"Parent of {student.name}" if student else "Parent",
-                    email="chetan16ck@gmail.com",
+                    email=os.getenv("C_EMAIL"),
                     phone="123456789"
                 )
                 db.session.add(new_parent)

@@ -10,16 +10,13 @@ from datetime import datetime, timezone
 from models.helpers import get_batch_year
 email_bp = Blueprint("email", __name__)
 
-EMAIL_ADDRESS = os.getenv("EMAIL_USER", "abhishek.r0605@gmail.com")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASS", "ithlbwrmeyajuenr")  # Gmail App Password
-
-
+EMAIL_ADDRESS = os.getenv("A_EMAIL")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASS")  # App password
 # -----------------------------
 # Message Model (store messages)
 # -----------------------------
 class Message(db.Model):
     __tablename__ = "messages"
-
     id = db.Column(db.Integer, primary_key=True)
     usn = db.Column(db.String(50), nullable=True)  # null = broadcast
     recipient_type = db.Column(db.String(20), nullable=False)  # student/parent
