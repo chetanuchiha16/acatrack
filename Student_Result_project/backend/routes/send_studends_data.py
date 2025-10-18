@@ -5,7 +5,7 @@ from models.paths import pdf_dir  , get_db_path
 import os
 from models.helpers import get_batch_year
 from sqlalchemy import create_engine
-from models.paths import postgres_db_url
+from models.paths import postgres_db_url, API_BASE
 
 student_bp = Blueprint('student', __name__)
 
@@ -53,7 +53,7 @@ def get_student_info():
                     student.credits, student.pass_fail
                 )
             ],
-            "pdf_url": f"http://localhost:5000/auth/Student/report/{filename}"
+            "pdf_url": f"{API_BASE}/auth/Student/report/{filename}"
         })
 
     except Exception as e:

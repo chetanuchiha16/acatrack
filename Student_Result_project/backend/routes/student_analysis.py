@@ -9,25 +9,26 @@ from flask import Blueprint, request, jsonify, session
 from sklearn.linear_model import LinearRegression
 from models.helpers import get_batch_year
 student_api_bp = Blueprint('student_api', __name__)
-
+from sqlalchemy import create_engine
 # student_service.py
 from models import Student
 from visuals import create_student_report
-from models.paths import get_db_path, pdf_dir
+from models.paths import get_db_path, pdf_dir, postgres_db_url, API_BASE
 import os
 
 def get_student_result(usn: str, semester: str, batch_year: int):
     """
     Returns student result as dictionary (same structure as /result API)
     """
-    db_path = get_db_path(batch_year)  # <-- resolves correct DB
-    student = Student(usn=usn, semester=semester, db_path=db_path)
+    engine = create_engine(postgres_db_url)
+    # db_path = get_db_path(batch_year)  # <-- resolves correct DB
+    student = Student(usn=usn, semester=semester, batch_year=batch_year, engine=engine)
 
     # Generate PDF (optional, can skip if only analysis needed)
     filename = f"{student.name}_{semester}_report.pdf"
     file_path = os.path.join(pdf_dir, filename)
     create_student_report(student, file_path=file_path)
-    pdf_url = f"http://localhost:5000/auth/Student/report/{filename}"
+    pdf_url = f"{API_BASE}/auth/Student/report/{filename}"
 
     result = {
         "name": student.name,

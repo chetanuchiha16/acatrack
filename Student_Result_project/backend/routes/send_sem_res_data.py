@@ -1,11 +1,13 @@
 from flask import Flask, jsonify, request,Blueprint,send_file
 from models import University, SubjectResult
-from models.paths import  pdf_dir  , get_db_path
+from models.paths import  pdf_dir  , get_db_path, postgres_db_url
 from visuals import generate_sem_pdf
 import os
 from models.fetch import sem_subjects
 from flask import session
 from models.helpers import get_batch_year
+from sqlalchemy import create_engine
+
 
 sem_bp = Blueprint('sem_res',__name__)
 
@@ -13,12 +15,13 @@ sem_bp = Blueprint('sem_res',__name__)
 def get_semester_results():
     semester = request.args.get('semester')
     batch_year = get_batch_year()   
+    # engine = create_engine(postgres_db_url)
     if not semester:
         return jsonify({"error": "Missing semester parameter"}), 400
     
     try:
-        db_path = get_db_path(batch_year)  # <-- resolves correct DB
-        university = University(db_path)
+        # db_path = get_db_path(batch_year)  # <-- resolves correct DB
+        university = University(postgres_url=postgres_db_url, batch_year=batch_year)
         university.add_students(selected_semester=semester)
 
         # Example: your semester_subject_msem_bping could come from a DB or config
@@ -69,8 +72,8 @@ def download_semester_report(semester):
     pdf_path = os.path.join(pdf_dir, f"{semester}_results.pdf")
     if not os.path.exists(pdf_path):
         # Optionally generate the PDF if it does not exist
-        db_path = get_db_path(batch_year)
-        university = University(db_path)
+        # db_path = get_db_path(batch_year)
+        university = University(postgres_url=postgres_db_url, batch_year=batch_year)
         university.add_students(selected_semester=semester)
         generate_sem_pdf(semester, university, semester_subject_mapping, output_path=pdf_path)
         

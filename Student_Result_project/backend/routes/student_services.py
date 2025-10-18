@@ -1,20 +1,22 @@
 # student_service.py
 from models import Student
 from visuals import create_student_report
-from models.paths import  pdf_dir
+from models.paths import  pdf_dir, postgres_db_url, API_BASE
 import os
+from sqlalchemy import create_engine
 
 def get_student_result(usn: str, semester: str):
     """
     Returns student result as dictionary (same structure as /result API)
     """
-    student = Student(usn=usn, semester=semester, db_path=None)
+    engine = create_engine(postgres_db_url)
+    student = Student(usn=usn, semester=semester, engine=engine)
 
     # Generate PDF (optional, can skip if only analysis needed)
     filename = f"{student.name}_{semester}_report.pdf"
     file_path = os.path.join(pdf_dir, filename)
     create_student_report(student, file_path=file_path)
-    pdf_url = f"http://localhost:5000/auth/Student/report/{filename}"
+    pdf_url = f"{API_BASE}/auth/Student/report/{filename}"
 
     result = {
         "name": student.name,

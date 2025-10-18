@@ -126,12 +126,12 @@ def fetch_student_data(usn, semester, batch_year, engine):
 
         for col in df.columns[2:]:  # Skip first two columns: (0: USN, 1: Name)
             if "INTERNALS" in col:
-                ia_marks.append(student_data[col])
+                ia_marks.append(int(student_data[col]))
                 subject_code.append(col.split("_")[0])
             elif "EXTERNALS" in col:
-                see_marks.append(student_data[col])
+                see_marks.append(int(student_data[col]))
             elif "CREDITS" in col:
-                credits.append(student_data[col])
+                credits.append(int(student_data[col]))
 
         return {
             "name": student_data.get("student_name", "Unknown"),
@@ -150,7 +150,7 @@ def fetch_student_data(usn, semester, batch_year, engine):
         print(f"Database error occurred in fetch_student_data: {e}")
         return None
 
-    
+   
 if(__name__) == ("__main__"):
         #test the above function
     '''student_data = fetch_student_data('1JS22CS001')  # Replace with a valid USN
