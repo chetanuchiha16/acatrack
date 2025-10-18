@@ -31,7 +31,7 @@ def convert_excel_to_postgres(excel_path: str, postgres_url: str, batch_year: in
                 df[col] = numeric_series.fillna(0).astype(int)
 
         # Use table prefix for batch separation
-        table_name = f"{sheet_name}_{batch_year}"
+        table_name = f"{sheet_name}_{batch_year}".lower()
 
         df.to_sql(table_name, engine, if_exists='replace', index=False)
         print(f"Saved sheet '{sheet_name}' to Postgres table '{table_name}'")

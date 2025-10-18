@@ -4,6 +4,7 @@ from models.config import Config
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
+from models.paths import postgres_db_url
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -14,12 +15,12 @@ def create_app(batch_year=None, postgres_url=None):
     app.config.from_object(Config)
 
     if postgres_url is None:
-        user = "chetan"
-        password = "chetan"
-        host = "localhost"
-        port = 5433
-        db_name = "Group_Project"
-        postgres_url = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db_name}"
+        # user = "chetan"
+        # password = "chetan"
+        # host = "localhost"
+        # port = 5433
+        # db_name = "Group_Project"
+        postgres_url = postgres_db_url
 
     app.config['SQLALCHEMY_DATABASE_URI'] = postgres_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

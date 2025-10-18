@@ -18,7 +18,7 @@ import os
 import random
 import sqlite3
 from typing import List, Tuple
-from sqlalchemy import text, inspect
+from sqlalchemy import text, inspect, delete
 import pandas as pd
 from flask import Blueprint, current_app, jsonify, request, send_file
 from werkzeug.utils import secure_filename
@@ -116,92 +116,93 @@ def generate_accounts():
     mode = request.args.get("mode", "missing").lower()
     if mode not in {"missing", "all"}:
         return jsonify({"error": "Invalid mode. Use 'missing' or 'all'."}), 400
-    
-    batch_year = int(request.args.get("batch_year", 2022))  # default if not passed
 
+    batch_year = int(request.args.get("batch_year", 2022))
+    batch_prefix = f"1JS{batch_year % 100}"  # e.g., 1JS22
 
     with bm.session_scope(batch_year) as db:
         students = _fetch_source_rows(batch_year)
 
+        # --- Delete existing accounts for 'all' mode
         if mode == "all":
-            StudentAuth.query.delete()
-            Teacher.query.delete()
-            ParentAuth.query.delete()
-            db.session.commit()
+            db.session.query(StudentAuth).filter(StudentAuth.username.like(f"{batch_prefix}%")).delete(synchronize_session=False)
+            db.session.query(ParentAuth).filter(ParentAuth.username.like(f"{batch_prefix}%_parent")).delete(synchronize_session=False)
+            db.session.commit()  # commit deletions before insertions
 
         out = io.StringIO()
         out.write("username,name,plain_password,password_hash,role,linked_student\n")
 
-        # --- Students + Parents
         for usn, name in students:
             if not usn:
                 continue
-            name = (name or "").strip()
             usn = str(usn).strip()
+            name = (name or "").strip()
 
-            if mode == "missing" and StudentAuth.query.filter_by(username=usn).first():
+            # --- Skip existing student if mode is 'missing'
+            existing_student = StudentAuth.query.filter_by(username=usn).first()
+            if mode == "missing" and existing_student:
                 continue
+            elif existing_student:
+                # Remove it to avoid duplicates
+                db.session.delete(existing_student)
+                db.session.commit()
 
-            plain_student = f"{_safe_seed(name)}{usn[-3:]}"
-            pw_hash_student = bcrypt.generate_password_hash(password=plain_student).decode("utf-8")
-            student = StudentAuth(
-                username=usn,
-                name=name,
-                password=pw_hash_student,
-                student_email=os.getenv("C_EMAIL"),
-                student_phno=os.getenv("DEFAULT_NUMBER")
-            )
-            db.session.add(student)
-            out.write(f"{usn},{name},{plain_student},{pw_hash_student},student,\n")
+            with db.session.no_autoflush:
+                # --- Create student
+                plain_student = f"{_safe_seed(name)}{usn[-3:]}"
+                pw_hash_student = bcrypt.generate_password_hash(password=plain_student).decode("utf-8")
+                student = StudentAuth(
+                    username=usn,
+                    name=name,
+                    password=pw_hash_student,
+                    student_email=os.getenv("C_EMAIL"),
+                    student_phno=os.getenv("DEFAULT_NUMBER")
+                )
+                db.session.add(student)
+                out.write(f"{usn},{name},{plain_student},{pw_hash_student},student,\n")
 
-            parent_username = f"{usn}_parent"
-            if not ParentAuth.query.filter_by(username=parent_username).first():
+                # --- Create parent
+                parent_username = f"{usn}_parent"
+                existing_parent = ParentAuth.query.filter_by(username=parent_username).first()
+                if existing_parent:
+                    db.session.delete(existing_parent)
+                    db.session.commit()
+
                 plain_parent = "default123"
                 pw_hash_parent = bcrypt.generate_password_hash(password=plain_parent).decode("utf-8")
-                new_parent = ParentAuth(
+                parent = ParentAuth(
                     username=parent_username,
                     password=pw_hash_parent,
                     student_usn=usn,
-                    name=f"Parent of {student.name}" if student else "Parent",
+                    name=f"Parent of {name}",
                     email=os.getenv("C_EMAIL"),
                     phone="123456789"
                 )
-                db.session.add(new_parent)
+                db.session.add(parent)
                 out.write(f"{parent_username},Parent of {name},{plain_parent},{pw_hash_parent},parent,{usn}\n")
-        # --- Populate mentor_id for students from mentor Excel ---
+
+        # --- Assign mentors safely
         if os.path.exists(mentor_excel_path):
             df = pd.read_excel(mentor_excel_path)
             for _, row in df.iterrows():
                 student_usn = str(row["student_usn"]).strip()
                 mentor_name = str(row["Mentor_Name"]).strip()
-                
                 student = StudentAuth.query.filter_by(username=student_usn).first()
                 mentor = Mentor.query.filter_by(name=mentor_name).first()
                 if student and mentor:
                     student.mentor_id = mentor.id
-            db.session.commit()
-        # # --- Teachers
-        # for (teacher_name,) in teachers:
-        #     teacher_name = (teacher_name or "").strip()
-        #     if mode == "missing" and Teacher.query.filter_by(name=teacher_name).first():
-        #         continue
 
-        #     username = _unique_teacher_username()
-        #     plain = f"{_safe_seed(teacher_name.split(' ', 1)[1])}{username[-3:]}"
-        #     pw_hash = bcrypt.generate_password_hash(password=plain).decode("utf-8")
-        #     if not Teacher.query.filter_by(name=teacher_name).first():
-        #         db.session.add(Teacher(username=username, name=teacher_name, password=pw_hash))
-        #         out.write(f"{username},{teacher_name},{plain},{pw_hash},teacher,\n")
+        db.session.commit()  # commit all inserts and updates
 
-        db.session.commit()
-
+        # --- Return CSV
         out.seek(0)
         return send_file(
             io.BytesIO(out.getvalue().encode("utf-8")),
             mimetype="text/csv",
             as_attachment=True,
-            download_name="generated_passwords.csv",
+            download_name=f"generated_passwords_{batch_year}.csv",
         )
+
 
 
 

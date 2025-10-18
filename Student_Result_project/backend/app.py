@@ -56,5 +56,7 @@ bm = BatchManager()
 app = create_app()
 register_routes(app)
 
+print("Using database:", app.config['SQLALCHEMY_DATABASE_URI'])
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

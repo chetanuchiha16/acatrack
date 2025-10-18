@@ -6,10 +6,10 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Flask secret key
-    SECRET_KEY = os.environ.get("SECRET_KEY", "supersecretkey")
+    SECRET_KEY = os.environ.get("SECRET_KEY")
 
     # Admin secret (for /admin endpoints)
-    ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "supersecretkey")  # fallback for dev
+    ADMIN_SECRET = os.environ.get("ADMIN_SECRET")  # fallback for dev
 
 
     # Session configuration
