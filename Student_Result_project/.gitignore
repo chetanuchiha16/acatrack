@@ -11,4 +11,5 @@ __pycache__/
 # Database files
 *.db
 firebase-service-account.json
+student-6b67d-firebase-adminsdk-fbsvc-d709714bcb.json
 .env

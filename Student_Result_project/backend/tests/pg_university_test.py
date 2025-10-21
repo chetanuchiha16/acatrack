@@ -20,7 +20,7 @@ def test_university_postgres():
         return
 
     # Test adding students
-    selected_semester = f"SEM1"  # Replace with a semester present in your database
+    selected_semester = f"sem1"  # Replace with a semester present in your database
     print(f"\nAdding students for {selected_semester}...")
     uni.add_students(selected_semester)
     print(f"Total students added: {len(uni.students)}")

@@ -60,7 +60,7 @@ class BatchManager:
     def list_batches(self):
         """
         Return all batch years present in PostgreSQL based on table names.
-        Looks for tables like SEM1_2022, SEM2_2022, etc.
+        Looks for tables like sem1_2022, sem2_2022, etc.
         """
         postgres_url = self.get_postgres_url(0)  # batch_year is irrelevant here
         from sqlalchemy import create_engine, text

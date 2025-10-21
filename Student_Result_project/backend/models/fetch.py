@@ -3,7 +3,7 @@ from sqlalchemy import create_engine, text
 from models.paths import postgres_db_url
 # Function to fetch data from the database with error handling for missing USN
 sem_subjects = {
-    "SEM1": {
+    "sem1": {
         "BMATS101": "Mathematics for CSE Stream-I",
         "BCHES102": "Applied Chemistry for CSE Stream",
         "BCEDK103": "Computer-Aided Engineering Drawing",
@@ -15,7 +15,7 @@ sem_subjects = {
         "BESCK104C": "Introduction TO Electronics Engineering",
         "BPLCK105B": "Introduction TO to Python Programming"
     },
-    "SEM2": {
+    "sem2": {
         "BMAT201": "Mathematics for CSE Stream-II",
         "BMATS201": "Mathematics-II for CSE Stream",
         "BPHYS202": "Applied Physics for CSE Stream",
@@ -29,7 +29,7 @@ sem_subjects = {
         "BESCK204D": "Introduction To Mechanical Engineering",
         "BETCK205H": "Introduction to Internet of Things (IoT)"
     },
-    "SEM3": {
+    "sem3": {
         "BCS301": "Mathematics for Computer Science",
         "BCS302": "Digital Design & Computer Organization",
         "BCS303": "Operating Systems",
@@ -40,7 +40,7 @@ sem_subjects = {
         "BCS306A": "Object Oriented Programming with Java",
         "BCS358D": "Data Visualization with Python"
     },
-    "SEM4": {
+    "sem4": {
         "BCS401": "Analysis & Design of Algorithms",
         "BCS402": "Microcontrollers",
         "BCS403": "Database Management Systems",
@@ -51,7 +51,7 @@ sem_subjects = {
         "BCS405B": "Graph Theory",
         "BCSL456D": "Technical Writing using LaTeX"
     },
-    "SEM5": {
+    "sem5": {
         "BCS501": "Software Engineering and Project Management",
         "BCS502": "Computer Networks",
         "BCS503": "Theory of Computation",
@@ -66,7 +66,7 @@ sem_subjects = {
         "BCS586": "Mini Project",
         "BPEK459_PhysicalEducation_OR_BNSK459_NSS_": "Physical Education or NSS"
     },
-    "SEM6": {
+    "sem6": {
         # Sem 6 subjects not found explicitly; placeholders
         "BCS601": "<Professional Core Course 6-1>",
         "BCS602": "<Professional Core Course 6-2>",
@@ -76,7 +76,7 @@ sem_subjects = {
         "OEC606x": "Open Elective",
         "BSK6xx": "Skill Development Activity / NSS / Physical Education"
     },
-    "SEM7": {
+    "sem7": {
         "PEC701x": "Professional Elective",
         "PEC702x": "Professional Elective",
         "PEC703x": "Professional Elective",
@@ -84,7 +84,7 @@ sem_subjects = {
         "OEC705x": "Open Elective",
         "PROJ786": "Major Project Phase II"  # includes practical/project work
     },
-    "SEM8": {
+    "sem8": {
         "PEC801x": "Professional Elective (Online Courses)",
         "OEC802x": "Open Elective (Online Courses)",
         "INT803": "Internship (Industry / Research / Rural - 14-20 weeks)"
@@ -92,12 +92,12 @@ sem_subjects = {
 }
 
 
-SEMESTERS = ["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6"]
+SEMESTERS = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6"]
 
 def fetch_student_data(usn, semester, batch_year, engine):
     """
     Fetch student data from the given semester table in PostgreSQL.
-    Each batch has its own suffixed tables (e.g., SEM1_2024).
+    Each batch has its own suffixed tables (e.g., sem1_2024).
     """
     # if postgres_url is None:
         # postgres_url = postgres_db_url
@@ -159,4 +159,4 @@ if(__name__) == ("__main__"):
     else:
         print("No data found for the specified USN.")'''
     
-    print(fetch_student_data("1JS22CS006","SEM1"))
+    print(fetch_student_data("1JS22CS006","sem1"))

@@ -4,9 +4,9 @@ const API_BASE = window.location.hostname.includes("devtunnels.ms")
 
 export default API_BASE;
 
-export const semesterOptions = ["SEM1", "SEM2", "SEM3", "SEM4"];
+export const semesterOptions = ["sem1", "sem2", "sem3", "sem4"];
 export const subjectMapping = {
-    SEM1: {
+    sem1: {
         BMATS101: "Mathematics for CSE Stream-I",
         BCHES102: "Applied Chemistry for CSE Stream",
         BCEDK103: "Computer-Aided Engineering Drawing",
@@ -16,9 +16,9 @@ export const subjectMapping = {
         BESCK104A: "Introduction to Civil Engineering",
         BETCK105H: "Introduction to Internet of Things (IoT)",
         BESCK104C: "Introduction TO Electronics Engineering",
-        BPLCK105B: "Introduction TO to Python Programming"
+        BPLCK105B: "Introduction TO to Python Programming",
     },
-    SEM2: {
+    sem2: {
         BMAT201: "Mathematics for CSE Stream-II",
         BMATS201: "Mathematics-II for CSE Stream",
         BPHYS202: "Applied Physics for CSE Stream",
@@ -30,9 +30,9 @@ export const subjectMapping = {
         BPLCK205B: "Introduction to Python Programming",
         BESCK204C: "Introduction to Electronics Engineering",
         BESCK204D: "Introduction To Mechanical Engineering",
-        BETCK205H: "Introduction to Internet of Things (IoT)"
+        BETCK205H: "Introduction to Internet of Things (IoT)",
     },
-    SEM3: {
+    sem3: {
         BCS301: "Mathematics for Computer Science",
         BCS302: "Digital Design & Computer Organization",
         BCS303: "Operating Systems",
@@ -43,7 +43,7 @@ export const subjectMapping = {
         BCS306A: "Object Oriented Programming with Java",
         BCS358D: "Data Visualization with Python",
     },
-    SEM4: {
+    sem4: {
         BCS401: "Analysis & Design of Algorithms",
         BCS402: "Microcontrollers",
         BCS403: "Database Management Systems",

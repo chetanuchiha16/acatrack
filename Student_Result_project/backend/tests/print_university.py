@@ -30,4 +30,4 @@
 
 # if __name__ == "__main__":
 #     # Example usage
-#     test_university_class(selected_semester="SEM3", db_path="Outputs/student_data.db")
+#     test_university_class(selected_semester="sem3", db_path="Outputs/student_data.db")

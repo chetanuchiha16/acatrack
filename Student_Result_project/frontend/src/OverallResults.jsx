@@ -10,7 +10,7 @@ export default function OverallResults() {
     const [sortDir, setSortDir] = useState("desc");
     const [expandedRow, setExpandedRow] = useState(null);
 
-    const semesterOptions = ["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6"];
+    const semesterOptions = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6"];
 
     const fetchData = async () => {
         if (!semester) return;
@@ -26,36 +26,33 @@ export default function OverallResults() {
     };
 
     const downloadPDF = async () => {
-    if (!semester) return;
+        if (!semester) return;
 
-    // const token = localStorage.getItem("jwt"); // wherever you store your JWT
-    const url = `${API_BASE}/auth/Staff/report/${semester}`;
+        // const token = localStorage.getItem("jwt"); // wherever you store your JWT
+        const url = `${API_BASE}/auth/Staff/report/${semester}`;
 
-    try {
-        const response = await fetchWithAuth(url, {
-            
-        });
+        try {
+            const response = await fetchWithAuth(url, {});
 
-        if (!response.ok) {
-            console.error("PDF download failed", response.status);
-            return;
+            if (!response.ok) {
+                console.error("PDF download failed", response.status);
+                return;
+            }
+
+            const blob = await response.blob();
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `${semester}_report.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            // Optional: release the blob object
+            URL.revokeObjectURL(a.href);
+        } catch (err) {
+            console.error("Error downloading PDF:", err);
         }
-
-        const blob = await response.blob();
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = `${semester}_report.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-
-        // Optional: release the blob object
-        URL.revokeObjectURL(a.href);
-    } catch (err) {
-        console.error("Error downloading PDF:", err);
-    }
-};
-
+    };
 
     // Filter out invalid entries first
     const validData = data.filter((student) => student.name && student.usn);

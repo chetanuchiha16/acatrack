@@ -1,5 +1,5 @@
--- table: SEM1
-CREATE TABLE "SEM1" (
+-- table: sem1
+CREATE TABLE "sem1" (
 "student_usn" TEXT,
   "student_name" TEXT,
   "BMATS101_INTERNALS" INTEGER,
@@ -42,8 +42,8 @@ CREATE TABLE "SEM1" (
   "TOTAL MARKS_Gender" TEXT
 );
 
--- table: SEM2
-CREATE TABLE "SEM2" (
+-- table: sem2
+CREATE TABLE "sem2" (
 "student_usn" TEXT,
   "student_name" TEXT,
   "BMAT201_INTERNALS" INTEGER,
@@ -83,8 +83,8 @@ CREATE TABLE "SEM2" (
   "TOTAL MARKS_PERCENTAGE" INTEGER
 );
 
--- table: SEM3
-CREATE TABLE "SEM3" (
+-- table: sem3
+CREATE TABLE "sem3" (
 "student_usn" TEXT,
   "student_name" TEXT,
   "BCS301_INTERNALS" INTEGER,
@@ -128,8 +128,8 @@ CREATE TABLE "SEM3" (
   "TOTAL Marks_PERCENTAGE" INTEGER
 );
 
--- table: SEM4
-CREATE TABLE "SEM4" (
+-- table: sem4
+CREATE TABLE "sem4" (
 "student_usn" TEXT,
   "student_name" TEXT,
   "BCS401_INTERNALS" INTEGER,
@@ -173,8 +173,8 @@ CREATE TABLE "SEM4" (
   "TOTAL Marks_PERCENTAGE" INTEGER
 );
 
--- table: SEM5
-CREATE TABLE "SEM5" (
+-- table: sem5
+CREATE TABLE "sem5" (
 "student_usn" TEXT,
   "student_name" TEXT,
   "BCS501_INTERNALS" REAL,
@@ -214,8 +214,8 @@ CREATE TABLE "SEM5" (
   "TOTAL Marks_PERCENTAGE" REAL
 );
 
--- table: SEM6
-CREATE TABLE "SEM6" (
+-- table: sem6
+CREATE TABLE "sem6" (
 "student_usn" TEXT,
   "student_name" TEXT,
   "BCS601_INTERNALS" REAL,
@@ -257,102 +257,102 @@ CREATE TABLE "SEM6" (
 
 -- table: Subjectwise_result_1
 CREATE TABLE "Subjectwise_result_1" (
-"SEM1_Unnamed: 0_level_1" INTEGER,
-  "SEM1_Staff_Initials" TEXT,
-  "SEM1_Sub_Name" TEXT,
-  "SEM1_Sub_Code" TEXT,
-  "SEM1_Appeared" INTEGER,
-  "SEM1_Pass" INTEGER,
-  "SEM1_Fail" INTEGER,
-  "SEM1_FCD" INTEGER,
-  "SEM1_FC" INTEGER,
-  "SEM1_SC" INTEGER,
-  "SEM1_Pass %" INTEGER
+"sem1_Unnamed: 0_level_1" INTEGER,
+  "sem1_Staff_Initials" TEXT,
+  "sem1_Sub_Name" TEXT,
+  "sem1_Sub_Code" TEXT,
+  "sem1_Appeared" INTEGER,
+  "sem1_Pass" INTEGER,
+  "sem1_Fail" INTEGER,
+  "sem1_FCD" INTEGER,
+  "sem1_FC" INTEGER,
+  "sem1_SC" INTEGER,
+  "sem1_Pass %" INTEGER
 );
 
 -- table: Subjectwise_result_2
 CREATE TABLE "Subjectwise_result_2" (
-"SEM2_Unnamed: 0_level_1" INTEGER,
-  "SEM2_Staff_Initials" TEXT,
-  "SEM2_Sub_Name" TEXT,
-  "SEM2_Sub_Code" TEXT,
-  "SEM2_Appeared" INTEGER,
-  "SEM2_Pass" INTEGER,
-  "SEM2_Fail" INTEGER,
-  "SEM2_FCD" INTEGER,
-  "SEM2_FC" INTEGER,
-  "SEM2_SC" INTEGER,
-  "SEM2_AB" INTEGER,
-  "SEM2_P" INTEGER,
-  "SEM2_Pass %" INTEGER
+"sem2_Unnamed: 0_level_1" INTEGER,
+  "sem2_Staff_Initials" TEXT,
+  "sem2_Sub_Name" TEXT,
+  "sem2_Sub_Code" TEXT,
+  "sem2_Appeared" INTEGER,
+  "sem2_Pass" INTEGER,
+  "sem2_Fail" INTEGER,
+  "sem2_FCD" INTEGER,
+  "sem2_FC" INTEGER,
+  "sem2_SC" INTEGER,
+  "sem2_AB" INTEGER,
+  "sem2_P" INTEGER,
+  "sem2_Pass %" INTEGER
 );
 
 -- table: Subjectwise_result_3
 CREATE TABLE "Subjectwise_result_3" (
-"SEM3_Unnamed: 0_level_1" INTEGER,
-  "SEM3_Staff_Initials" TEXT,
-  "SEM3_Sub_Name" TEXT,
-  "SEM3_Sub_Code" TEXT,
-  "SEM3_Appeared" INTEGER,
-  "SEM3_Pass" INTEGER,
-  "SEM3_Fail" INTEGER,
-  "SEM3_FCD" INTEGER,
-  "SEM3_FC" INTEGER,
-  "SEM3_SC" INTEGER,
-  "SEM3_AB" INTEGER,
-  "SEM3_p" INTEGER,
-  "SEM3_Pass %" INTEGER
+"sem3_Unnamed: 0_level_1" INTEGER,
+  "sem3_Staff_Initials" TEXT,
+  "sem3_Sub_Name" TEXT,
+  "sem3_Sub_Code" TEXT,
+  "sem3_Appeared" INTEGER,
+  "sem3_Pass" INTEGER,
+  "sem3_Fail" INTEGER,
+  "sem3_FCD" INTEGER,
+  "sem3_FC" INTEGER,
+  "sem3_SC" INTEGER,
+  "sem3_AB" INTEGER,
+  "sem3_p" INTEGER,
+  "sem3_Pass %" INTEGER
 );
 
 -- table: Subjectwise_result_4
 CREATE TABLE "Subjectwise_result_4" (
-"SEM4_Unnamed: 0_level_1" INTEGER,
-  "SEM4_Staff_Initials" TEXT,
-  "SEM4_Sub_Name" REAL,
-  "SEM4_Sub_Code" TEXT,
-  "SEM4_Appeared" REAL,
-  "SEM4_Pass" REAL,
-  "SEM4_Fail" REAL,
-  "SEM4_FCD" REAL,
-  "SEM4_FC" REAL,
-  "SEM4_SC" REAL,
-  "SEM4_AB" REAL,
-  "SEM4_p" REAL,
-  "SEM4_Pass %" REAL
+"sem4_Unnamed: 0_level_1" INTEGER,
+  "sem4_Staff_Initials" TEXT,
+  "sem4_Sub_Name" REAL,
+  "sem4_Sub_Code" TEXT,
+  "sem4_Appeared" REAL,
+  "sem4_Pass" REAL,
+  "sem4_Fail" REAL,
+  "sem4_FCD" REAL,
+  "sem4_FC" REAL,
+  "sem4_SC" REAL,
+  "sem4_AB" REAL,
+  "sem4_p" REAL,
+  "sem4_Pass %" REAL
 );
 
 -- table: Subjectwise_result_5
 CREATE TABLE "Subjectwise_result_5" (
-"SEM5_Unnamed: 0_level_1" INTEGER,
-  "SEM5_Staff_Initials" TEXT,
-  "SEM5_Sub_Name" REAL,
-  "SEM5_Sub_Code" TEXT,
-  "SEM5_Appeared" REAL,
-  "SEM5_Pass" REAL,
-  "SEM5_Fail" REAL,
-  "SEM5_FCD" REAL,
-  "SEM5_FC" REAL,
-  "SEM5_SC" REAL,
-  "SEM5_AB" REAL,
-  "SEM5_p" REAL,
-  "SEM5_Pass %" REAL
+"sem5_Unnamed: 0_level_1" INTEGER,
+  "sem5_Staff_Initials" TEXT,
+  "sem5_Sub_Name" REAL,
+  "sem5_Sub_Code" TEXT,
+  "sem5_Appeared" REAL,
+  "sem5_Pass" REAL,
+  "sem5_Fail" REAL,
+  "sem5_FCD" REAL,
+  "sem5_FC" REAL,
+  "sem5_SC" REAL,
+  "sem5_AB" REAL,
+  "sem5_p" REAL,
+  "sem5_Pass %" REAL
 );
 
 -- table: Subjectwise_result_6
 CREATE TABLE "Subjectwise_result_6" (
-"SEM6_Unnamed: 0_level_1" INTEGER,
-  "SEM6_Staff_Initials" TEXT,
-  "SEM6_Sub_Name" REAL,
-  "SEM6_Sub_Code" TEXT,
-  "SEM6_Appeared" REAL,
-  "SEM6_Pass" REAL,
-  "SEM6_Fail" REAL,
-  "SEM6_FCD" REAL,
-  "SEM6_FC" REAL,
-  "SEM6_SC" REAL,
-  "SEM6_AB" REAL,
-  "SEM6_p" REAL,
-  "SEM6_Pass %" REAL
+"sem6_Unnamed: 0_level_1" INTEGER,
+  "sem6_Staff_Initials" TEXT,
+  "sem6_Sub_Name" REAL,
+  "sem6_Sub_Code" TEXT,
+  "sem6_Appeared" REAL,
+  "sem6_Pass" REAL,
+  "sem6_Fail" REAL,
+  "sem6_FCD" REAL,
+  "sem6_FC" REAL,
+  "sem6_SC" REAL,
+  "sem6_AB" REAL,
+  "sem6_p" REAL,
+  "sem6_Pass %" REAL
 );
 
 -- table: mentor_students

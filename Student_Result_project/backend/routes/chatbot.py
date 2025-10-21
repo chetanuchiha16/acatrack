@@ -213,7 +213,7 @@ def get_latest_semester(student_data):
         pdf_url = student_data.get("pdf_url", "")
         match = re.search(r"(SEM\d+)", pdf_url)
         if match:
-            return match.group(1)  # e.g. "SEM5"
+            return match.group(1)  # e.g. "sem5"
     
     return None
 
@@ -225,7 +225,7 @@ def safe_marks(marks):
 
 def get_student_history(student_data):
     semesters = student_data.get("semesters", {})
-    # Extract number from keys like "SEM1", "SEM2"
+    # Extract number from keys like "sem1", "sem2"
     def sem_key(sem):
         match = re.search(r'\d+', sem)
         return int(match.group()) if match else 0
@@ -527,7 +527,7 @@ def get_student_report(student_query):
                 }
     else:  
         # New format (flat JSON)
-        sem = get_latest_semester(student_data) or "SEM1"
+        sem = get_latest_semester(student_data) or "sem1"
         sem_backlogs = []
         sem_credit_sum = 0
 

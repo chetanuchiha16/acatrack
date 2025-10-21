@@ -44,7 +44,7 @@ export default function Student() {
     const finalName = name;
     const finalUsn = id;
 
-    const sems = ["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6"];
+    const sems = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6"];
 
     // onMessage(messaging, (payload) => {
     //     console.log("Message received. ", payload);

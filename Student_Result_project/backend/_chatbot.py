@@ -31,8 +31,8 @@ def generate_pdf_report(student_data):
                              {
                                  "student_name": "John Doe",
                                  "semester_results": {
-                                     "SEM1": [{"subject": "Math", "score": 92, "grade": "A"}],
-                                     "SEM2": [{"subject": "Science", "score": 88, "grade": "B+"}]
+                                     "sem1": [{"subject": "Math", "score": 92, "grade": "A"}],
+                                     "sem2": [{"subject": "Science", "score": 88, "grade": "B+"}]
                                  },
                                  "comments": "Excellent progress."
                              }
@@ -64,8 +64,8 @@ def generate_pdf_report(student_data):
     if not semester_results:
         story.append(Paragraph("<b>No subject results found for this student across all semesters.</b>", styles['Normal']))
     else:
-        # Sort semesters to ensure a consistent order (e.g., SEM1, SEM2, SEM3, SEM4)
-        # Assuming sheet names like "SEM1", "SEM2" will sort correctly lexicographically.
+        # Sort semesters to ensure a consistent order (e.g., sem1, sem2, sem3, sem4)
+        # Assuming sheet names like "sem1", "sem2" will sort correctly lexicographically.
         sorted_semesters = sorted(semester_results.keys())
 
         for sem in sorted_semesters:
@@ -174,7 +174,7 @@ def main():
         excel_directory = "." # Use current directory if no path is specified
 
     # List of sheet names to read from within the Excel file
-    sheet_names = ["SEM1", "SEM2", "SEM3", "SEM4"] # Assuming these are the exact sheet names
+    sheet_names = ["sem1", "sem2", "sem3", "sem4"] # Assuming these are the exact sheet names
 
     if not os.path.exists(excel_file_path):
         print(f"❌ Error: File '{excel_file_path}' not found. Please ensure the path is correct.")
