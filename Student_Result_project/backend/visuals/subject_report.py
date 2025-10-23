@@ -16,6 +16,10 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import pathlib
 from models.fetch import sem_subjects
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 # from models import SubjectResult
 # from models.config import 
 def create_subject_report(subject_result, file_path=f"{pdf_dir}/subject_report.pdf"):
@@ -49,7 +53,7 @@ def create_subject_report(subject_result, file_path=f"{pdf_dir}/subject_report.p
         logo = Image(logo_path, width=50, height=50)
         c.drawImage(logo_path, 50, 735, width=50, height=50)
     except Exception as e:
-        print(f"Warning: Could not load logo image. {e}")
+        logger.debug(f"Warning: Could not load logo image. {e}")
     
     # Title for Subject Report
     c.setFont("Helvetica-Bold", 14)
@@ -74,4 +78,4 @@ def create_subject_report(subject_result, file_path=f"{pdf_dir}/subject_report.p
     
     # Save the PDF
     c.save()
-    print(f"Subject Report PDF saved successfully as {pathlib.Path(file_path).resolve()}")
+    logger.debug(f"Subject Report PDF saved successfully as {pathlib.Path(file_path).resolve()}")

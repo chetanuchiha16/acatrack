@@ -50,7 +50,7 @@ def fetch_single_result(usn: str, download_dir: str, exam_session: str, exam_yea
     RESULTS_URL = f"https://results.vtu.ac.in/{exam_session}cbcs{exam_year}/index.php"
     driver = setup_selenium(download_dir)
     try:
-        print(f"Fetching results for USN: {usn}")
+        logger.debug(f"Fetching results for USN: {usn}")
         driver.get(RESULTS_URL)
         time.sleep(2)
 
@@ -62,7 +62,7 @@ def fetch_single_result(usn: str, download_dir: str, exam_session: str, exam_yea
 
         # Wait for CAPTCHA to be solved manually
         WebDriverWait(driver, 300).until(EC.url_contains("resultpage.php"))
-        print(f"CAPTCHA solved for {usn}")
+        logger.debug(f"CAPTCHA solved for {usn}")
 
         # Click PRINT button
         print_button = WebDriverWait(driver, 10).until(
@@ -70,10 +70,10 @@ def fetch_single_result(usn: str, download_dir: str, exam_session: str, exam_yea
         )
         print_button.click()
         time.sleep(5)
-        print(f"Download triggered for {usn}")
+        logger.debug(f"Download triggered for {usn}")
 
     except Exception as e:
-        print(f"Error fetching {usn}: {e}")
+        logger.debug(f"Error fetching {usn}: {e}")
     finally:
         driver.quit()
 

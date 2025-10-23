@@ -7,6 +7,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 import os
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 
 # --- CONFIGURATION ---
 DOWNLOAD_DIR = os.path.abspath("VTU_Results")  # Folder to save PDFs
@@ -56,7 +60,7 @@ def setup_selenium():
 def fetch_results(usn_number):
     driver = setup_selenium()
     try:
-        print(f"\nFetching results for USN: {usn_number}")
+        logger.debug(f"\nFetching results for USN: {usn_number}")
         driver.get(RESULTS_URL)
         time.sleep(2)
 
@@ -70,32 +74,32 @@ def fetch_results(usn_number):
         WebDriverWait(driver, 300).until(
             EC.url_contains("resultpage.php")
         )
-        print("CAPTCHA solved, result page loaded.")
+        logger.debug("CAPTCHA solved, result page loaded.")
 
         # Click PRINT button to download PDF
         print_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, "//input[@value='ಮುದ್ರಣ / PRINT']"))
         )
         print_button.click()
-        print("Print button clicked. PDF download started.")
+        logger.debug("Print button clicked. PDF download started.")
         
         # Wait a few seconds to ensure download
         time.sleep(5)
 
     except Exception as e:
-        print(f"Error fetching results for USN {usn_number}: {e}")
+        logger.debug(f"Error fetching results for USN {usn_number}: {e}")
     finally:
         driver.quit()
 
 # --- MAIN FUNCTION ---
 def main():
-    print(f"\nFetching results from: {RESULTS_URL}")
+    logger.debug(f"\nFetching results from: {RESULTS_URL}")
     usn_list = [f"{USN_PREFIX}{str(i).zfill(3)}" for i in range(USN_START, USN_END + 1)]
     
     for usn in usn_list:
         fetch_results(usn)
 
-    print("\nAll results fetched successfully!")
+    logger.debug("\nAll results fetched successfully!")
 
 if __name__ == "__main__":
     main()

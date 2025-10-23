@@ -1,2 +1,6 @@
 import socket
-print(socket.getaddrinfo("db.hpavqkjevepfegkojisn.supabase.co", 5432))
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
+logger.debug(socket.getaddrinfo("db.hpavqkjevepfegkojisn.supabase.co", 5432))

@@ -5,6 +5,10 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import pathlib
 from models.paths import  pdf_dir, img_dir, logo_path
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 
 def create_student_report(student, file_path=f"{pdf_dir}/student_report.pdf"):
     """
@@ -29,7 +33,7 @@ def create_student_report(student, file_path=f"{pdf_dir}/student_report.pdf"):
     try:
         c.drawImage(logo_path, 50, 750, width=50, height=50)  # Add logo on the top-left
     except Exception as e:
-        print(f"Warning: Could not load logo image. {e}")
+        logger.debug(f"Warning: Could not load logo image. {e}")
 
     # Add Report Header
     c.setFont("Helvetica-Bold", 14)
@@ -86,4 +90,4 @@ def create_student_report(student, file_path=f"{pdf_dir}/student_report.pdf"):
     c.drawImage(graph_path, 100, 100, width=400, height=200)
     # Finalize PDF
     c.save()
-    print(f"Student Marks Card PDF saved successfully as {pathlib.Path(file_path).resolve()}")
+    logger.debug(f"Student Marks Card PDF saved successfully as {pathlib.Path(file_path).resolve()}")

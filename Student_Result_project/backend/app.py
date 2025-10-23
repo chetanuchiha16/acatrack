@@ -40,6 +40,9 @@ import firebase_admin
 from firebase_admin import credentials
 import os
 from dotenv import load_dotenv
+from logger_config import get_logger
+
+logger = get_logger(__name__)
 
 load_dotenv()
 cred_path = os.environ.get("FIREBASE_CRED_PATH")
@@ -56,7 +59,7 @@ bm = BatchManager()
 app = create_app()
 register_routes(app)
 
-print("Using database:", app.config['SQLALCHEMY_DATABASE_URI'])
+logger.debug(f"Using database:{app.config['SQLALCHEMY_DATABASE_URI']}")
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

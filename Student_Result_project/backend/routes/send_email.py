@@ -8,6 +8,10 @@ from email.mime.multipart import MIMEMultipart
 import os
 from datetime import datetime, timezone
 from models.helpers import get_batch_year
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 email_bp = Blueprint("email", __name__)
 
 EMAIL_ADDRESS = os.getenv("A_EMAIL")
@@ -53,7 +57,7 @@ def send_email(to_email, subject, body):
             server.send_message(msg)
         return True
     except Exception as e:
-        print("Email send error:", e)
+        logger.debug("Email send error:", e)
         return False
 
 
@@ -166,7 +170,7 @@ def save_message():
 @email_bp.route("/messages", methods=["GET"])
 def get_messages():
     batch_year = get_batch_year()   
-    print(f"{batch_year} from get_messages")
+    logger.debug(f"{batch_year} from get_messages")
     with bm.session_scope(batch_year) as db:
         messages = Message.query.order_by(Message.created_at.desc()).all()
         return jsonify([m.to_dict() for m in messages]), 200

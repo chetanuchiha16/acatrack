@@ -70,7 +70,7 @@ def process_archive_background(job_id, excel_filename, archive_path):
             try:
                 pdftoexcel.process_single_pdf(str(pdf_file), str(EXCEL_FOLDER / excel_filename))
             except Exception as e:
-                print(f"⚠️ Failed to process {pdf_file.name}: {e}")
+                logger.debug(f"⚠️ Failed to process {pdf_file.name}: {e}")
             job_data["processed_files"].append(pdf_file.name)
             job_data["progress"] = idx
             save_job(job_id, job_data)
@@ -85,7 +85,7 @@ def process_archive_background(job_id, excel_filename, archive_path):
         try:
             shutil.rmtree(tmpdir_path)
         except Exception as e:
-            print(f"⚠️ Could not delete temp folder {tmpdir_path}: {e}")
+            logger.debug(f"⚠️ Could not delete temp folder {tmpdir_path}: {e}")
 
 @pdftoexcel_bp.route("/upload_archive", methods=["POST"])
 def upload_archive():

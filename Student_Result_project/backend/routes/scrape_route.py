@@ -8,6 +8,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from models import pdftoexcel
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 
 # ---------- Blueprint ----------
 webscrape_bp = Blueprint("webscrape", __name__, url_prefix="/webscrape")
@@ -21,7 +25,7 @@ def _fetch_single_result(usn, download_dir, exam_url, batch_year):
     from selenium.common.exceptions import TimeoutException
     driver = setup_selenium(download_dir)
     try:
-        print(f"Fetching results for USN: {usn}")
+        logger.debug(f"Fetching results for USN: {usn}")
         driver.get(exam_url)
         time.sleep(1)
 
@@ -34,14 +38,14 @@ def _fetch_single_result(usn, download_dir, exam_url, batch_year):
         WebDriverWait(driver, 300).until(
             EC.url_contains("resultpage.php")
         )
-        print(f"CAPTCHA solved for {usn}")
+        logger.debug(f"CAPTCHA solved for {usn}")
 
         # Click PRINT button to download PDF
         print_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, "//input[@value='ಮುದ್ರಣ / PRINT']"))
         )
         print_button.click()
-        print(f"Download triggered for {usn}")
+        logger.debug(f"Download triggered for {usn}")
         time.sleep(5)
         # Wait for the PDF to download and rename it
         latest_pdf = pdftoexcel.wait_and_rename_pdf(download_dir, usn)
@@ -50,14 +54,14 @@ def _fetch_single_result(usn, download_dir, exam_url, batch_year):
         excel_filename = f"result_list_{batch_year}.xlsx"
         excel_path = os.path.join(excel_dir, excel_filename)
 
-        print(f"Updating Excel at {excel_path} for {usn}...")
+        logger.debug(f"Updating Excel at {excel_path} for {usn}...")
         pdftoexcel.process_single_pdf(latest_pdf, excel_path)
-        print(f"✅ Excel updated for {usn}")
+        logger.debug(f"✅ Excel updated for {usn}")
 
     except TimeoutException:
-        print(f"Timeout fetching results for {usn}")
+        logger.debug(f"Timeout fetching results for {usn}")
     except Exception as e:
-        print(f"Error fetching {usn}: {e}")
+        logger.debug(f"Error fetching {usn}: {e}")
     finally:
         driver.quit()
 

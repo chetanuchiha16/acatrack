@@ -3,6 +3,10 @@ from models.fetch import fetch_student_data
 from models.paths import img_dir
 from sqlalchemy import create_engine
 from models.paths import postgres_db_url
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 class Student:
     def __init__(self, usn, semester, batch_year, engine):
         """
@@ -122,7 +126,7 @@ class Student:
                     sgpa = self.calculate_sgpa_for_semester(ia_marks, see_marks, credits)
                     previous_sgpas.append(sgpa)
             except Exception as e:
-                print(f"Error fetching SGPA for semester {sem}: {e}")
+                logger.debug(f"Error fetching SGPA for semester {sem}: {e}")
         return previous_sgpas
 
     def calculate_sgpa_for_semester(self, ia_marks, see_marks, credits):
@@ -160,19 +164,19 @@ class Student:
         return (self.total_marks / max_total * 100) if max_total > 0 else 0
 
     def display_student_info(self):
-        print(f"Name: {self.name}")
-        print(f"USN: {self.usn}")
-        print(f"Total Marks: {self.total_marks}")
-        print(f"Percentage: {self.percentage:.2f}%")
-        print(f"Credits: {self.credits}")
-        print(f"Credits Obtained: {self.obtained_credits}")
-        print(f"SGPA: {self.sgpa:.2f}")
-        print(f"CGPA: {self.cgpa:.2f}")
-        print("Subject-wise Marks:")
+        logger.debug(f"Name: {self.name}")
+        logger.debug(f"USN: {self.usn}")
+        logger.debug(f"Total Marks: {self.total_marks}")
+        logger.debug(f"Percentage: {self.percentage:.2f}%")
+        logger.debug(f"Credits: {self.credits}")
+        logger.debug(f"Credits Obtained: {self.obtained_credits}")
+        logger.debug(f"SGPA: {self.sgpa:.2f}")
+        logger.debug(f"CGPA: {self.cgpa:.2f}")
+        logger.debug("Subject-wise Marks:")
         for i, (code, name, ia, see, credit, status) in enumerate(
             zip(self.subject_codes, self.subject_names, self.ia_marks, self.see_marks, self.credits, self.pass_fail), 1
         ):
-            print(f"{i}. {name} ({code}): IA={ia}, SEE={see}, Total={ia+see}, Credits={credit}, Status={status}")
+            logger.debug(f"{i}. {name} ({code}): IA={ia}, SEE={see}, Total={ia+see}, Credits={credit}, Status={status}")
 
     def plot_subject_marks(self):
         subjects = [f"{name} ({code})" for name, code in zip(self.subject_names, self.subject_codes)]

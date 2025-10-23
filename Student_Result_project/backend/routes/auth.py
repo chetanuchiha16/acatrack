@@ -51,12 +51,12 @@ def auth():
             user = Teacher.query.filter_by(username=username).first()
         elif who == "Parent":
             user = ParentAuth.query.filter_by(username=username).first()
-            print(f"user parent")
-            print(f"user and user.student: {user and user.student} {user} {batch_from_usn(user.student.username)}")
+            logger.debug(f"user parent")
+            logger.debug(f"user and user.student: {user and user.student} {user} {batch_from_usn(user.student.username)}")
             if user and user.student:
 
                 batch_year = batch_from_usn(user.student.username)
-                print(f"{batch_year} from parent auth")
+                logger.debug(f"{batch_year} from parent auth")
         else:
             # fallback, try all
             user = (StudentAuth.query.filter_by(username=username).first() or

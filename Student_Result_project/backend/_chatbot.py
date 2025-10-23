@@ -7,6 +7,10 @@ from io import BytesIO
 import os
 import pandas as pd # Library to read Excel/CSV files using pandas
 from models.paths import excel_path
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 
 def _calculate_grade(score):
     """
@@ -163,8 +167,8 @@ def main():
     Main function for the command-line chatbot interface.
     Reads student data from a multi-sheet Excel file using pandas and generates PDFs.
     """
-    print("Welcome to the Student Result Chatbot! 🎓")
-    print("I can help you generate PDF reports for specific students from your Excel file.")
+    logger.debug("Welcome to the Student Result Chatbot! 🎓")
+    logger.debug("I can help you generate PDF reports for specific students from your Excel file.")
 
     excel_file_path = excel_path
 
@@ -177,7 +181,7 @@ def main():
     sheet_names = ["sem1", "sem2", "sem3", "sem4"] # Assuming these are the exact sheet names
 
     if not os.path.exists(excel_file_path):
-        print(f"❌ Error: File '{excel_file_path}' not found. Please ensure the path is correct.")
+        logger.debug(f"❌ Error: File '{excel_file_path}' not found. Please ensure the path is correct.")
         return
 
     student_data_map = {} # To group results by student name, now structured semester-wise
@@ -185,11 +189,11 @@ def main():
     for sheet_name in sheet_names:
         try:
             df = pd.read_excel(excel_file_path, sheet_name=sheet_name)
-            print(f"✅ Successfully loaded sheet: '{sheet_name}' from '{excel_file_path}'.")
+            logger.debug(f"✅ Successfully loaded sheet: '{sheet_name}' from '{excel_file_path}'.")
 
             student_name_col = 'student_name'
             if student_name_col not in df.columns:
-                print(f"⚠ Warning: Sheet '{sheet_name}' is missing expected column '{student_name_col}'. Skipping this sheet.")
+                logger.debug(f"⚠ Warning: Sheet '{sheet_name}' is missing expected column '{student_name_col}'. Skipping this sheet.")
                 continue
 
             # Identify subject total columns for THIS specific sheet/semester
@@ -229,22 +233,22 @@ def main():
                         })
 
         except Exception as e:
-            print(f"❌ Error processing sheet '{sheet_name}' from '{excel_file_path}': {e}. Skipping this sheet.")
+            logger.debug(f"❌ Error processing sheet '{sheet_name}' from '{excel_file_path}': {e}. Skipping this sheet.")
 
     if not student_data_map:
-        print("🤷 No valid student data found after processing all specified sheets. Please check the file contents, sheet names, and column headers.")
+        logger.debug("🤷 No valid student data found after processing all specified sheets. Please check the file contents, sheet names, and column headers.")
         return
 
-    print("\n--- Available Students ---")
+    logger.debug("\n--- Available Students ---")
     unique_student_names = sorted(list(student_data_map.keys()))
     for name in unique_student_names:
-        print(f"- {name}")
-    print("--------------------------\n")
+        logger.debug(f"- {name}")
+    logger.debug("--------------------------\n")
 
     while True:
         target_student_name = input("Enter the full name of the student whose result you need (or 'exit' to quit): ").strip()
         if target_student_name.lower() == 'exit':
-            print("Exiting chatbot. Goodbye!")
+            logger.debug("Exiting chatbot. Goodbye!")
             break
 
         # Case-insensitive matching
@@ -255,21 +259,21 @@ def main():
             matched_student_name = normalized_name_map[normalized_input_name]
             selected_student_data = student_data_map[matched_student_name]
 
-            print(f"\n✅ Generating report for {matched_student_name}... ⏳")
+            logger.debug(f"\n✅ Generating report for {matched_student_name}... ⏳")
 
             # Calculate and display summary
             summary = _calculate_summary(selected_student_data["semester_results"])
-            print("\n📊 --- Result Summary ---\n")
+            logger.debug("\n📊 --- Result Summary ---\n")
             for sem in sorted(selected_student_data["semester_results"].keys()):
                 sem_data = summary.get(sem)
                 if sem_data:
-                    print(f"Semester: {sem}")
-                    print(f"  ➤ Total Marks: {sem_data['total_marks']}")
-                    print(f"  ➤ Percentage : {sem_data['percentage']}%")
-                    print(f"  ➤ SGPA       : {sem_data['sgpa']}")
-                    print()
-            print(f"🎓 CGPA (Cumulative): {summary['CGPA']}")
-            print("--------------------------")
+                    logger.debug(f"Semester: {sem}")
+                    logger.debug(f"  ➤ Total Marks: {sem_data['total_marks']}")
+                    logger.debug(f"  ➤ Percentage : {sem_data['percentage']}%")
+                    logger.debug(f"  ➤ SGPA       : {sem_data['sgpa']}")
+                    logger.debug()
+            logger.debug(f"🎓 CGPA (Cumulative): {summary['CGPA']}")
+            logger.debug("--------------------------")
 
             # Generate PDF
             pdf_buffer = generate_pdf_report(selected_student_data)
@@ -278,33 +282,33 @@ def main():
             try:
                 with open(full_pdf_path, 'wb') as f:
                     f.write(pdf_buffer.getbuffer())
-                print(f"✅ The results of {matched_student_name} are saved as '{pdf_file_name}'")
-                print(f"📄 You can find the PDF at: {full_pdf_path}")
+                logger.debug(f"✅ The results of {matched_student_name} are saved as '{pdf_file_name}'")
+                logger.debug(f"📄 You can find the PDF at: {full_pdf_path}")
             except IOError as e:
-                print(f"❌ Error saving file for {matched_student_name}: {e}")
+                logger.debug(f"❌ Error saving file for {matched_student_name}: {e}")
 
             another_report = input("\nIs the report generated correct? (yes/no): ").strip().lower()
             if another_report == 'yes':
-                print("Thank You, Have a Great Day and Goodbye!")
+                logger.debug("Thank You, Have a Great Day and Goodbye!")
                 break
         else:
-            print(f"\n❌ Student '{target_student_name}' not found. Please check the name along with their intials.")
+            logger.debug(f"\n❌ Student '{target_student_name}' not found. Please check the name along with their intials.")
 
 if __name__ == "__main__":
     # Ensure ReportLab is installed
     try:
         from reportlab.lib.pagesizes import letter # Check if it can be imported
     except ImportError:
-        print("Error: 'reportlab' module not found.")
-        print("Please install it using: pip install reportlab")
+        logger.debug("Error: 'reportlab' module not found.")
+        logger.debug("Please install it using: pip install reportlab")
         exit()
 
     # Ensure pandas is installed
     try:
         import pandas as pd # Check if it can be imported
     except ImportError:
-        print("Error: 'pandas' module not found.")
-        print("Please install it using: pip install pandas")
+        logger.debug("Error: 'pandas' module not found.")
+        logger.debug("Please install it using: pip install pandas")
         exit()
 
     main()

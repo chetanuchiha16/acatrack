@@ -11,6 +11,10 @@ import pathlib
 from models import SubjectResult
 from models.paths import pdf_dir,img_dir, logo_path
 from models.fetch import sem_subjects
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 styles = getSampleStyleSheet()
 normal_style = styles["Normal"]
 
@@ -31,7 +35,7 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping, ou
             logo = Image(logo_path, width=50, height=50)  # Adjust size as needed
             elements.append(logo)
         except Exception as e:
-            print(f"Warning: Could not load logo image. {e}")
+            logger.debug(f"Warning: Could not load logo image. {e}")
 
          # Add college name
         title = Paragraph(f"<b>{"JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU"}</b>", styles['Title'])
@@ -198,6 +202,6 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping, ou
 
         # Build the PDF
         doc.build(elements)
-        print(f"PDF report generated successfully at {pathlib.Path(output_path).resolve()}.")
+        logger.debug(f"PDF report generated successfully at {pathlib.Path(output_path).resolve()}.")
     except Exception as e:
-        print(f"Error generating PDF: {e}")
+        logger.debug(f"Error generating PDF: {e}")

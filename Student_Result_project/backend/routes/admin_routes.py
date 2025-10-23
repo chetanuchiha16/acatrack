@@ -70,7 +70,7 @@ def _fetch_source_rows(batch_year: int) -> list[tuple[str,str]]:
         for sem in SEMESTERS:
             table_name = f"{sem}_{batch_year}".lower()
             if table_name not in existing_tables:
-                print(f"[Warning] Table {table_name} does not exist, skipping")
+                logger.debug(f"[Warning] Table {table_name} does not exist, skipping")
                 continue
 
             result = db.session.execute(text(f'SELECT student_usn, student_name FROM "{table_name}"'))

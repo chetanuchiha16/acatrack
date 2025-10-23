@@ -14,6 +14,10 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from models.paths import  pdf_dir, img_dir, logo_path
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 
 def create_university_report(university, selected_semester, file_path=f"{pdf_dir}/university_report.pdf"):
     """
@@ -45,7 +49,7 @@ def create_university_report(university, selected_semester, file_path=f"{pdf_dir
         logo = Image(logo_path, width=50, height=50)
         c.drawImage(logo_path, 50, 710, width=50, height=50)
     except Exception as e:
-        print(f"Warning: Could not load logo image. {e}")
+        logger.debug(f"Warning: Could not load logo image. {e}")
 
     # Title for University Report
     c.setFont("Helvetica-Bold", 14)
@@ -103,4 +107,4 @@ def create_university_report(university, selected_semester, file_path=f"{pdf_dir
 
     # Save the PDF
     c.save()
-    print(f"University Report PDF saved successfully as {pathlib.Path(file_path).resolve()}")
+    logger.debug(f"University Report PDF saved successfully as {pathlib.Path(file_path).resolve()}")

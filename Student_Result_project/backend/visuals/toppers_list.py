@@ -13,6 +13,10 @@ from models.paths import  pdf_dir, img_dir, logo_path
 # from models.config import 
 
 from fpdf.enums import XPos, YPos  # Import enums for positioning
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 
 def create_toppers_list_pdf(toppers, selected_semester, file_path=f"{pdf_dir}/toppers_list.pdf"):
     """
@@ -52,4 +56,4 @@ def create_toppers_list_pdf(toppers, selected_semester, file_path=f"{pdf_dir}/to
 
     # Save PDF
     pdf.output(file_path)
-    print(f"Toppers list saved to {pathlib.Path(file_path).resolve()}")
+    logger.debug(f"Toppers list saved to {pathlib.Path(file_path).resolve()}")

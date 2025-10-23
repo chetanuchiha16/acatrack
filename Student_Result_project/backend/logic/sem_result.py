@@ -165,10 +165,10 @@ if __name__ == "__main__":
             headers = ["Subject Code", "Total Students", "Present", "Absent", "Pass %", "FCD", "FC", "SC", "Fail"]
             
             # Print header
-            print("\nSemester-Wise Results")
-            print("=" * 80)
-            print("{:<15} {:<15} {:<10} {:<10} {:<10} {:<5} {:<5} {:<5} {:<5}".format(*headers))
-            print("-" * 80)
+            logger.debug("\nSemester-Wise Results")
+            logger.debug("=" * 80)
+            logger.debug("{:<15} {:<15} {:<10} {:<10} {:<10} {:<5} {:<5} {:<5} {:<5}".format(*headers))
+            logger.debug("-" * 80)
 
             total_present = total_absent = total_fcd = total_fc = total_sc = total_fail = total_students = 0
 
@@ -215,10 +215,10 @@ if __name__ == "__main__":
                     subject_result.sc_count,
                     subject_result.fail_count,
                 ]
-                print("{:<15} {:<15} {:<10} {:<10} {:<10} {:<5} {:<5} {:<5} {:<5}".format(*data))
+                logger.debug("{:<15} {:<15} {:<10} {:<10} {:<10} {:<5} {:<5} {:<5} {:<5}".format(*data))
 
             # Print totals
-            print("-" * 80)
+            logger.debug("-" * 80)
             total_headers = [
                 "Total Students",
                 "FCD",
@@ -236,14 +236,14 @@ if __name__ == "__main__":
                 f"{pass_percentage:.2f}%",
             ]
 
-            print("{:<15} {:<15} {:<10} {:<10} {:<10} {:<5}".format(*total_headers))
-            print("{:<15} {:<15} {:<10} {:<10} {:<10} {:<5}".format(*total_values))
-            print("=" * 80)
+            logger.debug("{:<15} {:<15} {:<10} {:<10} {:<10} {:<5}".format(*total_headers))
+            logger.debug("{:<15} {:<15} {:<10} {:<10} {:<10} {:<5}".format(*total_values))
+            logger.debug("=" * 80)
 
             # Optionally, generate a PDF report
             #generate_sem_pdf(selected_semester, university, semester_subject_mapping, output_path=f"{selected_semester}_results.pdf")
         except Exception as e:
-            print(f"Error: {e}")
+            logger.debug(f"Error: {e}")
 
 
     # Call the function with a valid semester

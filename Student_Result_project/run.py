@@ -19,6 +19,6 @@ try:
     flask.wait()
     vite.wait()
 except KeyboardInterrupt:
-    print("\nShutting down gracefully...")
+    logger.debug("\nShutting down gracefully...")
     flask.terminate()
     vite.terminate()

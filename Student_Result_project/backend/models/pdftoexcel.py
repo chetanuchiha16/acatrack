@@ -11,6 +11,10 @@ from .paths import excel_dir
 import glob
 import shutil
 import time
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 # ---------------- CONFIG ----------------
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 pdf_folder = excel_dir
@@ -101,7 +105,7 @@ def get_pdf_text(pdf_path):
     with pdfplumber.open(pdf_path) as pdf:
         text = "\n".join(page.extract_text() or "" for page in pdf.pages)
     if not text.strip():
-        print(f"⚠️ Using OCR for {os.path.basename(pdf_path)}")
+        logger.debug(f"⚠️ Using OCR for {os.path.basename(pdf_path)}")
         text = extract_text_with_ocr(pdf_path)
     return text
 
@@ -196,7 +200,7 @@ def process_pdfs(excel_filename, pdf_folder=pdf_folder):
         row = extract_from_pdf(pdf_path, subject_codes, columns)
 
         if not row["student_usn"]:
-            print(f"⚠️ Skipping PDF '{file}' because USN was not found")
+            logger.debug(f"⚠️ Skipping PDF '{file}' because USN was not found")
             continue
 
         sem_sheet = f"sem{row.get('SEMESTER', 'Unknown')}"
@@ -239,7 +243,7 @@ def process_single_pdf(pdf_path, excel_path):
     # Extract data from the single PDF
     row = extract_from_pdf(pdf_path, subject_codes, columns)
     if not row["student_usn"]:
-        print(f"⚠️ Skipping PDF '{os.path.basename(pdf_path)}' because USN was not found")
+        logger.debug(f"⚠️ Skipping PDF '{os.path.basename(pdf_path)}' because USN was not found")
         return
 
     sem_sheet = f"sem{row.get('SEMESTER', 'Unknown')}"
@@ -269,7 +273,7 @@ def process_single_pdf(pdf_path, excel_path):
         for sheet_name, df in existing_sheets.items():
             df.to_excel(writer, sheet_name=sheet_name, index=False)
 
-    print(f"✅ Excel updated at {excel_path} for {row['student_usn']}")
+    logger.debug(f"✅ Excel updated at {excel_path} for {row['student_usn']}")
 
 
 

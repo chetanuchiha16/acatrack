@@ -41,9 +41,9 @@ def get_mentor_students():
                     # ✅ generate PDF only if it doesn't exist
                     if not os.path.exists(file_path):
                         create_student_report(student, file_path=file_path)
-                        print(f"PDF created: {file_path}")
+                        logger.debug(f"PDF created: {file_path}")
                     else:
-                        print(f"PDF exists: {file_path}, skipping generation")
+                        logger.debug(f"PDF exists: {file_path}, skipping generation")
 
                     results.append({
                         "name": student.name,
@@ -73,7 +73,7 @@ def get_mentor_students():
                     })
 
                 except Exception as e:
-                    print(f"[WARNING] Student data not found for USN {s.username}: {e}")
+                    logger.debug(f"[WARNING] Student data not found for USN {s.username}: {e}")
                     results.append({
                         "usn": s.username,
                         "error": "Student data not found"
@@ -82,7 +82,7 @@ def get_mentor_students():
             return jsonify(results)
 
     except Exception as e:
-        print(f"[ERROR] {e}")
+        logger.debug(f"[ERROR] {e}")
         return jsonify({"error": str(e)}), 400
 
 
@@ -108,7 +108,7 @@ def get_mentee_chart():
             # db_path = bm.get_db_path(batch_year)
             student = Student(usn=usn, semester=semester, batch_year=batch_year, engine=engine)
             fig = student.plot_subject_marks()[0]
-            # print("fig", fig) 
+            # logger.debug("fig", fig) 
             buf = io.BytesIO()
             fig.savefig(buf, format="png")
             buf.seek(0)
@@ -117,5 +117,5 @@ def get_mentee_chart():
             return jsonify({"image": f"data:image/png;base64,{img_base64}"})
 
     except Exception as e:
-        print(f"[ERROR] {e}")
+        logger.debug(f"[ERROR] {e}")
         return jsonify({"error": str(e)}), 400

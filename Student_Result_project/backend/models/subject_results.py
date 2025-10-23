@@ -6,7 +6,7 @@ class SubjectResult:
     def __init__(self, subject_code, semester, university):
         self.subject_name = sem_subjects[semester].get(subject_code,"Unknown subject")
         self.subject_code = subject_code
-        print(self.subject_code)
+        logger.debug(self.subject_code)
         self.semester = semester
         self.university = university  # Instance of the University class
         self.students_data = self.fetch_students_data()
@@ -45,7 +45,7 @@ class SubjectResult:
     #     fail_count = self.present_students - pass_count
         # for student in self.students_data:
             # if (student["ia"]<20 and student["see"]<18):
-                # print("failed students",student["name"])
+                # logger.debug("failed students",student["name"])
         #return pass_count, fail_count
 
     #new logic
@@ -155,8 +155,8 @@ class SubjectResult:
         """
         Plot a pie chart for performance distribution across categories.
         """
-        print("DEBUG: students_data =", self.students_data)
-        print("DEBUG: fcd, fc, sc =", self.fcd_count, self.fc_count, self.sc_count)
+        logger.debug("DEBUG: students_data =", self.students_data)
+        logger.debug("DEBUG: fcd, fc, sc =", self.fcd_count, self.fc_count, self.sc_count)
         import matplotlib.pyplot as plt
         categories = ['FCD (>70%)', 'FC (60-70%)', 'SC (50-60%)']
         values = [self.fcd_count, self.fc_count, self.sc_count]

@@ -6,6 +6,10 @@ import os
 from models.helpers import get_batch_year
 from sqlalchemy import create_engine
 from models.paths import postgres_db_url, API_BASE
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 
 student_bp = Blueprint('student', __name__)
 
@@ -15,9 +19,9 @@ def get_student_info():
     usn = request.args.get("usn")
     semester = request.args.get("semester")
     batch_year = get_batch_year()   
-    print(f"batch year from student {batch_year}")
+    logger.debug(f"batch year from student {batch_year}")
 
-    print(f"Received USN: {usn}, Semester: {semester}, Batch: {batch_year}")
+    logger.debug(f"Received USN: {usn}, Semester: {semester}, Batch: {batch_year}")
 
 
     try:
@@ -57,7 +61,7 @@ def get_student_info():
         })
 
     except Exception as e:
-        print(f"[ERROR] {e}")
+        logger.debug(f"[ERROR] {e}")
         return jsonify({"error": str(e)}), 400
 
 @student_bp.route("/auth/Student/report/<filename>", methods=["GET"])

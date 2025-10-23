@@ -1,6 +1,10 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
 from models.paths import postgres_db_url
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 # Function to fetch data from the database with error handling for missing USN
 sem_subjects = {
     "sem1": {
@@ -108,7 +112,7 @@ def fetch_student_data(usn, semester, batch_year, engine):
     # if postgres_url is None:
         # postgres_url = postgres_db_url
         
-    print(f"Semester is {semester}")
+    logger.debug(f"Semester is {semester}")
     try:
         # Connect to PostgreSQL
         # engine = create_engine(postgres_url)
@@ -134,10 +138,10 @@ def fetch_student_data(usn, semester, batch_year, engine):
         for col in df.columns[2:]: 
             val = student_data[col]
             if val is None:
-                print(f"Missing value for {col}, USN {usn}") # Skip first two columns: (0: USN, 1: Name)
+                logger.debug(f"Missing value for {col}, USN {usn}") # Skip first two columns: (0: USN, 1: Name)
             if "INTERNALS" in col:
-                print(safe_int(student_data[col]))
-                # print(student_data[col])
+                logger.debug(safe_int(student_data[col]))
+                # logger.debug(student_data[col])
                 ia_marks.append(safe_int(student_data[col]))
                 subject_code.append(col.split("_")[0])
             elif "EXTERNALS" in col:
@@ -159,7 +163,7 @@ def fetch_student_data(usn, semester, batch_year, engine):
         }
 
     except Exception as e:
-        print(f"Database error occurred in fetch_student_data: {e}")
+        logger.debug(f"Database error occurred in fetch_student_data: {e}")
         return None
 
    
@@ -167,8 +171,8 @@ if(__name__) == ("__main__"):
         #test the above function
     '''student_data = fetch_student_data('1JS22CS001')  # Replace with a valid USN
     if student_data:
-        print(student_data)
+        logger.debug(student_data)
     else:
-        print("No data found for the specified USN.")'''
+        logger.debug("No data found for the specified USN.")'''
     
-    # print(fetch_student_data("1JS22CS006","sem1"))
+    # logger.debug(fetch_student_data("1JS22CS006","sem1"))

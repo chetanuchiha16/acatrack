@@ -7,6 +7,10 @@ from models.paths import img_dir,pdf_dir  , get_db_path
 import pandas as pd
 from sqlalchemy import create_engine
 from models.paths import postgres_db_url
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 class University:
     def __init__(self, postgres_url=None, batch_year=None):
         self.postgres_url = postgres_url or postgres_db_url
@@ -20,14 +24,14 @@ class University:
             query = "SELECT table_name FROM information_schema.tables WHERE table_schema='public';"
             tables_df = pd.read_sql(query, self.engine)
             all_tables = tables_df['table_name'].tolist()
-            print("DEBUG: All tables in database:\n", all_tables)
+            logger.debug("DEBUG: All tables in database:\n", all_tables)
 
             # Filter in Python for SEM tables of this batch
             semester_tables = [t for t in all_tables if t.startswith("sem") and t.endswith(f"_{self.batch_year}")]
-            print("DEBUG: Semester tables for batch:", semester_tables)
+            logger.debug("DEBUG: Semester tables for batch:", semester_tables)
             return semester_tables
         except Exception as e:
-            print(f"Error fetching semester tables: {e}")
+            logger.debug(f"Error fetching semester tables: {e}")
             return []
 
 
@@ -41,7 +45,7 @@ class University:
             df = pd.read_sql(query, self.engine)
             return df['student_usn'].tolist()
         except Exception as e:
-            print(f"Error fetching students from {semester}: {e}")
+            logger.debug(f"Error fetching students from {semester}: {e}")
             return []
 
     def add_students(self, selected_semester):
@@ -50,7 +54,7 @@ class University:
         """
         semester_tables = self.fetch_semester_tables()
         if not semester_tables:
-            print("No semester tables found in the database.")
+            logger.debug("No semester tables found in the database.")
             return
 
         all_usns = set()
@@ -70,13 +74,13 @@ class University:
         Display all students and their details.
         """
         if not self.students:
-            print("No students in the university.")
+            logger.debug("No students in the university.")
             return
 
         for student in self.students:
-            print("\n" + "=" * 50)
+            logger.debug("\n" + "=" * 50)
             student.display_student_info()
-            print("=" * 50)
+            logger.debug("=" * 50)
 
 
     def calculate_all_sgpa_and_cgpa(self, previous_sgpas_list):
@@ -102,11 +106,11 @@ class University:
                 self.engine
             )
             all_tables = tables_df['table_name'].tolist()
-            print("DEBUG: All tables in database:\n", all_tables)
+            logger.debug("DEBUG: All tables in database:\n", all_tables)
 
             # Filter only SEM tables for the given batch
             semesters = [t for t in all_tables if t.lower().startswith("sem") and t.endswith(f"_{self.batch_year}")]
-            print(f"DEBUG: Semester tables for batch {self.batch_year}:", semesters)
+            logger.debug(f"DEBUG: Semester tables for batch {self.batch_year}:", semesters)
 
             if not semesters:
                 return [{"error": "No semester data available for this batch."}]
@@ -200,7 +204,7 @@ class University:
             return failed_students
 
         except Exception as e:
-            print(f"Error occurred while fetching failed students: {str(e)}")
+            logger.debug(f"Error occurred while fetching failed students: {str(e)}")
             return {}
 
 
@@ -253,7 +257,7 @@ class University:
             return failed_students_list
 
         except Exception as e:
-            print(f"Error occurred while fetching failed students: {str(e)}")
+            logger.debug(f"Error occurred while fetching failed students: {str(e)}")
             return []
 
 
@@ -262,12 +266,12 @@ class University:
         failed_students = self.find_failed_students(selected_semester)
 
         if not failed_students:
-            print("No failed students in the selected semester.")
+            logger.debug("No failed students in the selected semester.")
             return
 
-        print(f"Failed students in {selected_semester}:")
+        logger.debug(f"Failed students in {selected_semester}:")
         for usn, subjects in failed_students.items():
-            print(f"USN: {usn}, Subjects Failed: {', '.join(subjects)}")    
+            logger.debug(f"USN: {usn}, Subjects Failed: {', '.join(subjects)}")    
 
 
     def plot_student_totals(self, selected_semester, mode='top_n', n=10, bins=10):
@@ -288,7 +292,7 @@ class University:
         filtered_students = [student for student in self.students if student.semester == selected_semester]
         
         if not filtered_students:
-            print(f"No student data available for {selected_semester}.")
+            logger.debug(f"No student data available for {selected_semester}.")
             return plt.figure()  # Return an empty figure if no data
         
         # Get total marks and names for the filtered semester
@@ -315,7 +319,7 @@ class University:
             plt.title(f'Total Marks Distribution in {selected_semester}')
         
         else:
-            print("Invalid mode. Choose 'top_n' or 'histogram'.")
+            logger.debug("Invalid mode. Choose 'top_n' or 'histogram'.")
             return plt.figure()  # Return an empty figure if mode is invalid
 
         # Save the plot
@@ -340,7 +344,7 @@ class University:
         filtered_students = [student for student in self.students if student.semester == selected_semester]
 
         if not filtered_students:
-            print(f"No student data available for {selected_semester}.")
+            logger.debug(f"No student data available for {selected_semester}.")
             return []
 
         # Sort students by total marks in descending order
@@ -361,8 +365,8 @@ class University:
             })
 
         # Print topper details for debugging or console display
-        print(f"\nTop {n} Students in {selected_semester}:")
+        logger.debug(f"\nTop {n} Students in {selected_semester}:")
         for rank, topper in enumerate(toppers_list, start=1):
-            print(f"Rank {rank}: {topper['name']} (USN: {topper['usn']}, Marks: {topper['total_marks']}, SGPA: {topper['sgpa']})")
+            logger.debug(f"Rank {rank}: {topper['name']} (USN: {topper['usn']}, Marks: {topper['total_marks']}, SGPA: {topper['sgpa']})")
 
         return toppers_list
