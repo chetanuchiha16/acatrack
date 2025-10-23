@@ -56,7 +56,7 @@ if __name__ == "__main__":
         semester_label = ctk.CTkLabel(usn_tab, text="Select Semester:")
         semester_label.grid(row=2, column=0, pady=10)
 
-        semester_dropdown = ctk.CTkOptionMenu(usn_tab, values=["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6", "SEM7", "SEM8"])
+        semester_dropdown = ctk.CTkOptionMenu(usn_tab, values=["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"])
         semester_dropdown.grid(row=3, column=0, pady=10)
 
         submit_button = ctk.CTkButton(usn_tab, text="Submit", command= lambda: on_submit(widgets))
@@ -73,7 +73,7 @@ if __name__ == "__main__":
         semester_label_overall = ctk.CTkLabel(overall_result_tab, text="Select Semester for Academic Performance:")
         semester_label_overall.grid(row=0, column=0, pady=10, columnspan=2)
 
-        semester_dropdown_overall = ctk.CTkOptionMenu(overall_result_tab, values=["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6", "SEM7", "SEM8"])
+        semester_dropdown_overall = ctk.CTkOptionMenu(overall_result_tab, values=["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"])
         semester_dropdown_overall.grid(row=1, column=0, pady=10, columnspan=2)
 
         overall_submit_button = ctk.CTkButton(overall_result_tab, text="Submit and save PDF", command=lambda: test_university_class(semester_dropdown_overall.get(), overall_result_text, overall_result_graph, tabview,))
@@ -119,16 +119,16 @@ if __name__ == "__main__":
 
         semester_label_semwise = ctk.CTkOptionMenu(
             semwise_tab, 
-            values=["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6", "SEM7", "SEM8"]
+            values=["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"]
         )
         semester_label_semwise.grid(row=1, column=0, pady=10, columnspan=2)
 
         # Mapping for semesters and subject codes
         semester_subject_mapping = {
-            "SEM1": ["BMATS101", "BCHES102", "BCEDK103", "BENGK106", "BICOK107", "BIDTK158", "BESCK104A", "BETCK105H"],
-            "SEM2": ["BMAT201", "BPHYS202", "BPOPS203", "BPWSK206", "BKSKK207", "BSFHK258", "BPLCK205B", "BESCK204C"],
-            "SEM3": ["BCS301", "BCS302", "BCS303", "BCS304", "BCSL305", "BSCK307", "BNSK359", "BCS306A", "BCS358D"],
-            "SEM4": ["BCS401", "BCS402", "BCS403", "BCSL404", "BBOC407", "BUHK408", "BPEK459_PhysicalEducation_OR_BNSK459_NSS_", "BCS405B"]
+            "sem1": ["BMATS101", "BCHES102", "BCEDK103", "BENGK106", "BICOK107", "BIDTK158", "BESCK104A", "BETCK105H"],
+            "sem2": ["BMAT201", "BPHYS202", "BPOPS203", "BPWSK206", "BKSKK207", "BSFHK258", "BPLCK205B", "BESCK204C"],
+            "sem3": ["BCS301", "BCS302", "BCS303", "BCS304", "BCSL305", "BSCK307", "BNSK359", "BCS306A", "BCS358D"],
+            "sem4": ["BCS401", "BCS402", "BCS403", "BCSL404", "BBOC407", "BUHK408", "BPEK459_PhysicalEducation_OR_BNSK459_NSS_", "BCS405B"]
         }
 
         # Submit button to display semester-wise results

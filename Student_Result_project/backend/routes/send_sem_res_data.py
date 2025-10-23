@@ -1,11 +1,13 @@
 from flask import Flask, jsonify, request,Blueprint,send_file
 from models import University, SubjectResult
-from models.paths import  pdf_dir  , get_db_path
+from models.paths import  pdf_dir  , get_db_path, postgres_db_url
 from visuals import generate_sem_pdf
 import os
 from models.fetch import sem_subjects
 from flask import session
 from models.helpers import get_batch_year
+from sqlalchemy import create_engine
+
 
 sem_bp = Blueprint('sem_res',__name__)
 
@@ -13,20 +15,21 @@ sem_bp = Blueprint('sem_res',__name__)
 def get_semester_results():
     semester = request.args.get('semester')
     batch_year = get_batch_year()   
+    # engine = create_engine(postgres_db_url)
     if not semester:
         return jsonify({"error": "Missing semester parameter"}), 400
     
     try:
-        db_path = get_db_path(batch_year)  # <-- resolves correct DB
-        university = University(db_path)
+        # db_path = get_db_path(batch_year)  # <-- resolves correct DB
+        university = University(postgres_url=postgres_db_url, batch_year=batch_year)
         university.add_students(selected_semester=semester)
 
         # Example: your semester_subject_msem_bping could come from a DB or config
         semester_subject_mapping = {
-            "SEM1": ["BMATS101", "BCHES102", "BCEDK103", "BENGK106", "BICOK107", "BIDTK158", "BPLCK105B","BESCK104C", "BESCK104A", "BETCK105H"],
-            "SEM2": ["BMAT201", "BPHYS202", "BPOPS203", "BPWSK206", "BKSKK207", "BKBKK207", "BSFHK258", "BPLCK205B", "BESCK204C", "BESCK204D", "BETCK205H"],
-            "SEM3": ["BCS301", "BCS302", "BCS303", "BCS304", "BCSL305", "BSCK307", "BNSK359", "BCS306A", "BCS358D"],
-            "SEM4": ["BCS401", "BCS402", "BCS403", "BCSL404", "BBOC407", "BUHK408", "BPEK459_PhysicalEducation_OR_BNSK459_NSS_", "BCS405B", "BCSL456D"]
+            "sem1": ["BMATS101", "BCHES102", "BCEDK103", "BENGK106", "BICOK107", "BIDTK158", "BPLCK105B","BESCK104C", "BESCK104A", "BETCK105H"],
+            "sem2": ["BMAT201", "BPHYS202", "BPOPS203", "BPWSK206", "BKSKK207", "BKBKK207", "BSFHK258", "BPLCK205B", "BESCK204C", "BESCK204D", "BETCK205H"],
+            "sem3": ["BCS301", "BCS302", "BCS303", "BCS304", "BCSL305", "BSCK307", "BNSK359", "BCS306A", "BCS358D"],
+            "sem4": ["BCS401", "BCS402", "BCS403", "BCSL404", "BBOC407", "BUHK408", "BPEK459_PhysicalEducation_OR_BNSK459_NSS_", "BCS405B", "BCSL456D"]
         }
         subjects = semester_subject_mapping.get(semester, [])
         if not subjects:
@@ -61,16 +64,16 @@ def get_semester_results():
 def download_semester_report(semester):
     batch_year = get_batch_year()
     semester_subject_mapping = {
-                "SEM1": ["BMATS101", "BCHES102", "BCEDK103", "BENGK106", "BICOK107", "BIDTK158", "BPLCK105B","BESCK104C", "BESCK104A", "BETCK105H"],
-                "SEM2": ["BMAT201", "BPHYS202", "BPOPS203", "BPWSK206", "BKSKK207", "BKBKK207", "BSFHK258", "BPLCK205B", "BESCK204C", "BESCK204D", "BETCK205H"],
-                "SEM3": ["BCS301", "BCS302", "BCS303", "BCS304", "BCSL305", "BSCK307", "BNSK359", "BCS306A", "BCS358D"],
-                "SEM4": ["BCS401", "BCS402", "BCS403", "BCSL404", "BBOC407", "BUHK408", "BPEK459_PhysicalEducation_OR_BNSK459_NSS_", "BCS405B", "BCSL456D"]
+                "sem1": ["BMATS101", "BCHES102", "BCEDK103", "BENGK106", "BICOK107", "BIDTK158", "BPLCK105B","BESCK104C", "BESCK104A", "BETCK105H"],
+                "sem2": ["BMAT201", "BPHYS202", "BPOPS203", "BPWSK206", "BKSKK207", "BKBKK207", "BSFHK258", "BPLCK205B", "BESCK204C", "BESCK204D", "BETCK205H"],
+                "sem3": ["BCS301", "BCS302", "BCS303", "BCS304", "BCSL305", "BSCK307", "BNSK359", "BCS306A", "BCS358D"],
+                "sem4": ["BCS401", "BCS402", "BCS403", "BCSL404", "BBOC407", "BUHK408", "BPEK459_PhysicalEducation_OR_BNSK459_NSS_", "BCS405B", "BCSL456D"]
             }
     pdf_path = os.path.join(pdf_dir, f"{semester}_results.pdf")
     if not os.path.exists(pdf_path):
         # Optionally generate the PDF if it does not exist
-        db_path = get_db_path(batch_year)
-        university = University(db_path)
+        # db_path = get_db_path(batch_year)
+        university = University(postgres_url=postgres_db_url, batch_year=batch_year)
         university.add_students(selected_semester=semester)
         generate_sem_pdf(semester, university, semester_subject_mapping, output_path=pdf_path)
         

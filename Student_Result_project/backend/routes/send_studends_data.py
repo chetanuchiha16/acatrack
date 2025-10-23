@@ -4,8 +4,8 @@ from visuals import create_student_report
 from models.paths import pdf_dir  , get_db_path
 import os
 from models.helpers import get_batch_year
-
-
+from sqlalchemy import create_engine
+from models.paths import postgres_db_url, API_BASE
 
 student_bp = Blueprint('student', __name__)
 
@@ -21,8 +21,9 @@ def get_student_info():
 
 
     try:
-        db_path = get_db_path(batch_year)  # <-- resolves correct DB
-        student = Student(usn=usn, semester=semester, db_path=db_path)
+        # db_path = get_db_path(batch_year)  # <-- resolves correct DB
+        engine = create_engine(postgres_db_url)
+        student = Student(usn=usn, semester=semester, batch_year=batch_year, engine=engine)
 
         # Generate PDF
         filename = f"{student.name}_{semester}_report.pdf"
@@ -32,19 +33,19 @@ def get_student_info():
         return jsonify({
             "name": student.name,
             "usn": student.usn,
-            "total_marks": student.total_marks,
-            "percentage": student.percentage,
-            "credits": student.obtained_credits,
-            "sgpa": student.sgpa,
-            "cgpa": student.cgpa,
+            "total_marks": int(student.total_marks),
+            "percentage": float(student.percentage),
+            "credits": int(student.obtained_credits),
+            "sgpa": float(student.sgpa),
+            "cgpa": float(student.cgpa),
             "subjects": [
                 {
-                    "subject_name":subject_name,
+                    "subject_name": subject_name,
                     "code": code,
-                    "ia": ia,
-                    "see": see,
-                    "total": ia + see,
-                    "credit": credit,
+                    "ia": int(ia),
+                    "see": int(see),
+                    "total": int(ia + see),
+                    "credit": int(credit),
                     "status": status
                 }
                 for code,subject_name, ia, see, credit, status in zip(
@@ -52,9 +53,7 @@ def get_student_info():
                     student.credits, student.pass_fail
                 )
             ],
-            # "pdf_url": f"/auth/Student/report/{filename}"
-            "pdf_url": f"http://localhost:5000/auth/Student/report/{filename}"
-
+            "pdf_url": f"{API_BASE}/auth/Student/report/{filename}"
         })
 
     except Exception as e:

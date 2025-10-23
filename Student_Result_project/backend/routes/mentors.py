@@ -2,12 +2,13 @@ from flask import Blueprint, request, jsonify, send_from_directory, session
 from models import Mentor, StudentAuth
 from models import Student  # reuse your existing Student class logic
 from visuals import create_student_report
-from models.paths import  pdf_dir
+from models.paths import  pdf_dir, postgres_db_url, API_BASE
 import os
 import io
 import base64
 from models.batch_manager import BatchManager, bm
 from models.helpers import get_batch_year
+from sqlalchemy import create_engine
 mentor_bp = Blueprint('mentor', __name__)
 
 @mentor_bp.route("/auth/Staff/Mentor/result", methods=["GET"])
@@ -15,7 +16,7 @@ def get_mentor_students():
     mentor_id = request.args.get("mentor_id")
     semester = request.args.get("semester")
     batch_year = get_batch_year()
-    
+    engine = create_engine(postgres_db_url)
     if not mentor_id or not semester:
         return jsonify({"error": "mentor_id and semester are required"}), 400
 
@@ -30,8 +31,8 @@ def get_mentor_students():
 
             for s in students:
                 try:
-                    db_path = bm.get_db_path(batch_year=batch_year)
-                    student = Student(usn=s.username, semester=semester, db_path=db_path)
+                    # db_path = bm.get_db_path(batch_year=batch_year)
+                    student = Student(usn=s.username, semester=semester, batch_year=batch_year, engine=engine)
 
                     # Keep exact filename as create_student_report uses it
                     filename = f"{student.name}_{semester}_report.pdf"
@@ -68,7 +69,7 @@ def get_mentor_students():
                                 student.credits, student.pass_fail
                             )
                         ],
-                        "pdf_url": f"http://localhost:5000/auth/Staff/Mentor/report/{filename}"
+                        "pdf_url": f"{API_BASE}/auth/Staff/Mentor/report/{filename}"
                     })
 
                 except Exception as e:
@@ -98,14 +99,14 @@ def get_mentee_chart():
     usn = request.args.get("usn")
     semester = request.args.get("semester")
     batch_year = get_batch_year()
-    
+    engine = create_engine(postgres_db_url)
     if not usn or not semester:
         return jsonify({"error": "usn and semester are required"}), 400
 
     try:
         with bm.session_scope(batch_year) as db:
-            db_path = bm.get_db_path(batch_year)
-            student = Student(usn=usn, semester=semester, db_path=db_path)
+            # db_path = bm.get_db_path(batch_year)
+            student = Student(usn=usn, semester=semester, batch_year=batch_year, engine=engine)
             fig = student.plot_subject_marks()[0]
             # print("fig", fig) 
             buf = io.BytesIO()

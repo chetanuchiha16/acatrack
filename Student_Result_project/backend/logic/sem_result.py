@@ -247,4 +247,4 @@ if __name__ == "__main__":
 
 
     # Call the function with a valid semester
-    #display_semesterwise_results_console("SEM1")
+    #display_semesterwise_results_console("sem1")

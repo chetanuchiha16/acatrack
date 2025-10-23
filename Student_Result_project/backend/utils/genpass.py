@@ -11,8 +11,8 @@ app = create_app()
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
-techers = cursor.execute("SELECT SEM1_Staff_Initials FROM Subjectwise_result_1").fetchall()
-stus = cursor.execute("SELECT student_usn, student_name FROM SEM1").fetchall()
+techers = cursor.execute("SELECT sem1_Staff_Initials FROM Subjectwise_result_1").fetchall()
+stus = cursor.execute("SELECT student_usn, student_name FROM sem1").fetchall()
 
 conn.commit()
 cursor.close()

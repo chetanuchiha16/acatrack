@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
-export default function StudentInsights({ usn = "", semester = "SEM1" }) {
+export default function StudentInsights({ usn = "", semester = "sem1" }) {
     const [aiData, setAiData] = useState(null);
     const [performanceData, setPerformanceData] = useState(null);
     const [loadingAI, setLoadingAI] = useState(false);

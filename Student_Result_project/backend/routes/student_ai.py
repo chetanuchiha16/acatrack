@@ -1,7 +1,7 @@
 # ai_blueprint.py
 from flask import Blueprint, request, jsonify, session
 import numpy as np
-from models.paths import  get_db_path
+from models.paths import  get_db_path, postgres_db_url
 from models import Student
 from models.helpers import get_batch_year
 from .chatbot import (
@@ -9,17 +9,18 @@ from .chatbot import (
     predict_next_sgpa_with_confidence, build_placement_and_skill_advice,
     get_latest_semester, get_student_history, _calculate_backlogs
 )
-
+from sqlalchemy import create_engine
 ai_bp = Blueprint("ai", __name__)
 
 # ------------------ Helper: Multi-Semester History ------------------ #
 def get_student_history_usn(usn, semesters):
     batch_year = get_batch_year()   
     sgpas = []
+    engine = create_engine(postgres_db_url)
     for sem in semesters:
         try:
-            db_path = get_db_path(batch_year)  # <-- resolves correct DB
-            s = Student(usn=usn, semester=sem, db_path=db_path)
+            # db_path = get_db_path(batch_year)  # <-- resolves correct DB
+            s = Student(usn=usn, semester=sem, batch_year=batch_year, engine=engine)
             s.calculate_sgpa()
             if s.sgpa is not None:
                 sgpas.append((sem, s.sgpa))
@@ -32,17 +33,18 @@ def get_student_history_usn(usn, semesters):
 def ai_summary():
     usn = request.args.get("usn")
     batch_year = get_batch_year()   
+    engine = create_engine(postgres_db_url)
     if not usn:
         return jsonify({"error": "USN is required"}), 400
 
-    semesters_list = ["SEM1", "SEM2", "SEM3", "SEM4", "SEM5", "SEM6"]
+    semesters_list = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6"]
     student_data = {"student_name": "", "semesters": {}}
 
     # Fetch all semesters
     for sem in semesters_list:
         try:
-            db_path = get_db_path(batch_year)  # <-- resolves correct DB
-            s = Student(usn=usn, semester=sem, db_path=db_path)
+            # db_path = get_db_path(batch_year)  # <-- resolves correct DB
+            s = Student(usn=usn, semester=sem, batch_year=batch_year,engine=engine)
             if s.sgpa is None:
                 continue
             student_data["student_name"] = s.name or ""
@@ -136,13 +138,13 @@ def ai_summary():
 def ai_trend():
     usn = request.args.get("usn")
     batch_year = get_batch_year()   
-    semesters_list = ["SEM1","SEM2","SEM3","SEM4","SEM5","SEM6"]
-
+    semesters_list = ["sem1","sem2","sem3","sem4","sem5","sem6"]
+    engine = create_engine(postgres_db_url)
     student_data = {"semesters": {}}
     for sem in semesters_list:
         try:
-            db_path = get_db_path(batch_year)  # <-- resolves correct DB
-            s = Student(usn=usn, semester=sem, db_path=db_path)
+            # db_path = get_db_path(batch_year)  # <-- resolves correct DB
+            s = Student(usn=usn, semester=sem, batch_year=batch_year,engine=engine)
             if s.sgpa is None:
                 continue
             student_data["semesters"][sem] = {"sgpa": s.sgpa}
@@ -175,7 +177,7 @@ def ai_trend():
 @ai_bp.route("/ai/predict_cgpa", methods=["GET"])
 def ai_predict_cgpa():
     usn = request.args.get("usn")
-    sems = ["SEM1","SEM2","SEM3","SEM4","SEM5","SEM6","SEM7"]
+    sems = ["sem1","sem2","sem3","sem4","sem5","sem6","sem7"]
     history = get_student_history_usn(usn, sems)
 
     if not history:
@@ -218,13 +220,13 @@ def ai_predict_cgpa():
 def ai_profile():
     usn = request.args.get("usn")
     batch_year = get_batch_year()   
-    semesters_list = ["SEM1","SEM2","SEM3","SEM4","SEM5","SEM6"]
-
+    semesters_list = ["sem1","sem2","sem3","sem4","sem5","sem6"]
+    engine = create_engine(postgres_db_url)
     student_data = {"student_name": "", "semesters": {}}
     for sem in semesters_list:
         try:
-            db_path = get_db_path(batch_year)  # <-- resolves correct DB
-            s = Student(usn=usn, semester=sem, db_path=db_path)
+            # db_path = get_db_path(batch_year)  # <-- resolves correct DB
+            s = Student(usn=usn, semester=sem, batch_year=batch_year,engine=engine)
             if s.sgpa is None:
                 continue
             student_data["student_name"] = s.name

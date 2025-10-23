@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, send_file, Blueprint, session
 from models import University
 from visuals import create_toppers_list_pdf, create_university_report
-from models.paths import  pdf_dir  , get_db_path
+from models.paths import  pdf_dir  , get_db_path, postgres_db_url
 from models.helpers import get_batch_year
 
 uni_bp = Blueprint('uni', __name__)
@@ -17,7 +17,7 @@ def get_academic_performance():
         db_path = get_db_path(batch_year)  # <-- resolves correct DB
         print(f"{db_path} from university 1")
         print("Batch year in session:", get_batch_year())
-        university = University(db_path=db_path)
+        university = University(postgres_url=postgres_db_url, batch_year=batch_year)
         university.add_students(semester)
         result = university.calculate_academic_performance_by_semester(semester)
 
@@ -45,7 +45,7 @@ def get_report(semester):
     batch_year = get_batch_year()   
     db_path = get_db_path(batch_year)  # <-- resolves correct DB
     # generate report PDF if not exists
-    university = University(db_path=db_path)
+    university = University(postgres_url=postgres_db_url, batch_year=batch_year)
     university.add_students(semester)
     create_university_report(university, semester, file_path=file_path)
     return send_file(file_path, as_attachment=True)

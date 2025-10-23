@@ -1,5 +1,7 @@
 from pathlib import Path
-
+import os
+import dotenv
+dotenv.load_dotenv()
 base_dir = Path(__file__).resolve().parent.parent
 # print("../Inputs")
 excel_path = str(base_dir / "Inputs/ExcelSheet/result list project.xlsx")
@@ -24,6 +26,8 @@ def get_db_path(batch_year: int) -> str:
     print(str(db_dir / f"student_data_{batch_year}.db"))
     return str(db_dir / f"student_data_{batch_year}.db")
 
+postgres_db_url = os.getenv("DATABASE_URL")
+API_BASE="http://localhost:5000"
 # from models.batch_manager import BatchManager
 
 # current_batch_db_path = None
@@ -41,3 +45,12 @@ def get_db_path(batch_year: int) -> str:
 # print(base_dir)
 # print(f"[DEBUG] Using DB path: {base_dir}")
 # print(f"[DEBUG] Exists? {Path(excel_path).exists()}")
+
+from sqlalchemy import create_engine
+engine = create_engine(postgres_db_url)
+
+try:
+    with engine.connect() as connection:
+        print("Connection successful!")
+except Exception as e:
+    print(f"Failed to connect: {e}")

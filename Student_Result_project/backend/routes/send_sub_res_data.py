@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_file, Blueprint, session
 from models import University, SubjectResult
-from models.paths import  pdf_dir  , get_db_path
+from models.paths import  pdf_dir  , get_db_path, postgres_db_url
 from visuals import create_subject_report
 import os
 from models.helpers import get_batch_year
@@ -14,8 +14,8 @@ def get_subject_results():
     if not semester or not subject_code:
         return jsonify({"error": "semester and subject are required"}), 400
     
-    db_path = get_db_path(batch_year)  # <-- resolves correct DB
-    university = University(db_path)
+    # db_path = get_db_path(batch_year)  # <-- resolves correct DB
+    university = University(postgres_url=postgres_db_url, batch_year=batch_year)
     university.add_students(selected_semester=semester)
     subject_result = SubjectResult(subject_code, semester, university)
 
@@ -33,8 +33,8 @@ def get_subject_report_pdf():
 
     if not semester or not subject_code:
         return jsonify({"error": "semester and subject are required"}), 400
-    db_path = get_db_path(batch_year)
-    university = University(db_path)
+    # db_path = get_db_path(batch_year)
+    university = University(postgres_url=postgres_db_url, batch_year=batch_year)
     university.add_students(selected_semester=semester)
     subject_result = SubjectResult(subject_code, semester, university)
 

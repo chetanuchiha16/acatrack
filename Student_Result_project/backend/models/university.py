@@ -4,47 +4,47 @@ import matplotlib
 matplotlib.use('Agg')
 from models import Student
 from models.paths import img_dir,pdf_dir  , get_db_path
+import pandas as pd
+from sqlalchemy import create_engine
+from models.paths import postgres_db_url
 class University:
-    def __init__(self, db_path=None):
-        # if db_path is None:
-            # from models.paths import get_current_db_path
-            # db_path = get_current_db_path()
-        self.db_path = db_path
-        print(f"{db_path} from uni class")
+    def __init__(self, postgres_url=None, batch_year=None):
+        self.postgres_url = postgres_url or postgres_db_url
+        self.batch_year = batch_year
+        self.engine = create_engine(self.postgres_url)
         self.students = []
 
     def fetch_semester_tables(self):
-        """
-        Fetch all semester tables (e.g., SEM1, SEM2, etc.) from the database.
-        """
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'SEM%'")
-            tables = cursor.fetchall()
-            conn.close()
-            return [table[0] for table in tables]
-        except sqlite3.Error as e:
-            print(f"Database error occurred: {e}")
+            # Fetch all tables in public schema
+            query = "SELECT table_name FROM information_schema.tables WHERE table_schema='public';"
+            tables_df = pd.read_sql(query, self.engine)
+            all_tables = tables_df['table_name'].tolist()
+            print("DEBUG: All tables in database:\n", all_tables)
+
+            # Filter in Python for SEM tables of this batch
+            semester_tables = [t for t in all_tables if t.startswith("SEM") and t.endswith(f"_{self.batch_year}")]
+            print("DEBUG: Semester tables for batch:", semester_tables)
+            return semester_tables
+        except Exception as e:
+            print(f"Error fetching semester tables: {e}")
             return []
+
+
 
     def fetch_students(self, semester):
         """
         Fetch all unique USNs from a given semester table.
         """
+        query = f'SELECT DISTINCT student_usn FROM "{semester}"'
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            query = f"SELECT DISTINCT student_usn FROM {semester}"
-            cursor.execute(query)
-            usns = [row[0] for row in cursor.fetchall()]
-            conn.close()
-            return usns
-        except sqlite3.Error as e:
-            print(f"Database error occurred: {e}")
+            df = pd.read_sql(query, self.engine)
+            return df['student_usn'].tolist()
+        except Exception as e:
+            print(f"Error fetching students from {semester}: {e}")
             return []
 
-    def add_students(self,selected_semester):
+    def add_students(self, selected_semester):
         """
         Add all students from all semester tables into the University class.
         """
@@ -53,20 +53,17 @@ class University:
             print("No semester tables found in the database.")
             return
 
-        all_usns = set()  # To ensure no duplicates
+        all_usns = set()
         for semester in semester_tables:
             usns = self.fetch_students(semester)
             all_usns.update(usns)
 
-        # Create Student objects for each unique USN and add to the university's student list
         for usn in all_usns:
             try:
-                # Using SEM1 as a sample semester here, it can be changed based on your requirement
-                student = Student(usn, selected_semester, self.db_path)
+                student = Student(usn, selected_semester, self.batch_year, self.engine)
                 self.students.append(student)
-            except ValueError as e:
+            except ValueError:
                 pass
-                #print(f"Error fetching data for USN {usn}: {e}")
 
     def display_students(self):
         """
@@ -88,87 +85,79 @@ class University:
             student.calculate_sgpa()  # Ensure SGPA is calculated
             student.calculate_cgpa(previous_sgpas)
 
-    def calculate_academic_performance_by_semester(self, selected_semester, db_path=None):
-        if db_path is None:
-            db_path = self.db_path
-
+    def calculate_academic_performance_by_semester(self, selected_semester):
         """
         Calculates academic performance for all students in the selected semester.
 
         Parameters:
             selected_semester (str): The selected semester to filter students.
-            db_path (str): Path to the student database.
 
         Returns:
             list: List of dictionaries containing student academic details for the selected semester.
         """
         try:
-            # Connect to the database and get all semester tables
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-            tables = cursor.fetchall()
-            semesters = [table[0] for table in tables if table[0].startswith('SEM')]
-            conn.close()
+            # Fetch all tables in the public schema
+            tables_df = pd.read_sql(
+                "SELECT table_name FROM information_schema.tables WHERE table_schema='public';",
+                self.engine
+            )
+            all_tables = tables_df['table_name'].tolist()
+            print("DEBUG: All tables in database:\n", all_tables)
+
+            # Filter only SEM tables for the given batch
+            semesters = [t for t in all_tables if t.upper().startswith("SEM") and t.endswith(f"_{self.batch_year}")]
+            print(f"DEBUG: Semester tables for batch {self.batch_year}:", semesters)
 
             if not semesters:
-                return [{"error": "No semester data available."}]
+                return [{"error": "No semester data available for this batch."}]
 
             semester_results = []
+            table_name = f"{selected_semester}_{self.batch_year}"
 
-            for semester in sorted(semesters):  # Process semesters in order
-                if semester != selected_semester:
-                    continue  # Skip semesters that do not match the selected semester
+            if table_name not in semesters:
+                return [{"error": f"No data found for {selected_semester} in batch {self.batch_year}"}]
 
+            # Fetch all student USNs for this semester
+            query_usns = f'SELECT DISTINCT student_usn FROM "{table_name}" WHERE student_usn IS NOT NULL'
+            student_usns_df = pd.read_sql(query_usns, self.engine)
+            student_usns = student_usns_df['student_usn'].tolist()
+
+            for usn in student_usns:
                 try:
-                    # Fetch all students for the selected semester
-                    conn = sqlite3.connect(db_path)
-                    cursor = conn.cursor()
-                    cursor.execute(f"SELECT student_usn FROM {semester} WHERE student_usn IS NOT NULL;")
-                    student_usns = cursor.fetchall()
-                    conn.close()
+                    student = Student(usn, selected_semester, self.batch_year, self.engine)
 
-                    for student_usn in student_usns:
-                        usn = student_usn[0]
-                        # Create a Student object for the semester
-                        student = Student(usn, semester, db_path=db_path)
+                    if not student.name:
+                        continue
 
-                        # Ensure the student exists in the semester table
-                        if not student.name:
-                            continue  # Skip if student not found in this semester
+                    # Calculate SGPA and CGPA
+                    student.calculate_sgpa()
+                    student.calculate_cgpa(student.fetch_previous_sgpas())
 
-                        # Retrieve the specific student's previous SGPAs (reset for each student)
-                        #student_previous_sgpas = self.get_previous_sgpas(student.usn, selected_semester)
-
-                        # Calculate SGPA and CGPA
-                        student.calculate_sgpa()
-                        student.calculate_cgpa(student.fetch_previous_sgpas())
-
-                        # Store results
-                        semester_results.append({
-                            "semester": semester,
-                            "usn": student.usn,
-                            "name": student.name,
-                            "obtained_credits": student.obtained_credits,
-                            "sgpa": student.sgpa,
-                            "cgpa": student.cgpa,
-                            "percentage": student.percentage,
-                            "ia_marks": student.ia_marks,
-                            "see_marks": student.see_marks,
-                            "total_marks": student.total_marks,
-                            "pass_fail": student.pass_fail,
-                            "subject_names": student.subject_names,   # ✅ Added
-                            "subject_codes": student.subject_codes,  # ✅ Added
-                        })
+                    semester_results.append({
+                        "semester": selected_semester,
+                        "usn": student.usn,
+                        "name": student.name,
+                        "obtained_credits": student.obtained_credits,
+                        "sgpa": student.sgpa,
+                        "cgpa": student.cgpa,
+                        "percentage": student.percentage,
+                        "ia_marks": student.ia_marks,
+                        "see_marks": student.see_marks,
+                        "total_marks": student.total_marks,
+                        "pass_fail": student.pass_fail,
+                        "subject_names": student.subject_names,
+                        "subject_codes": student.subject_codes,
+                    })
 
                 except ValueError as e:
-                    # Handle errors for a specific semester
-                    semester_results.append({"semester": selected_semester, "error": str(e)})
-            
+                    semester_results.append({"semester": selected_semester, "usn": usn, "error": str(e)})
+
             return semester_results
 
         except Exception as e:
             return [{"error": f"Error occurred: {str(e)}"}]
+
+
         
 
     def find_failed_students_old(self, selected_semester):
@@ -184,30 +173,29 @@ class University:
         failed_students = {}
 
         try:
-            # Fetch all students for the selected semester
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute(f"SELECT student_usn FROM {selected_semester}")
-            rows = cursor.fetchall()
-            conn.close()
+            table_name = f"{selected_semester}_{self.batch_year}"
 
-            for row in rows:
-                usn = row[0]
-                # Create a student object for this USN and selected semester
-                student = Student(usn, selected_semester, self.db_path)
+            # Fetch all student USNs for this semester
+            query_usns = f'SELECT DISTINCT student_usn FROM "{table_name}" WHERE student_usn IS NOT NULL'
+            student_usns_df = pd.read_sql(query_usns, self.engine)
+            student_usns = student_usns_df['student_usn'].tolist()
 
-                # Get the pass/fail status for all subjects of the student
-                pass_fail_subjects = student.calculate_pass_fail()
+            for usn in student_usns:
+                try:
+                    # Create a Student object
+                    student = Student(usn, selected_semester, self.batch_year, self.postgres_url)
 
-                # Check each subject's pass/fail status
-                for subject_index, status in enumerate(pass_fail_subjects):
-                    if status == "Fail":
-                        if usn not in failed_students:
-                            failed_students[usn] = []
-                        # Assuming that the subject codes are stored in a list
-                        # subject_code = student.subject_codes[subject_index]  # Example, assuming `subject_codes` is a list
-                        subject_name = student.subject_names[subject_index]
-                        failed_students[usn].append(subject_name)
+                    # Get pass/fail status for each subject
+                    pass_fail_subjects = student.calculate_pass_fail()
+
+                    for idx, status in enumerate(pass_fail_subjects):
+                        if status == "Fail":
+                            failed_students.setdefault(usn, [])
+                            failed_students[usn].append(student.subject_names[idx])
+
+                except ValueError:
+                    # Skip if student data is not found
+                    continue
 
             return failed_students
 
@@ -215,43 +203,59 @@ class University:
             print(f"Error occurred while fetching failed students: {str(e)}")
             return {}
 
+
     def find_failed_students(self, selected_semester):
+        """
+        Returns full information for all students who failed in the selected semester.
+
+        Parameters:
+            selected_semester (str): The semester to check for failed students.
+
+        Returns:
+            list: List of dictionaries containing details of failed students.
+        """
         failed_students_list = []
 
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute(f"SELECT student_usn FROM {selected_semester}")
-            rows = cursor.fetchall()
-            conn.close()
+            table_name = f"{selected_semester}_{self.batch_year}"
 
-            for row in rows:
-                usn = row[0]
-                student = Student(usn, selected_semester, self.db_path)
-                pass_fail_subjects = student.calculate_pass_fail()
+            # Fetch all student USNs for this semester
+            query_usns = f'SELECT DISTINCT student_usn FROM "{table_name}" WHERE student_usn IS NOT NULL'
+            student_usns_df = pd.read_sql(query_usns, self.engine)
+            student_usns = student_usns_df['student_usn'].tolist()
 
-                # If student has any fail, add full student data to the list
-                if "Fail" in pass_fail_subjects:
-                    # Build a dict representing all needed student fields
-                    failed_students_list.append({
-                        "name": student.name,
-                        "usn": student.usn,
-                        "cgpa": student.cgpa,
-                        "percentage": student.percentage,
-                        "obtained_credits": student.obtained_credits,
-                        "pass_fail": pass_fail_subjects,
-                        "ia_marks": student.ia_marks,
-                        "see_marks": student.see_marks,
-                        "subject_codes": student.subject_codes,
-                        "subject_names": student.subject_names,
-                        # add any other fields your frontend expects
-                    })
+            for usn in student_usns:
+                try:
+                    # Create Student object for Postgres
+                    student = Student(usn, selected_semester, self.batch_year, self.postgres_url)
+                    pass_fail_subjects = student.calculate_pass_fail()
+
+                    if "Fail" in pass_fail_subjects:
+                        # Add full student info to the list
+                        failed_students_list.append({
+                            "name": student.name,
+                            "usn": student.usn,
+                            "cgpa": student.cgpa,
+                            "percentage": student.percentage,
+                            "obtained_credits": student.obtained_credits,
+                            "pass_fail": pass_fail_subjects,
+                            "ia_marks": student.ia_marks,
+                            "see_marks": student.see_marks,
+                            "subject_codes": student.subject_codes,
+                            "subject_names": student.subject_names,
+                            # Add any additional fields expected by frontend
+                        })
+
+                except ValueError:
+                    # Skip if student data is missing
+                    continue
 
             return failed_students_list
 
         except Exception as e:
             print(f"Error occurred while fetching failed students: {str(e)}")
             return []
+
 
 
     def display_failed_students(self, selected_semester):

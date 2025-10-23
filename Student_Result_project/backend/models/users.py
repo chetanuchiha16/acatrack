@@ -9,44 +9,47 @@ class StudentAuth(db.Model):
     __tablename__ = 'students'
     username = db.Column(db.String(10), primary_key=True, unique=True)
     name = db.Column(db.String(100))
-    password = db.Column(db.String(128), nullable=True)   # bcrypt hash
+    password = db.Column(db.String(128), nullable=True)
     student_email = db.Column(db.String(100), nullable=True)
     student_phno = db.Column(db.String(20), nullable=True)
 
-    # NEW: store latest Firebase device token
     fcm_token = db.Column(db.String(256), nullable=True)
 
-    # Link to mentor (one-to-many: one mentor, many students)
-    mentor_id = db.Column(db.Integer, db.ForeignKey("mentors.id"), nullable=True)
-    mentor = db.relationship("Mentor", backref=db.backref("students", lazy=True))
+    # Link to mentor (one-to-many)
+    mentor_id = db.Column(
+        db.Integer,
+        db.ForeignKey("mentors.id", ondelete="SET NULL"),  # if mentor deleted, student stays
+        nullable=True
+    )
+    mentor = db.relationship("Mentor", backref=db.backref("students", lazy=True, cascade="all, delete"))
+
 
 
 class ParentAuth(db.Model):
     __tablename__ = "parents"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
-    # Credentials
-    username = db.Column(db.String(10), unique=True, nullable=False)
+    username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=False)
-
-    # Contact info
     email = db.Column(db.String(100), nullable=True)
     phone = db.Column(db.String(20), nullable=True)
+    name = db.Column(db.String(100), nullable=True)
+    relation = db.Column(db.String(50), nullable=True, default="Guardian")
 
-    # Relation info
-    name = db.Column(db.String(100), nullable=True)   # actual parent name if available
-    relation = db.Column(db.String(50), nullable=True, default="Guardian")  # Father/Mother/Guardian
-
-    # Link to student (one parent per student account)
     student_usn = db.Column(
         db.String(10),
-        db.ForeignKey("students.username"),
+        db.ForeignKey("students.username", ondelete="CASCADE"),  # 👈 delete parent if student deleted
         nullable=False,
         unique=True
     )
-    student = db.relationship("StudentAuth", backref=db.backref("parent_account", uselist=False))
+    student = db.relationship(
+        "StudentAuth",
+        backref=db.backref("parent_account", uselist=False, cascade="all, delete"),
+        passive_deletes=True
+    )
 
     fcm_token = db.Column(db.String(256), nullable=True)
+
 
 
 class Teacher(db.Model):
@@ -54,15 +57,14 @@ class Teacher(db.Model):
     username = db.Column(db.String(10), primary_key=True, unique=True)
     mentor_id = db.Column(
         db.Integer,
-        db.ForeignKey('mentors.id', name='fk_teachers_mentor_id'),  # give it a name
+        db.ForeignKey('mentors.id', name='fk_teachers_mentor_id', ondelete="SET NULL"),
         nullable=True
     )
     name = db.Column(db.String(100))
     password = db.Column(db.String(128), nullable=True)
+    email = db.Column(db.String(100), nullable=True, default=default_email)
+    phone = db.Column(db.String(20), nullable=True, default=default_number)
 
-    # Contact info
-    email = db.Column(db.String(100), nullable=True, default = default_email)
-    phone = db.Column(db.String(20), nullable=True, default = default_number)
 
 
 class Mentor(db.Model):
@@ -97,20 +99,16 @@ class PasswordResetToken(db.Model):
 class MentorMessage(db.Model):
     __tablename__ = "mentor_messages"
     id = db.Column(db.Integer, primary_key=True)
-    mentor_id = db.Column(db.Integer, db.ForeignKey("mentors.id"))
-    student_usn = db.Column(db.String, db.ForeignKey("students.username"), nullable=True)  # null = broadcast
-    recipient_type = db.Column(db.String)  # student/parent
+    mentor_id = db.Column(db.Integer, db.ForeignKey("mentors.id", ondelete="CASCADE"))
+    student_usn = db.Column(db.String, db.ForeignKey("students.username", ondelete="CASCADE"), nullable=True)
+    recipient_type = db.Column(db.String)
     subject = db.Column(db.String)
     message = db.Column(db.Text)
-    created_at = db.Column(
-        db.DateTime,  
-        default=lambda: datetime.now(timezone.utc)
-    )
-
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     email_failed = db.Column(db.Boolean, default=False)
 
-    mentor = db.relationship("Mentor", backref=db.backref("messages", lazy=True))
-    student = db.relationship("StudentAuth", backref=db.backref("messages", lazy=True))
+    mentor = db.relationship("Mentor", backref=db.backref("messages", lazy=True, cascade="all, delete"))
+    student = db.relationship("StudentAuth", backref=db.backref("messages", lazy=True, cascade="all, delete"))
 
     def to_dict(self):
         dt = self.created_at
@@ -135,11 +133,13 @@ class MentorMessage(db.Model):
 class StudentMessageStatus(db.Model):
     __tablename__ = "student_message_status"
     id = db.Column(db.Integer, primary_key=True)
-    student_usn = db.Column(db.String(20), db.ForeignKey("students.username"))
-    msg_id = db.Column(db.Integer, db.ForeignKey("mentor_messages.id"))
+    student_usn = db.Column(
+        db.String(20),
+        db.ForeignKey("students.username", ondelete="CASCADE")
+    )
+    msg_id = db.Column(
+        db.Integer,
+        db.ForeignKey("mentor_messages.id", ondelete="CASCADE")
+    )
     read = db.Column(db.Boolean, default=False)
-
     __table_args__ = (db.UniqueConstraint("student_usn", "msg_id", name="uq_student_msg"),)
-
-    def to_dict(self):
-        return {"id": self.id, "student_usn": self.student_usn, "msg_id": self.msg_id, "read": self.read}

@@ -2,13 +2,13 @@ import React, { useEffect, useState } from "react";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
 export default function SemesterResults() {
-    const [semester, setSemester] = useState("SEM1");
+    const [semester, setSemester] = useState("sem1");
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [view, setView] = useState("cards");
 
-    const semesters = ["SEM1", "SEM2", "SEM3", "SEM4"];
+    const semesters = ["sem1", "sem2", "sem3", "sem4"];
 
     useEffect(() => {
         fetchResults(semester);

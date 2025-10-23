@@ -18,7 +18,7 @@ pdf_folder = excel_dir
 
 # Semester-wise subject credits mapping
 sem_credits = {
-    "SEM1": {
+    "sem1": {
         "BMATS101": 3,
         "BCHES102": 4,
         "BCEDK103": 3,
@@ -30,7 +30,7 @@ sem_credits = {
         "BPLCK105B": 3,
         "BESCK104C": 3
     },
-    "SEM2": {
+    "sem2": {
         "BMAT201": 4,
         "BMATS201": 4,
         "BPHYS202": 4,
@@ -44,7 +44,7 @@ sem_credits = {
         "BESCK204D": 3,
         "BETCK205H": 3
     },
-    "SEM3": {
+    "sem3": {
         "BCS301": 3,
         "BCS302": 3,
         "BCS303": 3,
@@ -56,7 +56,7 @@ sem_credits = {
         "BCS358D": 0,
         "BCS358D": 1
     },
-    "SEM4": {
+    "sem4": {
         "BCS401": 3,
         "BCS402": 3,
         "BCS403": 4,
@@ -67,7 +67,7 @@ sem_credits = {
         "BCS405B": 3,
         "BCSL456D": 1
     },
-    "SEM5": {
+    "sem5": {
         "BCS501": 3,
         "BCS502": 3,
         "BCS503": 3,
@@ -82,9 +82,9 @@ sem_credits = {
         "BCS586": 2,
         "BPEK459_PhysicalEducation_OR_BNSK459_NSS_": 0
     },
-    "SEM6": {},
-    "SEM7": {},
-    "SEM8": {}
+    "sem6": {},
+    "sem7": {},
+    "sem8": {}
 }
 
 # ---------------- OCR UTILS ----------------
