@@ -94,6 +94,12 @@ sem_subjects = {
 
 SEMESTERS = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6"]
 
+def safe_int(val):
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return 0  # or None if you want to indicate missing marks
+    
 def fetch_student_data(usn, semester, batch_year, engine):
     """
     Fetch student data from the given semester table in PostgreSQL.
@@ -101,11 +107,12 @@ def fetch_student_data(usn, semester, batch_year, engine):
     """
     # if postgres_url is None:
         # postgres_url = postgres_db_url
-
+        
+    print(f"Semester is {semester}")
     try:
         # Connect to PostgreSQL
         # engine = create_engine(postgres_url)
-        table_name = f"{semester}_{batch_year}"
+        table_name = f"{semester.lower()}_{batch_year}"
 
         # Use pandas to safely query
         query = text(f'SELECT * FROM "{table_name}" WHERE "student_usn" = :usn')
@@ -124,14 +131,19 @@ def fetch_student_data(usn, semester, batch_year, engine):
         see_marks = []
         credits = []
 
-        for col in df.columns[2:]:  # Skip first two columns: (0: USN, 1: Name)
+        for col in df.columns[2:]: 
+            val = student_data[col]
+            if val is None:
+                print(f"Missing value for {col}, USN {usn}") # Skip first two columns: (0: USN, 1: Name)
             if "INTERNALS" in col:
-                ia_marks.append(int(student_data[col]))
+                print(safe_int(student_data[col]))
+                # print(student_data[col])
+                ia_marks.append(safe_int(student_data[col]))
                 subject_code.append(col.split("_")[0])
             elif "EXTERNALS" in col:
-                see_marks.append(int(student_data[col]))
+                see_marks.append(safe_int(student_data[col]))
             elif "CREDITS" in col:
-                credits.append(int(student_data[col]))
+                credits.append(safe_int(student_data[col]))
 
         return {
             "name": student_data.get("student_name", "Unknown"),
@@ -159,4 +171,4 @@ if(__name__) == ("__main__"):
     else:
         print("No data found for the specified USN.")'''
     
-    print(fetch_student_data("1JS22CS006","sem1"))
+    # print(fetch_student_data("1JS22CS006","sem1"))

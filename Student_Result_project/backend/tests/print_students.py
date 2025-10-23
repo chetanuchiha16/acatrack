@@ -11,7 +11,7 @@
 #         cursor = conn.cursor()
 #         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
 #         tables = cursor.fetchall()
-#         semesters = [table[0] for table in tables if table[0].startswith('SEM')]  # Filter only tables starting with "SEM"
+#         semesters = [table[0] for table in tables if table[0].startswith('SEM')]  # Filter only tables starting with "sem"
 #         conn.close()
 
 #         # Check if there are any semesters to display

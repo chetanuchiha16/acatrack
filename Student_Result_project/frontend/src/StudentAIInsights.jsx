@@ -399,10 +399,10 @@ export default function StudentInsights({ usn = "", semester = "sem1" }) {
                                             .sort(
                                                 ([a], [b]) =>
                                                     parseInt(
-                                                        a.replace("SEM", "")
+                                                        a.replace("sem", "")
                                                     ) -
                                                     parseInt(
-                                                        b.replace("SEM", "")
+                                                        b.replace("sem", "")
                                                     )
                                             )
                                             .map(([sem, sgpa]) => (

@@ -23,7 +23,7 @@ class University:
             print("DEBUG: All tables in database:\n", all_tables)
 
             # Filter in Python for SEM tables of this batch
-            semester_tables = [t for t in all_tables if t.startswith("SEM") and t.endswith(f"_{self.batch_year}")]
+            semester_tables = [t for t in all_tables if t.startswith("sem") and t.endswith(f"_{self.batch_year}")]
             print("DEBUG: Semester tables for batch:", semester_tables)
             return semester_tables
         except Exception as e:
@@ -105,7 +105,7 @@ class University:
             print("DEBUG: All tables in database:\n", all_tables)
 
             # Filter only SEM tables for the given batch
-            semesters = [t for t in all_tables if t.upper().startswith("SEM") and t.endswith(f"_{self.batch_year}")]
+            semesters = [t for t in all_tables if t.lower().startswith("sem") and t.endswith(f"_{self.batch_year}")]
             print(f"DEBUG: Semester tables for batch {self.batch_year}:", semesters)
 
             if not semesters:

@@ -54,7 +54,7 @@ export function extractStudentName(input) {
  */
 export function extractSemester(input) {
   const semMatch = input.match(/\bsem(?:ester)?\s*(\d+)\b/i);
-  return semMatch ? `SEM${semMatch[1]}` : null;
+  return semMatch ? `sem${semMatch[1]}` : null;
 }
 
 /**

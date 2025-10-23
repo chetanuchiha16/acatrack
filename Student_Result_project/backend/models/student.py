@@ -114,7 +114,7 @@ class Student:
         for sem in range(1, sem_no):
             try:
                 
-                student_info = fetch_student_data(self.usn, f"SEM{sem}", self.batch_year, engine=self.engine)
+                student_info = fetch_student_data(self.usn, f"sem{sem}", self.batch_year, engine=self.engine)
                 if student_info:
                     ia_marks = [x or 0 for x in student_info.get("ia_marks", [])]
                     see_marks = [x or 0 for x in student_info.get("see_marks", [])]
