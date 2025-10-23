@@ -158,7 +158,7 @@ def extract_from_pdf(pdf_path, subject_codes, columns):
                 
 
                 # Credits
-                credit_val = sem_credits.get(f"SEM{semester}", {}).get(code, 0)
+                credit_val = sem_credits.get(f"sem{semester}", {}).get(code, 0)
                 student_data[f"{code}_CREDITS"] = credit_val
 
                 total_marks += total
@@ -199,7 +199,7 @@ def process_pdfs(excel_filename, pdf_folder=pdf_folder):
             print(f"⚠️ Skipping PDF '{file}' because USN was not found")
             continue
 
-        sem_sheet = f"SEM{row.get('SEMESTER', 'Unknown')}"
+        sem_sheet = f"sem{row.get('SEMESTER', 'Unknown')}"
         row.pop("SEMESTER", None)
 
         df_new = pd.DataFrame([row])
@@ -242,7 +242,7 @@ def process_single_pdf(pdf_path, excel_path):
         print(f"⚠️ Skipping PDF '{os.path.basename(pdf_path)}' because USN was not found")
         return
 
-    sem_sheet = f"SEM{row.get('SEMESTER', 'Unknown')}"
+    sem_sheet = f"sem{row.get('SEMESTER', 'Unknown')}"
     row.pop("SEMESTER", None)
     df_new = pd.DataFrame([row]).set_index("student_usn", drop=False)
 

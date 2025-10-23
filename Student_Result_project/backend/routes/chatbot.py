@@ -205,13 +205,13 @@ def get_latest_semester(student_data):
         valid_sems = [sem for sem, data in semesters.items() if data.get("sgpa") is not None]
         if valid_sems:
             # Sort by numeric part of "SEMx"
-            valid_sems.sort(key=lambda x: int(x.replace("SEM", "")))
+            valid_sems.sort(key=lambda x: int(x.replace("sem", "")))
             return valid_sems[-1]
 
     # Case 2: Flat JSON (new format with only one semester)
     if "sgpa" in student_data and student_data["sgpa"] is not None:
         pdf_url = student_data.get("pdf_url", "")
-        match = re.search(r"(SEM\d+)", pdf_url)
+        match = re.search(r"(sem\d+)", pdf_url)
         if match:
             return match.group(1)  # e.g. "sem5"
     
