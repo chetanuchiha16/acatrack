@@ -13,5 +13,6 @@ __pycache__/
 
 # Ignore project Postgres DB
 ProjectDBData/
-
+ExcelInputs/
 .env
+*.xlsx
