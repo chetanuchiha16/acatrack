@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from models.fetch import SEMESTERS
 from models import University
 from logger_config import get_logger
+from models.paths import postgres_db_url
 
 logger = get_logger(__name__)
 
@@ -26,12 +27,13 @@ class BatchManager:
         You can use the same DB for all batches, 
         tables are distinguished by batch suffix.
         """
-        user = "chetan"
-        password = "chetan"
-        host = "localhost"
-        port = 5433
-        db_name = "Group_Project"
-        return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db_name}"
+        # user = "chetan"
+        # password = "chetan"
+        # host = "localhost"
+        # port = 5433
+        # db_name = "Group_Project"
+        # return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db_name}"
+        return postgres_db_url
 
     def create_batch(self, batch_year: int):
         """Prepare Excel data and create tables in Postgres."""
