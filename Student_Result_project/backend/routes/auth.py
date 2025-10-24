@@ -5,6 +5,9 @@ from models.batch_manager import BatchManager, bm
 import jwt
 import datetime
 from models.helpers import get_batch_year, get_jwt_payload
+from logger_config import get_logger
+
+logger = get_logger(__name__)
 auth_bp = Blueprint("auth", __name__)
 
 

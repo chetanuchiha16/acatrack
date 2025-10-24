@@ -29,6 +29,10 @@ from models.paths import email_excel_path, mentor_excel_path, get_db_path, excel
 from models.batch_manager import BatchManager, bm
 from pathlib import Path
 from models.fetch import SEMESTERS
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 # ---------- Blueprint ----------
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
