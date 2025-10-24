@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.db
+*.xlsx
+.env
+Inputs/
+Outputs/*.pdf
+Outputs/*.png
+venv/
