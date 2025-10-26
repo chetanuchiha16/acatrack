@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { BarChart3, Users, CalendarDays } from "lucide-react";
+import { BarChart3, Users, CalendarDays, FileText } from "lucide-react";
 import MentorResults from "./MentorResults";
 import MentorSendEmails from "./MentorSendEmails";
 import { useLocation, useParams } from "react-router-dom";
 import MentorMeetings from "./MentorMeetings";
+import MentorRecords from "./MentorRecord"; // adjust the path if needed
+
 export default function MentorDashboard() {
     const [activeTab, setActiveTab] = useState("results");
     const [date, setDate] = useState("");
@@ -26,6 +28,11 @@ export default function MentorDashboard() {
             label: "Meetings",
             icon: <CalendarDays className="w-4 h-4" />,
         },
+        {
+            id: "records",
+            label: "Mentor Records",
+            icon: <FileText className="w-4 h-4" />, // icon for PDFs
+        },
     ];
 
     return (
@@ -44,10 +51,9 @@ export default function MentorDashboard() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-t-md transition-colors duration-200
-                                ${
-                                    activeTab === tab.id
-                                        ? "bg-blue-600 text-white"
-                                        : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                ${activeTab === tab.id
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
                                 }`}
                         >
                             {tab.icon}
@@ -71,6 +77,10 @@ export default function MentorDashboard() {
                             <MentorMeetings mentorId={mentor_id} />
                         </div>
                     )}
+
+                    {activeTab === "records" && 
+                    <MentorRecords mentor_id={mentor_id} />}
+
                 </div>
             </div>
         </div>
