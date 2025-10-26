@@ -20,7 +20,7 @@ def get_academic_performance():
     try:
         db_path = get_db_path(batch_year)  # <-- resolves correct DB
         logger.debug(f"{db_path} from university 1")
-        logger.debug("Batch year in session:", get_batch_year())
+        logger.debug(f"Batch year in session: {get_batch_year()}" )
         university = University(postgres_url=postgres_db_url, batch_year=batch_year)
         university.add_students(semester)
         result = university.calculate_academic_performance_by_semester(semester)
@@ -45,7 +45,7 @@ def get_academic_performance():
 @uni_bp.route('/auth/Staff/report/<semester>')
 def get_report(semester):
     file_path = f"{pdf_dir}/{semester}_report.pdf"
-    logger.debug("Batch year in session:", get_batch_year())
+    logger.debug(f"Batch year in session: {get_batch_year()}" )
     batch_year = get_batch_year()   
     db_path = get_db_path(batch_year)  # <-- resolves correct DB
     # generate report PDF if not exists
