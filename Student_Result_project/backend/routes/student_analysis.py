@@ -15,21 +15,18 @@ from models import Student
 from visuals import create_student_report
 from models.paths import get_db_path, pdf_dir, postgres_db_url, API_BASE
 import os
+import base64
 
 def get_student_result(usn: str, semester: str, batch_year: int):
-    """
-    Returns student result as dictionary (same structure as /result API)
-    """
+    # Create DB engine and Student object
     engine = create_engine(postgres_db_url)
-    # db_path = get_db_path(batch_year)  # <-- resolves correct DB
     student = Student(usn=usn, semester=semester, batch_year=batch_year, engine=engine)
 
-    # Generate PDF (optional, can skip if only analysis needed)
-    filename = f"{student.name}_{semester}_report.pdf"
-    file_path = os.path.join(pdf_dir, filename)
-    create_student_report(student, file_path=file_path)
-    pdf_url = f"{API_BASE}/auth/Student/report/{filename}"
+    # Generate PDF entirely in memory
+    pdf_bytes = create_student_report(student)  # returns bytes
+    pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
 
+    # Build result dictionary
     result = {
         "name": student.name,
         "usn": student.usn,
@@ -49,13 +46,16 @@ def get_student_result(usn: str, semester: str, batch_year: int):
                 "status": status
             }
             for code, subject_name, ia, see, credit, status in zip(
-                student.subject_codes, student.subject_names, student.ia_marks, student.see_marks,
+                student.subject_codes, student.subject_names,
+                student.ia_marks, student.see_marks,
                 student.credits, student.pass_fail
             )
         ],
-        "pdf_url": pdf_url
+        "pdf_url": f"data:application/pdf;base64,{pdf_base64}"  # inline PDF
     }
     return result
+
+
 
 
 def predict_future_sgpa(previous_sgpas, num_semesters_completed, total_semesters=8):

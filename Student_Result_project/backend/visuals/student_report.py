@@ -5,42 +5,30 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import pathlib
 from models.paths import  pdf_dir, img_dir, logo_path
+from io import BytesIO
 from logger_config import get_logger
 
 logger = get_logger(__name__)
 
 
-def create_student_report(student, file_path=f"{pdf_dir}/student_report.pdf"):
+def create_student_report(student):
     """
-    Create a PDF report for an individual student with graphs, resembling a marks card.
+    Create a PDF report for a student in memory, return as bytes
     """
-    # Generate a graph for subject-wise marks
-    fig, ax = plt.subplots()
-    ax.bar(student.subject_codes, [ia + see for ia, see in zip(student.ia_marks, student.see_marks)], color="#5E40BE")
-    ax.set_title(f"Performance of {student.name}")
-    ax.set_xlabel("Subjects")
-    ax.set_ylabel("Total Marks")
-    graph_path = f"{img_dir}/student_graph.png"
-    plt.savefig(graph_path)
-    plt.close()
+    buf = BytesIO()
 
-    # Create the PDF
-    c = canvas.Canvas(file_path, pagesize=letter)
+    # Create PDF
+    c = canvas.Canvas(buf, pagesize=letter)
 
-    # Add College Name and Logo
+    # College Name / Logo
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(150, 780, "JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU")  # Centered title
+    c.drawString(150, 780, "JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU")
     try:
-        c.drawImage(logo_path, 50, 750, width=50, height=50)  # Add logo on the top-left
+        c.drawImage(logo_path, 50, 750, width=50, height=50)
     except Exception as e:
-        logger.debug(f"Warning: Could not load logo image. {e}")
+        logger.debug(f"Warning: Logo not loaded: {e}")
 
-    # Add Report Header
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(50, 730, f"Student Marks Card")
-    c.line(50, 720, 550, 720)  # Add a horizontal line below the header
-
-    # Add Student Details
+    # Student Info
     c.setFont("Helvetica", 12)
     c.drawString(50, 700, f"Name: {student.name}")
     c.drawString(50, 680, f"USN: {student.usn}")
@@ -50,44 +38,25 @@ def create_student_report(student, file_path=f"{pdf_dir}/student_report.pdf"):
     c.drawString(50, 600, f"SGPA: {student.sgpa:.2f}")
     c.drawString(50, 580, f"CGPA: {student.cgpa:.2f}")
 
-    # Add Subject-wise Results Table
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, 560, "Subject-wise Results:")
+    # Subject Table
     y_position = 540
-    c.setFont("Helvetica", 10)
-    c.drawString(50, y_position, "Sl.No")
-    c.drawString(100, y_position, "Subject Name")
-    # c.drawString(100, y_position, "Subject Code")
-    c.drawString(300, y_position, "IA Marks")
-    c.drawString(350, y_position, "SEE Marks")
-    c.drawString(400, y_position, "Total Marks")
-    c.drawString(450, y_position, "Credits")
-    c.drawString(500, y_position, "Status")
-    y_position -= 20
-    c.line(50, y_position + 10, 550, y_position + 10)  # Horizontal line for table header
-
     line_spacing = 20
-    for i, (subject_name,subject_code, ia, see, credit, status) in enumerate(
-        zip(student.subject_names, student.subject_codes, student.ia_marks, student.see_marks, student.credits, student.pass_fail)
+    for i, (subject_name, subject_code, ia, see, credit, status) in enumerate(
+        zip(student.subject_names, student.subject_codes, student.ia_marks,
+            student.see_marks, student.credits, student.pass_fail)
     ):
         c.drawString(50, y_position, str(i + 1))
         c.drawString(100, y_position, f"{subject_name} {subject_code}")
-        # c.drawString(100, y_position, subject_code)
         c.drawString(300, y_position, str(ia))
         c.drawString(350, y_position, str(see))
         c.drawString(400, y_position, str(ia + see))
         c.drawString(450, y_position, str(credit))
         c.drawString(500, y_position, status)
         y_position -= line_spacing
-
-        # Start a new page if space runs out
         if y_position < 50:
             c.showPage()
-            c.setFont("Helvetica", 10)  # Reset font
-            y_position = 750  # Reset position for the new page
+            y_position = 750
 
-    # Add Performance Graph
-    c.drawImage(graph_path, 100, 100, width=400, height=200)
-    # Finalize PDF
     c.save()
-    logger.debug(f"Student Marks Card PDF saved successfully as {pathlib.Path(file_path).resolve()}")
+    buf.seek(0)
+    return buf.read()  # return PDF bytes

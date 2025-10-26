@@ -3,6 +3,7 @@ from models.fetch import fetch_student_data
 from models.paths import img_dir
 from sqlalchemy import create_engine
 from models.paths import postgres_db_url
+from models.cloud_utils import save_plot  # import your helper
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -178,16 +179,21 @@ class Student:
         ):
             logger.debug(f"{i}. {name} ({code}): IA={ia}, SEE={see}, Total={ia+see}, Credits={credit}, Status={status}")
 
+    
+
     def plot_subject_marks(self):
         subjects = [f"{name} ({code})" for name, code in zip(self.subject_names, self.subject_codes)]
         fig = plt.figure(figsize=(10, 6))
+
         plt.bar(subjects, self.ia_marks, label='IA Marks', color='skyblue', alpha=0.7)
         plt.bar(subjects, self.see_marks, label='SEE Marks', color='salmon', alpha=0.7, bottom=self.ia_marks)
+
         plt.xlabel('Subjects')
         plt.ylabel('Marks')
         plt.title(f'Subject-wise IA and SEE Marks for {self.name}')
         plt.legend()
-        graph_path = f"{img_dir}/plot_subject_marks_{self.usn}.png"
-        plt.savefig(graph_path)
-        plt.close(fig)
-        return fig, graph_path
+
+        # No saving required, just return the figure
+        return fig
+
+
