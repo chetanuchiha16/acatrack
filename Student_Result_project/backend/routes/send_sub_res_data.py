@@ -37,16 +37,16 @@ def get_subject_report_pdf():
 
     if not semester or not subject_code:
         return jsonify({"error": "semester and subject are required"}), 400
-    # db_path = get_db_path(batch_year)
+
     university = University(postgres_url=postgres_db_url, batch_year=batch_year)
     university.add_students(selected_semester=semester)
     subject_result = SubjectResult(subject_code, semester, university)
 
-    pdf_filename = f"subject_report_{semester}_{subject_code}.pdf"
-    pdf_path = os.path.join(pdf_dir, pdf_filename)
-    create_subject_report(subject_result, file_path=pdf_path)
+    # ✅ Generate PDF in-memory
+    pdf_bytes = create_subject_report(subject_result)
+    from io import BytesIO
+    pdf_buffer = BytesIO(pdf_bytes)
+    pdf_buffer.seek(0)
 
-    if os.path.exists(pdf_path):
-        return send_file(pdf_path, as_attachment=True)
-    else:
-        return jsonify({"error": "PDF not generated"}), 500
+    return send_file(pdf_buffer, as_attachment=True, download_name=f"subject_report_{semester}_{subject_code}.pdf", mimetype="application/pdf")
+
