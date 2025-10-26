@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify, send_from_directory, current_app
 import fitz
 import os
+from models.paths import pdf_dir, img_dir, base_dir
 
-UPLOAD_FOLDER = r"C:\Users\abhis\OneDrive\Desktop\mini-project\Group-Projects\Student_Result_project\backend\Outputs\PDFs"
+UPLOAD_FOLDER = pdf_dir
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 mentee_record_bp = Blueprint('mentee', __name__, url_prefix='/mentee')
 
-TEMPLATE_PATH = r"C:\Users\abhis\OneDrive\Desktop\New_mentor_Record[final].pdf"
+TEMPLATE_PATH = str(base_dir / "Inputs" / "New_mentor_Record[final].pdf")
 
 
 # --- Upload and fill PDF ---
