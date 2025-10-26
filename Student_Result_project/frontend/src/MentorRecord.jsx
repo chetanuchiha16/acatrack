@@ -59,7 +59,7 @@ export default function MentorRecords({ mentor_id }) {
                                     href={`${API_BASE}/mentee/mentor/${mentor_id}/download/${pdf.usn}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600"
+                                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
                                 >
                                     Download
                                 </a>
