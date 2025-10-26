@@ -2,13 +2,13 @@ import matplotlib
 matplotlib.use('Agg')  # headless backend for Flask
 import matplotlib.pyplot as plt
 import textwrap
-from models.paths import img_dir
+import io
+import base64
 
 def plot_student_marks(student):
     """
     Generate a stacked bar chart of IA and SEE marks for a student.
-    Returns the file path of the saved PNG.
-    Flask-friendly (no Tkinter, no hover interactivity).
+    Returns a Base64 PNG string (in-memory) suitable for JSON response.
     """
     fig, ax = plt.subplots(figsize=(8, 4))
 
@@ -16,11 +16,10 @@ def plot_student_marks(student):
     subjects = student.get("subject_codes") or [f"Sub {i+1}" for i in range(len(student["ia_marks"]))]
     ia_marks = student["ia_marks"]
     see_marks = student["see_marks"]
-    total_marks = [ia + see for ia, see in zip(ia_marks, see_marks)]
 
     # stacked bars
-    ax.bar(range(len(subjects)), ia_marks, label="IA Marks")
-    ax.bar(range(len(subjects)), see_marks, bottom=ia_marks, label="SEE Marks")
+    ax.bar(range(len(subjects)), ia_marks, label="IA Marks", color="skyblue", alpha=0.7)
+    ax.bar(range(len(subjects)), see_marks, bottom=ia_marks, label="SEE Marks", color="salmon", alpha=0.7)
 
     # wrap long labels and set ticks
     wrapped = [textwrap.fill(s, 18) for s in subjects]
@@ -32,9 +31,16 @@ def plot_student_marks(student):
     ax.legend()
     fig.tight_layout()
 
-    # save plot
-    file_path = f"{img_dir}/student_subject_marks.png"
-    fig.savefig(file_path)
+    # Convert figure to in-memory PNG
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+    img_base64 = base64.b64encode(buf.read()).decode("utf-8")
+
+    # Cleanup
+    fig.clf()
+    fig.canvas.close_event()
     plt.close(fig)
 
-    return file_path
+    # Return inline Base64 PNG
+    return f"data:image/png;base64,{img_base64}"

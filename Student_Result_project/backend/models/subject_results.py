@@ -1,6 +1,9 @@
 
 from models.paths import pdf_dir, img_dir
 from models.fetch import sem_subjects
+from logger_config import get_logger
+
+logger = get_logger(__name__)
 # SubjectResult class
 class SubjectResult:
     def __init__(self, subject_code, semester, university):

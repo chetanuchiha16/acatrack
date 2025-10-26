@@ -1,13 +1,13 @@
 import matplotlib
 matplotlib.use('Agg')  # headless backend for Flask
 import matplotlib.pyplot as plt
-from models.paths import img_dir
+import io
+import base64
 
 def plot_university_totals(university):
     """
     Generate a bar chart of total marks for each student in the university.
-    Returns the file path of the saved PNG.
-    Flask-friendly (no Tkinter).
+    Returns a Base64 PNG string (in-memory) suitable for JSON response.
     """
     fig, ax = plt.subplots(figsize=(10, 5))
 
@@ -22,9 +22,16 @@ def plot_university_totals(university):
 
     fig.tight_layout()
 
-    # save plot
-    file_path = f"{img_dir}/university_totals.png"
-    fig.savefig(file_path)
+    # Convert figure to in-memory PNG
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+    img_base64 = base64.b64encode(buf.read()).decode("utf-8")
+
+    # Cleanup
+    fig.clf()
+    fig.canvas.close_event()
     plt.close(fig)
 
-    return file_path
+    # Return inline Base64 PNG
+    return f"data:image/png;base64,{img_base64}"

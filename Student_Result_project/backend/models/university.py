@@ -24,11 +24,11 @@ class University:
             query = "SELECT table_name FROM information_schema.tables WHERE table_schema='public';"
             tables_df = pd.read_sql(query, self.engine)
             all_tables = tables_df['table_name'].tolist()
-            logger.debug("DEBUG: All tables in database:\n", all_tables)
+            logger.debug(f"DEBUG: All tables in database:\n{all_tables}")
 
             # Filter in Python for SEM tables of this batch
             semester_tables = [t for t in all_tables if t.startswith("sem") and t.endswith(f"_{self.batch_year}")]
-            logger.debug("DEBUG: Semester tables for batch:", semester_tables)
+            logger.debug(f"DEBUG: Semester tables for batch: {semester_tables}")
             return semester_tables
         except Exception as e:
             logger.debug(f"Error fetching semester tables: {e}")
@@ -106,11 +106,11 @@ class University:
                 self.engine
             )
             all_tables = tables_df['table_name'].tolist()
-            logger.debug("DEBUG: All tables in database:\n", all_tables)
+            logger.debug(f"DEBUG: All tables in database:\n{all_tables}")
 
             # Filter only SEM tables for the given batch
             semesters = [t for t in all_tables if t.lower().startswith("sem") and t.endswith(f"_{self.batch_year}")]
-            logger.debug(f"DEBUG: Semester tables for batch {self.batch_year}:", semesters)
+            logger.debug(f"DEBUG: Semester tables for batch {self.batch_year}:{semesters}")
 
             if not semesters:
                 return [{"error": "No semester data available for this batch."}]

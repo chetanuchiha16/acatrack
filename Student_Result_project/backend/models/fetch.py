@@ -112,7 +112,7 @@ def fetch_student_data(usn, semester, batch_year, engine):
     # if postgres_url is None:
         # postgres_url = postgres_db_url
         
-    logger.debug(f"Semester is {semester}")
+    # logger.debug(f"Semester is {semester}")
     try:
         # Connect to PostgreSQL
         # engine = create_engine(postgres_url)
@@ -136,11 +136,11 @@ def fetch_student_data(usn, semester, batch_year, engine):
         credits = []
 
         for col in df.columns[2:]: 
-            val = student_data[col]
-            if val is None:
-                logger.debug(f"Missing value for {col}, USN {usn}") # Skip first two columns: (0: USN, 1: Name)
+            # val = student_data[col]
+            # if val is None:
+                # logger.debug(f"Missing value for {col}, USN {usn}") # Skip first two columns: (0: USN, 1: Name)
             if "INTERNALS" in col:
-                logger.debug(safe_int(student_data[col]))
+                # logger.debug(safe_int(student_data[col]))
                 # logger.debug(student_data[col])
                 ia_marks.append(safe_int(student_data[col]))
                 subject_code.append(col.split("_")[0])
