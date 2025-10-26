@@ -5,6 +5,11 @@ from app_init import create_app, db
 from contextlib import contextmanager
 from models.fetch import SEMESTERS
 from models import University
+from logger_config import get_logger
+from models.paths import postgres_db_url
+
+logger = get_logger(__name__)
+
 
 class BatchManager:
     current_batch_year = None
@@ -22,39 +27,40 @@ class BatchManager:
         You can use the same DB for all batches, 
         tables are distinguished by batch suffix.
         """
-        user = "chetan"
-        password = "chetan"
-        host = "localhost"
-        port = 5433
-        db_name = "Group_Project"
-        return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db_name}"
+        # user = "chetan"
+        # password = "chetan"
+        # host = "localhost"
+        # port = 5433
+        # db_name = "Group_Project"
+        # return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db_name}"
+        return postgres_db_url
 
     def create_batch(self, batch_year: int):
         """Prepare Excel data and create tables in Postgres."""
         try:
-            print(f"[BatchManager] Preparing data for batch {batch_year}")
+            logger.debug(f"[BatchManager] Preparing data for batch {batch_year}")
             prep_data(batch_year=batch_year)
 
             app = self.get_flask_app(batch_year)
             with app.app_context():
-                print(f"[BatchManager] Creating tables for batch {batch_year}")
+                logger.debug(f"[BatchManager] Creating tables for batch {batch_year}")
                 db.create_all()
 
-            print(f"[BatchManager] ✅ Batch {batch_year} processed in Postgres")
+            logger.debug(f"[BatchManager] ✅ Batch {batch_year} processed in Postgres")
         except Exception as e:
             import traceback
-            print(f"[BatchManager] ❌ Failed to create batch {batch_year}: {e}")
+            logger.debug(f"[BatchManager] ❌ Failed to create batch {batch_year}: {e}")
             traceback.print_exc()
             raise
 
     def refresh_batch_data(self, batch_year: int):
         """Re-import Excel sheets to update Postgres tables."""
         try:
-            print(f"[BatchManager] Refreshing batch {batch_year}")
+            logger.debug(f"[BatchManager] Refreshing batch {batch_year}")
             prep_data(batch_year=batch_year)
-            print(f"[BatchManager] ✅ Batch {batch_year} refreshed")
+            logger.debug(f"[BatchManager] ✅ Batch {batch_year} refreshed")
         except Exception as e:
-            print(f"[BatchManager] ❌ Failed to refresh batch {batch_year}: {e}")
+            logger.debug(f"[BatchManager] ❌ Failed to refresh batch {batch_year}: {e}")
             raise
 
     def list_batches(self):
