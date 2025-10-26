@@ -19,11 +19,15 @@ from logger_config import get_logger
 logger = get_logger(__name__)
 
 
-def create_university_report(university, selected_semester, file_path=f"{pdf_dir}/university_report.pdf"):
+def create_university_report(university, selected_semester):
     """
     Create a PDF report for the university's academic performance with graphs.
+    Returns PDF bytes (in-memory).
     """
-    # Generate a graph for SGPA distribution
+    import io
+    pdf_buffer = io.BytesIO()
+
+    # Generate SGPA histogram
     sgpa_list = [student.sgpa for student in university.students if student.semester == selected_semester]
     fig, ax = plt.subplots()
     ax.hist(sgpa_list, bins=10, range=(0, 10), color='skyblue', edgecolor='black')
@@ -34,51 +38,48 @@ def create_university_report(university, selected_semester, file_path=f"{pdf_dir
     plt.savefig(graph_path)
     plt.close()
 
-    # Generate the second graph
+    # Generate second graph
     gpath = university.plot_student_totals(selected_semester, mode='histogram', n=10, bins=10)[1]
 
-    # Create the PDF
-    c = canvas.Canvas(file_path, pagesize=letter)
+    # Create PDF in-memory
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import Image
 
-    # Add College Name and Logo
+    c = canvas.Canvas(pdf_buffer, pagesize=letter)
+
+    # College Name & Logo
     c.setFont("Helvetica-Bold", 16)
     c.drawString(100, 730, "JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU")
-    
     try:
-        # Add logo to the top left
-        logo = Image(logo_path, width=50, height=50)
         c.drawImage(logo_path, 50, 710, width=50, height=50)
     except Exception as e:
         logger.debug(f"Warning: Could not load logo image. {e}")
 
-    # Title for University Report
+    # Title
     c.setFont("Helvetica-Bold", 14)
     c.drawString(100, 680, f"University Report for {selected_semester}")
 
-    # Insert the bar chart for SGPA distribution
+    # Insert charts
     c.drawImage(graph_path, 100, 500, width=400, height=200)
-
-    # Insert the second chart
     c.drawImage(gpath, 100, 300, width=400, height=200)
 
-    # Add a header for student details
+    # Add student details
     c.setFont("Helvetica", 12)
     c.drawString(100, 270, f"=== Academic Performance for Semester: {selected_semester} ===")
 
-    y = 250  # Start below the chart area
+    y = 250
     for student in university.students:
         if student.semester == selected_semester:
-            y -= 20  # Start below the previous paragraph or reset for a new page
-
-            if y < 100:  # Check if there's enough space; if not, start a new page
+            y -= 20
+            if y < 100:
                 c.showPage()
                 c.setFont("Helvetica", 12)
-                y = 750  # Reset y position for the new page
+                y = 750
 
-            # Add the student's details in a paragraph-style format
             c.setFont("Helvetica-Bold", 12)
             c.drawString(50, y, f"USN: {student.usn} | Name: {student.name}")
-            y -= 15  # Reduced space between student header and details
+            y -= 15
 
             c.setFont("Helvetica", 12)
             details = (
@@ -88,23 +89,22 @@ def create_university_report(university, selected_semester, file_path=f"{pdf_dir
                 f"Pass/Fail Status: {student.pass_fail}\n"
             )
 
-            # Split the details into lines and render them
             for line in details.split("\n"):
-                if y < 100:  # Start a new page if space runs out
+                if y < 100:
                     c.showPage()
                     c.setFont("Helvetica", 12)
                     y = 750
-
                 c.drawString(50, y, line.strip())
-                y -= 15  # Reduced spacing between lines
+                y -= 15
 
-            y -= 20  # Reduced space before the next student's details
-
-            if y < 100:  # Start a new page if there's not enough space for the next student
+            y -= 20
+            if y < 100:
                 c.showPage()
                 c.setFont("Helvetica", 12)
                 y = 750
 
-    # Save the PDF
     c.save()
-    logger.debug(f"University Report PDF saved successfully as {pathlib.Path(file_path).resolve()}")
+    pdf_buffer.seek(0)
+    pdf_bytes = pdf_buffer.read()
+    pdf_buffer.close()
+    return pdf_bytes

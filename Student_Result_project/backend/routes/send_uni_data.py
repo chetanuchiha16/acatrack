@@ -44,12 +44,20 @@ def get_academic_performance():
 
 @uni_bp.route('/auth/Staff/report/<semester>')
 def get_report(semester):
-    file_path = f"{pdf_dir}/{semester}_report.pdf"
-    logger.debug(f"Batch year in session: {get_batch_year()}" )
-    batch_year = get_batch_year()   
-    db_path = get_db_path(batch_year)  # <-- resolves correct DB
-    # generate report PDF if not exists
+    batch_year = get_batch_year()
     university = University(postgres_url=postgres_db_url, batch_year=batch_year)
     university.add_students(semester)
-    create_university_report(university, semester, file_path=file_path)
-    return send_file(file_path, as_attachment=True)
+
+    # ✅ Generate PDF in-memory
+    pdf_bytes = create_university_report(university, semester)
+    from io import BytesIO
+    pdf_buffer = BytesIO(pdf_bytes)
+    pdf_buffer.seek(0)
+
+    return send_file(
+        pdf_buffer,
+        as_attachment=True,
+        download_name=f"{semester}_report.pdf",
+        mimetype="application/pdf"
+    )
+
