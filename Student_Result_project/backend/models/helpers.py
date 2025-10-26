@@ -1,5 +1,9 @@
 import jwt
 from flask import request, current_app
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 
 def sanitize_jwt_header(auth_header: str) -> str:
     if not auth_header:
@@ -28,10 +32,10 @@ def get_jwt_payload():
         payload = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
         return payload
     except jwt.ExpiredSignatureError:
-        print("JWT expired")
+        logger.debug("JWT expired")
         return None
     except jwt.InvalidTokenError:
-        print("JWT decode error: Signature verification failed")
+        logger.debug("JWT decode error: Signature verification failed")
         return None
 
 def get_batch_year():

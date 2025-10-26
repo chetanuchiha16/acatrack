@@ -11,16 +11,23 @@ import pathlib
 from models import SubjectResult
 from models.paths import pdf_dir,img_dir, logo_path
 from models.fetch import sem_subjects
+import io
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 styles = getSampleStyleSheet()
 normal_style = styles["Normal"]
 
-def generate_sem_pdf(selected_semester, university, semester_subject_mapping, output_path):
+def generate_sem_pdf(selected_semester, university, semester_subject_mapping):
     try:
         subjects = semester_subject_mapping.get(selected_semester, [])
         if not subjects:
             raise ValueError("No subjects found for the selected semester.")
         
-        doc = SimpleDocTemplate(output_path, pagesize=letter, rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
+        pdf_buffer = io.BytesIO()
+        doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
+
         elements = []
 
         styles = getSampleStyleSheet()
@@ -31,7 +38,7 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping, ou
             logo = Image(logo_path, width=50, height=50)  # Adjust size as needed
             elements.append(logo)
         except Exception as e:
-            print(f"Warning: Could not load logo image. {e}")
+            logger.debug(f"Warning: Could not load logo image. {e}")
 
          # Add college name
         title = Paragraph(f"<b>{"JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU"}</b>", styles['Title'])
@@ -119,7 +126,7 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping, ou
         elements.append(totals_table)
         elements.append(Spacer(1, 20))
 
-        result = university.calculate_academic_performance_by_semester(selected_semester, db_path=None)
+        result = university.calculate_academic_performance_by_semester(selected_semester)
         toppers = sorted(result, key=lambda x: x['percentage'], reverse=True)[:10]  # Get top 10 students by percentage
 
         topper_title = Paragraph(f"<b> Toppers  {selected_semester}</b>", styles['Heading2'])
@@ -198,6 +205,11 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping, ou
 
         # Build the PDF
         doc.build(elements)
-        print(f"PDF report generated successfully at {pathlib.Path(output_path).resolve()}.")
+
+        pdf_buffer.seek(0)       # <-- seek to beginning
+        pdf_bytes = pdf_buffer.read()  # <-- read full content
+        pdf_buffer.close()
+        return pdf_bytes
+
     except Exception as e:
-        print(f"Error generating PDF: {e}")
+        logger.debug(f"Error generating PDF: {e}")

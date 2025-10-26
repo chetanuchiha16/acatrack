@@ -36,7 +36,7 @@ def send_email(to_email, subject, body):
             server.send_message(msg)
         return True
     except Exception as e:
-        print("Email send error:", e)
+        logger.debug("Email send error:", e)
         return False
 
 
@@ -182,7 +182,7 @@ def send_email_student(mentor_id):
             fcm_token = getattr(student, "fcm_token", None)
 
             if fcm_token:
-                print("FCM token for", student.username, ":", fcm_token)
+                logger.debug("FCM token for", student.username, ":", fcm_token)
                 notification = messaging.Message(
                     notification=messaging.Notification(
                         title=f"New message from {mentor.name}",
@@ -201,9 +201,9 @@ def send_email_student(mentor_id):
 
                 try:
                     response = messaging.send(notification)
-                    print("Notification sent:", response)
+                    logger.debug("Notification sent:", response)
                 except Exception as e:
-                    print("Error sending FCM:", e)
+                    logger.debug("Error sending FCM:", e)
 
 
         return jsonify({"success": success}), (200 if success else 500)
@@ -248,10 +248,10 @@ def send_email_all(mentor_id):
 @mentor_email_bp.route("/mentor/<int:mentor_id>/messages/<int:msg_id>", methods=["DELETE"])
 def delete_message(mentor_id, msg_id):
     batch_year = get_batch_year()
-    print(f"from del message {batch_year}")
+    logger.debug(f"from del message {batch_year}")
     with bm.session_scope(batch_year) as db:
         all_msgs = MentorMessage.query.all()
-        print("Existing messages:", [ (m.id, m.mentor_id) for m in all_msgs ])
+        logger.debug("Existing messages:", [ (m.id, m.mentor_id) for m in all_msgs ])
 
         msg = MentorMessage.query.filter_by(id=msg_id, mentor_id=mentor_id).first()
         if not msg:

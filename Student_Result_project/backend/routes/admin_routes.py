@@ -29,6 +29,10 @@ from models.paths import email_excel_path, mentor_excel_path, get_db_path, excel
 from models.batch_manager import BatchManager, bm
 from pathlib import Path
 from models.fetch import SEMESTERS
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 # ---------- Blueprint ----------
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -70,7 +74,7 @@ def _fetch_source_rows(batch_year: int) -> list[tuple[str,str]]:
         for sem in SEMESTERS:
             table_name = f"{sem}_{batch_year}".lower()
             if table_name not in existing_tables:
-                print(f"[Warning] Table {table_name} does not exist, skipping")
+                logger.debug(f"[Warning] Table {table_name} does not exist, skipping")
                 continue
 
             result = db.session.execute(text(f'SELECT student_usn, student_name FROM "{table_name}"'))

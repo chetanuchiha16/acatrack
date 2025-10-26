@@ -6,29 +6,33 @@ import os
 from models.helpers import get_batch_year
 from sqlalchemy import create_engine
 from models.paths import postgres_db_url, API_BASE
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 
 student_bp = Blueprint('student', __name__)
 
 # @student_bp.route("/api/student", methods=["GET"])
-@student_bp.route(f"/auth/Student/result", methods=["GET"])
+@student_bp.route("/auth/Student/result", methods=["GET"])
 def get_student_info():
     usn = request.args.get("usn")
     semester = request.args.get("semester")
     batch_year = get_batch_year()   
-    print(f"batch year from student {batch_year}")
-
-    print(f"Received USN: {usn}, Semester: {semester}, Batch: {batch_year}")
-
+    logger.debug(f"batch year from student {batch_year}")
+    logger.debug(f"Received USN: {usn}, Semester: {semester}, Batch: {batch_year}")
 
     try:
-        # db_path = get_db_path(batch_year)  # <-- resolves correct DB
+        # Get DB engine
         engine = create_engine(postgres_db_url)
         student = Student(usn=usn, semester=semester, batch_year=batch_year, engine=engine)
 
-        # Generate PDF
-        filename = f"{student.name}_{semester}_report.pdf"
-        file_path = os.path.join(pdf_dir, filename)
-        create_student_report(student, file_path=file_path)
+        # Generate PDF in-memory
+        pdf_bytes = create_student_report(student)  # returns bytes
+        pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
+
+        # Keep the same key so frontend doesn’t change
+        pdf_url = f"data:application/pdf;base64,{pdf_base64}"
 
         return jsonify({
             "name": student.name,
@@ -48,17 +52,18 @@ def get_student_info():
                     "credit": int(credit),
                     "status": status
                 }
-                for code,subject_name, ia, see, credit, status in zip(
+                for code, subject_name, ia, see, credit, status in zip(
                     student.subject_codes, student.subject_names, student.ia_marks, student.see_marks,
                     student.credits, student.pass_fail
                 )
             ],
-            "pdf_url": f"{API_BASE}/auth/Student/report/{filename}"
+            "pdf_url": pdf_url  # base64 inline PDF
         })
 
     except Exception as e:
-        print(f"[ERROR] {e}")
+        logger.debug(f"[ERROR] {e}")
         return jsonify({"error": str(e)}), 400
+
 
 @student_bp.route("/auth/Student/report/<filename>", methods=["GET"])
 def download_report(filename):
@@ -72,13 +77,22 @@ def get_student_chart():
     usn = request.args.get("usn")
     semester = request.args.get("semester")
     batch_year = get_batch_year()   
-    db_path = get_db_path(batch_year)  # <-- resolves correct DB
-    student = Student(usn=usn, semester=semester, db_path=db_path)
-    fig = student.plot_subject_marks()[0]
 
+    engine = create_engine(postgres_db_url)
+    student = Student(usn=usn, semester=semester, batch_year=batch_year, engine=engine)
+
+    # Get Figure from Student module
+    fig = student.plot_subject_marks()
+
+    # Convert to base64 in-memory
     buf = io.BytesIO()
     fig.savefig(buf, format="png")
     buf.seek(0)
     img_base64 = base64.b64encode(buf.read()).decode("utf-8")
 
-    return jsonify({ "image": f"data:image/png;base64,{img_base64}" })
+    # Close figure to free memory
+    fig.clf()
+    fig.canvas.flush_events()
+    
+    return jsonify({"image": f"data:image/png;base64,{img_base64}"})
+

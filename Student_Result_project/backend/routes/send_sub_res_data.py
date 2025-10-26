@@ -4,6 +4,10 @@ from models.paths import  pdf_dir  , get_db_path, postgres_db_url
 from visuals import create_subject_report
 import os
 from models.helpers import get_batch_year
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 sub_bp = Blueprint('sub_res', __name__)
 
 @sub_bp.route('/auth/Staff/sub_res', methods=['GET'])
@@ -26,7 +30,7 @@ def get_subject_results():
 @sub_bp.route('/auth/Staff/sub_res/report', methods=['GET'])
 def get_subject_report_pdf():
     token = request.headers.get("Authorization")
-    print("DEBUG: Authorization header =", token)
+    logger.debug("DEBUG: Authorization header =", token)
     batch_year = get_batch_year()
     semester = request.args.get('semester')
     subject_code = request.args.get('subject')

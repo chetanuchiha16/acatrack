@@ -12,12 +12,15 @@ import shelve
 import time
 from models import pdftoexcel
 from models.paths import excel_dir
+from logger_config import get_logger
+
+logger = get_logger(__name__)
 
 pdftoexcel_bp = Blueprint("pdf", __name__, url_prefix="/pdf")
 
 # Folder for final Excel files
 EXCEL_FOLDER = excel_dir
-EXCEL_FOLDER.mkdir(exist_ok=True)
+EXCEL_FOLDER.mkdir(parents=True, exist_ok=True)
 
 # Temporary folder for uploads (won't trigger Flask reload)
 UPLOAD_TEMP_FOLDER = Path(tempfile.gettempdir()) / "student_result_uploads"
@@ -70,7 +73,7 @@ def process_archive_background(job_id, excel_filename, archive_path):
             try:
                 pdftoexcel.process_single_pdf(str(pdf_file), str(EXCEL_FOLDER / excel_filename))
             except Exception as e:
-                print(f"⚠️ Failed to process {pdf_file.name}: {e}")
+                logger.debug(f"⚠️ Failed to process {pdf_file.name}: {e}")
             job_data["processed_files"].append(pdf_file.name)
             job_data["progress"] = idx
             save_job(job_id, job_data)
@@ -85,7 +88,7 @@ def process_archive_background(job_id, excel_filename, archive_path):
         try:
             shutil.rmtree(tmpdir_path)
         except Exception as e:
-            print(f"⚠️ Could not delete temp folder {tmpdir_path}: {e}")
+            logger.debug(f"⚠️ Could not delete temp folder {tmpdir_path}: {e}")
 
 @pdftoexcel_bp.route("/upload_archive", methods=["POST"])
 def upload_archive():

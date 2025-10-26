@@ -1,5 +1,0 @@
-selenium
-pandas
-webdriver_manager
-pdfplumber
-openpyxl

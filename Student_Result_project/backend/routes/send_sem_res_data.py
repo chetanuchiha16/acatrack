@@ -60,21 +60,24 @@ def get_semester_results():
         return jsonify({"error": str(e)}), 500
 
 
+from io import BytesIO
+from flask import send_file
+
 @sem_bp.route('/auth/Staff/sem_res/report/<semester>', methods=['GET'])
 def download_semester_report(semester):
     batch_year = get_batch_year()
     semester_subject_mapping = {
-                "sem1": ["BMATS101", "BCHES102", "BCEDK103", "BENGK106", "BICOK107", "BIDTK158", "BPLCK105B","BESCK104C", "BESCK104A", "BETCK105H"],
-                "sem2": ["BMAT201", "BPHYS202", "BPOPS203", "BPWSK206", "BKSKK207", "BKBKK207", "BSFHK258", "BPLCK205B", "BESCK204C", "BESCK204D", "BETCK205H"],
-                "sem3": ["BCS301", "BCS302", "BCS303", "BCS304", "BCSL305", "BSCK307", "BNSK359", "BCS306A", "BCS358D"],
-                "sem4": ["BCS401", "BCS402", "BCS403", "BCSL404", "BBOC407", "BUHK408", "BPEK459_PhysicalEducation_OR_BNSK459_NSS_", "BCS405B", "BCSL456D"]
-            }
-    pdf_path = os.path.join(pdf_dir, f"{semester}_results.pdf")
-    if not os.path.exists(pdf_path):
-        # Optionally generate the PDF if it does not exist
-        # db_path = get_db_path(batch_year)
-        university = University(postgres_url=postgres_db_url, batch_year=batch_year)
-        university.add_students(selected_semester=semester)
-        generate_sem_pdf(semester, university, semester_subject_mapping, output_path=pdf_path)
-        
-    return send_file(pdf_path, as_attachment=True, download_name=f"{semester}_results.pdf")
+        "sem1": ["BMATS101", "BCHES102", "BCEDK103", "BENGK106", "BICOK107", "BIDTK158", "BPLCK105B","BESCK104C", "BESCK104A", "BETCK105H"],
+        "sem2": ["BMAT201", "BPHYS202", "BPOPS203", "BPWSK206", "BKSKK207", "BKBKK207", "BSFHK258", "BPLCK205B", "BESCK204C", "BESCK204D", "BETCK205H"],
+        "sem3": ["BCS301", "BCS302", "BCS303", "BCS304", "BCSL305", "BSCK307", "BNSK359", "BCS306A", "BCS358D"],
+        "sem4": ["BCS401", "BCS402", "BCS403", "BCSL404", "BBOC407", "BUHK408", "BPEK459_PhysicalEducation_OR_BNSK459_NSS_", "BCS405B", "BCSL456D"]
+    }
+
+    # Generate the PDF in-memory
+    university = University(postgres_url=postgres_db_url, batch_year=batch_year)
+    university.add_students(selected_semester=semester)
+    pdf_bytes = generate_sem_pdf(semester, university, semester_subject_mapping)
+    pdf_buffer = BytesIO(pdf_bytes)
+    pdf_buffer.seek(0)
+    return send_file(pdf_buffer, as_attachment=True, download_name=f"{semester}_results.pdf", mimetype="application/pdf")
+

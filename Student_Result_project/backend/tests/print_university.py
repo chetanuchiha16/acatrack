@@ -17,16 +17,16 @@
 #         result = university.calculate_academic_performance_by_semester(selected_semester, db_path=db_path)
 
 #         # Display the results in the terminal (optional, for debugging)
-#         print(f"\n=== Calculating Academic Performance for Semester: {selected_semester} ===")
-#         print(result)
+#         logger.debug(f"\n=== Calculating Academic Performance for Semester: {selected_semester} ===")
+#         logger.debug(result)
         
 #         # Plot total marks for all students
-#         print("\n=== Plotting Total Marks for All Students ===")
+#         logger.debug("\n=== Plotting Total Marks for All Students ===")
 #         fig = university.plot_student_totals(selected_semester)
 #         #fig.show()
 
 #     except Exception as e:
-#         print(f"Error: {str(e)}")
+#         logger.debug(f"Error: {str(e)}")
 
 # if __name__ == "__main__":
 #     # Example usage

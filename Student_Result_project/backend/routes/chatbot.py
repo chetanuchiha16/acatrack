@@ -16,6 +16,10 @@ from transformers import pipeline
 import numpy as np
 from sklearn.linear_model import LinearRegression, Ridge
 import re
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 
@@ -608,7 +612,7 @@ def get_student_report(student_query):
                     "history": {sem: sgpa for sem, sgpa in history},
                     "avg_sgpa": round(float(np.mean(sgpas)), 2)
                 }
-                print(f"[DEBUG] Trend analysis for {matched_name}: slope={slope:.4f}, sgpas={sgpas}")
+                logger.debug(f"[DEBUG] Trend analysis for {matched_name}: slope={slope:.4f}, sgpas={sgpas}")
 
                 pred_info = predict_next_sgpa_with_confidence(history)
                 if pred_info:
@@ -622,7 +626,7 @@ def get_student_report(student_query):
                         "model": pred_info["model"],
                         "resid_std": pred_info["resid_std"]
                     }
-                    print(f"[DEBUG] Prediction for {matched_name}: {cgpa_prediction}")
+                    logger.debug(f"[DEBUG] Prediction for {matched_name}: {cgpa_prediction}")
             else:
                 # Only one semester → no slope, fallback prediction
                 trend_data = {
@@ -635,7 +639,7 @@ def get_student_report(student_query):
                     "predicted_final_cgpa": round(float(sgpas[0]), 2),
                     "note": "Based on one semester, we cannot predict trends. Current SGPA is used as the estimated next SGPA."
                 }
-                print(f"[DEBUG] Fallback prediction for {matched_name}: {cgpa_prediction}")
+                logger.debug(f"[DEBUG] Fallback prediction for {matched_name}: {cgpa_prediction}")
 
 
         placement_advice_list, learning_plan_list = build_placement_and_skill_advice(
