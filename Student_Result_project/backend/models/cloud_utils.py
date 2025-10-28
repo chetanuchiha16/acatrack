@@ -1,3 +1,4 @@
+#cloud_utils.py
 import os
 from io import BytesIO
 from pathlib import Path
@@ -49,13 +50,15 @@ def upload_to_supabase(file_bytes: bytes, file_name: str, folder: str = "", cont
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": content_type
+        "Content-Type": content_type,
+        "X-Upsert": "true",   # <-- ADD THIS LINE
     }
     res = requests.post(
-        f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{file_path}",
+        f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{file_path}",   # you can remove ?upsert=true if present
         headers=headers,
         data=file_bytes
     )
+
     if res.status_code not in [200, 201]:
         raise Exception(f"Supabase upload failed: {res.status_code} {res.text}")
     public_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{file_path}"
@@ -102,3 +105,30 @@ def save_plot(fig: Figure, filename: str, folder: str = "plots") -> str:
         save_path = IMG_DIR / filename
         fig.savefig(save_path)
         return str(save_path)
+
+import tempfile
+
+def download_excel_from_supabase(excel_filename: str, folder: str) -> str:
+    """Downloads an Excel file from Supabase to a local temp path. Returns local path."""
+    if not (SUPABASE_URL and SUPABASE_KEY and supabase):
+        raise RuntimeError("Supabase credentials not loaded.")
+    res = supabase.storage.from_(SUPABASE_BUCKET).download(f"{folder}/{secure_filename(excel_filename)}")
+    fd, temp_path = tempfile.mkstemp(suffix=".xlsx")
+    with os.fdopen(fd, "wb") as tmp:
+        tmp.write(res)
+    return temp_path
+
+def excel_exists_in_supabase(excel_filename: str, folder: str) -> bool:
+    """Checks if Excel file exists in Supabase Storage."""
+    files = supabase.storage.from_(SUPABASE_BUCKET).list(folder)
+    return secure_filename(excel_filename) in [f['name'] for f in files]
+
+def upload_pdf_to_supabase(local_pdf_path: str, usn: str, folder: str):
+    """Uploads a local PDF to Supabase Storage and returns the public URL."""
+    with open(local_pdf_path, "rb") as f:
+        return upload_to_supabase(f.read(), f"{usn}.pdf", folder, content_type="application/pdf")
+
+def upload_excel_to_supabase(local_excel_path: str, excel_filename: str, folder: str):
+    """Uploads a local Excel file to Supabase Storage and returns the public URL."""
+    with open(local_excel_path, "rb") as f:
+        return upload_to_supabase(f.read(), excel_filename, folder, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

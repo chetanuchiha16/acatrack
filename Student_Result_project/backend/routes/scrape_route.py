@@ -2,95 +2,114 @@ from flask import Blueprint, request, jsonify
 from threading import Thread
 import os
 import time
-from models.paths import excel_dir
 from models.webscrape import setup_selenium  # only need setup_selenium now
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from models import pdftoexcel
+from models.cloud_utils import (
+    upload_pdf_to_supabase,
+    upload_excel_to_supabase,
+    download_excel_from_supabase,
+    excel_exists_in_supabase
+)
+import tempfile
 from logger_config import get_logger
 
 logger = get_logger(__name__)
-
+import logging
+logging.getLogger("pdfminer").setLevel(logging.WARNING)
 
 # ---------- Blueprint ----------
 webscrape_bp = Blueprint("webscrape", __name__, url_prefix="/webscrape")
 
-# Base folder where results will be stored
-# BASE_DOWNLOAD_DIR = os.path.abspath("VTU_Results")
-BASE_DOWNLOAD_DIR = excel_dir
-
 # ---------- Helpers ----------
-def _fetch_single_result(usn, download_dir, exam_url, batch_year):
+def _fetch_single_result(usn, exam_url, batch_year, sem):
     from selenium.common.exceptions import TimeoutException
-    driver = setup_selenium(download_dir)
-    try:
-        logger.debug(f"Fetching results for USN: {usn}")
-        driver.get(exam_url)
-        time.sleep(1)
+    excel_folder = f"{batch_year}_SEM{sem}"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        driver = setup_selenium(tmpdir)
+        try:
+            logger.debug(f"Fetching results for USN: {usn}")
+            driver.get(exam_url)
+            time.sleep(1)
+            usn_input = WebDriverWait(driver, 10).until(
+                EC.visibility_of_element_located((By.NAME, "lns"))
+            )
+            usn_input.send_keys(usn)
+            WebDriverWait(driver, 300).until(
+                EC.url_contains("resultpage.php")
+            )
+            logger.debug(f"CAPTCHA solved for {usn}")
+            print_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//input[@value='ಮುದ್ರಣ / PRINT']"))
+            )
+            print_button.click()
+            logger.debug(f"Download triggered for {usn}")
+            time.sleep(5)
+            
+            # List contents for debugging
+            logger.debug(f"Files in tmpdir after download: {os.listdir(tmpdir)}")
 
-        usn_input = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.NAME, "lns"))
-        )
-        usn_input.send_keys(usn)
+            latest_pdf = pdftoexcel.wait_and_rename_pdf(tmpdir, usn)
+            local_pdf = os.path.join(tmpdir, f"{usn}.pdf")
+            logger.debug(f"local_pdf: {local_pdf}")
 
-        # Wait for user to solve CAPTCHA manually
-        WebDriverWait(driver, 300).until(
-            EC.url_contains("resultpage.php")
-        )
-        logger.debug(f"CAPTCHA solved for {usn}")
+            # Confirm file exists before upload
+            if os.path.exists(local_pdf):
+                try:
+                    pdf_url = upload_pdf_to_supabase(local_pdf, usn, folder=excel_folder)
+                    logger.debug(f"PDF uploaded to Supabase: {pdf_url}")
+                except Exception as e:
+                    logger.error(f"PDF upload failed: {e}")
+            else:
+                logger.error(f"PDF file not found for {usn} in {tmpdir}")
+                return  # Skip to next USN
 
-        # Click PRINT button to download PDF
-        print_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//input[@value='ಮುದ್ರಣ / PRINT']"))
-        )
-        print_button.click()
-        logger.debug(f"Download triggered for {usn}")
-        time.sleep(5)
-        # Wait for the PDF to download and rename it
-        latest_pdf = pdftoexcel.wait_and_rename_pdf(download_dir, usn)
-        # 🔥 Convert the latest PDF only
-        latest_pdf = os.path.join(download_dir, f"{usn}.pdf")  # make sure PDF is named by USN
-        excel_filename = f"result_list_{batch_year}.xlsx"
-        excel_path = os.path.join(excel_dir, excel_filename)
+            excel_filename = f"result_list_{batch_year}.xlsx"
+            # Download existing Excel or start new
+            if excel_exists_in_supabase(excel_filename, excel_folder):
+                local_excel = download_excel_from_supabase(excel_filename, excel_folder)
+            else:
+                local_excel = os.path.join(tmpdir, excel_filename)  # will be created by process_single_pdf
 
-        logger.debug(f"Updating Excel at {excel_path} for {usn}...")
-        pdftoexcel.process_single_pdf(latest_pdf, excel_path)
-        logger.debug(f"✅ Excel updated for {usn}")
+            logger.debug(f"Updating Excel at {local_excel} for {usn}...")
+            pdftoexcel.process_single_pdf(local_pdf, local_excel)
+            try:
+                excel_url = upload_excel_to_supabase(local_excel, excel_filename, excel_folder)
+                logger.debug(f"Excel uploaded to Supabase: {excel_url}")
+            except Exception as e:
+                logger.error(f"Excel upload failed: {e}")
+            logger.debug(f"✅ Uploaded/updated Excel for {usn}")
+        except TimeoutException:
+            logger.debug(f"Timeout fetching results for {usn}")
+        except Exception as e:
+            logger.debug(f"Error fetching {usn}: {e}")
+        finally:
+            driver.quit()
 
-    except TimeoutException:
-        logger.debug(f"Timeout fetching results for {usn}")
-    except Exception as e:
-        logger.debug(f"Error fetching {usn}: {e}")
-    finally:
-        driver.quit()
-
-
-def _fetch_usn_range(usn_prefix, start, end, exam_session, exam_year, download_dir):
+def _fetch_usn_range(usn_prefix, start, end, exam_session, exam_year, sem):
     batch_year = batch_from_usn(usn_prefix)
     exam_url = f"https://results.vtu.ac.in/{exam_session}cbcs{exam_year}/index.php"
-    os.makedirs(download_dir, exist_ok=True)
-
     for i in range(start, end + 1):
         usn = f"{usn_prefix}{str(i).zfill(3)}"
-        _fetch_single_result(usn, download_dir, exam_url, batch_year)
-        
+        _fetch_single_result(usn, exam_url, batch_year, sem)
+
 def batch_from_usn(usn_prefix: str) -> int:
     year_suffix = usn_prefix[3:5]   # "23"
     return 2000 + int(year_suffix)  # 2023
 
 def get_exam_session_and_year(usn_prefix: str, sem: int):
     batch_year = batch_from_usn(usn_prefix)
-
     if sem % 2 == 1:  # odd sem
         exam_session = "DJ"   # Dec–Jan
         exam_year = batch_year + (sem // 2) + 1  # Jan of next year
     else:  # even sem
         exam_session = "JJE"  # Jun–Jul
         exam_year = batch_year + (sem // 2)
-
     exam_year_suffix = str(exam_year)[-2:]
     return exam_session, exam_year_suffix, batch_year
+
 # ---------- Routes ----------
 @webscrape_bp.route("/fetch-results", methods=["POST"])
 def fetch_results_route():
@@ -100,8 +119,7 @@ def fetch_results_route():
         "usn_prefix": "1JS23CS",
         "usn_start": 8,
         "usn_end": 25,
-        "sem": 1,
-        "download_dir": "custom/path"  # optional
+        "sem": 1
     }
     """
     data = request.json
@@ -109,31 +127,22 @@ def fetch_results_route():
     missing = [f for f in required_fields if f not in data]
     if missing:
         return jsonify({"error": f"Missing fields: {', '.join(missing)}"}), 400
-
     usn_prefix = data["usn_prefix"].upper()
     start = int(data["usn_start"])
     end = int(data["usn_end"])
     sem = int(data["sem"])
-
     exam_session, exam_year_suffix, batch_year = get_exam_session_and_year(usn_prefix, sem)
-
-    download_dir = data.get(
-        "download_dir",
-        os.path.join(BASE_DOWNLOAD_DIR, f"{batch_year}_SEM{sem}")
-    )
 
     thread = Thread(
         target=_fetch_usn_range,
-        args=(usn_prefix, start, end, exam_session, exam_year_suffix, download_dir)
+        args=(usn_prefix, start, end, exam_session, exam_year_suffix, sem)
     )
     thread.start()
-
     return jsonify({
         "status": "started",
         "message": (
             f"Fetching results for batch {batch_year}, sem {sem} → "
             f"{exam_session}{exam_year_suffix}, "
             f"USNs {usn_prefix}{start:03d} to {usn_prefix}{end:03d}"
-        ),
-        "download_dir": download_dir
+        )
     })
