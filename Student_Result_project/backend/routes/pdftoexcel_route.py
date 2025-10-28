@@ -1,10 +1,14 @@
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from pathlib import Path
-import zipfile, rarfile, threading, tempfile, shutil, uuid, time
-import json
+import zipfile, rarfile, threading, tempfile, shutil, uuid, time, json, re
 from models import pdftoexcel
-from models.cloud_utils import upload_excel_to_supabase
+from models.cloud_utils import (
+    upload_pdf_to_supabase, 
+    upload_excel_to_supabase,
+    download_excel_from_supabase,
+    excel_exists_in_supabase
+)
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -31,6 +35,21 @@ def load_job(job_id):
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def parse_batch_sem(archive_stem):
+    """
+    From something like '2023_SEM3' or '1JS23CS_SEM1', returns ("2023", "3")
+    """
+    m = re.match(r"(?P<batch>\d{4})_SEM(?P<sem>\d+)", archive_stem)
+    if not m:
+        m = re.match(r".*?(?P<batch>\d{4}).*SEM(?P<sem>\d+)", archive_stem)
+    if m:
+        return m.group('batch'), m.group('sem')
+    else:
+        return None, None
+
+def extract_usn_from_filename(pdf_filename):
+    return pdf_filename.split('.')[0]
+
 def process_archive_background(job_id, excel_filename, archive_path):
     tmpdir_path = Path(tempfile.mkdtemp(prefix="pdf_processing_"))
     job_data = {
@@ -41,7 +60,6 @@ def process_archive_background(job_id, excel_filename, archive_path):
         "progress": 0
     }
     save_job(job_id, job_data)
-
     try:
         try:
             if archive_path.suffix.lower() == ".zip":
@@ -55,21 +73,44 @@ def process_archive_background(job_id, excel_filename, archive_path):
             save_job(job_id, job_data)
             return
 
-        pdf_files = [f for f in tmpdir_path.iterdir() if f.suffix.lower() == ".pdf"]
-        temp_excel_path = tmpdir_path / excel_filename
+        # Get batch and sem from archive name
+        batch_year, sem = parse_batch_sem(archive_path.stem)
+        if not batch_year or not sem:
+            job_data.update({"status": "failed", "error": f"Could not parse batch/sem from archive name"})
+            save_job(job_id, job_data)
+            return
 
+        pdf_files = [f for f in tmpdir_path.iterdir() if f.suffix.lower() == ".pdf"]
+        temp_excel_path = tmpdir_path / f"result_list_{batch_year}.xlsx"
+        excel_supabase_folder = f"{batch_year}"
+        excel_filename_final = f"result_list_{batch_year}.xlsx"
+
+        # Download and use existing Excel if present (for merge/update)
+        local_excel_path = temp_excel_path
+        if excel_exists_in_supabase(excel_filename_final, excel_supabase_folder):
+            downloaded_excel = download_excel_from_supabase(excel_filename_final, excel_supabase_folder)
+            shutil.copy(downloaded_excel, local_excel_path)
+            logger.debug(f"Downloaded existing Excel for update: {downloaded_excel}")
+
+        # PDF processing and upload per student
         for idx, pdf_file in enumerate(pdf_files, start=1):
             try:
-                pdftoexcel.process_single_pdf(str(pdf_file), str(temp_excel_path))
+                pdftoexcel.process_single_pdf(str(pdf_file), str(local_excel_path))
             except Exception as e:
                 logger.debug(f"⚠️ Failed to process {pdf_file.name}: {e}")
+            usn = extract_usn_from_filename(pdf_file.name)
+            pdf_supabase_folder = f"{batch_year}/{batch_year}_SEM{sem}"
+            try:
+                upload_pdf_to_supabase(str(pdf_file), f"{usn}.pdf", pdf_supabase_folder)
+            except Exception as e:
+                logger.debug(f"⚠️ Supabase PDF upload failed for {usn}: {e}")
             job_data["processed_files"].append(pdf_file.name)
             job_data["progress"] = idx
             save_job(job_id, job_data)
 
-        upload_folder = archive_path.stem
+        # Upload the updated Excel back to Supabase
         try:
-            excel_public_url = upload_excel_to_supabase(str(temp_excel_path), excel_filename, upload_folder)
+            excel_public_url = upload_excel_to_supabase(str(local_excel_path), excel_filename_final, excel_supabase_folder)
             job_data.update({
                 "status": "done",
                 "excel_path": excel_public_url
