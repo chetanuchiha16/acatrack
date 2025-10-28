@@ -1,5 +1,6 @@
 from app_init import db
 from datetime import datetime, timezone
+from sqlalchemy.dialects.postgresql import JSON
 import os
 def default_email():
     return os.getenv("C_EMAIL")
@@ -143,3 +144,16 @@ class StudentMessageStatus(db.Model):
     )
     read = db.Column(db.Boolean, default=False)
     __table_args__ = (db.UniqueConstraint("student_usn", "msg_id", name="uq_student_msg"),)
+
+
+
+
+class Job(db.Model):
+    __tablename__ = 'jobs'
+    id = db.Column(db.String, primary_key=True)
+    status = db.Column(db.String, nullable=False)
+    processed_files = db.Column(JSON, default=[])
+    excel_url = db.Column(db.String)
+    error = db.Column(db.String)
+    progress = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())

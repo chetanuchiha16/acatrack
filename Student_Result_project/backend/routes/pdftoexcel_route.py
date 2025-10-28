@@ -1,44 +1,35 @@
-# routes/pdf_routes.py
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from pathlib import Path
-import zipfile
-import rarfile
-import threading
-import tempfile
-import shutil
-import uuid
-import shelve
-import time
+import zipfile, rarfile, threading, tempfile, shutil, uuid, time
+import json
 from models import pdftoexcel
-from models.paths import excel_dir
+from models.cloud_utils import upload_excel_to_supabase
 from logger_config import get_logger
 
 logger = get_logger(__name__)
 
 pdftoexcel_bp = Blueprint("pdf", __name__, url_prefix="/pdf")
-
-# Folder for final Excel files
-EXCEL_FOLDER = excel_dir
-EXCEL_FOLDER.mkdir(parents=True, exist_ok=True)
-
-# Temporary folder for uploads (won't trigger Flask reload)
 UPLOAD_TEMP_FOLDER = Path(tempfile.gettempdir()) / "student_result_uploads"
 UPLOAD_TEMP_FOLDER.mkdir(exist_ok=True)
-
 ALLOWED_EXTENSIONS = {"zip", "rar"}
-JOB_STORE_FILE = UPLOAD_TEMP_FOLDER / "job_store.db"
+
+# Job status helpers (JSON files)
+JOB_STATUS_DIR = Path(tempfile.gettempdir()) / "student_result_jobs"
+JOB_STATUS_DIR.mkdir(exist_ok=True)
+
+def save_job(job_id, data):
+    with open(JOB_STATUS_DIR / f"job_{job_id}.json", "w") as f:
+        json.dump(data, f)
+
+def load_job(job_id):
+    path = JOB_STATUS_DIR / f"job_{job_id}.json"
+    if not path.exists(): return None
+    with open(path, "r") as f:
+        return json.load(f)
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def save_job(job_id, data):
-    with shelve.open(str(JOB_STORE_FILE)) as db:
-        db[job_id] = data
-
-def load_job(job_id):
-    with shelve.open(str(JOB_STORE_FILE)) as db:
-        return db.get(job_id)
 
 def process_archive_background(job_id, excel_filename, archive_path):
     tmpdir_path = Path(tempfile.mkdtemp(prefix="pdf_processing_"))
@@ -52,7 +43,6 @@ def process_archive_background(job_id, excel_filename, archive_path):
     save_job(job_id, job_data)
 
     try:
-        # Extract archive
         try:
             if archive_path.suffix.lower() == ".zip":
                 with zipfile.ZipFile(archive_path, 'r') as zip_ref:
@@ -65,25 +55,31 @@ def process_archive_background(job_id, excel_filename, archive_path):
             save_job(job_id, job_data)
             return
 
-        # Process PDFs
         pdf_files = [f for f in tmpdir_path.iterdir() if f.suffix.lower() == ".pdf"]
-        total_pdfs = len(pdf_files)
+        temp_excel_path = tmpdir_path / excel_filename
 
         for idx, pdf_file in enumerate(pdf_files, start=1):
             try:
-                pdftoexcel.process_single_pdf(str(pdf_file), str(EXCEL_FOLDER / excel_filename))
+                pdftoexcel.process_single_pdf(str(pdf_file), str(temp_excel_path))
             except Exception as e:
                 logger.debug(f"⚠️ Failed to process {pdf_file.name}: {e}")
             job_data["processed_files"].append(pdf_file.name)
             job_data["progress"] = idx
             save_job(job_id, job_data)
 
-        job_data.update({
-            "status": "done",
-            "excel_path": str(EXCEL_FOLDER / excel_filename)
-        })
+        upload_folder = archive_path.stem
+        try:
+            excel_public_url = upload_excel_to_supabase(str(temp_excel_path), excel_filename, upload_folder)
+            job_data.update({
+                "status": "done",
+                "excel_path": excel_public_url
+            })
+        except Exception as e:
+            job_data.update({
+                "status": "failed",
+                "error": f"Excel upload to Supabase failed: {e}"
+            })
         save_job(job_id, job_data)
-
     finally:
         try:
             shutil.rmtree(tmpdir_path)
@@ -92,33 +88,25 @@ def process_archive_background(job_id, excel_filename, archive_path):
 
 @pdftoexcel_bp.route("/upload_archive", methods=["POST"])
 def upload_archive():
-    if "file" not in request.files:
-        return jsonify({"error": "No file part"}), 400
-
+    if "file" not in request.files: return jsonify({"error": "No file part"}), 400
     file = request.files["file"]
     excel_filename = request.form.get("excel_filename")
-    if not excel_filename:
-        return jsonify({"error": "Missing excel_filename"}), 400
-
+    if not excel_filename: return jsonify({"error": "Missing excel_filename"}), 400
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         archive_path = UPLOAD_TEMP_FOLDER / filename
         file.save(archive_path)
-
         job_id = uuid.uuid4().hex
         threading.Thread(target=process_archive_background, args=(job_id, excel_filename, archive_path), daemon=True).start()
-
         return jsonify({
             "status": "processing",
             "job_id": job_id,
             "message": "Archive upload received. Poll job status to get progress."
         })
-
     return jsonify({"error": "Invalid file"}), 400
 
 @pdftoexcel_bp.route("/job_status/<job_id>", methods=["GET"])
 def job_status(job_id):
     job = load_job(job_id)
-    if not job:
-        return jsonify({"error": "Invalid job ID"}), 404
+    if not job: return jsonify({"error": "Invalid job ID"}), 404
     return jsonify(job)
