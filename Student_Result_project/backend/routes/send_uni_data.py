@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, send_file, Blueprint, session
 from models import University
 from visuals import create_toppers_list_pdf, create_university_report
 from models.paths import  pdf_dir  , get_db_path, postgres_db_url
+from io import BytesIO
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -15,10 +16,11 @@ def get_academic_performance():
     semester = request.args.get('semester')
     show_toppers = request.args.get('show_toppers', 'false').lower() == 'true'
     show_failed = request.args.get('show_failed', 'false').lower() == 'true'
+    format_type = request.args.get('format', 'json').lower() # default is JSON
     batch_year = get_batch_year()   
 
     try:
-        db_path = get_db_path(batch_year)  # <-- resolves correct DB
+        db_path = get_db_path(batch_year)
         logger.debug(f"{db_path} from university 1")
         logger.debug(f"Batch year in session: {get_batch_year()}" )
         university = University(postgres_url=postgres_db_url, batch_year=batch_year)
@@ -27,17 +29,25 @@ def get_academic_performance():
 
         if show_toppers:
             toppers = sorted(result, key=lambda x: x['percentage'], reverse=True)[:10]
-            # optionally generate and serve PDF, or send data as JSON
-            create_toppers_list_pdf(toppers, semester, file_path=f"{pdf_dir}/{semester}_toppers_list.pdf")
+            if format_type == 'pdf':
+                # Create in-memory PDF for the top 10 students
+                # --- assume create_toppers_list_pdf returns bytes instead of saving ---
+                pdf_bytes = create_toppers_list_pdf(toppers, semester) # <--- SHOULD RETURN bytes, not save to disk
+                pdf_buffer = BytesIO(pdf_bytes)
+                pdf_buffer.seek(0)
+                return send_file(
+                    pdf_buffer,
+                    as_attachment=True,
+                    download_name=f"{semester}_toppers_list.pdf",
+                    mimetype="application/pdf"
+                )    
             return jsonify(toppers)
         
         elif show_failed:
             failed_students = university.find_failed_students(semester)
             return jsonify(failed_students)
-        
         else:
             return jsonify(result)
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

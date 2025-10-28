@@ -18,7 +18,7 @@ from logger_config import get_logger
 logger = get_logger(__name__)
 
 
-def create_toppers_list_pdf(toppers, selected_semester, file_path=f"{pdf_dir}/toppers_list.pdf"):
+def create_toppers_list_pdf(toppers, selected_semester):
     """
     Generates a PDF for the toppers list.
 
@@ -54,6 +54,12 @@ def create_toppers_list_pdf(toppers, selected_semester, file_path=f"{pdf_dir}/to
         pdf.cell(30, 10, f"{topper['percentage']:.2f}%", border=1, align="C")
         pdf.ln()
 
-    # Save PDF
-    pdf.output(file_path)
-    logger.debug(f"Toppers list saved to {pathlib.Path(file_path).resolve()}")
+    # Output PDF to bytes
+    pdf_data = pdf.output(dest='S')
+    if isinstance(pdf_data, str):
+        # FPDF v1 — string, must encode
+        pdf_bytes = pdf_data.encode('latin1')
+    else:
+        # FPDF2 — already bytes/bytearray, use directly
+        pdf_bytes = bytes(pdf_data)
+    return pdf_bytes
