@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from threading import Thread
 import os
 import time
-from models.webscrape import setup_selenium  # only need setup_selenium now
+from models.webscrape import setup_selenium
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -15,18 +15,21 @@ from models.cloud_utils import (
 )
 import tempfile
 from logger_config import get_logger
+import logging
 
 logger = get_logger(__name__)
-import logging
 logging.getLogger("pdfminer").setLevel(logging.WARNING)
+
 
 # ---------- Blueprint ----------
 webscrape_bp = Blueprint("webscrape", __name__, url_prefix="/webscrape")
 
+
 # ---------- Helpers ----------
 def _fetch_single_result(usn, exam_url, batch_year, sem):
     from selenium.common.exceptions import TimeoutException
-    excel_folder = f"{batch_year}_SEM{sem}"
+    pdf_folder = f"{batch_year}/{batch_year}_SEM{sem}"
+    excel_folder = f"{batch_year}"
     with tempfile.TemporaryDirectory() as tmpdir:
         driver = setup_selenium(tmpdir)
         try:
@@ -47,8 +50,6 @@ def _fetch_single_result(usn, exam_url, batch_year, sem):
             print_button.click()
             logger.debug(f"Download triggered for {usn}")
             time.sleep(5)
-            
-            # List contents for debugging
             logger.debug(f"Files in tmpdir after download: {os.listdir(tmpdir)}")
 
             latest_pdf = pdftoexcel.wait_and_rename_pdf(tmpdir, usn)
@@ -58,29 +59,38 @@ def _fetch_single_result(usn, exam_url, batch_year, sem):
             # Confirm file exists before upload
             if os.path.exists(local_pdf):
                 try:
-                    pdf_url = upload_pdf_to_supabase(local_pdf, usn, folder=excel_folder)
+                    pdf_url = upload_pdf_to_supabase(local_pdf, f"{usn}", pdf_folder)
                     logger.debug(f"PDF uploaded to Supabase: {pdf_url}")
                 except Exception as e:
                     logger.error(f"PDF upload failed: {e}")
             else:
                 logger.error(f"PDF file not found for {usn} in {tmpdir}")
-                return  # Skip to next USN
+                return
 
             excel_filename = f"result_list_{batch_year}.xlsx"
-            # Download existing Excel or start new
+
+            # Download (and update) existing Excel or start new.
             if excel_exists_in_supabase(excel_filename, excel_folder):
                 local_excel = download_excel_from_supabase(excel_filename, excel_folder)
+                tmp_excel_path = os.path.join(tmpdir, excel_filename)
+                # Copy downloaded Excel to workspace, so as not to edit cloud copy in place
+                import shutil
+                shutil.copy(local_excel, tmp_excel_path)
+                local_excel = tmp_excel_path
             else:
-                local_excel = os.path.join(tmpdir, excel_filename)  # will be created by process_single_pdf
+                local_excel = os.path.join(tmpdir, excel_filename)
 
             logger.debug(f"Updating Excel at {local_excel} for {usn}...")
             pdftoexcel.process_single_pdf(local_pdf, local_excel)
+
             try:
                 excel_url = upload_excel_to_supabase(local_excel, excel_filename, excel_folder)
                 logger.debug(f"Excel uploaded to Supabase: {excel_url}")
             except Exception as e:
                 logger.error(f"Excel upload failed: {e}")
+
             logger.debug(f"✅ Uploaded/updated Excel for {usn}")
+
         except TimeoutException:
             logger.debug(f"Timeout fetching results for {usn}")
         except Exception as e:
@@ -96,16 +106,16 @@ def _fetch_usn_range(usn_prefix, start, end, exam_session, exam_year, sem):
         _fetch_single_result(usn, exam_url, batch_year, sem)
 
 def batch_from_usn(usn_prefix: str) -> int:
-    year_suffix = usn_prefix[3:5]   # "23"
-    return 2000 + int(year_suffix)  # 2023
+    year_suffix = usn_prefix[3:5]
+    return 2000 + int(year_suffix)
 
 def get_exam_session_and_year(usn_prefix: str, sem: int):
     batch_year = batch_from_usn(usn_prefix)
     if sem % 2 == 1:  # odd sem
-        exam_session = "DJ"   # Dec–Jan
-        exam_year = batch_year + (sem // 2) + 1  # Jan of next year
-    else:  # even sem
-        exam_session = "JJE"  # Jun–Jul
+        exam_session = "DJ"
+        exam_year = batch_year + (sem // 2) + 1
+    else:
+        exam_session = "JJE"
         exam_year = batch_year + (sem // 2)
     exam_year_suffix = str(exam_year)[-2:]
     return exam_session, exam_year_suffix, batch_year
