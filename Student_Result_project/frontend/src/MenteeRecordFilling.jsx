@@ -94,22 +94,23 @@ export default function MenteeRecordFilling({ usn, name }) {
               placeholder={field.replace("_", " ").toUpperCase()}
               value={formData[field]}
               onChange={handleChange}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm resize-none h-12 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
+              className={`w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white 
+        ${field.includes("address") ? "h-24" : "h-12"}`}
             />
           ))}
         </div>
 
+
         {/* Parent Info */}
-        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mt-4">Parent Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {["father_name", "mother_name", "Contact", "Contact_Mother", "Occupation", "Occupation_Mother"].map((field) => (
-            <textarea
+            <input
               key={field}
               name={field}
               placeholder={field.replace("_", " ").toUpperCase()}
               value={formData[field]}
               onChange={handleChange}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm resize-none h-12 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm h-12 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
             />
           ))}
         </div>
