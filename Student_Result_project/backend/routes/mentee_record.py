@@ -83,9 +83,9 @@ def upload_form():
     for i, act in enumerate(activities):
         y = 180 + i*75
         page.insert_text((105, y), act.get("Sports", ""))
-        page.insert_text((215, y), act.get("conference details", ""))
-        page.insert_text((335, y), act.get("papers published", ""))
-        page.insert_text((455, y), act.get("certifications from MOOC", ""))
+        page.insert_text((215, y), act.get("conference_details", ""))
+        page.insert_text((335, y), act.get("papers_published", ""))
+        page.insert_text((455, y), act.get("certifications_from_MOOC", ""))
 
 
     # Summary row
