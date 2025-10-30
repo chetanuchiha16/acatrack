@@ -29,8 +29,8 @@ def upload_form():
     Contact = data.get("Contact")
     Occupation = data.get("Occupation")
     mother_name = data.get("mother_name")
-    Contact_Mother = data.get("Contact_(Mother)")
-    Occupation_Mother = data.get("Occupation_(Mother)")
+    Contact_Mother = data.get("Contact_Mother")
+    Occupation_Mother = data.get("Occupation_Mother")
     sgpas = data.get("sgpa", [])  # Array of 8 SGPA values
     projects = data.get("projects", [])  # List of dicts
     internships = data.get("internships", [])  # List of dicts
@@ -53,7 +53,8 @@ def upload_form():
     page.insert_text((290, 560), Occupation or "")
     page.insert_text((360, 595), mother_name or "")
     page.insert_text((425, 595), Contact_Mother or "")
-    page.insert_text((495, 560), Occupation_Mother or "")
+    page.insert_text((495, 595), Occupation_Mother or "")
+    logger.debug(f"mother: {Contact_Mother} and {Occupation_Mother}")
 
     # SGPA
     coords = [(60, 760), (135, 760), (190, 760), (250, 760),
