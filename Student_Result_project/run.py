@@ -2,7 +2,8 @@ import subprocess
 import webbrowser
 import time
 import sys
-
+from backend.logger_config import get_logger
+logger = get_logger(__name__)
 # Start Flask (backend)
 flask = subprocess.Popen([sys.executable, "-m", "flask", "run"], cwd="backend")
 
