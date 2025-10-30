@@ -30,7 +30,7 @@ function FileGrid({ tree, path = "", setPath }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {entries.map(([name, value]) => {
                 const fullPath = `${path}/${name}`;
-                const isFolder = value !== null;
+                const isFolder = typeof value === "object" && value !== null;
 
                 return (
                     <FileItem
@@ -40,18 +40,9 @@ function FileGrid({ tree, path = "", setPath }) {
                         onClick={() => {
                             if (isFolder) {
                                 setPath(fullPath);
-                            } else {
-                                const encodedPath = fullPath
-                                    .split("/")
-                                    .map(encodeURIComponent)
-                                    .join("/");
-                                const downloadUrl = `${API_BASE}/auth/Student/report${encodedPath}`;
-                                const link = document.createElement("a");
-                                link.href = downloadUrl;
-                                link.download = "";
-                                document.body.appendChild(link);
-                                link.click();
-                                link.remove();
+                            } else if (typeof value === "string") {
+                                // Open/download PDF (direct URL, not backend route)
+                                window.open(value, "_blank");
                             }
                         }}
                     />
