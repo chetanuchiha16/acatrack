@@ -4,3 +4,4 @@
 *.pyc
 *.db
 *.pdf
+!Inputs/New_mentor_Record[final].pdf
