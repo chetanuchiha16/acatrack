@@ -1,50 +1,73 @@
-from flask import Blueprint, jsonify, send_from_directory
-import os
-from models.paths import notes_dir
+from flask import Blueprint, jsonify, request, redirect
+from models.cloud_utils import SUPABASE_URL, SUPABASE_KEY, supabase, SUPABASE_BUCKET
+from models.helpers import get_batch_year
 
-# Blueprint for serving student reports
 student_notes_bp = Blueprint('notes', __name__)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'pdf'
 
-def get_folder_structure(directory):
-    structure = {}
-    for item in os.listdir(directory):
-        path = os.path.join(directory, item)
-        if os.path.isdir(path):
-            structure[item] = get_folder_structure(path)
-        elif allowed_file(item):
-            structure[item] = None  # It's a file
-    return structure
+def build_supabase_file_tree(folder: str = "") -> dict:
+    """
+    Returns a nested dict: folders as {name: {...}}, PDFs as {name: url string}
+    """
+    tree = {}
+    try:
+        entries = supabase.storage.from_(SUPABASE_BUCKET).list(folder)
+    except Exception as e:
+        print(f"Supabase list error: {e}")
+        return tree
+
+    file_list = getattr(entries, "data", entries) if hasattr(entries, "data") else entries
+    for entry in file_list:
+        name = entry.get("name")
+        metadata = entry.get("metadata") or {}
+        mimetype = metadata.get("mimetype", "")
+        if not name:
+            continue
+        # If folder
+        if mimetype == "application/x-directory" or (not mimetype and not name.lower().endswith('.pdf')):
+            subfolder = f"{folder}/{name}" if folder else name
+            subtree = build_supabase_file_tree(subfolder)
+            if subtree:
+                tree[name] = subtree
+        # If PDF file
+        elif allowed_file(name):
+            file_path = f"{folder}/{name}" if folder else name
+            url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{file_path}"
+            tree[name] = url
+    return tree
 
 @student_notes_bp.route('/auth/Student/notes', methods=['GET'])
 def list_notes():
+    """
+    List all available notes in a tree structure.
+    Uses batch year for correct folder, optionally support "path" param.
+    """
     try:
-        structure = get_folder_structure(notes_dir)
+        batch_year = request.args.get("batch", get_batch_year())
+        relative_path = request.args.get("path", "").strip("/")
+        prefix = f"notes/{batch_year}/{relative_path}" if relative_path else f"notes/{batch_year}"
+        structure = build_supabase_file_tree(prefix)
         return jsonify(structure)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
-from flask import abort
-import os
 
-@student_notes_bp.route('/auth/Student/report/<path:filename>', methods=['GET'])
-def get_note(filename):
+@student_notes_bp.route('/auth/Student/notes/<path:file_path>', methods=['GET'])
+def get_note(file_path):
+    """
+    Redirects to the public URL of the PDF file stored in Supabase.
+    """
     try:
-        # Secure full path
-        full_path = os.path.join(notes_dir, filename)
-        full_path = os.path.abspath(full_path)
+        # Optional: secure path -- do not allow '..'
+        if ".." in file_path or file_path.startswith("/"):
+            return jsonify({"error": "Invalid path"}), 403
 
-        # Prevent path traversal attacks
-        if not full_path.startswith(os.path.abspath(notes_dir)):
-            abort(403)
+        # Compose Supabase public file URL
+        url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/notes/{file_path}"
+        # Optionally, you could generate a signed URL instead if files need to be private.
 
-        directory = os.path.dirname(full_path)
-        file = os.path.basename(full_path)
-
-        return send_from_directory(directory, file)
-
+        # Redirect to public URL
+        return redirect(url)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-

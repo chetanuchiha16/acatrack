@@ -12,12 +12,12 @@
 #         tables = cursor.fetchall()
 
 #         # Print table names
-#         print("Tables in the database:")
+#         logger.debug("Tables in the database:")
 #         for table in tables:
-#             print(table[0])
+#             logger.debug(table[0])
 
 #     except sqlite3.Error as e:
-#         print(f"Database error occurred: {e}")
+#         logger.debug(f"Database error occurred: {e}")
 #     finally:
 #         conn.close()
 
@@ -38,17 +38,17 @@
 #         # Loop through each table and get column names
 #         for table in tables:
 #             table_name = table[0]
-#             print(f"/nColumns in table '{table_name}':")
+#             logger.debug(f"/nColumns in table '{table_name}':")
             
 #             # Get column names for the current table
 #             cursor.execute(f"PRAGMA table_info({table_name});")
 #             columns = cursor.fetchall()
             
 #             for column in columns:
-#                 print(column[1])  # Column name is the second item in each row of PRAGMA result
+#                 logger.debug(column[1])  # Column name is the second item in each row of PRAGMA result
 
 #     except sqlite3.Error as e:
-#         print(f"Database error occurred: {e}")
+#         logger.debug(f"Database error occurred: {e}")
 #     finally:
 #         conn.close()
 

@@ -1,11 +1,16 @@
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('Agg')  # headless backend for Flask
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from models.paths import  pdf_dir, img_dir
-# Function to generate and display a chart for University class
-def plot_university_totals(university, root):
-    fig, ax = plt.subplots()
+import io
+import base64
+
+def plot_university_totals(university):
+    """
+    Generate a bar chart of total marks for each student in the university.
+    Returns a Base64 PNG string (in-memory) suitable for JSON response.
+    """
+    fig, ax = plt.subplots(figsize=(10, 5))
+
     student_names = [student.name for student in university.students]
     total_marks = [student.total_marks for student in university.students]
 
@@ -13,13 +18,20 @@ def plot_university_totals(university, root):
     ax.set_title("Total Marks for Each Student")
     ax.set_ylabel("Total Marks")
     ax.set_xticks(range(len(student_names)))
-    ax.set_xticklabels(student_names, rotation=45)
+    ax.set_xticklabels(student_names, rotation=45, ha="right", fontsize=8)
 
-    # Embed plot in Tkinter window
-    canvas = FigureCanvasTkAgg(fig, master=root)
-    canvas.draw()
-    canvas.get_tk_widget().pack()
+    fig.tight_layout()
 
-    # Save plot as image for PDF export
-    fig.savefig(f"{img_dir}/university_totals.png")
-    plt.close(fig)  # Close the figure to free memory
+    # Convert figure to in-memory PNG
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+    img_base64 = base64.b64encode(buf.read()).decode("utf-8")
+
+    # Cleanup
+    fig.clf()
+    fig.canvas.close_event()
+    plt.close(fig)
+
+    # Return inline Base64 PNG
+    return f"data:image/png;base64,{img_base64}"

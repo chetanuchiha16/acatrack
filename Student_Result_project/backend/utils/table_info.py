@@ -1,11 +1,11 @@
-import sqlite3
-from models.paths import 
+# import sqlite3
+# from models.paths import 
 
-conn = sqlite3.connect(db_path)   # path to your db
-cursor = conn.cursor()
+# conn = sqlite3.connect(db_path)   # path to your db
+# cursor = conn.cursor()
 
-cursor.execute("PRAGMA table_info(sem1);")
-for col in cursor.fetchall():
-    print(col)
+# cursor.execute("PRAGMA table_info(sem1);")
+# for col in cursor.fetchall():
+#     logger.debug(col)
 
-conn.close()
+# conn.close()

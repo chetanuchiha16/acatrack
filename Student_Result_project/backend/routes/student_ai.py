@@ -10,6 +10,10 @@ from .chatbot import (
     get_latest_semester, get_student_history, _calculate_backlogs
 )
 from sqlalchemy import create_engine
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 ai_bp = Blueprint("ai", __name__)
 
 # ------------------ Helper: Multi-Semester History ------------------ #
@@ -68,7 +72,7 @@ def ai_summary():
                 "percentage": float(s.percentage or 0.0)
             }
         except Exception as e:
-            print(f"[AI_SUMMARY] Error for USN={usn}, SEM={sem}: {e}")
+            logger.debug(f"[AI_SUMMARY] Error for USN={usn}, SEM={sem}: {e}")
             continue
 
     if not student_data["semesters"]:
@@ -163,7 +167,7 @@ def ai_trend():
         else:
             trend = "Insufficient data"
     except Exception as e:
-        print(f"[DEBUG] Error calculating trend for USN={usn}: {e}")
+        logger.debug(f"[DEBUG] Error calculating trend for USN={usn}: {e}")
         trend = "Error calculating trend"
 
     return jsonify({

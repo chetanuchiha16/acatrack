@@ -32,7 +32,7 @@ function FileGrid({ tree, path = "", setPath }) {
         <div className="flex flex-wrap justify-center">
             {entries.map(([name, value]) => {
                 const fullPath = `${path}/${name}`;
-                const isFolder = value !== null;
+                const isFolder = typeof value === "object" && value !== null;
 
                 return (
                     <FileItem
@@ -44,6 +44,9 @@ function FileGrid({ tree, path = "", setPath }) {
                             setSelected(fullPath);
                             if (isFolder) {
                                 setPath(fullPath);
+                            } else if (typeof value === "string") {
+                                // PDF file: open in new tab
+                                window.open(value, "_blank");
                             }
                         }}
                     />

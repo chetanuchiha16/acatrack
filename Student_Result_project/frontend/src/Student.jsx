@@ -8,6 +8,8 @@ import MenteeRecieveEmails from "./MenteeRecieveEmails";
 import { onMessage } from "firebase/messaging";
 import { messaging } from "./firebase"; // your firebase.js
 import useProtectedPage from "./useProtectedPage";
+import MenteeRecordFilling from "./MenteeRecordFilling.jsx";
+
 export default function Student() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -129,11 +131,10 @@ export default function Student() {
                                 role="tab"
                                 aria-selected={selectedTab === "result"}
                                 onClick={() => setSelectedTab("result")}
-                                className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                                    selectedTab === "result"
-                                        ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
-                                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                }`}
+                                className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "result"
+                                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
+                                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                    }`}
                             >
                                 Result
                             </button>
@@ -142,11 +143,10 @@ export default function Student() {
                                 role="tab"
                                 aria-selected={selectedTab === "classroom"}
                                 onClick={() => setSelectedTab("classroom")}
-                                className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                                    selectedTab === "classroom"
-                                        ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
-                                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                }`}
+                                className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "classroom"
+                                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
+                                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                    }`}
                             >
                                 Classroom
                             </button>
@@ -155,13 +155,24 @@ export default function Student() {
                                 role="tab"
                                 aria-selected={selectedTab === "mentee"}
                                 onClick={() => setSelectedTab("mentee")}
-                                className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                                    selectedTab === "mentee"
-                                        ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
-                                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                }`}
+                                className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "mentee"
+                                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
+                                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                    }`}
                             >
                                 Mentee
+                            </button>
+                            {/* ✅ Record button */}
+                            <button
+                                role="tab"
+                                aria-selected={selectedTab === "record"}
+                                onClick={() => setSelectedTab("record")}
+                                className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "record"
+                                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
+                                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                    }`}
+                            >
+                                Record
                             </button>
                         </nav>
                     </div>
@@ -195,31 +206,28 @@ export default function Student() {
                                 <div className=" overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 shadow-sm hidden sm:inline-flex">
                                     <button
                                         onClick={() => setView("cards")}
-                                        className={`px-3 py-2 text-xs sm:text-sm transition ${
-                                            view === "cards"
-                                                ? "bg-slate-900 text-white"
-                                                : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                        }`}
+                                        className={`px-3 py-2 text-xs sm:text-sm transition ${view === "cards"
+                                            ? "bg-slate-900 text-white"
+                                            : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                            }`}
                                     >
                                         Cards
                                     </button>
                                     <button
                                         onClick={() => setView("table")}
-                                        className={`px-3 py-2 text-xs sm:text-sm transition ${
-                                            view === "table"
-                                                ? "bg-slate-900 text-white"
-                                                : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                        }`}
+                                        className={`px-3 py-2 text-xs sm:text-sm transition ${view === "table"
+                                            ? "bg-slate-900 text-white"
+                                            : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                            }`}
                                     >
                                         Table
                                     </button>
                                     <button
                                         onClick={() => setView("ai")}
-                                        className={`px-3 py-2 text-xs sm:text-sm transition ${
-                                            view === "ai"
-                                                ? "bg-slate-900 text-white"
-                                                : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                        }`}
+                                        className={`px-3 py-2 text-xs sm:text-sm transition ${view === "ai"
+                                            ? "bg-slate-900 text-white"
+                                            : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                            }`}
                                     >
                                         {"AI"}
                                     </button>
@@ -261,9 +269,14 @@ export default function Student() {
                         {selectedTab === "mentee" && (
                             <MenteeRecieveEmails usn={finalUsn} />
                         )}
+                        {selectedTab === "record" && (
+                            <MenteeRecordFilling usn={finalUsn} name={finalName} />
+                        )}
+
                     </div>
                 </section>
             </div>
+
         </main>
     );
 }

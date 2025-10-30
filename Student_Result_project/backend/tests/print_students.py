@@ -16,7 +16,7 @@
 
 #         # Check if there are any semesters to display
 #         if not semesters:
-#             print("No semester data available.")
+#             logger.debug("No semester data available.")
 #             return
 
 #         # Loop through each semester and fetch student data
@@ -28,14 +28,14 @@
 #                 student = Student(usn=usn, semester=semester, db_path=db_path)
 
 #                 # Display the student's information for the current semester
-#                 print(f"\nData for {semester}:")
+#                 logger.debug(f"\nData for {semester}:")
 #                 student.display_student_info()  # Using the display method from the Student class
 
 #             else:
-#                 print(f"No data found for USN {usn} in {semester}.")
+#                 logger.debug(f"No data found for USN {usn} in {semester}.")
 
 #     except Exception as e:
-#         print(f"Error occurred: {e}")
+#         logger.debug(f"Error occurred: {e}")
 
 # if __name__ == "__main__":
 #     # Usage

@@ -4,6 +4,10 @@ from models.paths import  pdf_dir  , get_db_path, postgres_db_url
 from visuals import create_subject_report
 import os
 from models.helpers import get_batch_year
+from logger_config import get_logger
+
+logger = get_logger(__name__)
+
 sub_bp = Blueprint('sub_res', __name__)
 
 @sub_bp.route('/auth/Staff/sub_res', methods=['GET'])
@@ -26,23 +30,23 @@ def get_subject_results():
 @sub_bp.route('/auth/Staff/sub_res/report', methods=['GET'])
 def get_subject_report_pdf():
     token = request.headers.get("Authorization")
-    print("DEBUG: Authorization header =", token)
+    logger.debug("DEBUG: Authorization header =", token)
     batch_year = get_batch_year()
     semester = request.args.get('semester')
     subject_code = request.args.get('subject')
 
     if not semester or not subject_code:
         return jsonify({"error": "semester and subject are required"}), 400
-    # db_path = get_db_path(batch_year)
+
     university = University(postgres_url=postgres_db_url, batch_year=batch_year)
     university.add_students(selected_semester=semester)
     subject_result = SubjectResult(subject_code, semester, university)
 
-    pdf_filename = f"subject_report_{semester}_{subject_code}.pdf"
-    pdf_path = os.path.join(pdf_dir, pdf_filename)
-    create_subject_report(subject_result, file_path=pdf_path)
+    # ✅ Generate PDF in-memory
+    pdf_bytes = create_subject_report(subject_result)
+    from io import BytesIO
+    pdf_buffer = BytesIO(pdf_bytes)
+    pdf_buffer.seek(0)
 
-    if os.path.exists(pdf_path):
-        return send_file(pdf_path, as_attachment=True)
-    else:
-        return jsonify({"error": "PDF not generated"}), 500
+    return send_file(pdf_buffer, as_attachment=True, download_name=f"subject_report_{semester}_{subject_code}.pdf", mimetype="application/pdf")
+

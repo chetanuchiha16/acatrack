@@ -84,9 +84,9 @@ class Mentor(db.Model):
 ```python
 parent = ParentAuth.query.filter_by(username="abc_parent").first()
 
-print(parent.student.name)           # Student's name
-print(parent.student.mentor.name)    # Student's mentor name
-print(parent.student.mentor.id)      # Student's mentor id
+logger.debug(parent.student.name)           # Student's name
+logger.debug(parent.student.mentor.name)    # Student's mentor name
+logger.debug(parent.student.mentor.id)      # Student's mentor id
 ```
 
 ---
