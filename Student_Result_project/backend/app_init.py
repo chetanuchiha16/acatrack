@@ -24,6 +24,12 @@ def create_app(batch_year=None, postgres_url=None):
 
     app.config['SQLALCHEMY_DATABASE_URI'] = postgres_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        "pool_pre_ping": True,
+        "pool_size": 5,
+        "max_overflow": 10,
+        "pool_recycle": 1800
+    }
 
     db.init_app(app)
     migrate.init_app(app, db)  # <-- use global migrate
