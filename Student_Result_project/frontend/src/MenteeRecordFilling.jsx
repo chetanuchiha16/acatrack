@@ -87,32 +87,80 @@ export default function MenteeRecordFilling({ usn, name }) {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Personal Info */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {["name", "usn", "mentor_name", "mentor_phone", "phone_number", "email", "temporary_address", "permanent_address"].map((field) => (
-            <textarea
-              key={field}
-              name={field}
-              placeholder={field.replace("_", " ").toUpperCase()}
-              value={formData[field]}
-              onChange={handleChange}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm resize-none h-12 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
-            />
-          ))}
+          {[
+            "name",
+            "usn",
+            "mentor_name",
+            "mentor_phone",
+            "phone_number",
+            "email",
+            "temporary_address",
+            "permanent_address",
+          ].map((field) => {
+            const isAddressField =
+              field === "temporary_address" || field === "permanent_address";
+
+            return isAddressField ? (
+              <textarea
+                key={field}
+                name={field}
+                placeholder={field.replace("_", " ").toUpperCase()}
+                value={formData[field]}
+                onChange={handleChange}
+                rows={5} // fixed visible height
+                maxLength={100} // ✅ limit characters
+                className="w-48 border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm 
+             resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 
+             dark:bg-gray-700 dark:text-white overflow-y-auto break-words whitespace-pre-wrap !whitespace-normal"
+              />
+
+            ) : (
+              <input
+                key={field}
+                type="text"
+                name={field}
+                placeholder={field.replace("_", " ").toUpperCase()}
+                value={formData[field]}
+                onChange={handleChange}
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm h-12 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
+              />
+            );
+          })}
         </div>
 
+
+
         {/* Parent Info */}
-        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mt-4">Parent Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {["father_name", "mother_name", "Contact", "Contact_Mother", "Occupation", "Occupation_Mother"].map((field) => (
-            <textarea
-              key={field}
-              name={field}
-              placeholder={field.replace("_", " ").toUpperCase()}
-              value={formData[field]}
-              onChange={handleChange}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm resize-none h-12 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
-            />
-          ))}
+          {["father_name", "mother_name", "Contact", "Contact_Mother", "Occupation", "Occupation_Mother"].map((field) =>
+            field.toLowerCase().includes("occupation") ? (
+              // ✅ Use textarea for occupation fields
+              <textarea
+                key={field}
+                name={field}
+                placeholder={field.replace("_", " ").toUpperCase()}
+                value={formData[field]}
+                onChange={handleChange}
+                rows={2} // fixed visible height
+                maxLength={20} // ✅ limit characters
+                className="w-36 border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm 
+             resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 
+             dark:bg-gray-700 dark:text-white overflow-y-auto break-words whitespace-pre-wrap !whitespace-normal"
+              />
+            ) : (
+              // ✅ Use input for all other fields
+              <input
+                key={field}
+                name={field}
+                placeholder={field.replace("_", " ").toUpperCase()}
+                value={formData[field]}
+                onChange={handleChange}
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm h-12 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
+              />
+            )
+          )}
         </div>
+
 
         {/* SGPA */}
         <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mt-4">SGPA (Sem 1 - 8)</h3>
@@ -135,10 +183,15 @@ export default function MenteeRecordFilling({ usn, name }) {
             {["company", "address", "duration", "stipend"].map((field) => (
               <textarea
                 key={field}
-                placeholder={field.toUpperCase()}
-                value={proj[field] || ""}
-                onChange={(e) => handleObjectArrayChange("projects", i, field, e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm resize-none h-16 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
+                name={field}
+                placeholder={field.replace("_", " ").toUpperCase()}
+                value={formData[field]}
+                onChange={handleChange}
+                rows={2} // fixed visible height
+                maxLength={34} // ✅ limit characters
+                className="w-36 border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm 
+             resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 
+             dark:bg-gray-700 dark:text-white overflow-y-auto break-words whitespace-pre-wrap !whitespace-normal"
               />
             ))}
           </div>
@@ -152,10 +205,15 @@ export default function MenteeRecordFilling({ usn, name }) {
             {["company", "address", "duration", "stipend"].map((field) => (
               <textarea
                 key={field}
-                placeholder={field.toUpperCase()}
-                value={intern[field] || ""}
-                onChange={(e) => handleObjectArrayChange("internships", i, field, e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm resize-none h-16 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
+                name={field}
+                placeholder={field.replace("_", " ").toUpperCase()}
+                value={formData[field]}
+                onChange={handleChange}
+                rows={2} // fixed visible height
+                maxLength={34} // ✅ limit characters
+                className="w-36 border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm 
+             resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 
+             dark:bg-gray-700 dark:text-white overflow-y-auto break-words whitespace-pre-wrap !whitespace-normal"
               />
             ))}
           </div>
@@ -166,13 +224,18 @@ export default function MenteeRecordFilling({ usn, name }) {
         <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mt-4">Activities</h3>
         {formData.activities.map((act, i) => (
           <div key={i} className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-2">
-            {["Sports", "conference details", "papers published", "certifications from MOOC"].map((field) => (
+            {["Sports", "conference_details", "papers_published", "certifications_from_MOOC"].map((field) => (
               <textarea
                 key={field}
-                placeholder={field.toUpperCase()}
-                value={act[field] || ""}
-                onChange={(e) => handleObjectArrayChange("activities", i, field, e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm resize-none h-16 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
+                name={field}
+                placeholder={field.replace("_", " ").toUpperCase()}
+                value={formData[field]}
+                onChange={handleChange}
+                rows={3} // fixed visible height
+                maxLength={49} // ✅ limit characters
+                className="w-36 border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm 
+             resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 
+             dark:bg-gray-700 dark:text-white overflow-y-auto break-words whitespace-pre-wrap !whitespace-normal"
               />
             ))}
           </div>
@@ -191,13 +254,18 @@ export default function MenteeRecordFilling({ usn, name }) {
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
-                  summary: { ...prev.summary, [key]: e.target.value }
+                  summary: { ...prev.summary, [key]: e.target.value },
                 }))
               }
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm resize-none h-16 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
+              row={3}
+              maxLength={49} // ✅ limit characters
+              className="w-36 border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm 
+             resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 
+             dark:bg-gray-700 dark:text-white overflow-y-auto break-words whitespace-pre-wrap !whitespace-normal"
             />
           ))}
         </div>
+
 
         <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition mt-6 w-full sm:w-auto">
           Submit & Generate PDF
