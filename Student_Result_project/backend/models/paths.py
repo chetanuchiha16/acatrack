@@ -2,7 +2,7 @@ from pathlib import Path
 import os
 import dotenv
 from logger_config import get_logger
-
+from .cloud_utils  import download_image_from_url
 logger = get_logger(__name__)
 
 dotenv.load_dotenv()
@@ -11,7 +11,13 @@ base_dir = Path(__file__).resolve().parent.parent
 excel_path = str(base_dir / "Inputs/ExcelSheet/result list project.xlsx")
 email_excel_path = str(base_dir / "Inputs/ExcelSheet/Email.xlsx")
 mentor_excel_path = str(base_dir / "Inputs/ExcelSheet/Mentor.xlsx")
-logo_path = str(base_dir / "Inputs" / "Images" / "logo.png")
+# logo_path = str(base_dir / "Inputs" / "Images" / "logo.png")
+# Your Supabase public URL
+logo_url = "https://hpavqkjevepfegkojisn.supabase.co/storage/v1/object/public/uploads/Inputs/Images/logo.png"
+
+# Download and get a local file path
+logo_path = download_image_from_url(logo_url)
+logger.debug(f"{logo_path}")
 # db_path = str(base_dir / "Outputs" / "student_data.db")
 # db_path = str(base_dir / "instance" / "user.db")
 pdf_dir = str(base_dir / "Outputs" / "PDFs")

@@ -170,3 +170,24 @@ def list_supabase_file_tree(folder: str = "") -> dict:
             tree[name] = url
     return tree
 
+
+import requests
+from pathlib import Path
+import tempfile
+
+def download_image_from_url(url: str) -> str:
+    """
+    Downloads an image from a URL to a temporary local file.
+    Returns the local file path as a string.
+    """
+    response = requests.get(url)
+    response.raise_for_status()  # Raise error if download failed
+    
+    # Create a temporary file with .png extension
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+    
+    # Write image content to temp file
+    temp_file.write(response.content)
+    temp_file.close()
+    
+    return temp_file.name
