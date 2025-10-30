@@ -132,3 +132,41 @@ def upload_excel_to_supabase(local_excel_path: str, excel_filename: str, folder:
     """Uploads a local Excel file to Supabase Storage and returns the public URL."""
     with open(local_excel_path, "rb") as f:
         return upload_to_supabase(f.read(), excel_filename, folder, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+def list_supabase_file_tree(folder: str = "") -> dict:
+    """
+    Recursively lists folders/files (.pdf only) in Supabase Storage under the specified folder.
+    Only non-empty folders, and files ending with '.pdf' are shown.
+    """
+    if not (SUPABASE_URL and SUPABASE_KEY and supabase):
+        raise RuntimeError("Supabase credentials not loaded.")
+
+    tree = {}
+    try:
+        files = supabase.storage.from_(SUPABASE_BUCKET).list(folder)
+    except Exception as e:
+        raise RuntimeError(f"Supabase list error: {e}")
+
+    if not isinstance(files, list):
+        return tree
+
+    for entry in files:
+        if not entry or not isinstance(entry, dict):
+            continue
+        name = entry.get('name')
+        metadata = entry.get('metadata') or {}
+        mimetype = metadata.get('mimetype', '')
+
+        # Recurse into real folders/directories only
+        if mimetype == "application/x-directory":
+            subfolder = f"{folder}/{name}" if folder else name
+            sub_tree = list_supabase_file_tree(subfolder)
+            if sub_tree:
+                tree[name] = sub_tree
+        # Add only PDFs as files
+        elif name and name.lower().endswith('.pdf'):
+            file_path = f"{folder}/{name}" if folder else name
+            url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{file_path}"
+            tree[name] = url
+    return tree
+
