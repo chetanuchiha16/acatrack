@@ -1,7 +1,7 @@
 # Ignore all PDFs and PNGs inside output folders
 **/Outputs/**/*.png
 **/Outputs/**/*.pdf
-!Inputs/New_mentor_Record[final].pdf
 *.pyc
 *.db
 *.pdf
+!Inputs/New_mentor_Record[final].pdf
