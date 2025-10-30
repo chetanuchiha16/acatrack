@@ -82,10 +82,11 @@ def upload_form():
     page = pdf[2]
     for i, act in enumerate(activities):
         y = 180 + i*75
-        page.insert_text((105, y), act.get("sports", ""))
-        page.insert_text((215, y), act.get("conference", ""))
-        page.insert_text((335, y), act.get("papers", ""))
-        page.insert_text((455, y), act.get("certifications", ""))
+        page.insert_text((105, y), act.get("Sports", ""))
+        page.insert_text((215, y), act.get("conference details", ""))
+        page.insert_text((335, y), act.get("papers published", ""))
+        page.insert_text((455, y), act.get("certifications from MOOC", ""))
+
 
     # Summary row
     page.insert_text((90, 645), summary.get("cultural_activities", ""))
