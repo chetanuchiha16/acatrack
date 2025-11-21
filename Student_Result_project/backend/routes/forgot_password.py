@@ -5,6 +5,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from app_init import bcrypt
 from models.batch_manager import bm, BatchManager
+from models.paths import API_BASE
 forgot_bp = Blueprint("forgot", __name__, url_prefix="/auth/forgot")
 from .auth import batch_from_usn
 
@@ -51,7 +52,7 @@ def request_reset():
         db.session.add(reset_token)
         db.session.commit()
 
-        reset_link = f"http://localhost:5173/reset-password/{token}"
+        reset_link = f"{API_BASE}/reset-password/{token}"
         subject = "Password Reset Request"
         body = f"Hello {user.name},\n\nClick below to reset your password:\n{reset_link}\n\nThis link expires in 15 minutes."
 
