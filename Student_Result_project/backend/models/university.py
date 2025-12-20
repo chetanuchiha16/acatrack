@@ -15,7 +15,7 @@ class University:
     def __init__(self, postgres_url=None, batch_year=None):
         self.postgres_url = postgres_url or postgres_db_url
         self.batch_year = batch_year
-        self.engine = create_engine(self.postgres_url, echo=True)
+        self.engine = create_engine(self.postgres_url)
         self.students = []
 
     def fetch_semester_tables(self):
