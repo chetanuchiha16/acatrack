@@ -6,10 +6,10 @@ A collaborative student management system project integrating a React-based fron
 
 ### 👥 Contributors
 
-* Abhishek R
-* Adithya V
 * Chetan Kishor C G
+* Abhishek R
 * Dhanush Singh G
+* Adithya V
 
 ---
 
