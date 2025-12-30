@@ -7,10 +7,10 @@ Each subfolder represents a different project completed by our team.
 
 ## 👥 Collaborators
 
-- Abhishek R  
-- Adithya V  
 - Chetan Kishor C G  
+- Abhishek R  
 - Dhanush Singh G  
+- Adithya V  
 
 ---
 
