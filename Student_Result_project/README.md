@@ -35,7 +35,7 @@ A collaborative student management system project integrating a React-based fron
 
 #### 🗃️ **Database**
 
-* `SQLAlchemy` — database management (SQLite)
+* `SQLAlchemy` — database management (PostgreSql)
 
 ---
 ### ✨ Prerequisites
