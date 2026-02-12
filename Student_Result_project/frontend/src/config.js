@@ -1,8 +1,9 @@
 // const API_BASE = window.location.hostname.includes("devtunnels.ms")
-    // ? "https://wr0cjgnx-5000.inc1.devtunnels.ms"
-    // : `http://${window.location.hostname}:5000`;
-const API_BASE = "https://student-result-backend.onrender.com";
+//     ? "https://wr0cjgnx-5000.inc1.devtunnels.ms"
+//     : `http://${window.location.hostname}:5000`;
+// // const API_BASE = "https://student-result-backend.onrender.com";
 
+const API_BASE = import.meta.env.VITE_API_BASE;
 export default API_BASE;
 
 export const semesterOptions = ["sem1", "sem2", "sem3", "sem4"];
