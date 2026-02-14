@@ -1,12 +1,19 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import time
+import logging
 import os
+import time
+
+from logger_config import get_logger
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from webdriver_manager.chrome import ChromeDriverManager
+
+logger = get_logger(__name__)
+logging.getLogger("pdfminer").setLevel(logging.WARNING)
+
 
 # --- SELENIUM SETUP ---
 def setup_selenium(download_dir: str):
@@ -14,10 +21,10 @@ def setup_selenium(download_dir: str):
     os.makedirs(download_dir, exist_ok=True)
 
     chrome_options = Options()
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--disable-blink-features=AutomationControlled')
-    chrome_options.add_argument('--start-maximized')
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_argument("--start-maximized")
 
     # Configure downloads + PDF auto-saving
     prefs = {
@@ -32,11 +39,11 @@ def setup_selenium(download_dir: str):
         ),
         "printing.default_destination_selection_rules": {
             "kind": "local",
-            "namePattern": "Save as PDF"
-        }
+            "namePattern": "Save as PDF",
+        },
     }
     chrome_options.add_experimental_option("prefs", prefs)
-    chrome_options.add_argument('--kiosk-printing')
+    chrome_options.add_argument("--kiosk-printing")
 
     driver_path = ChromeDriverManager().install()
     service = Service(driver_path)
@@ -79,7 +86,14 @@ def fetch_single_result(usn: str, download_dir: str, exam_session: str, exam_yea
 
 
 # --- FETCH RANGE OF USNs ---
-def fetch_usn_range(usn_prefix: str, start: int, end: int, exam_session: str, exam_year: str, download_dir: str):
+def fetch_usn_range(
+    usn_prefix: str,
+    start: int,
+    end: int,
+    exam_session: str,
+    exam_year: str,
+    download_dir: str,
+):
     """Fetch result PDFs for a range of USNs."""
     os.makedirs(download_dir, exist_ok=True)
     for i in range(start, end + 1):
