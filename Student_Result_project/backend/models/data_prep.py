@@ -4,13 +4,15 @@ from logger_config import get_logger
 from models.cloud_utils import download_excel_from_supabase
 from models.schema import AcademicResult, StudentAuth, Subject
 
+from models.fetch import sem_subjects
+
 logger = get_logger(__name__)
 
 
 def convert_excel_to_postgres(excel_path: str, batch_year: int):
     """
     Convert Excel sheets to normalized Postgres tables (3NF).
-    Reads multi-level columns and maps them to Student, Subject, and AcademicResult.
+    Reads single-level columns and maps them to Student, Subject, and AcademicResult.
     """
     xls = pd.ExcelFile(excel_path)
 
@@ -20,14 +22,13 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
         # Usually sheet names are 'sem1', 'sem2'
         semester_name = str(sheet_name).lower().strip()
 
-        # Parse with multi-index to capture [Subject_Code] -> [IA, SEE, Total]
-        df = xls.parse(sheet_name, header=[0, 1])
-
-        # Flatten multi-level headers: ('21CS51', 'IA') -> '21CS51_IA'
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = ["_".join(map(str, col)).strip() for col in df.columns.values]
-        else:
-            df.columns = [str(col).strip() for col in df.columns]
+        # Parse with single header (Row 0)
+        df = xls.parse(sheet_name, header=0)
+        
+        # Flatten columns just in case, though header=0 should be flat
+        df.columns = [str(col).strip() for col in df.columns]
+        
+        logger.debug(f"Columns: {df.columns.tolist()[:20]}...") 
 
         # Remove unnamed columns
         df = df.loc[:, ~df.columns.str.contains("^Unnamed", case=False)]
@@ -41,38 +42,44 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
             continue
 
         # Identify subject columns and their metrics
-        # Maps '21CS51_IA' -> subject_cols['21CS51']['ia'] = '21CS51_IA'
+        # Maps '21CS51' -> { 'ia': '21CS51_INTERNALS', 'see': '...', 'credits': '...' }
         subject_cols = {}
+        
+        # Iterate over columns to map them to subjects
         for col in df.columns:
             if col in [usn_col, name_col]:
                 continue
 
             # Split from the right to separate Subject Code and Metric
+            # Expecting format: SUBJECTCODE_METRIC (e.g., BCS301_INTERNALS)
             parts = col.rsplit("_", 1)
+            
             if len(parts) == 2:
                 subj_code = parts[0].strip()
-                metric = parts[1].strip().lower()
-
+                metric = parts[1].strip().upper()  # Normalize metric to UPPER
                 
-                # Cleanup subject code from garbage headers
-                if "INTERNALS" in subj_code:
-                    subj_code = subj_code.split("INTERNALS")[0]
-                if "Unnamed" in subj_code:
-                    subj_code = subj_code.split("Unnamed")[0]
-                
+                # Sanitize Subject Code (remove known garbage if any remains)
                 subj_code = subj_code.strip("_").strip()
-                
+
                 if not subj_code:
                     continue
-                    
+                
                 if len(subj_code) > 20:
-                    logger.warning(f"Skipping column {col} - subject code parsed as '{subj_code}' which is too long")
-                    continue
+                     logger.warning(f"Skipping column {col} - subject code parsed as '{subj_code}' which is too long")
+                     continue
 
                 if subj_code not in subject_cols:
                     subject_cols[subj_code] = {}
-                subject_cols[subj_code][metric] = col
-
+                
+                if "INTERNALS" in metric:
+                    subject_cols[subj_code]["ia"] = col
+                elif "EXTERNALS" in metric:
+                    subject_cols[subj_code]["see"] = col
+                elif "TOTAL" in metric:
+                    subject_cols[subj_code]["total"] = col
+                elif "CREDITS" in metric:
+                    subject_cols[subj_code]["credits"] = col
+        
         # Iterate over rows
         for _, row in df.iterrows():
             usn_val = str(row[usn_col]).strip()
@@ -90,56 +97,70 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
             if not student:
                 student = StudentAuth(usn=usn_val, name=name_val, batch_year=batch_year)
                 db.session.add(student)
-                db.session.flush()  # Flush to get student.id immediately
+                db.session.flush()
 
-            # 2. Extract and Insert Academic Results
+            # 2. Extract and Insert Academic Results / Update Subjects
             for subj_code, metrics in subject_cols.items():
+                
+                # Fetch Subject Name from mapping or default to code
+                real_subject_name = sem_subjects.get(semester_name, {}).get(subj_code, subj_code)
+
                 # Get or Create Subject
                 subject = Subject.query.filter_by(subject_code=subj_code).first()
                 if not subject:
                     subject = Subject(
                         subject_code=subj_code,
-                        subject_name=subj_code,  # Default name to code until updated
+                        subject_name=real_subject_name,
                         semester=semester_name,
-                        credits=0,
+                        credits=0, # Will update if credits column exists
                     )
                     db.session.add(subject)
                     db.session.flush()
+                else:
+                     # Update name if it was a default code before
+                     if subject.subject_name == subj_code and real_subject_name != subj_code:
+                         subject.subject_name = real_subject_name
+
+                # Extract Credits if available and update Subject
+                credits_col = metrics.get("credits")
+                if credits_col:
+                     try:
+                        credit_val = int(float(row[credits_col])) if pd.notna(row[credits_col]) else 0
+                        # Update subject credits if not set or if we found a non-zero value
+                        if credit_val > 0:
+                            subject.credits = credit_val
+                     except (ValueError, TypeError):
+                        pass
 
                 # Extract Marks
                 ia_col = metrics.get("ia")
                 see_col = metrics.get("see")
                 total_col = metrics.get("total")
+                
+                # If this is purely a credit/metadata column set (no marks), we might skip result creation
+                # But usually there are marks. 
+                
+                if not (ia_col or see_col or total_col):
+                    continue
 
-                # Parse values (Handles 'ABS', Strings, or floats by defaulting to 0)
+                # Parse values
                 try:
-                    ia_marks = (
-                        int(float(row[ia_col]))
-                        if ia_col and pd.notna(row[ia_col])
-                        else 0
-                    )
+                    ia_marks = int(float(row[ia_col])) if ia_col and pd.notna(row[ia_col]) else 0
                 except (ValueError, TypeError):
                     ia_marks = 0
 
                 try:
-                    see_marks = (
-                        int(float(row[see_col]))
-                        if see_col and pd.notna(row[see_col])
-                        else 0
-                    )
+                    see_marks = int(float(row[see_col])) if see_col and pd.notna(row[see_col]) else 0
                 except (ValueError, TypeError):
                     see_marks = 0
 
                 try:
-                    total_marks = (
-                        int(float(row[total_col]))
-                        if total_col and pd.notna(row[total_col])
-                        else (ia_marks + see_marks)
-                    )
+                    total_marks = int(float(row[total_col])) if total_col and pd.notna(row[total_col]) else (ia_marks + see_marks)
                 except (ValueError, TypeError):
                     total_marks = ia_marks + see_marks
 
-                # Skip if no data for this subject for this student
+                # Skip if no data for this subject for this student AND it's not a credit-only update
+                # (We already updated credits above, so strict check on marks here)
                 if ia_marks == 0 and see_marks == 0 and total_marks == 0:
                     continue
 
@@ -158,7 +179,6 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
                     )
                     db.session.add(result)
                 else:
-                    # Update existing if processing duplicate/updated sheet
                     result.ia_marks = ia_marks
                     result.see_marks = see_marks
                     result.total_marks = total_marks
