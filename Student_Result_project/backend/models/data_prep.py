@@ -53,6 +53,22 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
                 subj_code = parts[0].strip()
                 metric = parts[1].strip().lower()
 
+                
+                # Cleanup subject code from garbage headers
+                if "INTERNALS" in subj_code:
+                    subj_code = subj_code.split("INTERNALS")[0]
+                if "Unnamed" in subj_code:
+                    subj_code = subj_code.split("Unnamed")[0]
+                
+                subj_code = subj_code.strip("_").strip()
+                
+                if not subj_code:
+                    continue
+                    
+                if len(subj_code) > 20:
+                    logger.warning(f"Skipping column {col} - subject code parsed as '{subj_code}' which is too long")
+                    continue
+
                 if subj_code not in subject_cols:
                     subject_cols[subj_code] = {}
                 subject_cols[subj_code][metric] = col
