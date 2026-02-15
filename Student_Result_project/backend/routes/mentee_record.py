@@ -3,7 +3,7 @@ import fitz
 import os
 from models.paths import pdf_dir, img_dir, base_dir
 from models.cloud_utils import save_file, supabase, SUPABASE_BUCKET
-from backend.models.schema import StudentAuth
+from models import StudentAuth
 from logger_config import get_logger
 
 logger = get_logger(__name__)
