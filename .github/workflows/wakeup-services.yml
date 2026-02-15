@@ -1,0 +1,21 @@
+name: Wake up Render & Supabase
+
+on:
+  schedule:
+    - cron: "0 9 */3 * *"
+  workflow_dispatch:
+
+jobs:
+  wakeup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake Render app
+        run: |
+          curl -s https://student-result-backend.onrender.com/health > /dev/null
+
+      - name: Wake Supabase project (real DB query)
+        run: |
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "https://hpavqkjevepfegkojisn.supabase.co/rest/v1/students?select=name&limit=1" \
+            > /dev/null
