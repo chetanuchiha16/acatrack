@@ -6,9 +6,7 @@ from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from models.paths import postgres_db_url
 
-db = SQLAlchemy()
-bcrypt = Bcrypt()
-migrate = Migrate()  # <-- make Migrate global
+from extensions import db, migrate, bcrypt
 
 def create_app(batch_year=None, postgres_url=None):
     app = Flask(__name__)
