@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-from app_init import db
+from extensions import db
 from sqlalchemy.dialects.postgresql import JSON
 
 
