@@ -250,6 +250,27 @@ class Student:
 
     def to_dict(self):
         """Standard serialization for frontend."""
+        subjects = []
+        for code, name, ia, see, credit, status in zip(
+            self.subject_codes,
+            self.subject_names,
+            self.ia_marks,
+            self.see_marks,
+            self.credits,
+            self.pass_fail,
+        ):
+            subjects.append(
+                {
+                    "code": code,
+                    "subject_name": name,
+                    "ia": ia,
+                    "see": see,
+                    "total": ia + see,
+                    "credit": credit,
+                    "status": status,
+                }
+            )
+
         return {
             "usn": self.usn,
             "name": self.name,
@@ -260,12 +281,6 @@ class Student:
             "percentage": round(self.percentage, 2),
             "sgpa": round(self.sgpa, 2),
             "cgpa": round(self.cgpa, 2),
-            "pass_fail": self.pass_fail,
-            "results": {
-                "subject_codes": self.subject_codes,
-                "subject_names": self.subject_names,
-                "ia_marks": self.ia_marks,
-                "see_marks": self.see_marks,
-                "credits": self.credits,
-            },
+            "credits": sum(self.credits),
+            "subjects": subjects,
         }
