@@ -57,9 +57,10 @@ class Student:
         self.pass_fail = self.calculate_pass_fail()
         self.obtained_credits = self.calculate_obtained_credits()
         self.sgpa = self.calculate_sgpa()
-        self.cgpa = (
-            self.calculate_cgpa_cumulative()
-        )  # Refactored to look at all DB records
+        previous_data = self.fetch_previous_sgpas()
+        self.cgpa = self.calculate_cgpa(
+            previous_data
+        )  # Refactored to look at all DB records and calculate VTU formula
         self.percentage = self.calculate_percentage()
 
     def calculate_pass_fail(self):
@@ -111,57 +112,100 @@ class Student:
         total_credits = sum(self.credits)
         return self.obtained_credits / total_credits if total_credits > 0 else 0
 
-    def calculate_cgpa_cumulative(self):
+    def fetch_previous_sgpas(self):
         """
-        New Logic: Calculates CGPA across ALL semesters in the 3NF database.
-        This replaces 'fetch_previous_sgpas' with a more accurate full-DB calculation.
+        Calculates SGPAs and total credits for all previous semesters using the normalized database.
         """
+        previous_data = []  # Stores dicts with 'sgpa' and 'credits'
         try:
-            student_rec = StudentAuth.query.filter_by(usn=self.usn).first()
-            all_res = (
+            sem_no = int(self.semester[-1]) if self.semester else 1
+        except Exception:
+            sem_no = 1
+
+        student_rec = StudentAuth.query.filter_by(usn=self.usn).first()
+        if not student_rec:
+            return previous_data
+
+        for sem in range(1, sem_no):
+            sem_name = f"sem{sem}"
+
+            # Fetch for this previous semester
+            results = (
                 db.session.query(AcademicResult, Subject)
                 .join(Subject, AcademicResult.subject_code == Subject.subject_code)
-                .filter(AcademicResult.student_id == student_rec.id)
+                .filter(
+                    AcademicResult.student_id == student_rec.id,
+                    Subject.semester == sem_name,
+                )
                 .all()
             )
 
-            if not all_res:
-                return 0.0
+            if results:
+                ia_marks = [(r.ia_marks or 0) for r, s in results]
+                see_marks = [(r.see_marks or 0) for r, s in results]
+                credits = [(s.credits or 0) for r, s in results]
 
-            total_weighted_points = 0
-            total_credits = 0
+                sgpa_i = self.calculate_sgpa_for_semester(ia_marks, see_marks, credits)
+                total_credits_i = sum(credits)
 
-            for res, sub in all_res:
-                if not sub.credits:
-                    continue
-                m = (res.ia_marks or 0) + (res.see_marks or 0)
-                if m >= 90:
-                    gp = 10
-                elif m >= 80:
-                    gp = 9
-                elif m >= 70:
-                    gp = 8
-                elif m >= 60:
-                    gp = 7
-                elif m >= 50:
-                    gp = 6
-                elif m >= 40:
-                    gp = 5
-                elif m >= 30:
-                    gp = 3
-                elif m >= 20:
-                    gp = 2
-                elif m >= 10:
-                    gp = 1
-                else:
-                    gp = 0
-                total_weighted_points += gp * sub.credits
-                total_credits += sub.credits
+                previous_data.append({"sgpa": sgpa_i, "credits": total_credits_i})
 
-            return total_weighted_points / total_credits if total_credits > 0 else 0.0
-        except Exception as e:
-            logger.error(f"Error calculating CGPA for {self.usn}: {e}")
+        return previous_data
+
+    def calculate_sgpa_for_semester(self, ia_marks, see_marks, credits):
+        obtained = 0
+        total_credits = sum(credits)
+        if total_credits == 0:
+            return 0
+        for ia, see, credit in zip(ia_marks, see_marks, credits):
+            total_score = ia + see
+            if credit == 0:
+                continue
+            if total_score >= 90:
+                grade_points = 10
+            elif total_score >= 80:
+                grade_points = 9
+            elif total_score >= 70:
+                grade_points = 8
+            elif total_score >= 60:
+                grade_points = 7
+            elif total_score >= 50:
+                grade_points = 6
+            elif total_score >= 40:
+                grade_points = 5
+            elif total_score >= 30:
+                grade_points = 3
+            elif total_score >= 20:
+                grade_points = 2
+            elif total_score >= 10:
+                grade_points = 1
+            else:
+                grade_points = 0
+            obtained += grade_points * credit
+        return obtained / total_credits
+
+    def calculate_cgpa(self, previous_data):
+        """
+        Calculates VTU accurate CGPA using the semester formula:
+        CGPA = Sum(Semester SGPA * Semester Total Credits) / Sum(Total Credits from all Semesters)
+        """
+        # Append current semester
+        all_semesters = previous_data + [
+            {"sgpa": self.sgpa, "credits": sum(self.credits)}
+        ]
+
+        sum_sgpa_x_credits = 0.0
+        cumulative_credits = 0
+
+        for sem in all_semesters:
+            if sem["credits"] > 0:
+                sum_sgpa_x_credits += sem["sgpa"] * sem["credits"]
+                cumulative_credits += sem["credits"]
+
+        if cumulative_credits == 0:
             return 0.0
+
+        return round(sum_sgpa_x_credits / cumulative_credits, 2)
 
     def calculate_percentage(self):
         max_total = 100 * len(self.credits)
@@ -206,6 +250,27 @@ class Student:
 
     def to_dict(self):
         """Standard serialization for frontend."""
+        subjects = []
+        for code, name, ia, see, credit, status in zip(
+            self.subject_codes,
+            self.subject_names,
+            self.ia_marks,
+            self.see_marks,
+            self.credits,
+            self.pass_fail,
+        ):
+            subjects.append(
+                {
+                    "code": code,
+                    "subject_name": name,
+                    "ia": ia,
+                    "see": see,
+                    "total": ia + see,
+                    "credit": credit,
+                    "status": status,
+                }
+            )
+
         return {
             "usn": self.usn,
             "name": self.name,
@@ -216,12 +281,6 @@ class Student:
             "percentage": round(self.percentage, 2),
             "sgpa": round(self.sgpa, 2),
             "cgpa": round(self.cgpa, 2),
-            "pass_fail": self.pass_fail,
-            "results": {
-                "subject_codes": self.subject_codes,
-                "subject_names": self.subject_names,
-                "ia_marks": self.ia_marks,
-                "see_marks": self.see_marks,
-                "credits": self.credits,
-            },
+            "credits": sum(self.credits),
+            "subjects": subjects,
         }
