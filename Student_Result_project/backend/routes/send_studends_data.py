@@ -1,51 +1,64 @@
-import base64
-import io
-
-from flask import Blueprint, jsonify, request, send_from_directory
-from logger_config import get_logger
+from flask import Blueprint, request, jsonify, send_from_directory, session
 from models import Student
-from models.helpers import get_batch_year
-from models.paths import pdf_dir, postgres_db_url
-from sqlalchemy import create_engine
 from visuals import create_student_report
+from models.paths import pdf_dir  , get_db_path
+import os
+from models.helpers import get_batch_year
+from sqlalchemy import create_engine
+from models.paths import postgres_db_url, API_BASE
+from logger_config import get_logger
 
 logger = get_logger(__name__)
 
 
-student_bp = Blueprint("student", __name__)
-
+student_bp = Blueprint('student', __name__)
 
 # @student_bp.route("/api/student", methods=["GET"])
 @student_bp.route("/auth/Student/result", methods=["GET"])
 def get_student_info():
     usn = request.args.get("usn")
     semester = request.args.get("semester")
-    batch_year = get_batch_year()
+    batch_year = get_batch_year()   
     logger.debug(f"batch year from student {batch_year}")
     logger.debug(f"Received USN: {usn}, Semester: {semester}, Batch: {batch_year}")
 
     try:
-        # Initialize student using the new normalized model
-        student = Student(
-            usn=usn,
-            semester=semester,
-            batch_year=batch_year,
-        )
+        # Get DB engine
+        engine = create_engine(postgres_db_url)
+        student = Student(usn=usn, semester=semester, batch_year=batch_year, engine=engine)
 
-        if not student.found:
-            return jsonify({"error": "Student not found"}), 404
-
-        # RESTORE PDF GENERATION
-        # This calls your visual reporting logic using the new student object
-        pdf_bytes = create_student_report(student)
+        # Generate PDF in-memory
+        pdf_bytes = create_student_report(student)  # returns bytes
         pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
+
+        # Keep the same key so frontend doesn’t change
         pdf_url = f"data:application/pdf;base64,{pdf_base64}"
 
-        # Get standard dictionary and inject the pdf_url
-        response_data = student.to_dict()
-        response_data["pdf_url"] = pdf_url
-
-        return jsonify(response_data)
+        return jsonify({
+            "name": student.name,
+            "usn": student.usn,
+            "total_marks": int(student.total_marks),
+            "percentage": float(student.percentage),
+            "credits": int(student.obtained_credits),
+            "sgpa": float(student.sgpa),
+            "cgpa": float(student.cgpa),
+            "subjects": [
+                {
+                    "subject_name": subject_name,
+                    "code": code,
+                    "ia": int(ia),
+                    "see": int(see),
+                    "total": int(ia + see),
+                    "credit": int(credit),
+                    "status": status
+                }
+                for code, subject_name, ia, see, credit, status in zip(
+                    student.subject_codes, student.subject_names, student.ia_marks, student.see_marks,
+                    student.credits, student.pass_fail
+                )
+            ],
+            "pdf_url": pdf_url  # base64 inline PDF
+        })
 
     except Exception as e:
         logger.debug(f"[ERROR] {e}")
@@ -56,12 +69,14 @@ def get_student_info():
 def download_report(filename):
     return send_from_directory(pdf_dir, filename, as_attachment=True)
 
+import io
+import base64
 
 @student_bp.route("/auth/Student/chart", methods=["GET"])
 def get_student_chart():
     usn = request.args.get("usn")
     semester = request.args.get("semester")
-    batch_year = get_batch_year()
+    batch_year = get_batch_year()   
 
     engine = create_engine(postgres_db_url)
     student = Student(usn=usn, semester=semester, batch_year=batch_year, engine=engine)
@@ -78,5 +93,6 @@ def get_student_chart():
     # Close figure to free memory
     fig.clf()
     fig.canvas.flush_events()
-
+    
     return jsonify({"image": f"data:image/png;base64,{img_base64}"})
+
