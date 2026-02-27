@@ -81,7 +81,7 @@ def run_student_test():
         # 6. Final Dictionary Check for Frontend
         print("\n[Test] Dictionary Output (for React):")
         data = student.to_dict()
-        expected_keys = ["usn", "name", "found", "sgpa", "cgpa", "results"]
+        expected_keys = ["usn", "name", "found", "sgpa", "cgpa", "credits", "subjects"]
         missing = [k for k in expected_keys if k not in data]
 
         if not missing:
