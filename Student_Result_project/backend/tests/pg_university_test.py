@@ -1,52 +1,57 @@
 # test_university_postgres.py
 
-import pandas as pd
-from models import University, Student
-from models.paths import postgres_db_url
 from logger_config import get_logger
+from models import University
+from models.paths import postgres_db_url
+from app_init import create_app
 
 logger = get_logger(__name__)
 
+
 def test_university_postgres():
-    # Replace with your actual Postgres URL and batch year
-    postgres_url = postgres_db_url
-    batch_year = 2022
+    app = create_app()
 
-    # Create University instance
-    uni = University(postgres_url=postgres_url, batch_year=batch_year)
+    with app.app_context():
+        # Replace with your actual Postgres URL and batch year
+        postgres_url = postgres_db_url
+        batch_year = 2022
 
-    logger.debug("Fetching semester tables...")
-    semesters = uni.fetch_semester_tables()
-    logger.debug("Semester tables found:", semesters)
+        # Create University instance
+        uni = University(postgres_url=postgres_url, batch_year=batch_year)
 
-    if not semesters:
-        logger.debug("No semester tables found. Exiting test.")
-        return
+        logger.debug("Fetching semester tables...")
+        semesters = uni.fetch_semester_tables()
+        logger.debug(f"Semester tables found: {semesters}")
 
-    # Test adding students
-    selected_semester = f"sem1"  # Replace with a semester present in your database
-    logger.debug(f"\nAdding students for {selected_semester}...")
-    uni.add_students(selected_semester)
-    logger.debug(f"Total students added: {len(uni.students)}")
+        if not semesters:
+            logger.debug("No semester tables found. Exiting test.")
+            return
 
-    # Test academic performance calculation
-    logger.debug(f"\nCalculating academic performance for {selected_semester}...")
-    results = uni.calculate_academic_performance_by_semester(selected_semester)
-    logger.debug(f"Results for {selected_semester}:")
-    for student in results[:3]:  # Print first 3 for brevity
-        logger.debug(student)
+        # Test adding students
+        selected_semester = "sem1"  # Replace with a semester present in your database
+        logger.debug(f"\nAdding students for {selected_semester}...")
+        uni.add_students(selected_semester)
+        logger.debug(f"Total students added: {len(uni.students)}")
 
-    # Test fetching failed students
-    logger.debug(f"\nFetching failed students for {selected_semester}...")
-    failed_students = uni.find_failed_students(selected_semester)
-    logger.debug(f"Number of failed students: {len(failed_students)}")
-    for fs in failed_students[:3]:  # Print first 3 for brevity
-        logger.debug(fs)
+        # Test academic performance calculation
+        logger.debug(f"\nCalculating academic performance for {selected_semester}...")
+        results = uni.calculate_academic_performance_by_semester(selected_semester)
+        logger.debug(f"Results for {selected_semester}:")
+        for student in results[:3]:  # Print first 3 for brevity
+            logger.debug(student)
 
-    # Optional: Test plotting (will save plot)
-    logger.debug(f"\nPlotting student totals for {selected_semester}...")
-    fig, path = uni.plot_student_totals(selected_semester, mode='top_n', n=5)
-    logger.debug(f"Plot saved to: {path}")
+        # Test fetching failed students
+        logger.debug(f"\nFetching failed students for {selected_semester}...")
+        failed_students = uni.find_failed_students(selected_semester)
+        logger.debug(f"Number of failed students: {len(failed_students)}")
+        for fs in failed_students[:3]:  # Print first 3 for brevity
+            logger.debug(fs)
+
+        # Optional: Test plotting (will save plot)
+        logger.debug(f"\nPlotting student totals for {selected_semester}...")
+        fig, path = uni.plot_student_totals(selected_semester, mode="top_n", n=5)
+        logger.debug(f"Plot saved to: {path}")
+
 
 if __name__ == "__main__":
     test_university_postgres()
