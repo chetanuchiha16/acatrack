@@ -271,6 +271,8 @@ class Student:
                 }
             )
 
+        overall_status = "Fail" if any(s in ["Fail", "SCR"] for s in self.pass_fail) else "Pass"
+
         return {
             "usn": self.usn,
             "name": self.name,
@@ -282,5 +284,6 @@ class Student:
             "sgpa": round(self.sgpa, 2),
             "cgpa": round(self.cgpa, 2),
             "credits": sum(self.credits),
+            "status": overall_status,
             "subjects": subjects,
         }
