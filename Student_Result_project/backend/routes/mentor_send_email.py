@@ -52,10 +52,13 @@ def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=
         if hasattr(mentor, "phone"):
             sender_info += f"\nPhone: {mentor.phone}"
 
+        # Lookup student to get ID
+        student = StudentAuth.query.filter_by(usn=usn).first() if usn else None
+
         # 1️⃣ Create and save the message
         msg = MentorMessage(
             mentor_id=mentor_id,
-            student_usn=usn,
+            student_id=student.id if student else None,
             recipient_type=recipient_type,
             subject=subject,
             message=message + sender_info,
@@ -84,11 +87,11 @@ def serialize_message_with_read_status(db, msg):
     for s in msg.mentor.students:  # StudentAuth objects
         status = (
             db.session.query(StudentMessageStatus)
-            .filter_by(student_usn=s.username, msg_id=msg.id)
+            .filter_by(student_id=s.id, msg_id=msg.id)
             .first()
         )
         students.append({
-            "usn": s.username,
+            "usn": s.usn,
             "name": s.name,
             "read": status.read if status else False
         })
@@ -107,7 +110,7 @@ def get_mentor_students(mentor_id):
         students = []
         for s in mentor.students:  # direct students now
             students.append({
-                "usn": s.username,
+                "usn": s.usn,
                 "name": s.name,
                 "parent_name": s.parent_account.name if s.parent_account else None,
                 "parent_email": s.parent_account.email if s.parent_account else None,
@@ -158,7 +161,7 @@ def send_email_student(mentor_id):
     message = data.get("message")
     batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
-        student = StudentAuth.query.filter_by(username=usn).first()
+        student = StudentAuth.query.filter_by(usn=usn).first()
         if not student:
             return jsonify({"error": "Student not found"}), 404
 
@@ -182,7 +185,7 @@ def send_email_student(mentor_id):
             fcm_token = getattr(student, "fcm_token", None)
 
             if fcm_token:
-                logger.debug("FCM token for", student.username, ":", fcm_token)
+                logger.debug("FCM token for", student.usn, ":", fcm_token)
                 notification = messaging.Message(
                     notification=messaging.Notification(
                         title=f"New message from {mentor.name}",
@@ -240,7 +243,7 @@ def send_email_all(mentor_id):
 
             success = send_email(to_email, subject, f"Hello {name},\n\n{message}{sender_info}")
 
-            results.append({"usn": s.username, "success": success})
+            results.append({"usn": s.usn, "success": success})
 
         return jsonify(results), 200
 
