@@ -13,7 +13,7 @@ sem_bp = Blueprint("sem_res", __name__)
 @sem_bp.route("/auth/Staff/sem_res", methods=["GET"])
 def get_semester_results():
     semester = request.args.get("semester")
-    batch_year = get_batch_year()
+    batch_year = request.args.get("batch_year") or get_batch_year()
     if not semester:
         return jsonify({"error": "Missing semester parameter"}), 400
 
@@ -120,7 +120,7 @@ def get_semester_results():
 
 @sem_bp.route("/auth/Staff/sem_res/report/<semester>", methods=["GET"])
 def download_semester_report(semester):
-    batch_year = get_batch_year()
+    batch_year = request.args.get("batch_year") or get_batch_year()
     semester_subject_mapping = {
         "sem1": [
             "BMATS101",
