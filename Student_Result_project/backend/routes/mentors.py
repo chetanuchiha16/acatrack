@@ -36,7 +36,7 @@ def get_mentor_students():
 
             for s in students:
                 try:
-                    student = Student(usn=s.username, semester=semester, batch_year=batch_year, engine=engine)
+                    student = Student(usn=s.usn, semester=semester, batch_year=batch_year, engine=engine)
 
                     # Generate PDF in memory
                     pdf_bytes = create_student_report(student)  # returns bytes
@@ -71,9 +71,9 @@ def get_mentor_students():
                     })
 
                 except Exception as e:
-                    logger.debug(f"[WARNING] Student data not found for USN {s.username}: {e}")
+                    logger.debug(f"[WARNING] Student data not found for USN {s.usn}: {e}")
                     results.append({
-                        "usn": s.username,
+                        "usn": s.usn,
                         "error": "Student data not found"
                     })
 
