@@ -66,13 +66,8 @@ class University:
             logger.debug(f"No students found for {selected_semester} in batch {self.batch_year}.")
             return
 
-        for usn in all_usns:
-            try:
-                # `Student` class automatically handles DB fetching
-                student = Student(usn, selected_semester, self.batch_year)
-                self.students.append(student)
-            except ValueError:
-                pass
+        bulk_students = Student.bulk_fetch(all_usns, selected_semester, self.batch_year)
+        self.students.extend(bulk_students.values())
 
     def display_students(self):
         """
