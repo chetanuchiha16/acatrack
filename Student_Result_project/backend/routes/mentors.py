@@ -31,7 +31,7 @@ def get_mentor_students():
             if not mentor:
                 return jsonify({"error": "Mentor not found"}), 404
 
-            students = StudentAuth.query.filter_by(mentor_id=mentor_id).all()
+            students = StudentAuth.query.filter_by(mentor_id=mentor_id, batch_year=batch_year).all()
             usns = [s.usn for s in students]
             bulk_students = Student.bulk_fetch(usns, semester, batch_year)
             results = []
