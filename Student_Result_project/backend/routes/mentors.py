@@ -32,11 +32,15 @@ def get_mentor_students():
                 return jsonify({"error": "Mentor not found"}), 404
 
             students = StudentAuth.query.filter_by(mentor_id=mentor_id).all()
+            usns = [s.usn for s in students]
+            bulk_students = Student.bulk_fetch(usns, semester, batch_year)
             results = []
 
             for s in students:
                 try:
-                    student = Student(usn=s.usn, semester=semester, batch_year=batch_year, engine=engine)
+                    student = bulk_students.get(s.usn)
+                    if not student:
+                        raise ValueError(f"No student data found for USN {s.usn}")
 
                     # Generate PDF in memory
                     pdf_bytes = create_student_report(student)  # returns bytes
