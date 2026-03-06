@@ -69,18 +69,9 @@ def _connect_sqlite(batch_year: int) -> Tuple[sqlite3.Connection, sqlite3.Cursor
 def _fetch_source_rows(batch_year: int) -> list[tuple[str,str]]:
     students_set = set()
     with bm.session_scope(batch_year) as db:
-        inspector = inspect(db.engine)
-        existing_tables = {t.lower() for t in inspector.get_table_names()}
-
-        for sem in SEMESTERS:
-            table_name = f"{sem}_{batch_year}".lower()
-            if table_name not in existing_tables:
-                logger.debug(f"[Warning] Table {table_name} does not exist, skipping")
-                continue
-
-            result = db.session.execute(text(f'SELECT student_usn, student_name FROM "{table_name}"'))
-            for row in result:
-                students_set.add((row.student_usn, row.student_name))
+        students = StudentAuth.query.filter_by(batch_year=batch_year).all()
+        for s in students:
+            students_set.add((s.usn, s.name))
 
     return list(students_set)
 
@@ -127,10 +118,13 @@ def generate_accounts():
 
     with bm.session_scope(batch_year) as db:
         students = _fetch_source_rows(batch_year)
-        # --- Delete existing accounts for 'all' mode
+        # --- Delete existing passwords for 'all' mode
         if mode == "all":
-            db.session.query(StudentAuth).filter(StudentAuth.username.like(f"{batch_prefix}%")).delete(synchronize_session=False)
-            db.session.query(ParentAuth).filter(ParentAuth.username.like(f"{batch_prefix}%_parent")).delete(synchronize_session=False)
+            students_to_reset = StudentAuth.query.filter_by(batch_year=batch_year).all()
+            for s in students_to_reset:
+                s.password = None
+                if s.parent_account:
+                    s.parent_account.password = None
             db.session.commit()
 
         out = io.StringIO()
@@ -141,46 +135,45 @@ def generate_accounts():
                 continue
             usn = str(usn).strip()
             name = (name or "").strip()
-            # --- Skip existing student if mode is 'missing'
-            existing_student = StudentAuth.query.filter_by(username=usn).first()
-            if mode == "missing" and existing_student:
+            # --- Skip if mode is 'missing' and password exists
+            existing_student = StudentAuth.query.filter_by(usn=usn).first()
+            if not existing_student:
                 continue
-            elif existing_student:
-                db.session.delete(existing_student)
-                db.session.commit()
+                
+            if mode == "missing" and existing_student.password:
+                continue
 
             with db.session.no_autoflush:
-                # --- Create student
+                # --- Set student password
                 plain_student = f"{_safe_seed(name)}{usn[-3:]}"
                 pw_hash_student = bcrypt.generate_password_hash(password=plain_student).decode("utf-8")
-                student = StudentAuth(
-                    username=usn,
-                    name=name,
-                    password=pw_hash_student,
-                    student_email=os.getenv("C_EMAIL"),
-                    student_phno=os.getenv("DEFAULT_NUMBER")
-                )
-                db.session.add(student)
+                
+                existing_student.password = pw_hash_student
+                if not existing_student.student_email:
+                    existing_student.student_email = os.getenv("C_EMAIL")
+                if not existing_student.student_phno:
+                    existing_student.student_phno = os.getenv("DEFAULT_NUMBER")
+                    
                 out.write(f"{usn},{name},{plain_student},{pw_hash_student},student,\n")
 
-                # --- Create parent
+                # --- Create or Update parent
                 parent_username = f"{usn}_parent"
-                existing_parent = ParentAuth.query.filter_by(username=parent_username).first()
-                if existing_parent:
-                    db.session.delete(existing_parent)
-                    db.session.commit()
-
                 plain_parent = "default123"
                 pw_hash_parent = bcrypt.generate_password_hash(password=plain_parent).decode("utf-8")
-                parent = ParentAuth(
-                    username=parent_username,
-                    password=pw_hash_parent,
-                    student_usn=usn,
-                    name=f"Parent of {name}",
-                    email=os.getenv("C_EMAIL"),
-                    phone="123456789"
-                )
-                db.session.add(parent)
+                
+                if existing_student.parent_account:
+                    parent = existing_student.parent_account
+                    parent.password = pw_hash_parent
+                else:
+                    parent = ParentAuth(
+                        username=parent_username,
+                        password=pw_hash_parent,
+                        student=existing_student,
+                        name=f"Parent of {name}",
+                        email=os.getenv("C_EMAIL"),
+                        phone="123456789"
+                    )
+                    db.session.add(parent)
                 out.write(f"{parent_username},Parent of {name},{plain_parent},{pw_hash_parent},parent,{usn}\n")
 
         # --- Assign mentors from Excel in Supabase (using new pattern)
@@ -199,7 +192,7 @@ def generate_accounts():
                 mentor_name = str(row.get("Mentor_Name", "")).strip()
                 if not student_usn or not mentor_name:
                     continue
-                student = StudentAuth.query.filter_by(username=student_usn).first()
+                student = StudentAuth.query.filter_by(usn=student_usn).first()
                 mentor = Mentor.query.filter_by(name=mentor_name).first()
                 if student and mentor:
                     student.mentor_id = mentor.id
@@ -284,7 +277,7 @@ def upload_emails():
             usn = str(row["student_usn"]).strip()
             if not usn:
                 continue
-            student = StudentAuth.query.filter_by(username=usn).first()
+            student = StudentAuth.query.filter_by(usn=usn).first()
 
             if student:
                 # update existing student record
@@ -296,7 +289,7 @@ def upload_emails():
                     student.parent_account.email = str(row["Parent_Email"]).strip()
                     student.parent_account.phone = str(row.get("Parent_PHNO", "")).strip()
                 else:
-                    parent_username = f"{student.username}_parent"
+                    parent_username = f"{student.usn}_parent"
                     plain_parent_pw = "default123"
                     pw_hash = bcrypt.generate_password_hash(plain_parent_pw).decode("utf-8")
                     parent = ParentAuth(
@@ -304,7 +297,7 @@ def upload_emails():
                         password=pw_hash,
                         email=str(row["Parent_Email"]).strip(),
                         phone=str(row.get("Parent_PHNO", "")).strip(),
-                        student_usn=student.username
+                        student=student
                     )
                     db.session.add(parent)
                 count_updated += 1
@@ -312,7 +305,8 @@ def upload_emails():
             else:
                 # insert new student + parent records
                 new_student = StudentAuth(
-                    username=usn,
+                    usn=usn,
+                    batch_year=batch_year,
                     name=str(row["student_name"]).strip(),
                     student_email=str(row["Student_Email"]).strip(),
                     student_phno=str(row.get("Student_PHNO", "")).strip(),
@@ -327,7 +321,7 @@ def upload_emails():
                     password=pw_hash,
                     email=str(row["Parent_Email"]).strip(),
                     phone=str(row.get("Parent_PHNO", "")).strip(),
-                    student_usn=usn,
+                    student=new_student,
                     name=str(row.get("Parent_Name", f"Parent of {row['student_name']}")).strip(),
                     relation=str(row.get("Parent_Relation", "Guardian")).strip()
                 )
@@ -429,7 +423,7 @@ def upload_mentors():
                     out.write(f"{username},{mentor_name},{plain_pw},{pw_hash},teacher,\n")
                 mentor_cache[mentor_name] = mentor
 
-            student = StudentAuth.query.filter_by(username=student_usn).first()
+            student = StudentAuth.query.filter_by(usn=student_usn).first()
             if student:
                 student.mentor_id = mentor.id
                 count_mappings += 1
