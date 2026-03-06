@@ -7,7 +7,7 @@ logger = get_logger(__name__)
 
 
 class Student:
-    def __init__(self, usn, semester, batch_year, engine=None):
+    def __init__(self, usn, semester, batch_year, engine=None, preloaded_data=None):
         """
         Load student information using SQLAlchemy from normalized tables.
         Keeps the exact logic and attributes for frontend compatibility.
@@ -15,52 +15,62 @@ class Student:
         self.usn = usn
         self.semester = semester.lower().strip() if semester else None
         self.batch_year = batch_year
-        # engine is accepted but ignored as we use the Flask-SQLAlchemy db session
+        self.found = False
 
-        # 1. Fetch core student details
-        student_rec = StudentAuth.query.filter_by(usn=self.usn).first()
-        if not student_rec:
-            # Maintain the behavior of raising ValueError if not found
-            raise ValueError(f"No student data found for USN {usn}")
-
-        self.name = student_rec.name
-        self.found = True
-
-        # Result containers
         self.subject_codes = []
         self.subject_names = []
         self.ia_marks = []
         self.see_marks = []
         self.credits = []
+        
+        self._preloaded_data = preloaded_data
 
-        # 2. Fetch marks for the specific semester
-        if self.semester:
-            results = (
-                db.session.query(AcademicResult, Subject)
-                .join(Subject, AcademicResult.subject_code == Subject.subject_code)
-                .filter(
-                    AcademicResult.student_id == student_rec.id,
-                    Subject.semester == self.semester,
-                )
-                .all()
-            )
-
-            for res, sub in results:
+        if preloaded_data:
+            self.name = preloaded_data["student"].name
+            self.found = True
+            for res, sub in zip(preloaded_data["current_semester"]["res"], preloaded_data["current_semester"]["sub"]):
                 self.subject_codes.append(sub.subject_code)
                 self.subject_names.append(sub.subject_name or sub.subject_code)
                 self.ia_marks.append(res.ia_marks or 0)
                 self.see_marks.append(res.see_marks or 0)
                 self.credits.append(sub.credits or 0)
+        else:
+            # 1. Fetch core student details
+            student_rec = StudentAuth.query.filter_by(usn=self.usn).first()
+            if student_rec:
+                self.name = student_rec.name
+                self.found = True
+
+                # 2. Fetch marks for the specific semester
+                if self.semester:
+                    results = (
+                        db.session.query(AcademicResult, Subject)
+                        .join(Subject, AcademicResult.subject_code == Subject.subject_code)
+                        .filter(
+                            AcademicResult.student_id == student_rec.id,
+                            Subject.semester == self.semester,
+                        )
+                        .all()
+                    )
+
+                    for res, sub in results:
+                        self.subject_codes.append(sub.subject_code)
+                        self.subject_names.append(sub.subject_name or sub.subject_code)
+                        self.ia_marks.append(res.ia_marks or 0)
+                        self.see_marks.append(res.see_marks or 0)
+                        self.credits.append(sub.credits or 0)
+
+        if not self.found:
+            raise ValueError(f"No student data found for USN {usn}")
 
         # 3. Calculate derived attributes (Matching your old methods exactly)
         self.total_marks = sum(self.ia_marks) + sum(self.see_marks)
         self.pass_fail = self.calculate_pass_fail()
         self.obtained_credits = self.calculate_obtained_credits()
         self.sgpa = self.calculate_sgpa()
+        
         previous_data = self.fetch_previous_sgpas()
-        self.cgpa = self.calculate_cgpa(
-            previous_data
-        )  # Refactored to look at all DB records and calculate VTU formula
+        self.cgpa = self.calculate_cgpa(previous_data)
         self.percentage = self.calculate_percentage()
 
     def calculate_pass_fail(self):
@@ -122,14 +132,27 @@ class Student:
         except Exception:
             sem_no = 1
 
+        if self._preloaded_data:
+            for sem in range(1, sem_no):
+                sem_name = f"sem{sem}"
+                if sem_name in self._preloaded_data["previous_semesters"]:
+                    sem_data = self._preloaded_data["previous_semesters"][sem_name]
+                    ia_marks = [(r.ia_marks or 0) for r in sem_data["res"]]
+                    see_marks = [(r.see_marks or 0) for r in sem_data["res"]]
+                    credits_list = [(s.credits or 0) for s in sem_data["sub"]]
+
+                    if credits_list:
+                        sgpa_i = self.calculate_sgpa_for_semester(ia_marks, see_marks, credits_list)
+                        total_credits_i = sum(credits_list)
+                        previous_data.append({"sgpa": sgpa_i, "credits": total_credits_i})
+            return previous_data
+
         student_rec = StudentAuth.query.filter_by(usn=self.usn).first()
         if not student_rec:
             return previous_data
 
         for sem in range(1, sem_no):
             sem_name = f"sem{sem}"
-
-            # Fetch for this previous semester
             results = (
                 db.session.query(AcademicResult, Subject)
                 .join(Subject, AcademicResult.subject_code == Subject.subject_code)
@@ -287,3 +310,70 @@ class Student:
             "status": overall_status,
             "subjects": subjects,
         }
+
+    @classmethod
+    def bulk_fetch(cls, usns, semester, batch_year):
+        """
+        Efficiently fetches combined StudentAuth, AcademicResult, and Subject records for a list of USNs.
+        Returns a dictionary mapping USN strings to fully instantiated Student objects.
+        """
+        if not usns:
+            return {}
+
+        semester = semester.lower().strip() if semester else None
+        
+        try:
+            sem_no = int(semester[-1]) if semester else 1
+        except Exception:
+            sem_no = 1
+            
+        required_semesters = [f"sem{i}" for i in range(1, sem_no + 1)]
+
+        # Fetch all StudentAuth records
+        student_records = StudentAuth.query.filter(StudentAuth.usn.in_(usns)).all()
+        student_map = {s.usn: s for s in student_records}
+        student_id_to_usn = {s.id: s.usn for s in student_records}
+
+        if not student_map:
+            return {}
+
+        # Fetch AcademicResult and Subject joined over required semesters
+        student_ids = list(student_id_to_usn.keys())
+        results = (
+            db.session.query(AcademicResult, Subject)
+            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
+            .filter(
+                AcademicResult.student_id.in_(student_ids),
+                Subject.semester.in_(required_semesters)
+            )
+            .all()
+        )
+        
+        preloaded_data = {
+            usn: {
+                "student": student_map[usn],
+                "current_semester": {"res": [], "sub": []},
+                "previous_semesters": {}
+            } for usn in usns if usn in student_map
+        }
+
+        for res, sub in results:
+            usn = student_id_to_usn[res.student_id]
+            if sub.semester == semester:
+                preloaded_data[usn]["current_semester"]["res"].append(res)
+                preloaded_data[usn]["current_semester"]["sub"].append(sub)
+            else:
+                if sub.semester not in preloaded_data[usn]["previous_semesters"]:
+                    preloaded_data[usn]["previous_semesters"][sub.semester] = {"res": [], "sub": []}
+                preloaded_data[usn]["previous_semesters"][sub.semester]["res"].append(res)
+                preloaded_data[usn]["previous_semesters"][sub.semester]["sub"].append(sub)
+
+        # Instantiate memory-fed objects
+        instantiated_students = {}
+        for usn, data in preloaded_data.items():
+            try:
+                instantiated_students[usn] = cls(usn, semester, batch_year, preloaded_data=data)
+            except ValueError:
+                pass
+
+        return instantiated_students

@@ -31,12 +31,16 @@ def get_mentor_students():
             if not mentor:
                 return jsonify({"error": "Mentor not found"}), 404
 
-            students = StudentAuth.query.filter_by(mentor_id=mentor_id).all()
+            students = StudentAuth.query.filter_by(mentor_id=mentor_id, batch_year=batch_year).all()
+            usns = [s.usn for s in students]
+            bulk_students = Student.bulk_fetch(usns, semester, batch_year)
             results = []
 
             for s in students:
                 try:
-                    student = Student(usn=s.username, semester=semester, batch_year=batch_year, engine=engine)
+                    student = bulk_students.get(s.usn)
+                    if not student:
+                        raise ValueError(f"No student data found for USN {s.usn}")
 
                     # Generate PDF in memory
                     pdf_bytes = create_student_report(student)  # returns bytes
@@ -71,9 +75,9 @@ def get_mentor_students():
                     })
 
                 except Exception as e:
-                    logger.debug(f"[WARNING] Student data not found for USN {s.username}: {e}")
+                    logger.debug(f"[WARNING] Student data not found for USN {s.usn}: {e}")
                     results.append({
-                        "usn": s.username,
+                        "usn": s.usn,
                         "error": "Student data not found"
                     })
 

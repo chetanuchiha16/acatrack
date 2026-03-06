@@ -59,25 +59,15 @@ class University:
 
     def add_students(self, selected_semester):
         """
-        Add all students from all semesters for this batch.
+        Add all students who have records for this specific semester.
         """
-        semesters = self.fetch_semester_tables()
-        if not semesters:
-            logger.debug("No semester data found in the database.")
+        all_usns = self.fetch_students(selected_semester)
+        if not all_usns:
+            logger.debug(f"No students found for {selected_semester} in batch {self.batch_year}.")
             return
 
-        all_usns = set()
-        for semester in semesters:
-            usns = self.fetch_students(semester)
-            all_usns.update(usns)
-
-        for usn in all_usns:
-            try:
-                # `Student` class automatically handles DB fetching
-                student = Student(usn, selected_semester, self.batch_year)
-                self.students.append(student)
-            except ValueError:
-                pass
+        bulk_students = Student.bulk_fetch(all_usns, selected_semester, self.batch_year)
+        self.students.extend(bulk_students.values())
 
     def display_students(self):
         """

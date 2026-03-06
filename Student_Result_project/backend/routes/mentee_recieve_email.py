@@ -8,8 +8,8 @@ student_email_bp = Blueprint("student_email", __name__)
 from models.batch_manager import BatchManager, bm
 
 # ✅ Utility to serialize MentorMessage with required fields
-def serialize_message(msg, usn):
-    status = StudentMessageStatus.query.filter_by(student_usn=usn, msg_id=msg.id).first()
+def serialize_message(msg, student):
+    status = StudentMessageStatus.query.filter_by(student_id=student.id, msg_id=msg.id).first()
     mentor = Mentor.query.filter_by(id=msg.mentor_id).first() if hasattr(msg, "mentor_id") else None
 
     dt = msg.created_at
@@ -32,14 +32,18 @@ def get_student_messages(usn):
     batch_year = get_batch_year()  # however you infer it
     
     with bm.session_scope(batch_year) as db:
+        student = StudentAuth.query.filter_by(usn=usn).first()
+        if not student:
+            return jsonify({"error": "Student not found"}), 404
+
         msgs = (
             MentorMessage.query
-            .filter((MentorMessage.student_usn == usn) | (MentorMessage.student_usn == None))
+            .filter((MentorMessage.student_id == student.id) | (MentorMessage.student_id == None))
             .order_by(MentorMessage.id.desc())
             .all()
         )
 
-        results = [serialize_message(m, usn) for m in msgs]
+        results = [serialize_message(m, student) for m in msgs]
         return jsonify(results)
 
 
@@ -47,30 +51,38 @@ def get_student_messages(usn):
 def get_student_message_detail(usn, msg_id):
     batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
+        student = StudentAuth.query.filter_by(usn=usn).first()
+        if not student:
+            return jsonify({"error": "Student not found"}), 404
+            
         msg = MentorMessage.query.filter_by(id=msg_id).first()
         if not msg:
             return jsonify({"error": "Message not found"}), 404
 
-        if msg.student_usn not in (None, usn):
+        if msg.student_id not in (None, student.id):
             return jsonify({"error": "Not authorized to view this message"}), 403
 
-        return jsonify(serialize_message(msg, usn))
+        return jsonify(serialize_message(msg, student))
 
 
 @student_email_bp.route("/student/<string:usn>/messages/<int:msg_id>/read", methods=["POST"])
 def mark_message_read(usn, msg_id):
     batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
+        student = StudentAuth.query.filter_by(usn=usn).first()
+        if not student:
+            return jsonify({"error": "Student not found"}), 404
+            
         msg = MentorMessage.query.filter_by(id=msg_id).first()
         if not msg:
             return jsonify({"error": "Message not found"}), 404
 
-        if msg.student_usn not in (None, usn):
+        if msg.student_id not in (None, student.id):
             return jsonify({"error": "Not authorized to update this message"}), 403
 
-        status = StudentMessageStatus.query.filter_by(student_usn=usn, msg_id=msg_id).first()
+        status = StudentMessageStatus.query.filter_by(student_id=student.id, msg_id=msg_id).first()
         if not status:
-            status = StudentMessageStatus(student_usn=usn, msg_id=msg_id, read=True)
+            status = StudentMessageStatus(student_id=student.id, msg_id=msg_id, read=True)
             db.session.add(status)
         else:
             status.read = True
