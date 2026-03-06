@@ -14,7 +14,7 @@ sub_bp = Blueprint('sub_res', __name__)
 def get_subject_results():
     semester = request.args.get('semester')
     subject_code = request.args.get('subject')
-    batch_year = get_batch_year()   
+    batch_year = request.args.get('batch_year') or get_batch_year()   
     if not semester or not subject_code:
         return jsonify({"error": "semester and subject are required"}), 400
     
@@ -31,7 +31,7 @@ def get_subject_results():
 def get_subject_report_pdf():
     token = request.headers.get("Authorization")
     logger.debug("DEBUG: Authorization header =", token)
-    batch_year = get_batch_year()
+    batch_year = request.args.get('batch_year') or get_batch_year()
     semester = request.args.get('semester')
     subject_code = request.args.get('subject')
 
