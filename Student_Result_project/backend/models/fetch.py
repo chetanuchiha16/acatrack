@@ -1,6 +1,3 @@
-import pandas as pd
-from sqlalchemy import create_engine, text
-from models.paths import postgres_db_url
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -17,7 +14,7 @@ sem_subjects = {
         "BESCK104A": "Introduction to Civil Engineering",
         "BETCK105H": "Introduction to Internet of Things (IoT)",
         "BESCK104C": "Introduction TO Electronics Engineering",
-        "BPLCK105B": "Introduction TO to Python Programming"
+        "BPLCK105B": "Introduction TO to Python Programming",
     },
     "sem2": {
         "BMAT201": "Mathematics for CSE Stream-II",
@@ -31,7 +28,7 @@ sem_subjects = {
         "BPLCK205B": "Introduction to Python Programming",
         "BESCK204C": "Introduction to Electronics Engineering",
         "BESCK204D": "Introduction To Mechanical Engineering",
-        "BETCK205H": "Introduction to Internet of Things (IoT)"
+        "BETCK205H": "Introduction to Internet of Things (IoT)",
     },
     "sem3": {
         "BCS301": "Mathematics for Computer Science",
@@ -42,7 +39,7 @@ sem_subjects = {
         "BSCK307": "Social Connect and Responsibility",
         "BNSK359": "National Service Scheme (NSS)",
         "BCS306A": "Object Oriented Programming with Java",
-        "BCS358D": "Data Visualization with Python"
+        "BCS358D": "Data Visualization with Python",
     },
     "sem4": {
         "BCS401": "Analysis & Design of Algorithms",
@@ -53,7 +50,7 @@ sem_subjects = {
         "BUHK408": "Universal Human Values",
         "BPEK459_PhysicalEducation_OR_BNSK459_NSS_": "Physical Education or NSS",
         "BCS405B": "Graph Theory",
-        "BCSL456D": "Technical Writing using LaTeX"
+        "BCSL456D": "Technical Writing using LaTeX",
     },
     "sem5": {
         "BCS501": "Software Engineering and Project Management",
@@ -68,7 +65,7 @@ sem_subjects = {
         "BRMK557": "Research Methodology & IPR",
         "BES508": "Environmental Studies",
         "BCS586": "Mini Project",
-        "BPEK459_PhysicalEducation_OR_BNSK459_NSS_": "Physical Education or NSS"
+        "BPEK459_PhysicalEducation_OR_BNSK459_NSS_": "Physical Education or NSS",
     },
     "sem6": {
         # Sem 6 subjects not found explicitly; placeholders
@@ -78,7 +75,7 @@ sem_subjects = {
         "BCSL604": "<PCCL Lab for Sem 6>",
         "PEC605x": "Professional Elective",
         "OEC606x": "Open Elective",
-        "BSK6xx": "Skill Development Activity / NSS / Physical Education"
+        "BSK6xx": "Skill Development Activity / NSS / Physical Education",
     },
     "sem7": {
         "PEC701x": "Professional Elective",
@@ -86,77 +83,75 @@ sem_subjects = {
         "PEC703x": "Professional Elective",
         "OEC704x": "Open Elective",
         "OEC705x": "Open Elective",
-        "PROJ786": "Major Project Phase II"  # includes practical/project work
+        "PROJ786": "Major Project Phase II",  # includes practical/project work
     },
     "sem8": {
         "PEC801x": "Professional Elective (Online Courses)",
         "OEC802x": "Open Elective (Online Courses)",
-        "INT803": "Internship (Industry / Research / Rural - 14-20 weeks)"
-    }
+        "INT803": "Internship (Industry / Research / Rural - 14-20 weeks)",
+    },
 }
 
 
 SEMESTERS = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6"]
+
 
 def safe_int(val):
     try:
         return int(val)
     except (TypeError, ValueError):
         return 0  # or None if you want to indicate missing marks
-    
+
+
 def fetch_student_data(usn, semester, batch_year, engine):
     """
-    Fetch student data from the given semester table in PostgreSQL.
-    Each batch has its own suffixed tables (e.g., sem1_2024).
+    Fetch student data from the normalized PostgreSQL tables.
+    Returns a dictionary of relevant info, mapping the old JSON schema.
     """
-    # if postgres_url is None:
-        # postgres_url = postgres_db_url
-        
-    # logger.debug(f"Semester is {semester}")
     try:
-        # Connect to PostgreSQL
-        # engine = create_engine(postgres_url)
-        table_name = f"{semester.lower()}_{batch_year}"
+        from extensions import db
+        from models.schema import AcademicResult, StudentAuth, Subject
 
-        # Use pandas to safely query
-        query = text(f'SELECT * FROM "{table_name}" WHERE "student_usn" = :usn')
-        df = pd.read_sql(query, engine, params={"usn": usn})
-
-        # Return None if no data found
-        if df.empty:
+        # Fetch student base
+        student_rec = StudentAuth.query.filter_by(usn=usn).first()
+        if not student_rec:
             return None
 
-        # Extract the first row (one student per USN expected)
-        student_data = df.iloc[0]
+        # Fetch results joined with subjects for the semester
+        results = (
+            db.session.query(AcademicResult, Subject)
+            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
+            .filter(
+                AcademicResult.student_id == student_rec.id,
+                Subject.semester == semester.lower().strip(),
+            )
+            .all()
+        )
 
-        # Extract marks and credits
+        if not results:
+            return None
+
         subject_code = []
+        subject_name = []
         ia_marks = []
         see_marks = []
         credits = []
 
-        for col in df.columns[2:]: 
-            # val = student_data[col]
-            # if val is None:
-                # logger.debug(f"Missing value for {col}, USN {usn}") # Skip first two columns: (0: USN, 1: Name)
-            if "INTERNALS" in col:
-                # logger.debug(safe_int(student_data[col]))
-                # logger.debug(student_data[col])
-                ia_marks.append(safe_int(student_data[col]))
-                subject_code.append(col.split("_")[0])
-            elif "EXTERNALS" in col:
-                see_marks.append(safe_int(student_data[col]))
-            elif "CREDITS" in col:
-                credits.append(safe_int(student_data[col]))
+        for res, sub in results:
+            subject_code.append(sub.subject_code)
+            subject_name.append(
+                sub.subject_name
+                or sem_subjects.get(semester, {}).get(sub.subject_code, "Unknown")
+            )
+            ia_marks.append(res.ia_marks or 0)
+            see_marks.append(res.see_marks or 0)
+            credits.append(sub.credits or 0)
 
         return {
-            "name": student_data.get("student_name", "Unknown"),
-            "usn": student_data["student_usn"],
+            "name": student_rec.name or "Unknown",
+            "usn": student_rec.usn,
             "subject_code": subject_code,
-            "subject_name": [
-                sem_subjects[semester].get(code, "unknown_subject")
-                for code in subject_code
-            ],
+            "subject_name": subject_name,
             "ia_marks": ia_marks,
             "see_marks": see_marks,
             "credits": credits,
@@ -166,13 +161,13 @@ def fetch_student_data(usn, semester, batch_year, engine):
         logger.debug(f"Database error occurred in fetch_student_data: {e}")
         return None
 
-   
-if(__name__) == ("__main__"):
-        #test the above function
-    '''student_data = fetch_student_data('1JS22CS001')  # Replace with a valid USN
+
+if (__name__) == ("__main__"):
+    # test the above function
+    """student_data = fetch_student_data('1JS22CS001')  # Replace with a valid USN
     if student_data:
         logger.debug(student_data)
     else:
-        logger.debug("No data found for the specified USN.")'''
-    
+        logger.debug("No data found for the specified USN.")"""
+
     # logger.debug(fetch_student_data("1JS22CS006","sem1"))
