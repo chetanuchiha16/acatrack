@@ -82,9 +82,11 @@ def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=
 
 
 
-def serialize_message_with_read_status(db, msg):
+def serialize_message_with_read_status(db, msg, batch_year=None):
     students = []
     for s in msg.mentor.students:  # StudentAuth objects
+        if batch_year and str(s.batch_year) != str(batch_year):
+            continue
         status = (
             db.session.query(StudentMessageStatus)
             .filter_by(student_id=s.id, msg_id=msg.id)
@@ -109,6 +111,8 @@ def get_mentor_students(mentor_id):
             return jsonify({"error": "Mentor not found"}), 404
         students = []
         for s in mentor.students:  # direct students now
+            if str(s.batch_year) != str(batch_year):
+                continue
             students.append({
                 "usn": s.usn,
                 "name": s.name,
@@ -129,7 +133,7 @@ def get_messages(mentor_id):
             .order_by(MentorMessage.id.desc())
             .all()
         )
-        return jsonify([serialize_message_with_read_status(db, m) for m in msgs])
+        return jsonify([serialize_message_with_read_status(db, m, batch_year) for m in msgs])
 
 
 @mentor_email_bp.route("/mentor/<int:mentor_id>/messages", methods=["POST"])
@@ -146,7 +150,7 @@ def create_message(mentor_id):
     batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         msg = save_message(mentor_id, usn, recipient_type, subject, message)
-        result = serialize_message_with_read_status(db, msg)   # ✅ pass db
+        result = serialize_message_with_read_status(db, msg, batch_year)   # ✅ pass db
 
     return jsonify(result), 200
 
@@ -226,6 +230,9 @@ def send_email_all(mentor_id):
 
         results = []
         for s in mentor.students:  # direct now
+            if str(s.batch_year) != str(batch_year):
+                continue
+
             if recipient_type == "parent":
                 to_email = getattr(s.parent_account, "email", None)
                 name = getattr(s.parent_account, "name", None) or s.name
