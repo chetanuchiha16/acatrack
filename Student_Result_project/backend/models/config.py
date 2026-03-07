@@ -1,4 +1,5 @@
 import os
+from settings import settings
 
 class Config:
     # Database
@@ -6,10 +7,10 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Flask secret key
-    SECRET_KEY = os.environ.get("SECRET_KEY")
+    SECRET_KEY = settings.secret_key
 
     # Admin secret (for /admin endpoints)
-    ADMIN_SECRET = os.environ.get("ADMIN_SECRET")  # fallback for dev
+    ADMIN_SECRET = settings.admin_secret  # fallback for dev
 
 
     # Session configuration

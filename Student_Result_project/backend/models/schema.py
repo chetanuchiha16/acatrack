@@ -1,16 +1,17 @@
 import os
 from datetime import datetime, timezone
+from settings import settings
 
 from extensions import db
 from sqlalchemy.dialects.postgresql import JSON
 
 
 def default_email():
-    return os.getenv("C_EMAIL")
+    return settings.c_email
 
 
 def default_number():
-    return os.getenv("DEFAULT_NUMBER")
+    return settings.default_number
 
 
 # ==========================================
