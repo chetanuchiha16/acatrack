@@ -1,8 +1,7 @@
-import os
 from datetime import datetime, timezone
-from settings import settings
 
 from extensions import db
+from settings import settings
 from sqlalchemy.dialects.postgresql import JSON
 
 
@@ -30,7 +29,7 @@ class Subject(db.Model):
 class AcademicResult(db.Model):
     __tablename__ = "academic_results"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    
+
     # FIX: Changed to Integer and named student_id
     student_id = db.Column(
         db.Integer, db.ForeignKey("students.id", ondelete="CASCADE"), nullable=False
@@ -52,6 +51,7 @@ class AcademicResult(db.Model):
     )
 
     subject = db.relationship("Subject", backref=db.backref("results", lazy=True))
+
 
 # ==========================================
 # USER & AUTH MODELS (Normalized)
@@ -166,7 +166,7 @@ class MentorMessage(db.Model):
     __tablename__ = "mentor_messages"
     id = db.Column(db.Integer, primary_key=True)
     mentor_id = db.Column(db.Integer, db.ForeignKey("mentors.id", ondelete="CASCADE"))
-    
+
     # FIX: Changed to Integer and named student_id
     student_id = db.Column(
         db.Integer, db.ForeignKey("students.id", ondelete="CASCADE"), nullable=True
@@ -177,8 +177,12 @@ class MentorMessage(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     email_failed = db.Column(db.Boolean, default=False)
 
-    mentor = db.relationship("Mentor", backref=db.backref("messages", lazy=True, cascade="all, delete"))
-    student = db.relationship("StudentAuth", backref=db.backref("messages", lazy=True, cascade="all, delete"))
+    mentor = db.relationship(
+        "Mentor", backref=db.backref("messages", lazy=True, cascade="all, delete")
+    )
+    student = db.relationship(
+        "StudentAuth", backref=db.backref("messages", lazy=True, cascade="all, delete")
+    )
 
     def to_dict(self):
         dt = self.created_at
@@ -197,19 +201,18 @@ class MentorMessage(db.Model):
             "email_failed": self.email_failed,
         }
 
+
 class StudentMessageStatus(db.Model):
     __tablename__ = "student_message_status"
     id = db.Column(db.Integer, primary_key=True)
-    
+
     # FIX: Changed to Integer and named student_id
-    student_id = db.Column(
-        db.Integer, db.ForeignKey("students.id", ondelete="CASCADE")
-    )
+    student_id = db.Column(db.Integer, db.ForeignKey("students.id", ondelete="CASCADE"))
     msg_id = db.Column(
         db.Integer, db.ForeignKey("mentor_messages.id", ondelete="CASCADE")
     )
     read = db.Column(db.Boolean, default=False)
-    
+
     # FIX: Update constraint
     __table_args__ = (
         db.UniqueConstraint("student_id", "msg_id", name="uq_student_msg"),
