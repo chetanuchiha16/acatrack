@@ -19,7 +19,7 @@ mentor_bp = Blueprint('mentor', __name__)
 def get_mentor_students():
     mentor_id = request.args.get("mentor_id")
     semester = request.args.get("semester")
-    batch_year = get_batch_year()
+    batch_year = request.args.get("batch_year") or get_batch_year()
     engine = create_engine(postgres_db_url)
 
     if not mentor_id or not semester:
@@ -101,7 +101,7 @@ def download_mentee_report(filename):
 def get_mentee_chart():
     usn = request.args.get("usn")
     semester = request.args.get("semester")
-    batch_year = get_batch_year()
+    batch_year = request.args.get("batch_year") or get_batch_year()
     engine = create_engine(postgres_db_url)
 
     if not usn or not semester:

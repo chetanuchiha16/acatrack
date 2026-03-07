@@ -12,8 +12,17 @@ export default function OverallResults({ batchYear }) {
 
     const semesterOptions = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6"];
 
+    useEffect(() => {
+        if (semester && batchYear) {
+            fetchData();
+        } else {
+            setData([]);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [batchYear, semester, view]);
+
     const fetchData = async () => {
-        if (!semester) return;
+        if (!semester || !batchYear) return;
         let url = `${API_BASE}/auth/Staff/overall_res?semester=${semester}&batch_year=${batchYear}`;
         if (view === "toppers") url += "&show_toppers=true";
         if (view === "failed") url += "&show_failed=true";

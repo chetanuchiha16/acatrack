@@ -1,16 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BarChart3, Users, CalendarDays, FileText } from "lucide-react";
 import MentorResults from "./MentorResults";
 import MentorSendEmails from "./MentorSendEmails";
 import { useLocation, useParams } from "react-router-dom";
 import MentorMeetings from "./MentorMeetings";
 import MentorRecords from "./MentorRecord"; // adjust the path if needed
+import API_BASE from "./config";
+import axios from "axios";
 
 export default function MentorDashboard() {
     const [activeTab, setActiveTab] = useState("results");
+    const [batches, setBatches] = useState([]);
+    const [batchYear, setBatchYear] = useState("");
     const [date, setDate] = useState("");
     let { mentor_id } = useLocation().state || {};
     let { finalId } = useParams();
+
+    useEffect(() => {
+        axios.get(`${API_BASE}/batches`)
+            .then((res) => {
+                setBatches(res.data.batches);
+                if (res.data.batches && res.data.batches.length > 0) {
+                    setBatchYear(res.data.batches[res.data.batches.length - 1]);
+                }
+            })
+            .catch(() => setBatches([]));
+    }, []);
 
     const tabs = [
         {
@@ -37,9 +52,25 @@ export default function MentorDashboard() {
 
     return (
         <div className="p-4 md:p-6 space-y-6">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center">
-                Mentor Dashboard
-            </h1>
+            <div className="flex flex-col sm:flex-row items-center justify-between p-2">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center">
+                    Mentor Dashboard
+                </h1>
+
+                <div className="flex items-center gap-3 mt-4 sm:mt-0">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Active Batch:</span>
+                    <select
+                        value={batchYear}
+                        onChange={(e) => setBatchYear(e.target.value)}
+                        className="p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none w-32"
+                    >
+                        <option value="">Select</option>
+                        {batches.map(year => (
+                            <option key={year} value={year}>{year}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
 
             <div className="w-[95%] mx-auto h-[2px] bg-gray-300 my-4 rounded shadow-sm"></div>
 
@@ -64,23 +95,30 @@ export default function MentorDashboard() {
 
                 {/* Content */}
                 <div className="p-4 mt-12 rounded-lg bg-gray-50 dark:bg-gray-900">
-                    {activeTab === "results" && (
-                        <MentorResults mentor_id={mentor_id} />
-                    )}
+                    {batchYear ? (
+                        <>
+                            {activeTab === "results" && (
+                                <MentorResults mentor_id={mentor_id} batchYear={batchYear} />
+                            )}
 
-                    {activeTab === "communication" && (
-                        <MentorSendEmails mentorId={mentor_id} />
-                    )}
+                            {activeTab === "communication" && (
+                                <MentorSendEmails mentorId={mentor_id} batchYear={batchYear} />
+                            )}
 
-                    {activeTab === "meetings" && (
-                        <div className="flex flex-col gap-3">
-                            <MentorMeetings mentorId={mentor_id} />
+                            {activeTab === "meetings" && (
+                                <div className="flex flex-col gap-3">
+                                    <MentorMeetings mentorId={mentor_id} batchYear={batchYear} />
+                                </div>
+                            )}
+
+                            {activeTab === "records" && 
+                            <MentorRecords mentor_id={mentor_id} batchYear={batchYear} />}
+                        </>
+                    ) : (
+                        <div className="text-center text-gray-500 py-10">
+                            Please select a batch to view mentor details.
                         </div>
                     )}
-
-                    {activeTab === "records" && 
-                    <MentorRecords mentor_id={mentor_id} />}
-
                 </div>
             </div>
         </div>
