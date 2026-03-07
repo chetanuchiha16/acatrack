@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import API_BASE from "./config";
-
-export default function MentorRecords({ mentor_id }) {
+export default function MentorRecords({ mentor_id, batchYear }) {
     const [pdfs, setPdfs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -13,7 +12,7 @@ export default function MentorRecords({ mentor_id }) {
         const fetchPdfs = async () => {
             try {
                 const res = await axios.get(
-                    `${API_BASE}/mentee/mentor/${mentor_id}/pdfs`
+                    `${API_BASE}/mentee/mentor/${mentor_id}/pdfs?batch_year=${batchYear}`
                 );
                 setPdfs(res.data);
             } catch (err) {
@@ -22,14 +21,14 @@ export default function MentorRecords({ mentor_id }) {
                 setLoading(false);
             }
         };
-        fetchPdfs();
-    }, [mentor_id]);
+        if (mentor_id && batchYear) fetchPdfs();
+    }, [mentor_id, batchYear]);
 
     // Fetch signed file URL before viewing/downloading
     const fetchPdfUrl = async (usn) => {
         try {
             const res = await axios.get(
-                `${API_BASE}/mentee/mentor/${mentor_id}/download/${usn}`
+                `${API_BASE}/mentee/mentor/${mentor_id}/download/${usn}?batch_year=${batchYear}`
             );
             setPdfUrl(res.data.file_url);
         } catch {
@@ -72,7 +71,7 @@ export default function MentorRecords({ mentor_id }) {
                                 <button
                                     onClick={async () => {
                                         const res = await axios.get(
-                                            `${API_BASE}/mentee/mentor/${mentor_id}/download/${pdf.usn}`
+                                            `${API_BASE}/mentee/mentor/${mentor_id}/download/${pdf.usn}?batch_year=${batchYear}`
                                         );
                                         window.open(
                                             res.data.file_url,

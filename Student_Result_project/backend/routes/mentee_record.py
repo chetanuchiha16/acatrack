@@ -146,7 +146,11 @@ def download(filename):
 @mentee_record_bp.route('/mentor/<int:mentor_id>/pdfs', methods=['GET'])
 def list_mentor_pdfs(mentor_id):
     try:
-        mentees = StudentAuth.query.filter_by(mentor_id=mentor_id).all()
+        batch_year = request.args.get("batch_year") or get_batch_year()
+        mentees = StudentAuth.query.filter_by(mentor_id=mentor_id)
+        if batch_year:
+            mentees = mentees.filter_by(batch_year=batch_year)
+        mentees = mentees.all()
 
         # List all PDFs in "pdfs" folder. Response is a plain list.
         response = supabase.storage.from_(SUPABASE_BUCKET).list("pdfs", {"limit": 1000})

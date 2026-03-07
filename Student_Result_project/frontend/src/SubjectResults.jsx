@@ -7,8 +7,17 @@ export default function SubjectResults({ batchYear }) {
     const [subject, setSubject] = useState("");
     const [data, setData] = useState(null);
 
+    useEffect(() => {
+        if (semester && subject && batchYear) {
+            fetchData();
+        } else {
+            setData(null);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [semester, subject, batchYear]);
+
     const fetchData = async () => {
-        if (!semester || !subject) return;
+        if (!semester || !subject || !batchYear) return;
         const res = await fetchWithAuth(
             `${API_BASE}/auth/Staff/sub_res?semester=${semester}&subject=${subject}&batch_year=${batchYear}`,
             {
