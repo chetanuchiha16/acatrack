@@ -110,7 +110,7 @@ def get_mentee_chart():
     try:
         with bm.session_scope(batch_year) as db:
             # Create Student object
-            student = Student(usn=usn, semester=semester, batch_year=batch_year, engine=engine)
+            student = Student(usn=usn, semester=semester, batch_year=batch_year)
 
             # Generate figure in memory
             fig = student.plot_subject_marks()

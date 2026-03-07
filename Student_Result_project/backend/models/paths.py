@@ -55,12 +55,3 @@ API_BASE="http://localhost:5000"
 # logger.debug(base_dir)
 # logger.debug(f"[DEBUG] Using DB path: {base_dir}")
 # logger.debug(f"[DEBUG] Exists? {Path(excel_path).exists()}")
-
-from sqlalchemy import create_engine
-engine = create_engine(postgres_db_url)
-
-try:
-    with engine.connect() as connection:
-        logger.debug("Connection successful!")
-except Exception as e:
-    logger.debug(f"Failed to connect: {e}")

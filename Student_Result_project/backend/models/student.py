@@ -7,7 +7,7 @@ logger = get_logger(__name__)
 
 
 class Student:
-    def __init__(self, usn, semester, batch_year, engine=None, preloaded_data=None):
+    def __init__(self, usn, semester, batch_year, preloaded_data=None):
         """
         Load student information using SQLAlchemy from normalized tables.
         Keeps the exact logic and attributes for frontend compatibility.

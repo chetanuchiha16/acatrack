@@ -6,7 +6,6 @@ from logger_config import get_logger
 from models import Student
 from models.helpers import get_batch_year
 from models.paths import pdf_dir, postgres_db_url
-from sqlalchemy import create_engine
 from visuals import create_student_report
 
 logger = get_logger(__name__)
@@ -63,8 +62,7 @@ def get_student_chart():
     semester = request.args.get("semester")
     batch_year = get_batch_year()
 
-    engine = create_engine(postgres_db_url)
-    student = Student(usn=usn, semester=semester, batch_year=batch_year, engine=engine)
+    student = Student(usn=usn, semester=semester, batch_year=batch_year)
 
     # Get Figure from Student module
     fig = student.plot_subject_marks()
