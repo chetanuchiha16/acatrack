@@ -8,9 +8,16 @@ student_email_bp = Blueprint("student_email", __name__)
 from models.batch_manager import BatchManager, bm
 
 # ✅ Utility to serialize MentorMessage with required fields
-def serialize_message(msg, student):
-    status = StudentMessageStatus.query.filter_by(student_id=student.id, msg_id=msg.id).first()
-    mentor = Mentor.query.filter_by(id=msg.mentor_id).first() if hasattr(msg, "mentor_id") else None
+def serialize_message(msg, student, status_map=None, mentor_map=None):
+    if status_map is not None:
+        status = status_map.get(msg.id)
+    else:
+        status = StudentMessageStatus.query.filter_by(student_id=student.id, msg_id=msg.id).first()
+        
+    if mentor_map is not None:
+        mentor = mentor_map.get(getattr(msg, "mentor_id", None))
+    else:
+        mentor = Mentor.query.filter_by(id=msg.mentor_id).first() if hasattr(msg, "mentor_id") else None
 
     dt = msg.created_at
     if dt and dt.tzinfo is None:
@@ -43,7 +50,22 @@ def get_student_messages(usn):
             .all()
         )
 
-        results = [serialize_message(m, student) for m in msgs]
+        if not msgs:
+            return jsonify([])
+
+        msg_ids = [m.id for m in msgs]
+        mentor_ids = list(set([m.mentor_id for m in msgs if hasattr(m, "mentor_id") and m.mentor_id is not None]))
+
+        statuses = StudentMessageStatus.query.filter(
+            StudentMessageStatus.student_id == student.id,
+            StudentMessageStatus.msg_id.in_(msg_ids)
+        ).all()
+        status_map = {s.msg_id: s for s in statuses}
+
+        mentors = Mentor.query.filter(Mentor.id.in_(mentor_ids)).all() if mentor_ids else []
+        mentor_map = {m.id: m for m in mentors}
+
+        results = [serialize_message(m, student, status_map, mentor_map) for m in msgs]
         return jsonify(results)
 
 

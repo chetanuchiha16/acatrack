@@ -118,10 +118,13 @@ def generate_accounts():
 
     with bm.session_scope(batch_year) as db:
         students = _fetch_source_rows(batch_year)
+        # Pre-fetch all students in batch to avoid N+1 queries
+        all_students = StudentAuth.query.filter_by(batch_year=batch_year).all()
+        student_usn_map = {s.usn: s for s in all_students}
+
         # --- Delete existing passwords for 'all' mode
         if mode == "all":
-            students_to_reset = StudentAuth.query.filter_by(batch_year=batch_year).all()
-            for s in students_to_reset:
+            for s in all_students:
                 s.password = None
                 if s.parent_account:
                     s.parent_account.password = None
@@ -136,7 +139,7 @@ def generate_accounts():
             usn = str(usn).strip()
             name = (name or "").strip()
             # --- Skip if mode is 'missing' and password exists
-            existing_student = StudentAuth.query.filter_by(usn=usn).first()
+            existing_student = student_usn_map.get(usn)
             if not existing_student:
                 continue
                 
@@ -187,13 +190,16 @@ def generate_accounts():
 
         if mentor_excel_path and os.path.exists(mentor_excel_path):
             df = pd.read_excel(mentor_excel_path)
+            all_mentors = Mentor.query.all()
+            mentor_name_map = {m.name: m for m in all_mentors}
+
             for _, row in df.iterrows():
                 student_usn = str(row.get("student_usn", "")).strip()
                 mentor_name = str(row.get("Mentor_Name", "")).strip()
                 if not student_usn or not mentor_name:
                     continue
-                student = StudentAuth.query.filter_by(usn=student_usn).first()
-                mentor = Mentor.query.filter_by(name=mentor_name).first()
+                student = student_usn_map.get(student_usn)
+                mentor = mentor_name_map.get(mentor_name)
                 if student and mentor:
                     student.mentor_id = mentor.id
 
@@ -273,11 +279,16 @@ def upload_emails():
     count_updated = 0
 
     with bm.session_scope(batch_year) as db:
+        # Pre-fetch existing students to avoid N+1
+        usns_in_df = [str(usn).strip() for usn in df["student_usn"] if str(usn).strip()]
+        existing_students = StudentAuth.query.filter(StudentAuth.usn.in_(usns_in_df)).all()
+        student_map = {s.usn: s for s in existing_students}
+
         for _, row in df.iterrows():
             usn = str(row["student_usn"]).strip()
             if not usn:
                 continue
-            student = StudentAuth.query.filter_by(usn=usn).first()
+            student = student_map.get(usn)
 
             if student:
                 # update existing student record
@@ -393,6 +404,18 @@ def upload_mentors():
     out.write("username,name,plain_password,password_hash,role,linked_student\n")  # CSV header
 
     with bm.session_scope(batch_year) as db:
+        # Pre-fetch students, mentors and teachers to avoid N+1
+        usns_in_df = [str(usn).strip() for usn in df["student_usn"] if str(usn).strip()]
+        existing_students = StudentAuth.query.filter(StudentAuth.usn.in_(usns_in_df)).all()
+        student_map = {s.usn: s for s in existing_students}
+        
+        mentor_names_in_df = list(set([str(name).strip() for name in df["Mentor_Name"] if str(name).strip()]))
+        existing_mentors = Mentor.query.filter(Mentor.name.in_(mentor_names_in_df)).all()
+        mentor_cache = {m.name: m for m in existing_mentors}
+        
+        existing_teachers = Teacher.query.filter(Teacher.name.in_(mentor_names_in_df)).all()
+        teacher_cache = {t.name: t for t in existing_teachers}
+
         for _, row in df.iterrows():
             mentor_name = str(row["Mentor_Name"]).strip()
             student_usn = str(row["student_usn"]).strip()
@@ -401,14 +424,13 @@ def upload_mentors():
 
             mentor = mentor_cache.get(mentor_name)
             if mentor is None:
-                mentor = Mentor.query.filter_by(name=mentor_name).first()
-                if mentor is None:
-                    mentor = Mentor(name=mentor_name)
-                    db.session.add(mentor)
-                    db.session.flush()
-                    count_mentors += 1
+                # Still check db just in case, but unlikely since we pre-fetched all in df
+                mentor = Mentor(name=mentor_name)
+                db.session.add(mentor)
+                db.session.flush()
+                count_mentors += 1
 
-                teacher = Teacher.query.filter_by(name=mentor_name).first()
+                teacher = teacher_cache.get(mentor_name)
                 if not teacher:
                     username = _unique_teacher_username()
                     plain_pw = f"{_safe_seed(mentor_name.split(' ', 1)[-1])}{username[-3:]}"
@@ -420,15 +442,16 @@ def upload_mentors():
                         mentor_id=mentor.id
                     )
                     db.session.add(teacher)
+                    teacher_cache[mentor_name] = teacher
                     out.write(f"{username},{mentor_name},{plain_pw},{pw_hash},teacher,\n")
                 mentor_cache[mentor_name] = mentor
 
-            student = StudentAuth.query.filter_by(usn=student_usn).first()
+            student = student_map.get(student_usn)
             if student:
                 student.mentor_id = mentor.id
                 count_mappings += 1
 
-            teacher = Teacher.query.filter_by(name=mentor_name).first()
+            teacher = teacher_cache.get(mentor_name)
             if teacher and teacher.mentor_id is None:
                 teacher.mentor_id = mentor.id
 
