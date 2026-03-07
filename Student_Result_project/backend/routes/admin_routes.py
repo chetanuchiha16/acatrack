@@ -10,27 +10,26 @@ FEATURES
 - Validates required columns and inserts new rows into StudentAuth table
 - Upload mentor Excel; validates and inserts into Mentor  tables
 """
+
 from __future__ import annotations
 
-from werkzeug.security import generate_password_hash  # add this import
 import io
 import os
 import random
 import sqlite3
-from typing import List, Tuple
-from sqlalchemy import text, inspect, delete
-import pandas as pd
-from flask import Blueprint, current_app, jsonify, request, send_file
-from werkzeug.utils import secure_filename
-from app_init import bcrypt
-from models import Teacher, StudentAuth, Mentor, ParentAuth, db
-from models.paths import email_excel_path, mentor_excel_path, get_db_path, excel_dir
-from models.batch_manager import BatchManager, bm
-from pathlib import Path
-from models.fetch import SEMESTERS
 import tempfile
-from models.cloud_utils import upload_excel_to_supabase, download_excel_from_supabase
+from typing import Tuple
+
+import pandas as pd
+from app_init import bcrypt
+from flask import Blueprint, current_app, jsonify, request, send_file
 from logger_config import get_logger
+from models import Mentor, ParentAuth, StudentAuth, Teacher
+from models.batch_manager import bm
+from models.cloud_utils import download_excel_from_supabase, upload_excel_to_supabase
+from models.paths import get_db_path
+from settings import settings
+from werkzeug.utils import secure_filename
 
 logger = get_logger(__name__)
 
@@ -44,7 +43,7 @@ DEFAULT_ADMIN_SECRET = "supersecretkey"
 # ---------- Helpers ----------
 def _get_admin_secret() -> str:
     return (
-        os.environ.get("ADMIN_SECRET")
+        settings.admin_secret
         or current_app.config.get("ADMIN_SECRET")
         or DEFAULT_ADMIN_SECRET
     )
@@ -57,7 +56,7 @@ def _check_secret(req) -> bool:
 
 def _safe_seed(text: str | None) -> str:
     base = (text or "user").strip()
-    return (base[:4] if len(base) >= 4 else base.ljust(4, "0"))
+    return base[:4] if len(base) >= 4 else base.ljust(4, "0")
 
 
 def _connect_sqlite(batch_year: int) -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
@@ -66,7 +65,7 @@ def _connect_sqlite(batch_year: int) -> Tuple[sqlite3.Connection, sqlite3.Cursor
     return conn, cur
 
 
-def _fetch_source_rows(batch_year: int) -> list[tuple[str,str]]:
+def _fetch_source_rows(batch_year: int) -> list[tuple[str, str]]:
     students_set = set()
     with bm.session_scope(batch_year) as db:
         students = StudentAuth.query.filter_by(batch_year=batch_year).all()
@@ -90,19 +89,22 @@ def health():
         return jsonify({"status": "unauthorized"}), 401
     return jsonify({"status": "ok"})
 
+
 @admin_bp.route("/list-batches", methods=["GET"])
 def list_batches():
     """Return all existing batch years as JSON."""
     if not _check_secret(request):
         return jsonify({"error": "Unauthorized"}), 401
 
-    
     try:
-        batches = bm.list_batches()  # should return list of integers, e.g. [2022, 2023, 2024]
+        batches = (
+            bm.list_batches()
+        )  # should return list of integers, e.g. [2022, 2023, 2024]
     except Exception as e:
         return jsonify({"error": f"Failed to get batches: {e}"}), 500
 
     return jsonify({"batches": batches})
+
 
 @admin_bp.route("/generate-accounts", methods=["POST"])
 def generate_accounts():
@@ -118,10 +120,13 @@ def generate_accounts():
 
     with bm.session_scope(batch_year) as db:
         students = _fetch_source_rows(batch_year)
+        # Pre-fetch all students in batch to avoid N+1 queries
+        all_students = StudentAuth.query.filter_by(batch_year=batch_year).all()
+        student_usn_map = {s.usn: s for s in all_students}
+
         # --- Delete existing passwords for 'all' mode
         if mode == "all":
-            students_to_reset = StudentAuth.query.filter_by(batch_year=batch_year).all()
-            for s in students_to_reset:
+            for s in all_students:
                 s.password = None
                 if s.parent_account:
                     s.parent_account.password = None
@@ -136,31 +141,35 @@ def generate_accounts():
             usn = str(usn).strip()
             name = (name or "").strip()
             # --- Skip if mode is 'missing' and password exists
-            existing_student = StudentAuth.query.filter_by(usn=usn).first()
+            existing_student = student_usn_map.get(usn)
             if not existing_student:
                 continue
-                
+
             if mode == "missing" and existing_student.password:
                 continue
 
             with db.session.no_autoflush:
                 # --- Set student password
                 plain_student = f"{_safe_seed(name)}{usn[-3:]}"
-                pw_hash_student = bcrypt.generate_password_hash(password=plain_student).decode("utf-8")
-                
+                pw_hash_student = bcrypt.generate_password_hash(
+                    password=plain_student
+                ).decode("utf-8")
+
                 existing_student.password = pw_hash_student
                 if not existing_student.student_email:
-                    existing_student.student_email = os.getenv("C_EMAIL")
+                    existing_student.student_email = settings.c_email
                 if not existing_student.student_phno:
-                    existing_student.student_phno = os.getenv("DEFAULT_NUMBER")
-                    
+                    existing_student.student_phno = settings.default_number
+
                 out.write(f"{usn},{name},{plain_student},{pw_hash_student},student,\n")
 
                 # --- Create or Update parent
                 parent_username = f"{usn}_parent"
                 plain_parent = "default123"
-                pw_hash_parent = bcrypt.generate_password_hash(password=plain_parent).decode("utf-8")
-                
+                pw_hash_parent = bcrypt.generate_password_hash(
+                    password=plain_parent
+                ).decode("utf-8")
+
                 if existing_student.parent_account:
                     parent = existing_student.parent_account
                     parent.password = pw_hash_parent
@@ -170,30 +179,39 @@ def generate_accounts():
                         password=pw_hash_parent,
                         student=existing_student,
                         name=f"Parent of {name}",
-                        email=os.getenv("C_EMAIL"),
-                        phone="123456789"
+                        email=settings.c_email,
+                        phone="123456789",
                     )
                     db.session.add(parent)
-                out.write(f"{parent_username},Parent of {name},{plain_parent},{pw_hash_parent},parent,{usn}\n")
+                out.write(
+                    f"{parent_username},Parent of {name},{plain_parent},{pw_hash_parent},parent,{usn}\n"
+                )
 
         # --- Assign mentors from Excel in Supabase (using new pattern)
         excel_folder = f"mentors/{batch_year}"
         excel_filename = f"mentors_{batch_year}.xlsx"
         mentor_excel_path = None
         try:
-            mentor_excel_path = download_excel_from_supabase(excel_filename, excel_folder)
+            mentor_excel_path = download_excel_from_supabase(
+                excel_filename, excel_folder
+            )
         except Exception as e:
-            logger.debug(f"No mentor excel found in Supabase for batch {batch_year}: {e}")
+            logger.debug(
+                f"No mentor excel found in Supabase for batch {batch_year}: {e}"
+            )
 
         if mentor_excel_path and os.path.exists(mentor_excel_path):
             df = pd.read_excel(mentor_excel_path)
+            all_mentors = Mentor.query.all()
+            mentor_name_map = {m.name: m for m in all_mentors}
+
             for _, row in df.iterrows():
                 student_usn = str(row.get("student_usn", "")).strip()
                 mentor_name = str(row.get("Mentor_Name", "")).strip()
                 if not student_usn or not mentor_name:
                     continue
-                student = StudentAuth.query.filter_by(usn=student_usn).first()
-                mentor = Mentor.query.filter_by(name=mentor_name).first()
+                student = student_usn_map.get(student_usn)
+                mentor = mentor_name_map.get(mentor_name)
                 if student and mentor:
                     student.mentor_id = mentor.id
 
@@ -209,19 +227,8 @@ def generate_accounts():
         )
 
 
-
-
-
-
-from flask import Blueprint, request, jsonify
-from werkzeug.utils import secure_filename
-import pandas as pd
-import tempfile
-import os
-from models.cloud_utils import upload_excel_to_supabase
-from logger_config import get_logger
-
 logger = get_logger(__name__)
+
 
 @admin_bp.route("/upload-emails", methods=["POST"])
 def upload_emails():
@@ -260,24 +267,37 @@ def upload_emails():
 
     # Load DataFrame
     try:
-        df = pd.read_excel(temp_upload_path) if ext == ".xlsx" else pd.read_csv(temp_upload_path)
+        df = (
+            pd.read_excel(temp_upload_path)
+            if ext == ".xlsx"
+            else pd.read_csv(temp_upload_path)
+        )
     except Exception as e:
         return jsonify({"error": f"Failed to read file: {e}"}), 400
 
     required_cols = ["student_usn", "student_name", "Parent_Email", "Student_Email"]
     missing = [c for c in required_cols if c not in df.columns]
     if missing:
-        return jsonify({"error": f"Missing required columns: {', '.join(missing)}"}), 400
+        return jsonify(
+            {"error": f"Missing required columns: {', '.join(missing)}"}
+        ), 400
 
     count_inserted = 0
     count_updated = 0
 
     with bm.session_scope(batch_year) as db:
+        # Pre-fetch existing students to avoid N+1
+        usns_in_df = [str(usn).strip() for usn in df["student_usn"] if str(usn).strip()]
+        existing_students = StudentAuth.query.filter(
+            StudentAuth.usn.in_(usns_in_df)
+        ).all()
+        student_map = {s.usn: s for s in existing_students}
+
         for _, row in df.iterrows():
             usn = str(row["student_usn"]).strip()
             if not usn:
                 continue
-            student = StudentAuth.query.filter_by(usn=usn).first()
+            student = student_map.get(usn)
 
             if student:
                 # update existing student record
@@ -287,17 +307,21 @@ def upload_emails():
                 # update parent (via relationship)
                 if student.parent_account:
                     student.parent_account.email = str(row["Parent_Email"]).strip()
-                    student.parent_account.phone = str(row.get("Parent_PHNO", "")).strip()
+                    student.parent_account.phone = str(
+                        row.get("Parent_PHNO", "")
+                    ).strip()
                 else:
                     parent_username = f"{student.usn}_parent"
                     plain_parent_pw = "default123"
-                    pw_hash = bcrypt.generate_password_hash(plain_parent_pw).decode("utf-8")
+                    pw_hash = bcrypt.generate_password_hash(plain_parent_pw).decode(
+                        "utf-8"
+                    )
                     parent = ParentAuth(
                         username=parent_username,
                         password=pw_hash,
                         email=str(row["Parent_Email"]).strip(),
                         phone=str(row.get("Parent_PHNO", "")).strip(),
-                        student=student
+                        student=student,
                     )
                     db.session.add(parent)
                 count_updated += 1
@@ -322,8 +346,10 @@ def upload_emails():
                     email=str(row["Parent_Email"]).strip(),
                     phone=str(row.get("Parent_PHNO", "")).strip(),
                     student=new_student,
-                    name=str(row.get("Parent_Name", f"Parent of {row['student_name']}")).strip(),
-                    relation=str(row.get("Parent_Relation", "Guardian")).strip()
+                    name=str(
+                        row.get("Parent_Name", f"Parent of {row['student_name']}")
+                    ).strip(),
+                    relation=str(row.get("Parent_Relation", "Guardian")).strip(),
                 )
                 db.session.add(new_parent)
                 count_inserted += 1
@@ -345,7 +371,9 @@ def upload_emails():
     }
     return jsonify(response)
 
+
 mentor_csv_cache = {}
+
 
 @admin_bp.route("/upload-mentors", methods=["POST"])
 def upload_mentors():
@@ -375,7 +403,9 @@ def upload_mentors():
         mentor_folder = f"mentors/{batch_year}"
         mentor_excel_name = f"mentors_{batch_year}.xlsx"
         try:
-            mentor_excel_url = upload_excel_to_supabase(tmpfile.name, mentor_excel_name, mentor_folder)
+            mentor_excel_url = upload_excel_to_supabase(
+                tmpfile.name, mentor_excel_name, mentor_folder
+            )
             logger.debug(f"Mentor Excel uploaded to Supabase: {mentor_excel_url}")
         except Exception as e:
             logger.error(f"Mentor Excel upload to Supabase failed: {e}")
@@ -390,9 +420,31 @@ def upload_mentors():
     count_mappings = 0
     mentor_cache = {}
     out = io.StringIO()
-    out.write("username,name,plain_password,password_hash,role,linked_student\n")  # CSV header
+    out.write(
+        "username,name,plain_password,password_hash,role,linked_student\n"
+    )  # CSV header
 
     with bm.session_scope(batch_year) as db:
+        # Pre-fetch students, mentors and teachers to avoid N+1
+        usns_in_df = [str(usn).strip() for usn in df["student_usn"] if str(usn).strip()]
+        existing_students = StudentAuth.query.filter(
+            StudentAuth.usn.in_(usns_in_df)
+        ).all()
+        student_map = {s.usn: s for s in existing_students}
+
+        mentor_names_in_df = list(
+            set([str(name).strip() for name in df["Mentor_Name"] if str(name).strip()])
+        )
+        existing_mentors = Mentor.query.filter(
+            Mentor.name.in_(mentor_names_in_df)
+        ).all()
+        mentor_cache = {m.name: m for m in existing_mentors}
+
+        existing_teachers = Teacher.query.filter(
+            Teacher.name.in_(mentor_names_in_df)
+        ).all()
+        teacher_cache = {t.name: t for t in existing_teachers}
+
         for _, row in df.iterrows():
             mentor_name = str(row["Mentor_Name"]).strip()
             student_usn = str(row["student_usn"]).strip()
@@ -401,34 +453,38 @@ def upload_mentors():
 
             mentor = mentor_cache.get(mentor_name)
             if mentor is None:
-                mentor = Mentor.query.filter_by(name=mentor_name).first()
-                if mentor is None:
-                    mentor = Mentor(name=mentor_name)
-                    db.session.add(mentor)
-                    db.session.flush()
-                    count_mentors += 1
+                # Still check db just in case, but unlikely since we pre-fetched all in df
+                mentor = Mentor(name=mentor_name)
+                db.session.add(mentor)
+                db.session.flush()
+                count_mentors += 1
 
-                teacher = Teacher.query.filter_by(name=mentor_name).first()
+                teacher = teacher_cache.get(mentor_name)
                 if not teacher:
                     username = _unique_teacher_username()
-                    plain_pw = f"{_safe_seed(mentor_name.split(' ', 1)[-1])}{username[-3:]}"
+                    plain_pw = (
+                        f"{_safe_seed(mentor_name.split(' ', 1)[-1])}{username[-3:]}"
+                    )
                     pw_hash = bcrypt.generate_password_hash(plain_pw).decode("utf-8")
                     teacher = Teacher(
                         username=username,
                         name=mentor_name,
                         password=pw_hash,
-                        mentor_id=mentor.id
+                        mentor_id=mentor.id,
                     )
                     db.session.add(teacher)
-                    out.write(f"{username},{mentor_name},{plain_pw},{pw_hash},teacher,\n")
+                    teacher_cache[mentor_name] = teacher
+                    out.write(
+                        f"{username},{mentor_name},{plain_pw},{pw_hash},teacher,\n"
+                    )
                 mentor_cache[mentor_name] = mentor
 
-            student = StudentAuth.query.filter_by(usn=student_usn).first()
+            student = student_map.get(student_usn)
             if student:
                 student.mentor_id = mentor.id
                 count_mappings += 1
 
-            teacher = Teacher.query.filter_by(name=mentor_name).first()
+            teacher = teacher_cache.get(mentor_name)
             if teacher and teacher.mentor_id is None:
                 teacher.mentor_id = mentor.id
 
@@ -442,7 +498,7 @@ def upload_mentors():
         "mentors_inserted": count_mentors,
         "mappings_inserted": count_mappings,
         "batch_year": batch_year,
-        "csv_download_url": f"/admin/download-teachers-csv?batch_year={batch_year}"
+        "csv_download_url": f"/admin/download-teachers-csv?batch_year={batch_year}",
     }
     if mentor_excel_url:
         response["mentor_excel_url"] = mentor_excel_url
@@ -450,23 +506,23 @@ def upload_mentors():
     return jsonify(response)
 
 
-
 @admin_bp.route("/download-teachers-csv", methods=["GET"])
 def download_teachers_csv():
     if not _check_secret(request):
         return jsonify({"error": "Unauthorized"}), 401
-    
+
     batch_year = int(request.args.get("batch_year", 0))
     csv_content = mentor_csv_cache.get(batch_year)
     if not csv_content:
         return jsonify({"error": "No CSV available, please re-upload mentors"}), 404
-    
+
     return send_file(
         io.BytesIO(csv_content.encode("utf-8")),
         mimetype="text/csv",
         as_attachment=True,
-        download_name=f"generated_teachers_batch_{batch_year}.csv"
+        download_name=f"generated_teachers_batch_{batch_year}.csv",
     )
+
 
 @admin_bp.route("/create-batch", methods=["POST"])
 def create_batch():
@@ -478,7 +534,6 @@ def create_batch():
         return jsonify({"error": "Missing batch_year"}), 400
     batch_year = int(batch_year)
 
-    
     if batch_year in bm.list_batches():
         return jsonify({"error": f"Batch {batch_year} already exists"}), 400
 
@@ -487,6 +542,7 @@ def create_batch():
         return jsonify({"status": "success", "batch_year": batch_year})
     except Exception as e:
         return jsonify({"error": f"Failed to create batch: {e}"}), 500
+
 
 @admin_bp.route("/refresh-batch", methods=["POST"])
 def refresh_batch():

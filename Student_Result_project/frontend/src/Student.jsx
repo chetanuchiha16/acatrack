@@ -14,11 +14,11 @@ export default function Student() {
     const navigate = useNavigate();
     const location = useLocation();
     const params = useParams();
-    const [view, setView] = useState("table");
+    const [view, setView] = useState("cards");
     // const { name: locName, id: locId, usn: locUsn, branch: locBranch } =
     //   location.state || {};
-    const [selectedTab, setSelectedTab] = useState("");
-    const [currentSem, setCurrentSem] = useState("");
+    const [selectedTab, setSelectedTab] = useState("result");
+    const [currentSem, setCurrentSem] = useState("sem1");
     const { user, studentData, loading } = useProtectedPage("Student");
     useEffect(() => {
         if (!user) return; // wait for auth
@@ -46,7 +46,7 @@ export default function Student() {
     const finalName = name;
     const finalUsn = id;
 
-    const sems = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6"];
+    const sems = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"];
 
     // onMessage(messaging, (payload) => {
     //     console.log("Message received. ", payload);

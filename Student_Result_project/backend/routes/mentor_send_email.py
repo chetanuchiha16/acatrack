@@ -43,7 +43,7 @@ def send_email(to_email, subject, body):
 # ---------------- Save Message ----------------
 # ---------------- Save Message ----------------
 def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=False):
-    batch_year = get_batch_year()
+    batch_year = request.args.get("batch_year") or get_batch_year()
     with bm.session_scope(batch_year) as db:
         mentor = Mentor.query.get(mentor_id)
         sender_info = f"\n\n--\nMessage sent by {mentor.name}"
@@ -84,19 +84,41 @@ def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=
 
 def serialize_message_with_read_status(db, msg, batch_year=None):
     students = []
+    
+    # 1. Filter students by batch year
+    valid_students = []
     for s in msg.mentor.students:  # StudentAuth objects
         if batch_year and str(s.batch_year) != str(batch_year):
             continue
-        status = (
-            db.session.query(StudentMessageStatus)
-            .filter_by(student_id=s.id, msg_id=msg.id)
-            .first()
+        valid_students.append(s)
+        
+    if not valid_students:
+        return {**msg.to_dict(), "read_status": []}
+        
+    # 2. Extract valid student IDs
+    student_ids = [s.id for s in valid_students]
+    
+    # 3. Bulk fetch all statuses for these students and this message in ONE query
+    statuses = (
+        db.session.query(StudentMessageStatus)
+        .filter(
+            StudentMessageStatus.msg_id == msg.id,
+            StudentMessageStatus.student_id.in_(student_ids)
         )
+        .all()
+    )
+    
+    # 4. Create an in-memory lookup dict {student_id: read_status_boolean}
+    status_map = {st.student_id: st.read for st in statuses}
+    
+    # 5. Build final result array
+    for s in valid_students:
         students.append({
             "usn": s.usn,
             "name": s.name,
-            "read": status.read if status else False
+            "read": status_map.get(s.id, False)
         })
+        
     return {**msg.to_dict(), "read_status": students}
 
 
@@ -104,7 +126,7 @@ def serialize_message_with_read_status(db, msg, batch_year=None):
 # ---------------- Mentor APIs ----------------
 @mentor_email_bp.route("/mentor/<int:mentor_id>/students", methods=["GET"])
 def get_mentor_students(mentor_id):
-    batch_year = get_batch_year()
+    batch_year = request.args.get("batch_year") or get_batch_year()
     with bm.session_scope(batch_year) as db:
         mentor = Mentor.query.get(mentor_id)
         if not mentor:
@@ -126,7 +148,7 @@ def get_mentor_students(mentor_id):
 
 @mentor_email_bp.route("/mentor/<int:mentor_id>/messages", methods=["GET"])
 def get_messages(mentor_id):
-    batch_year = get_batch_year()
+    batch_year = request.args.get("batch_year") or get_batch_year()
     with bm.session_scope(batch_year) as db:
         msgs = (
             MentorMessage.query.filter_by(mentor_id=mentor_id)
@@ -147,7 +169,7 @@ def create_message(mentor_id):
     if not subject or not message:
         return jsonify({"error": "Subject and message required"}), 400
 
-    batch_year = get_batch_year()
+    batch_year = request.args.get("batch_year") or get_batch_year()
     with bm.session_scope(batch_year) as db:
         msg = save_message(mentor_id, usn, recipient_type, subject, message)
         result = serialize_message_with_read_status(db, msg, batch_year)   # ✅ pass db
@@ -163,7 +185,7 @@ def send_email_student(mentor_id):
     recipient_type = data.get("recipientType", "student").lower()
     subject = data.get("subject")
     message = data.get("message")
-    batch_year = get_batch_year()
+    batch_year = request.args.get("batch_year") or get_batch_year()
     with bm.session_scope(batch_year) as db:
         student = StudentAuth.query.filter_by(usn=usn).first()
         if not student:
@@ -222,7 +244,7 @@ def send_email_all(mentor_id):
     recipient_type = data.get("recipientType", "student").lower()
     subject = data.get("subject")
     message = data.get("message")
-    batch_year = get_batch_year()
+    batch_year = request.args.get("batch_year") or get_batch_year()
     with bm.session_scope(batch_year) as db:
         mentor = Mentor.query.get(mentor_id)
         if not mentor:
@@ -257,7 +279,7 @@ def send_email_all(mentor_id):
 
 @mentor_email_bp.route("/mentor/<int:mentor_id>/messages/<int:msg_id>", methods=["DELETE"])
 def delete_message(mentor_id, msg_id):
-    batch_year = get_batch_year()
+    batch_year = request.args.get("batch_year") or get_batch_year()
     logger.debug(f"from del message {batch_year}")
     with bm.session_scope(batch_year) as db:
         all_msgs = MentorMessage.query.all()

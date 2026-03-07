@@ -9,7 +9,6 @@ from .chatbot import (
     predict_next_sgpa_with_confidence, build_placement_and_skill_advice,
     get_latest_semester, get_student_history, _calculate_backlogs
 )
-from sqlalchemy import create_engine
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -20,14 +19,15 @@ ai_bp = Blueprint("ai", __name__)
 def get_student_history_usn(usn, semesters):
     batch_year = get_batch_year()   
     sgpas = []
-    engine = create_engine(postgres_db_url)
+    max_sem = int(max([s[-1] for s in semesters])) if semesters else 6
+    students_dict = Student.get_all_semesters(usn=usn, batch_year=batch_year, max_sem=max_sem)
+
     for sem in semesters:
         try:
-            # db_path = get_db_path(batch_year)  # <-- resolves correct DB
-            s = Student(usn=usn, semester=sem, batch_year=batch_year, engine=engine)
-            s.calculate_sgpa()
-            if s.sgpa is not None:
-                sgpas.append((sem, s.sgpa))
+            if sem in students_dict:
+                s = students_dict[sem]
+                if getattr(s, 'sgpa', None) is not None:
+                    sgpas.append((sem, s.sgpa))
         except Exception:
             pass
     return sgpas
@@ -37,19 +37,21 @@ def get_student_history_usn(usn, semesters):
 def ai_summary():
     usn = request.args.get("usn")
     batch_year = get_batch_year()   
-    engine = create_engine(postgres_db_url)
     if not usn:
         return jsonify({"error": "USN is required"}), 400
 
     semesters_list = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6"]
     student_data = {"student_name": "", "semesters": {}}
 
+    students_dict = Student.get_all_semesters(usn=usn, batch_year=batch_year, max_sem=6)
+
     # Fetch all semesters
     for sem in semesters_list:
         try:
-            # db_path = get_db_path(batch_year)  # <-- resolves correct DB
-            s = Student(usn=usn, semester=sem, batch_year=batch_year,engine=engine)
-            if s.sgpa is None:
+            if sem not in students_dict:
+                continue
+            s = students_dict[sem]
+            if getattr(s, 'sgpa', None) is None:
                 continue
             student_data["student_name"] = s.name or ""
             def safe_list(val):
@@ -143,15 +145,14 @@ def ai_trend():
     usn = request.args.get("usn")
     batch_year = get_batch_year()   
     semesters_list = ["sem1","sem2","sem3","sem4","sem5","sem6"]
-    engine = create_engine(postgres_db_url)
     student_data = {"semesters": {}}
+    
+    students_dict = Student.get_all_semesters(usn=usn, batch_year=batch_year, max_sem=6)
+    
     for sem in semesters_list:
         try:
-            # db_path = get_db_path(batch_year)  # <-- resolves correct DB
-            s = Student(usn=usn, semester=sem, batch_year=batch_year,engine=engine)
-            if s.sgpa is None:
-                continue
-            student_data["semesters"][sem] = {"sgpa": s.sgpa}
+            if sem in students_dict and getattr(students_dict[sem], 'sgpa', None) is not None:
+                student_data["semesters"][sem] = {"sgpa": students_dict[sem].sgpa}
         except Exception:
             pass
 
@@ -225,13 +226,16 @@ def ai_profile():
     usn = request.args.get("usn")
     batch_year = get_batch_year()   
     semesters_list = ["sem1","sem2","sem3","sem4","sem5","sem6"]
-    engine = create_engine(postgres_db_url)
     student_data = {"student_name": "", "semesters": {}}
+    
+    students_dict = Student.get_all_semesters(usn=usn, batch_year=batch_year, max_sem=6)
+    
     for sem in semesters_list:
         try:
-            # db_path = get_db_path(batch_year)  # <-- resolves correct DB
-            s = Student(usn=usn, semester=sem, batch_year=batch_year,engine=engine)
-            if s.sgpa is None:
+            if sem not in students_dict:
+                continue
+            s = students_dict[sem]
+            if getattr(s, 'sgpa', None) is None:
                 continue
             student_data["student_name"] = s.name
             student_data["semesters"][sem] = {

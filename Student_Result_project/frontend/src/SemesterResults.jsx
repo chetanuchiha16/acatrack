@@ -11,9 +11,13 @@ export default function SemesterResults({ batchYear }) {
     const semesters = ["sem1", "sem2", "sem3", "sem4"];
 
     useEffect(() => {
-        fetchResults(semester);
+        if (semester && batchYear) {
+            fetchResults(semester);
+        } else {
+            setData(null);
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [semester]);
+    }, [semester, batchYear]);
 
     async function fetchResults(selected) {
         setLoading(true);
