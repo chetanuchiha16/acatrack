@@ -1,16 +1,19 @@
-# 📊💻 Student_Result_Project
+# 📊💻 Student_Result_Project (Legacy & Evolution)
 
-A collaborative student management system project integrating a React-based frontend with a Flask-powered backend. Built with modularity, teamwork, and practicality in mind.
+Originally developed as a collaborative student management system, this repository now serves as the **active solo continuation** of the project. I am currently refactoring the legacy architecture to improve scalability and performance.
 
 ---
 
-### 👥 Contributors
-
-* Chetan Kishor C G
-* Abhishek R
-* Dhanush Singh G
-* Adithya V
-
+### 🛠 Project Evolution
+* **Phase 1 (Collaborative):** Initial MVP build with the original team.
+* **Phase 2 (Solo Maintenance):** Active evolution focused on architectural integrity:
+    * **Database Normalization:** Redesigning schemas for better data integrity.
+    * **Performance Tuning:** Identifying and resolving **N+1 query issues**.
+    * **Resource Management:** Optimizing database engine usage to prevent connection pool exhaustion.
+    * **UI/UX Refinement:** Modernizing components for a smoother user experience.
+### 👥 Original Core Contributors (Legacy)
+* **Lead Maintainer:** Chetan Kishor C G
+* **Collaborators:** Abhishek R, Dhanush Singh G, Adithya V
 ---
 
 ### 📦 Tech Stack
@@ -78,8 +81,8 @@ Make sure the following are installed on your system:
 1. Run the backend server:
 ```bash
 cd backend  # or open terminal inside backend folder
-pip install -r requirements.txt           # to install all required dependencies
-python app.py
+uv sync         # to install all required dependencies
+uv run python app.py
 
 ```
 
@@ -106,6 +109,7 @@ npm run dev
 
 ---
 
-### 🤍 About the Project
+### 🤍 About the Project & Evolution
+This project began as a group assignment where teamwork, coding, and late-night fixes came together. Every file and every solution carries the shared effort of students learning the ropes of full-stack development together.
 
-This was a group assignment where teamwork, coding, and late-night fixes came together. Every file, every bug, and every solution carries the effort of students learning together.
+Current Status: While the foundation was built in collaboration with the original team, this repository is now being independently maintained and evolved by me. I am currently treating the original codebase as a "Legacy System"—refining the logic, squashing remaining bugs, and implementing better architecture to take the initial prototype to a professional standard.
