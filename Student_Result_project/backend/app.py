@@ -1,20 +1,16 @@
 # app.py
-import os
-
 import firebase_admin
 from app_init import create_app, db
-from dotenv import load_dotenv
 from firebase_admin import credentials
 from flask import jsonify
 from logger_config import get_logger
 from models.batch_manager import BatchManager
 from routes import register_routes
+from settings import settings
 from sqlalchemy import text
 
 logger = get_logger(__name__)
-
-load_dotenv()
-cred_path = os.environ.get("FIREBASE_CRED_PATH")
+cred_path = settings.firebase_cred_path
 if not cred_path:
     raise Exception("FIREBASE_CRED_PATH not set!")
 

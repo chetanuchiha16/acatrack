@@ -9,11 +9,8 @@ from models.data_prep import prepare_data as prep_data
 from models.fetch import SEMESTERS
 from models.paths import postgres_db_url
 from models.schema import StudentAuth  # Added to query distinct batches
-from dotenv import load_dotenv
 import os
 import sys
-env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.env'))
-load_dotenv(env_path)
 
 # Ensure the backend directory is in the path so imports work
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
