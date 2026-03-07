@@ -9,7 +9,6 @@ from .chatbot import (
     predict_next_sgpa_with_confidence, build_placement_and_skill_advice,
     get_latest_semester, get_student_history, _calculate_backlogs
 )
-from sqlalchemy import create_engine
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -20,11 +19,10 @@ ai_bp = Blueprint("ai", __name__)
 def get_student_history_usn(usn, semesters):
     batch_year = get_batch_year()   
     sgpas = []
-    engine = create_engine(postgres_db_url)
     for sem in semesters:
         try:
             # db_path = get_db_path(batch_year)  # <-- resolves correct DB
-            s = Student(usn=usn, semester=sem, batch_year=batch_year, engine=engine)
+            s = Student(usn=usn, semester=sem, batch_year=batch_year)
             s.calculate_sgpa()
             if s.sgpa is not None:
                 sgpas.append((sem, s.sgpa))
@@ -37,7 +35,6 @@ def get_student_history_usn(usn, semesters):
 def ai_summary():
     usn = request.args.get("usn")
     batch_year = get_batch_year()   
-    engine = create_engine(postgres_db_url)
     if not usn:
         return jsonify({"error": "USN is required"}), 400
 
@@ -48,7 +45,7 @@ def ai_summary():
     for sem in semesters_list:
         try:
             # db_path = get_db_path(batch_year)  # <-- resolves correct DB
-            s = Student(usn=usn, semester=sem, batch_year=batch_year,engine=engine)
+            s = Student(usn=usn, semester=sem, batch_year=batch_year)
             if s.sgpa is None:
                 continue
             student_data["student_name"] = s.name or ""
@@ -143,12 +140,12 @@ def ai_trend():
     usn = request.args.get("usn")
     batch_year = get_batch_year()   
     semesters_list = ["sem1","sem2","sem3","sem4","sem5","sem6"]
-    engine = create_engine(postgres_db_url)
+    semesters_list = ["sem1","sem2","sem3","sem4","sem5","sem6"]
     student_data = {"semesters": {}}
     for sem in semesters_list:
         try:
             # db_path = get_db_path(batch_year)  # <-- resolves correct DB
-            s = Student(usn=usn, semester=sem, batch_year=batch_year,engine=engine)
+            s = Student(usn=usn, semester=sem, batch_year=batch_year)
             if s.sgpa is None:
                 continue
             student_data["semesters"][sem] = {"sgpa": s.sgpa}
@@ -225,12 +222,12 @@ def ai_profile():
     usn = request.args.get("usn")
     batch_year = get_batch_year()   
     semesters_list = ["sem1","sem2","sem3","sem4","sem5","sem6"]
-    engine = create_engine(postgres_db_url)
+    semesters_list = ["sem1","sem2","sem3","sem4","sem5","sem6"]
     student_data = {"student_name": "", "semesters": {}}
     for sem in semesters_list:
         try:
             # db_path = get_db_path(batch_year)  # <-- resolves correct DB
-            s = Student(usn=usn, semester=sem, batch_year=batch_year,engine=engine)
+            s = Student(usn=usn, semester=sem, batch_year=batch_year)
             if s.sgpa is None:
                 continue
             student_data["student_name"] = s.name

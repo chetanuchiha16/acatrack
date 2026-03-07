@@ -19,8 +19,7 @@ import base64
 
 def get_student_result(usn: str, semester: str, batch_year: int):
     # Create DB engine and Student object
-    engine = create_engine(postgres_db_url)
-    student = Student(usn=usn, semester=semester, batch_year=batch_year, engine=engine)
+    student = Student(usn=usn, semester=semester, batch_year=batch_year)
 
     # Generate PDF entirely in memory
     pdf_bytes = create_student_report(student)  # returns bytes
