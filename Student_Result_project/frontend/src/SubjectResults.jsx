@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import API_BASE from "./config";
 import { semesterOptions, subjectMapping } from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
