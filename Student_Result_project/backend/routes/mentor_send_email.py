@@ -84,19 +84,41 @@ def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=
 
 def serialize_message_with_read_status(db, msg, batch_year=None):
     students = []
+    
+    # 1. Filter students by batch year
+    valid_students = []
     for s in msg.mentor.students:  # StudentAuth objects
         if batch_year and str(s.batch_year) != str(batch_year):
             continue
-        status = (
-            db.session.query(StudentMessageStatus)
-            .filter_by(student_id=s.id, msg_id=msg.id)
-            .first()
+        valid_students.append(s)
+        
+    if not valid_students:
+        return {**msg.to_dict(), "read_status": []}
+        
+    # 2. Extract valid student IDs
+    student_ids = [s.id for s in valid_students]
+    
+    # 3. Bulk fetch all statuses for these students and this message in ONE query
+    statuses = (
+        db.session.query(StudentMessageStatus)
+        .filter(
+            StudentMessageStatus.msg_id == msg.id,
+            StudentMessageStatus.student_id.in_(student_ids)
         )
+        .all()
+    )
+    
+    # 4. Create an in-memory lookup dict {student_id: read_status_boolean}
+    status_map = {st.student_id: st.read for st in statuses}
+    
+    # 5. Build final result array
+    for s in valid_students:
         students.append({
             "usn": s.usn,
             "name": s.name,
-            "read": status.read if status else False
+            "read": status_map.get(s.id, False)
         })
+        
     return {**msg.to_dict(), "read_status": students}
 
 
