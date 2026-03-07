@@ -14,11 +14,11 @@ export default function Student() {
     const navigate = useNavigate();
     const location = useLocation();
     const params = useParams();
-    const [view, setView] = useState("table");
+    const [view, setView] = useState("cards");
     // const { name: locName, id: locId, usn: locUsn, branch: locBranch } =
     //   location.state || {};
-    const [selectedTab, setSelectedTab] = useState("");
-    const [currentSem, setCurrentSem] = useState("");
+    const [selectedTab, setSelectedTab] = useState("result");
+    const [currentSem, setCurrentSem] = useState("sem1");
     const { user, studentData, loading } = useProtectedPage("Student");
     useEffect(() => {
         if (!user) return; // wait for auth
