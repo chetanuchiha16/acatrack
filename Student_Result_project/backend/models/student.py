@@ -377,3 +377,50 @@ class Student:
                 pass
 
         return instantiated_students
+
+    @classmethod
+    def get_all_semesters(cls, usn, batch_year, max_sem=6):
+        """
+        Fetches all semesters for a given USN in 2 queries, returning a dict of 
+        instantiated Student objects mapping semester name (e.g. 'sem1') to Student.
+        """
+        required_semesters = [f"sem{i}" for i in range(1, max_sem + 1)]
+        
+        student_rec = StudentAuth.query.filter_by(usn=usn).first()
+        if not student_rec:
+            return {}
+
+        results = (
+            db.session.query(AcademicResult, Subject)
+            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
+            .filter(
+                AcademicResult.student_id == student_rec.id,
+                Subject.semester.in_(required_semesters)
+            )
+            .all()
+        )
+        
+        sem_data = {sem: {"res": [], "sub": []} for sem in required_semesters}
+        for res, sub in results:
+            if sub.semester in sem_data:
+                sem_data[sub.semester]["res"].append(res)
+                sem_data[sub.semester]["sub"].append(sub)
+
+        instantiated = {}
+        for sem in required_semesters:
+            sem_index = int(sem[-1])
+            preloaded = {
+                "student": student_rec,
+                "current_semester": sem_data[sem],
+                "previous_semesters": {s: sem_data[s] for s in required_semesters if int(s[-1]) < sem_index}
+            }
+            try:
+                # If current semester has no results but student exists, Student__init__ 
+                # might still initialize if it doesn't strictly throw error for empty current_semester array
+                # But it's safer to check if there are results
+                if sem_data[sem]["res"]:
+                    instantiated[sem] = cls(usn, sem, batch_year, preloaded_data=preloaded)
+            except ValueError:
+                pass
+                
+        return instantiated
