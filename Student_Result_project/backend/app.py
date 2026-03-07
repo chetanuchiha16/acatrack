@@ -1,9 +1,13 @@
 # app.py
 import os
 
+from dotenv import load_dotenv
+
+# Load environment variables before any local imports to ensure Supabase and DB URIs are populated
+load_dotenv()
+
 import firebase_admin
 from app_init import create_app, db
-from dotenv import load_dotenv
 from firebase_admin import credentials
 from flask import jsonify
 from logger_config import get_logger
@@ -12,8 +16,6 @@ from routes import register_routes
 from sqlalchemy import text
 
 logger = get_logger(__name__)
-
-load_dotenv()
 cred_path = os.environ.get("FIREBASE_CRED_PATH")
 if not cred_path:
     raise Exception("FIREBASE_CRED_PATH not set!")
