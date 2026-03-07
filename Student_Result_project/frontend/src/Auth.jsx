@@ -16,7 +16,6 @@ export default function Auth() {
     const [showPassword, setShowPassword] = useState(false);
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [batchYear, setBatchYear] = useState("");
     const [user, setUser] = useState(null);
     const [showForgot, setShowForgot] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -58,17 +57,11 @@ export default function Auth() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (who === "Staff" && !batchYear) {
-            alert("Please select a batch year");
-            return;
-        }
-
         try {
             const res = await axiosInstance.post(`${API_BASE}/auth`, {
                 who,
                 username,
                 password,
-                batch_year: who === "Staff" ? batchYear : null,
             });
 
             const token = res.data.token;
@@ -108,17 +101,7 @@ export default function Auth() {
             alert(err.response?.data?.error || "Login failed");
         }
     };
-    const [batches, setBatches] = useState([]);
-
-    // fetch batches if staff
-    useEffect(() => {
-        if (who === "Staff") {
-            axios
-                .get(`${API_BASE}/batches`)
-                .then((res) => setBatches(res.data.batches))
-                .catch(() => setBatches([]));
-        }
-    }, [who]);
+    // `batches` logic removed - Staff will select batch in their dashboard
 
     if (loading) {
         return <div className="text-white text-center mt-10">Loading...</div>;
@@ -177,20 +160,6 @@ export default function Auth() {
                 {/* Login Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="relative">
-                        {who === "Staff" && (
-                            <select
-                                value={batchYear}
-                                onChange={(e) => setBatchYear(e.target.value)}
-                                className="mb-2 w-full rounded-lg bg-white/20 text-white p-2"
-                            >
-                                <option value="">Select Batch</option>
-                                {batches.map((year) => (
-                                    <option key={year} value={year}>
-                                        {year}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
                         <FaUser className="absolute left-3 top-3 text-white/70" />
                         <input
                             type="text"

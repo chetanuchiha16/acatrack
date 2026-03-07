@@ -34,10 +34,8 @@ def auth():
     if who == "Student":
         batch_year = batch_from_usn(username)
     elif who == "Staff":
+        # Staff access all batches. Let them select actively loaded batch in the dashboard UI.
         batch_year = request.json.get("batch_year")
-        if not batch_year:
-            return jsonify({"error": "Batch year required for Staff"}), 400
-        batch_year = int(batch_year)
     elif who == "Parent":
         # For parent, we will detect after loading student
         batch_year = batch_from_usn(username)

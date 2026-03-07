@@ -17,7 +17,7 @@ def get_academic_performance():
     show_toppers = request.args.get('show_toppers', 'false').lower() == 'true'
     show_failed = request.args.get('show_failed', 'false').lower() == 'true'
     format_type = request.args.get('format', 'json').lower() # default is JSON
-    batch_year = get_batch_year()   
+    batch_year = request.args.get('batch_year') or get_batch_year()   
 
     try:
         db_path = get_db_path(batch_year)
@@ -54,7 +54,7 @@ def get_academic_performance():
 
 @uni_bp.route('/auth/Staff/report/<semester>')
 def get_report(semester):
-    batch_year = get_batch_year()
+    batch_year = request.args.get('batch_year') or get_batch_year()
     university = University(postgres_url=postgres_db_url, batch_year=batch_year)
     university.add_students(semester)
 
