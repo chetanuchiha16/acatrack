@@ -16,7 +16,6 @@ from __future__ import annotations
 import io
 import os
 import random
-import sqlite3
 import tempfile
 from typing import Tuple
 
@@ -27,7 +26,6 @@ from logger_config import get_logger
 from models import Mentor, ParentAuth, StudentAuth, Teacher
 from models.batch_manager import bm
 from models.cloud_utils import download_excel_from_supabase, upload_excel_to_supabase
-from models.paths import get_db_path
 from settings import settings
 from werkzeug.utils import secure_filename
 
@@ -57,12 +55,6 @@ def _check_secret(req) -> bool:
 def _safe_seed(text: str | None) -> str:
     base = (text or "user").strip()
     return base[:4] if len(base) >= 4 else base.ljust(4, "0")
-
-
-def _connect_sqlite(batch_year: int) -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
-    conn = sqlite3.connect(get_db_path(batch_year))
-    cur = conn.cursor()
-    return conn, cur
 
 
 def _fetch_source_rows(batch_year: int) -> list[tuple[str, str]]:

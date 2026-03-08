@@ -27,11 +27,11 @@ def test_university_postgres():
             logger.debug("No semester tables found. Exiting test.")
             return
 
-        # Test adding students
+        # Test fetching students
         selected_semester = "sem1"  # Replace with a semester present in your database
-        logger.debug(f"\nAdding students for {selected_semester}...")
-        uni.add_students(selected_semester)
-        logger.debug(f"Total students added: {len(uni.students)}")
+        logger.debug(f"\nFetching students for {selected_semester}...")
+        students = uni.get_students_for_semester(selected_semester)
+        logger.debug(f"Total students retrieved: {len(students)}")
 
         # Test academic performance calculation
         logger.debug(f"\nCalculating academic performance for {selected_semester}...")
@@ -49,7 +49,7 @@ def test_university_postgres():
 
         # Optional: Test plotting (will save plot)
         logger.debug(f"\nPlotting student totals for {selected_semester}...")
-        fig, path = uni.plot_student_totals(selected_semester, mode="top_n", n=5)
+        _, path = uni.plot_student_totals(selected_semester, mode="top_n", n=5)
         logger.debug(f"Plot saved to: {path}")
 
 
