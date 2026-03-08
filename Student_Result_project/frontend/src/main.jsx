@@ -11,7 +11,6 @@ import Staff from "./Staff.jsx";
 import StaffResults from "./StaffResults.jsx"
 import ExcelViewer from "./ExcelViewer.jsx";
 import TeacherNotesUploader from "./TeacherNotesUploader.jsx";
-import ChatBot from "./Chatbot.jsx";
 import SemesterResults from "./SemesterResults.jsx";
 import SendEmails from "./SendEmails.jsx";
 import AdminLogin from "./AdminLogin.jsx";
@@ -35,7 +34,6 @@ function RootLayout({ children }) {
 
 const route = createBrowserRouter([
   { path: "/auth/Parent/:id/ParentResult", element: <RootLayout><ParentResult /></RootLayout> },
-  { path: "/auth/Parent/:id/ChatBot", element: <RootLayout><ChatBot /></RootLayout> },
   { path: "/auth/Parent/:id", element: <RootLayout><ParentDashboard /></RootLayout> },
     { path: "/auth/Staff/:id/MentorDashboard", element: <RootLayout><MentorDashboard /></RootLayout> },
     { path: "/auth/Staff/:id/MentorResults", element: <RootLayout><MentorResults /></RootLayout> },
