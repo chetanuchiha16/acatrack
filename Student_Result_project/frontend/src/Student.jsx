@@ -9,6 +9,7 @@ import { onMessage } from "firebase/messaging";
 import { messaging } from "./firebase"; // your firebase.js
 import useProtectedPage from "./useProtectedPage";
 import MenteeRecordFilling from "./MenteeRecordFilling.jsx";
+import LoadingSpinner from "./LoadingSpinner";
 
 export default function Student() {
     const navigate = useNavigate();
@@ -52,7 +53,8 @@ export default function Student() {
     //     console.log("Message received. ", payload);
     //     alert("📩 New notification: " + payload.notification.title);
     // });
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <LoadingSpinner message="Authenticating Dashboard..." fullScreen={true} />;
+    
     return (
         <main className="min-h-screen w-full bg-gray-100 dark:bg-gray-900 px-4 sm:px-6 lg:px-8 py-6">
             {/* Header */}
