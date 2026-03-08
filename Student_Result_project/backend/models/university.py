@@ -210,7 +210,8 @@ class University:
             return plt.figure(), None
 
         plt.tight_layout()
-        graph_path = f"{img_dir}/plot_student_totals.png"
+        import uuid
+        graph_path = f"{img_dir}/plot_student_totals_{uuid.uuid4().hex}.png"
         plt.savefig(graph_path)
         plt.close(fig) # Prevent memory leak!
 
