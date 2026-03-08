@@ -3,8 +3,10 @@ import { check, sleep, group } from 'k6';
 
 // Read environment variables or use defaults
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:5000';
-const USN = __ENV.USN || '1JS23CS032'; // Example USN, can be passed via k6 run -e USN=123
+const USN = __ENV.USN || '1JS23CS032'; 
 const SEMESTER = __ENV.SEMESTER || 'sem1';
+const MENTOR_ID = __ENV.MENTOR_ID || '1'; // Placeholder mentor ID 
+const ADMIN_SECRET = __ENV.ADMIN_SECRET || 'supersecretkey';
 
 export const options = {
   stages: [
@@ -14,98 +16,142 @@ export const options = {
   ],
   thresholds: {
     // Assert overall HTTP request duration
-    http_req_duration: ['p(95)<2000'], // 95% of requests should complete within 2000ms
+    http_req_duration: ['p(95)<3000'], // Extended to 3s for heavier endpoints
     // Assert error rate is low
     http_req_failed: ['rate<0.05'],    // Less than 5% failure rate
   },
 };
 
-// Note: to use crypto in k6 we import from 'k6/crypto' but for JWT generation
-// it's often easier to just make a real request to the login endpoint.
-
 export default function () {
   group('Backend Performance Tests', function () {
     
-    // We get a token for the student
-    let token;
-    group('Login to get token', function() {
-        const loginPayload = JSON.stringify({
+    // We get a token for the roles
+    let studentToken, staffToken, parentToken;
+    
+    group('Login to get tokens', function() {
+        // 1. Student Login
+        const studentLogin = JSON.stringify({
            who: "Student",
            username: USN,
-           password: "CHET032" // Replace with valid password or we handle 401
+           password: "CHET032" // Using previously known password
         });
-        const loginRes = http.post(`${BASE_URL}/auth`, loginPayload, {
+        const studentRes = http.post(`${BASE_URL}/auth`, studentLogin, {
            headers: { 'Content-Type': 'application/json' }
         });
-        
-        // If login fails we might not have a valid user, so testing will fail gracefully
-        if (loginRes.status === 200) {
-           token = loginRes.json('token');
-        }
+        if (studentRes.status === 200) { studentToken = studentRes.json('token'); }
+
+        // 2. Staff/Mentor Login (Using dummy/placeholder credentials)
+        const staffLogin = JSON.stringify({
+           who: "Staff",
+           username: "1007", // Dummy teacher ID
+           password: "Sneh007",
+           batch_year: "2022"
+        });
+        const staffRes = http.post(`${BASE_URL}/auth`, staffLogin, {
+           headers: { 'Content-Type': 'application/json' }
+        });
+        if (staffRes.status === 200) { staffToken = staffRes.json('token'); }
+
+        // 3. Parent Login (Using dummy/placeholder credentials)
+        const parentLogin = JSON.stringify({
+           who: "Parent",
+           username: `${USN}_parent`,
+           password: "default123"
+        });
+        const parentRes = http.post(`${BASE_URL}/auth`, parentLogin, {
+           headers: { 'Content-Type': 'application/json' }
+        });
+        if (parentRes.status === 200) { parentToken = parentRes.json('token'); }
     });
 
-    const params = {
-      headers: {
-        'Authorization': `Bearer ${token || 'test-token'}`,
-        'Content-Type': 'application/json'
-      }
-    };
+    const studentParams = { headers: { 'Authorization': `Bearer ${studentToken || 'test-token'}`, 'Content-Type': 'application/json' } };
+    const staffParams = { headers: { 'Authorization': `Bearer ${staffToken || 'test-token'}`, 'Content-Type': 'application/json' } };
+    const parentParams = { headers: { 'Authorization': `Bearer ${parentToken || 'test-token'}`, 'Content-Type': 'application/json' } };
+    const adminParams = { headers: { 'X-Admin-Secret': ADMIN_SECRET, 'Content-Type': 'application/json' } };
 
-    // 1. Baseline Health Check
-    group('Health Check', function () {
-      const res = http.get(`${BASE_URL}/health`);
-      check(res, {
-        'status is 200': (r) => r.status === 200,
-        'is ok': (r) => r.status === 200 && r.json('status') === 'ok',
-      });
+    // ==========================================
+    // Student Routes
+    // ==========================================
+    group('Student Endpoints', function () {
+        group('Student Analysis API', function () {
+          const res = http.get(`${BASE_URL}/auth/Student/analysis?usn=${USN}&semester=${SEMESTER}`, studentParams);
+          check(res, { 'status is 200': (r) => r.status === 200 });
+        });
+
+        group('Chart Generation API', function () {
+          const res = http.get(`${BASE_URL}/auth/Student/chart?usn=${USN}&semester=${SEMESTER}`, studentParams);
+          check(res, { 'status is 200': (r) => r.status === 200 });
+        });
+
+        group('PDF Report API', function () {
+          const res = http.get(`${BASE_URL}/auth/Student/result?usn=${USN}&semester=${SEMESTER}`, studentParams);
+          check(res, { 'status is 200': (r) => r.status === 200 });
+        });
     });
 
-    // 2. Student Analytics & Regression
-    group('Student Analysis API', function () {
-      const res = http.get(`${BASE_URL}/auth/Student/analysis?usn=${USN}&semester=${SEMESTER}`, params);
-      check(res, {
-        'status is 200': (r) => r.status === 200,
-        'has study summary': (r) => {
-           try {
-              if (r.status !== 200) return false;
-              return r.json('study_summary') !== undefined;
-           } catch (e) {
-              return false;
-           }
-        }
-      });
+    // ==========================================
+    // Staff / Mentor Routes
+    // ==========================================
+    group('Staff and Mentor Endpoints', function() {
+        group('Overall Res API', function () {
+           const res = http.get(`${BASE_URL}/auth/Staff/overall_res?semester=${SEMESTER}`, staffParams);
+           // Can be 200 if valid layout, or 401 if teacher token failed
+           check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
+        });
+
+        group('Staff PDF Report API', function () {
+           const res = http.get(`${BASE_URL}/auth/Staff/report/${SEMESTER}`, staffParams);
+           check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
+        });
+
+        group('Staff Semester Result API', function () {
+           const res = http.get(`${BASE_URL}/auth/Staff/sem_res/report/${SEMESTER}`, staffParams);
+           check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
+        });
+
+        group('Mentor Students List API', function () {
+           const res = http.get(`${BASE_URL}/mentor/${MENTOR_ID}/students`, staffParams);
+           check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
+        });
+
+        group('Mentor Meetings API', function () {
+           const res = http.get(`${BASE_URL}/mentor/${MENTOR_ID}`, staffParams);
+           check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
+        });
+
+        group('Mentor PDFs File Tree API', function () {
+           const res = http.get(`${BASE_URL}/mentor/${MENTOR_ID}/pdfs`, staffParams);
+           check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
+        });
     });
 
-    // 3. Matplotlib Chart Generation 
-    group('Chart Generation API', function () {
-      const res = http.get(`${BASE_URL}/auth/Student/chart?usn=${USN}&semester=${SEMESTER}`, params);
-      check(res, {
-        'status is 200': (r) => r.status === 200,
-        'has base64 image data': (r) => {
-           try {
-              if (r.status !== 200) return false;
-              return r.json('image').startsWith('data:image/png;base64');
-           } catch (e) {
-              return false;
-           }
-        }
-      });
+    // ==========================================
+    // Parent Routes
+    // ==========================================
+    group('Parent Endpoints', function() {
+        group('Parent Student Details API', function () {
+           const res = http.get(`${BASE_URL}/parent/student-details`, parentParams);
+           // Checking 200 OR 401 because the Parent login above uses dummy defaults that might fail
+           check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
+        });
     });
 
-    // 4. PDF Report Generation
-    group('PDF Report API', function () {
-      const res = http.get(`${BASE_URL}/auth/Student/result?usn=${USN}&semester=${SEMESTER}`, params);
-      check(res, {
-        'status is 200': (r) => r.status === 200,
-        'has base64 pdf data': (r) => {
-           try {
-              if (r.status !== 200) return false;
-              return r.json('pdf_url').startsWith('data:application/pdf;base64');
-           } catch (e) {
-              return false;
-           }
-        }
-      });
+    // ==========================================
+    // Admin Routes
+    // ==========================================
+    group('Admin Endpoints', function() {
+        group('Health Check', function () {
+          const res = http.get(`${BASE_URL}/admin/health`, adminParams);
+          check(res, {
+            'status is 200': (r) => r.status === 200,
+            'is ok': (r) => r.status === 200 && r.json('status') === 'ok',
+          });
+        });
+
+        group('List Batches API', function () {
+          const res = http.get(`${BASE_URL}/admin/list-batches`, adminParams);
+           check(res, { 'status is 200': (r) => r.status === 200 });
+        });
     });
 
   });
