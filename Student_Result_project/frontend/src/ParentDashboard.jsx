@@ -96,16 +96,11 @@ export default function ParentDashboard() {
             <div className="w-[95%] mx-auto h-[2px] bg-gray-300 my-4 mt-[-4] rounded shadow-sm"></div>
 
             {/* Welcome Section */}
-            <div className="space-y-2 mb-8 text-center sm:text-center lg:text-center">
-                {/* <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100">
-          {t("welcome")}
-        </p> */}
-                {/* <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
-          {t("description")}
-        </p> */}
+            <div className="space-y-2 mb-6 text-center sm:text-center lg:text-center">
             </div>
+            
             {/* Dashboard Section with Mentor Contact on the left */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 max-w-5xl mx-auto mt-4">
                 {/* Mentor Contact Card (info only) */}
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8">
                     <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-4">
@@ -148,29 +143,20 @@ export default function ParentDashboard() {
 
                 {/* Result Card */}
                 <div
-                    className="bg-red-300 dark:bg-red-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-red-400 dark:hover:bg-red-700 transition-all duration-200"
+                    className="bg-green-500 dark:bg-green-700 text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-green-600 dark:hover:bg-green-800 transition-all duration-200 flex flex-col items-center justify-center text-center"
                     onClick={() => navigate(`/auth/Parent/${id}/ParentResult`)}
                 >
-                    <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-2">
-                        {t("result")}
+                    <div className="text-4xl mb-4">📊</div>
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">
+                        View Student Marks
                     </h2>
-                    <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
-                        {t("resultDesc")}
+                    <p className="text-green-100 text-sm sm:text-base font-medium">
+                        Click here to see exam results and progress
                     </p>
                 </div>
 
-                {/* Chatbot Card */}
-                <div
-                    className="bg-blue-300 dark:bg-blue-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-blue-400 dark:hover:bg-blue-700 transition-all duration-200"
-                    onClick={() => navigate(`/auth/Parent/${id}/ChatBot`)}
-                >
-                    <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-2">
-                        {t("chatbot")}
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
-                        {t("chatbotDesc")}
-                    </p>
-                </div>
+
+
             </div>
         </div>
     );
