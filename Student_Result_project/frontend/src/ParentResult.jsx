@@ -100,11 +100,11 @@ export default function ParentResult() {
     // Extract from semData
     const subjects = Array.isArray(semData?.subjects) ? semData.subjects : [];
     
-    // Merge standard data with AI summary data where available
-    const percentage = aiData?.summary?.percentage ?? semData?.percentage ?? 0;
-    const cgpa = aiData?.summary?.cgpa ?? semData?.cgpa ?? 0;
-    const sgpa = aiData?.summary?.sgpa ?? semData?.sgpa ?? 0;
-    const totalMarks = aiData?.summary?.total_marks ?? semData?.total_marks ?? "-";
+    // Prioritize exact database data (semData) over AI-generated text numbers
+    const percentage = semData?.percentage ?? aiData?.summary?.percentage ?? 0;
+    const cgpa = semData?.cgpa ?? aiData?.summary?.cgpa ?? 0;
+    const sgpa = semData?.sgpa ?? aiData?.summary?.sgpa ?? 0;
+    const totalMarks = semData?.total_marks ?? aiData?.summary?.total_marks ?? "-";
 
     return (
         <main className="min-h-screen w-full bg-slate-50 dark:bg-slate-900 py-6 px-4">
