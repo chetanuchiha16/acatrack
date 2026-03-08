@@ -150,9 +150,6 @@ export default function ParentResult() {
                     ) : aiData?.summary ? (
                         <div className="text-sm sm:text-base text-indigo-950 dark:text-indigo-200 leading-relaxed font-medium bg-white/60 dark:bg-slate-900/50 p-4 rounded-xl shadow-inner border border-white/40 dark:border-slate-700/50">
                             {aiData.summary.backlog_status}
-                            {aiData.profile?.placement_advice?.[0] && (
-                                <p className="mt-3 text-indigo-700 dark:text-indigo-400">💡 {aiData.profile.placement_advice[0]}</p>
-                            )}
                         </div>
                     ) : null}
                 </div>
@@ -250,6 +247,66 @@ export default function ParentResult() {
                         </div>
                     )}
                 </div>
+
+                {/* --- DEEP AI PROFILE INSIGHTS --- */}
+                {aiData?.profile && !aiLoading && (
+                    <div className="mt-8 space-y-6 animate-fade-in">
+                        <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-2">
+                            <span>🧠</span> {t("aiAnalysis", "Personalized AI Analysis")}
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Trend & Prediction */}
+                            <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-purple-100 dark:border-purple-900/40 shadow-sm flex flex-col justify-center">
+                                <h4 className="text-sm font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-3">📈 {t("performanceTrend", "Performance Trend")}</h4>
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className="text-gray-600 dark:text-gray-300 font-medium">{t("currentTrajectory", "Current Trajectory")}:</span>
+                                    <span className={`px-3 py-1 rounded-full text-sm font-black ${aiData.profile.trend?.trend === "Improving" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"}`}>
+                                        {aiData.profile.trend?.trend || "N/A"}
+                                    </span>
+                                </div>
+                                {aiData.profile.cgpa_prediction?.predicted_next_sgpa && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-gray-600 dark:text-gray-300 font-medium">{t("predictedNextSem", "Predicted Next Sem")}:</span>
+                                        <span className="text-lg font-black text-gray-800 dark:text-gray-100">
+                                            {aiData.profile.cgpa_prediction.predicted_next_sgpa} {t("sgpa")}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Placement Advice */}
+                            {aiData.profile.placement_advice?.length > 0 && (
+                                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800 rounded-xl p-5 border border-blue-100 dark:border-blue-900/40 shadow-sm">
+                                    <h4 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3">🎯 {t("careerReadiness", "Career Readiness")}</h4>
+                                    <ul className="space-y-2">
+                                        {aiData.profile.placement_advice.slice(0, 2).map((advice, i) => (
+                                            <li key={i} className="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-2">
+                                                <span className="text-blue-500 mt-0.5">•</span>
+                                                <span className="leading-relaxed">{advice}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Learning Plan */}
+                        {aiData.profile.learning_plan?.length > 0 && (
+                            <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-amber-100 dark:border-amber-900/30 shadow-sm">
+                                <h4 className="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-3">📚 {t("recommendedActionPlan", "Recommended Action Plan")}</h4>
+                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {aiData.profile.learning_plan.map((plan, i) => (
+                                        <li key={i} className="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-2 bg-amber-50/50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-100 dark:border-amber-900/20">
+                                            <span className="text-amber-500">▶</span>
+                                            <span className="leading-relaxed">{plan}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* --- DOWNLOAD BUTTON --- */}
                 {semData?.pdf_url && (
