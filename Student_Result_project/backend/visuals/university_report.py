@@ -34,7 +34,8 @@ def create_university_report(university, selected_semester):
     ax.set_title("SGPA Distribution")
     ax.set_xlabel("SGPA")
     ax.set_ylabel("Number of Students")
-    graph_path = f"{img_dir}/university_graph.png"
+    import uuid
+    graph_path = f"{img_dir}/university_graph_{uuid.uuid4().hex}.png"
     plt.savefig(graph_path)
     plt.close()
 
@@ -107,4 +108,11 @@ def create_university_report(university, selected_semester):
     pdf_buffer.seek(0)
     pdf_bytes = pdf_buffer.read()
     pdf_buffer.close()
+    
+    import os
+    if os.path.exists(graph_path):
+        os.remove(graph_path)
+    if gpath and os.path.exists(gpath):
+        os.remove(gpath)
+        
     return pdf_bytes
