@@ -15,7 +15,9 @@ class SubjectResult:
         self.students = students if students is not None else university.get_students_for_semester(semester)
         
         self.students_data = self.fetch_students_data()
-        self.total_students = len(self.students)  # Total students for the semester
+        
+        # Total students is the number of students who actually registered for this specific subject
+        self.total_students = len([s for s in self.students if s.semester == self.semester and self.subject_code in s.subject_codes]) 
         self.present_students = len(self.students_data)
         self.absent_students = self.total_students - self.present_students
         self.pass_count, self.fail_count = self.fetch_subject_stats()
