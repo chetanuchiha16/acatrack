@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { BarChart3, Users, CalendarDays, FileText } from "lucide-react";
+import { BarChart3, Users, CalendarDays, FileText, ArrowLeft } from "lucide-react";
 import MentorResults from "./MentorResults";
 import MentorSendEmails from "./MentorSendEmails";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import MentorMeetings from "./MentorMeetings";
 import MentorRecords from "./MentorRecord"; // adjust the path if needed
 import API_BASE from "./config";
@@ -15,6 +15,7 @@ export default function MentorDashboard() {
     const [date, setDate] = useState("");
     let { mentor_id } = useLocation().state || {};
     let { finalId } = useParams();
+    let navigate = useNavigate();
 
     useEffect(() => {
         axios.get(`${API_BASE}/batches`)
@@ -51,30 +52,40 @@ export default function MentorDashboard() {
     ];
 
     return (
-        <div className="p-4 md:p-6 space-y-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between p-2">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center">
-                    Mentor Dashboard
-                </h1>
+        <div className="min-h-screen w-full bg-gray-50 dark:bg-[#0b1220] p-4 sm:p-6 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-6">
+                
+                {/* Header Card */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between">
+                    <div className="flex items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
+                        <button 
+                            onClick={() => navigate(-1)} 
+                            className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm"
+                            title="Go Back"
+                        >
+                            <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+                        </button>
+                        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                            Mentor Dashboard
+                        </h1>
+                    </div>
 
-                <div className="flex items-center gap-3 mt-4 sm:mt-0">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Active Batch:</span>
-                    <select
-                        value={batchYear}
-                        onChange={(e) => setBatchYear(e.target.value)}
-                        className="p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none w-32"
-                    >
-                        <option value="">Select</option>
-                        {batches.map(year => (
-                            <option key={year} value={year}>{year}</option>
-                        ))}
-                    </select>
+                    <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-900 p-2 rounded-xl border border-gray-100 dark:border-gray-700 shadow-inner">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-300 px-2">Active Batch:</span>
+                        <select
+                            value={batchYear}
+                            onChange={(e) => setBatchYear(e.target.value)}
+                            className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500 w-32 shadow-sm"
+                        >
+                            <option value="">Select</option>
+                            {batches.map(year => (
+                                <option key={year} value={year}>{year}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
-            </div>
 
-            <div className="w-[95%] mx-auto h-[2px] bg-gray-300 my-4 rounded shadow-sm"></div>
-
-            <div className="w-full md:max-w-6xl mx-auto p-4 sm:p-6 bg-white dark:bg-gray-800 rounded-lg shadow-2xl">
+                <div className="w-full mx-auto p-4 sm:p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
                 {/* Segmented Control Tabs */}
                 <div className="flex justify-center mb-8">
                     <div className="inline-flex bg-gray-100 dark:bg-gray-800/80 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700/50 shadow-inner">
@@ -104,37 +115,39 @@ export default function MentorDashboard() {
                     <div className="absolute bottom-0 left-0 -m-4 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl"></div>
                     
                     <div className="relative z-10">
-                    {batchYear ? (
-                        <>
-                            {activeTab === "results" && (
-                                <MentorResults mentor_id={mentor_id} batchYear={batchYear} />
-                            )}
+                        {batchYear ? (
+                            <>
+                                {activeTab === "results" && (
+                                    <MentorResults mentor_id={mentor_id} batchYear={batchYear} />
+                                )}
 
-                            {activeTab === "communication" && (
-                                <MentorSendEmails mentorId={mentor_id} batchYear={batchYear} />
-                            )}
+                                {activeTab === "communication" && (
+                                    <MentorSendEmails mentorId={mentor_id} batchYear={batchYear} />
+                                )}
 
-                            {activeTab === "meetings" && (
-                                <div className="flex flex-col gap-3">
-                                    <MentorMeetings mentorId={mentor_id} batchYear={batchYear} />
+                                {activeTab === "meetings" && (
+                                    <div className="flex flex-col gap-3">
+                                        <MentorMeetings mentorId={mentor_id} batchYear={batchYear} />
+                                    </div>
+                                )}
+
+                                {activeTab === "records" && (
+                                    <MentorRecords mentor_id={mentor_id} batchYear={batchYear} />
+                                )}
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-full mb-4">
+                                    <Users className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                                 </div>
-                            )}
-
-                            {activeTab === "records" && 
-                            <MentorRecords mentor_id={mentor_id} batchYear={batchYear} />}
-                        </>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-full mb-4">
-                                <Users className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">No Batch Selected</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+                                    Please select a batch year from the dropdown menu above to view mentor details, results, and communications.
+                                </p>
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">No Batch Selected</h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
-                                Please select a batch year from the dropdown menu above to view mentor details, results, and communications.
-                            </p>
-                        </div>
-                    )}
+                        )}
                     </div>
+                </div>
                 </div>
             </div>
         </div>
