@@ -1,16 +1,18 @@
 from flask import Flask, request, jsonify, send_file, Blueprint, session
 from models import University, SubjectResult
-from models.paths import  pdf_dir  , get_db_path, postgres_db_url
+from models.paths import  pdf_dir, postgres_db_url
 from visuals import create_subject_report
 import os
 from models.helpers import get_batch_year
 from logger_config import get_logger
+from extensions import cache
 
 logger = get_logger(__name__)
 
 sub_bp = Blueprint('sub_res', __name__)
 
 @sub_bp.route('/auth/Staff/sub_res', methods=['GET'])
+@cache.cached(timeout=3600, query_string=True)
 def get_subject_results():
     semester = request.args.get('semester')
     subject_code = request.args.get('subject')
@@ -18,9 +20,7 @@ def get_subject_results():
     if not semester or not subject_code:
         return jsonify({"error": "semester and subject are required"}), 400
     
-    # db_path = get_db_path(batch_year)  # <-- resolves correct DB
     university = University(postgres_url=postgres_db_url, batch_year=batch_year)
-    university.add_students(selected_semester=semester)
     subject_result = SubjectResult(subject_code, semester, university)
 
     result_data = subject_result.get_subject_results_dict()
@@ -39,7 +39,6 @@ def get_subject_report_pdf():
         return jsonify({"error": "semester and subject are required"}), 400
 
     university = University(postgres_url=postgres_db_url, batch_year=batch_year)
-    university.add_students(selected_semester=semester)
     subject_result = SubjectResult(subject_code, semester, university)
 
     # ✅ Generate PDF in-memory

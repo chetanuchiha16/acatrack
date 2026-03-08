@@ -79,7 +79,10 @@ class Student:
             if credit == 0:
                 status_list.append("No Credits")
             elif see == 0:
-                status_list.append("SCR")
+                if ia >= 20: 
+                    status_list.append("Pass")
+                else:
+                    status_list.append("Fail")
             elif ia >= 20 and see >= 18:
                 status_list.append("Pass")
             else:
@@ -294,7 +297,7 @@ class Student:
                 }
             )
 
-        overall_status = "Fail" if any(s in ["Fail", "SCR"] for s in self.pass_fail) else "Pass"
+        overall_status = "Fail" if "Fail" in self.pass_fail else "Pass"
 
         return {
             "usn": self.usn,

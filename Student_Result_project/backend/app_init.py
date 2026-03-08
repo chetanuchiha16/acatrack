@@ -12,6 +12,12 @@ def create_app(batch_year=None, postgres_url=None):
     app = Flask(__name__)
     app.config.from_object(Config)
 
+    # Configure Redis Cache
+    from settings import settings
+    app.config['CACHE_TYPE'] = 'RedisCache'
+    app.config['CACHE_REDIS_URL'] = settings.redis_url
+    app.config['CACHE_DEFAULT_TIMEOUT'] = 600 # 10 minutes
+
     if postgres_url is None:
         # user = "chetan"
         # password = "chetan"
@@ -32,6 +38,9 @@ def create_app(batch_year=None, postgres_url=None):
 
     db.init_app(app)
     migrate.init_app(app, db)  # <-- use global migrate
+    
+    from extensions import cache
+    cache.init_app(app)
 
     CORS(app, supports_credentials=True)
      # Teardown function to close sessions after each request

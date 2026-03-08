@@ -6,11 +6,13 @@ from models.fetch import sem_subjects
 from models.helpers import get_batch_year
 from models.paths import postgres_db_url
 from visuals import generate_sem_pdf
+from extensions import cache
 
 sem_bp = Blueprint("sem_res", __name__)
 
 
 @sem_bp.route("/auth/Staff/sem_res", methods=["GET"])
+@cache.cached(timeout=3600, query_string=True)
 def get_semester_results():
     semester = request.args.get("semester")
     batch_year = request.args.get("batch_year") or get_batch_year()
@@ -77,16 +79,16 @@ def get_semester_results():
 
         # Use the University model which automatically handles the normalized DB fetch
         university = University(postgres_url=postgres_db_url, batch_year=batch_year)
-        university.add_students(selected_semester=semester)
 
-        if not university.students:
+        students = university.get_students_for_semester(selected_semester=semester)
+        if not students:
             return jsonify(
                 {"error": f"No data found for {semester} in batch {batch_year}"}
             ), 404
 
         results = []
         for subject_code in subjects:
-            subject_result = SubjectResult(subject_code, semester, university)
+            subject_result = SubjectResult(subject_code, semester, university, students=students)
 
             # Skip returning empty stats if no students took the subject
             if (
@@ -173,7 +175,6 @@ def download_semester_report(semester):
 
     # Generate the PDF in-memory
     university = University(postgres_url=postgres_db_url, batch_year=batch_year)
-    university.add_students(selected_semester=semester)
     pdf_bytes = generate_sem_pdf(semester, university, semester_subject_mapping)
     pdf_buffer = BytesIO(pdf_bytes)
     pdf_buffer.seek(0)
