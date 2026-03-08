@@ -12,7 +12,6 @@ class University:
         self.postgres_url = postgres_url or postgres_db_url
         self.batch_year = batch_year
         # We assume operations happen within a Flask app context with `db.session` active.
-        self.students = []
 
     def fetch_semester_tables(self):
         """
@@ -57,32 +56,18 @@ class University:
             logger.debug(f"Error fetching students for {semester}: {e}")
             return []
 
-    def add_students(self, selected_semester):
+    def get_students_for_semester(self, selected_semester):
         """
-        Add all students who have records for this specific semester.
+        Fetch all Student objects for a semester instantly using a bulk query, 
+        avoiding N+1 queries. Returns a list representing the cohort.
         """
         all_usns = self.fetch_students(selected_semester)
         if not all_usns:
             logger.debug(f"No students found for {selected_semester} in batch {self.batch_year}.")
-            return
+            return []
 
         bulk_students = Student.bulk_fetch(all_usns, selected_semester, self.batch_year)
-        self.students.extend(bulk_students.values())
-
-    def display_students(self):
-        """
-        Display all students and their details.
-        """
-        if not self.students:
-            logger.debug("No students in the university.")
-            return
-
-        for student in self.students:
-            logger.debug("\n" + "=" * 50)
-            logger.debug(
-                student.to_dict()
-            )  # Replaced custom print with standardized to_dict view
-            logger.debug("=" * 50)
+        return list(bulk_students.values())
 
     def calculate_all_sgpa_and_cgpa(self, previous_sgpas_list):
         """Calculates SGPA and CGPA for each student. This was redundant as Student calculates it, leaving intact for compatibility."""
@@ -106,12 +91,10 @@ class University:
                 ]
 
             semester_results = []
-            student_usns = self.fetch_students(selected_semester)
+            students = self.get_students_for_semester(selected_semester)
 
-            for usn in student_usns:
+            for student in students:
                 try:
-                    student = Student(usn, selected_semester, self.batch_year)
-
                     if not student.name:
                         continue
 
@@ -135,7 +118,7 @@ class University:
 
                 except ValueError as e:
                     semester_results.append(
-                        {"semester": selected_semester, "usn": usn, "error": str(e)}
+                        {"semester": selected_semester, "usn": student.usn, "error": str(e)}
                     )
 
             return semester_results
@@ -143,35 +126,13 @@ class University:
         except Exception as e:
             return [{"error": f"Error occurred: {str(e)}"}]
 
-    def find_failed_students_old(self, selected_semester):
-        failed_students = {}
-        try:
-            student_usns = self.fetch_students(selected_semester)
-
-            for usn in student_usns:
-                try:
-                    student = Student(usn, selected_semester, self.batch_year)
-                    for idx, status in enumerate(student.pass_fail):
-                        if status == "Fail" or status == "SCR":
-                            failed_students.setdefault(usn, [])
-                            failed_students[usn].append(student.subject_names[idx])
-                except ValueError:
-                    continue
-
-            return failed_students
-        except Exception as e:
-            logger.debug(f"Error occurred while fetching failed students: {str(e)}")
-            return {}
-
     def find_failed_students(self, selected_semester):
         failed_students_list = []
         try:
-            student_usns = self.fetch_students(selected_semester)
+            students = self.get_students_for_semester(selected_semester)
 
-            for usn in student_usns:
+            for student in students:
                 try:
-                    student = Student(usn, selected_semester, self.batch_year)
-
                     if any(s in ["Fail", "SCR"] for s in student.pass_fail):
                         failed_students_list.append(
                             {
@@ -208,21 +169,17 @@ class University:
             logger.debug(f"USN: {fail_item['usn']}, Details: {fail_item}")
 
     def plot_student_totals(self, selected_semester, mode="top_n", n=10, bins=10):
-        # We retain the original logic to filter `self.students` assuming `add_students` was called.
+        # Dynamically fetch students for plotting stateless calculations
         import matplotlib
         import matplotlib.pyplot as plt
 
         matplotlib.use("Agg")
 
-        filtered_students = [
-            student
-            for student in self.students
-            if student.semester == selected_semester
-        ]
+        filtered_students = self.get_students_for_semester(selected_semester)
 
         if not filtered_students:
             logger.debug(f"No student data available for {selected_semester}.")
-            return plt.figure(), None
+            return None, None
 
         student_names = [student.name for student in filtered_students]
         total_marks = [student.total_marks for student in filtered_students]
@@ -255,15 +212,12 @@ class University:
         plt.tight_layout()
         graph_path = f"{img_dir}/plot_student_totals.png"
         plt.savefig(graph_path)
+        plt.close(fig) # Prevent memory leak!
 
-        return fig, graph_path
+        return None, graph_path
 
     def get_toppers(self, selected_semester, n=5):
-        filtered_students = [
-            student
-            for student in self.students
-            if student.semester == selected_semester
-        ]
+        filtered_students = self.get_students_for_semester(selected_semester)
 
         if not filtered_students:
             logger.debug(f"No student data available for {selected_semester}.")

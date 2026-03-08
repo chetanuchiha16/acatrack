@@ -104,11 +104,6 @@ class BatchManager:
         if batch_year not in self._universities:
             postgres_url = self.get_postgres_url(batch_year)
             uni = University(postgres_url=postgres_url, batch_year=batch_year)
-            for sem in SEMESTERS:
-                try:
-                    uni.add_students(selected_semester=sem)
-                except Exception:
-                    continue
             self._universities[batch_year] = uni
         return self._universities[batch_year]
 
