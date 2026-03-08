@@ -74,7 +74,7 @@ def get_student_chart():
     img_base64 = base64.b64encode(buf.read()).decode("utf-8")
 
     # Close figure to free memory
-    fig.clf()
-    fig.canvas.flush_events()
+    import matplotlib.pyplot as plt
+    plt.close(fig)
 
     return jsonify({"image": f"data:image/png;base64,{img_base64}"})
