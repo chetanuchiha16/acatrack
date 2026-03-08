@@ -7,6 +7,7 @@ import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import ForgotPassword from "./ForgotPassword";
 import API_BASE from "./config";
 import { requestForToken } from "./firebase";
+import LoadingSpinner from "./LoadingSpinner";
 
 export default function Auth() {
     let { who } = useParams();
@@ -104,7 +105,7 @@ export default function Auth() {
     // `batches` logic removed - Staff will select batch in their dashboard
 
     if (loading) {
-        return <div className="text-white text-center mt-10">Loading...</div>;
+        return <LoadingSpinner message="Checking authentication status..." fullScreen={true} />;
     }
 
     return (
