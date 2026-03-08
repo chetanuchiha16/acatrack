@@ -22,16 +22,9 @@ notes_dir = str(base_dir / "Outputs" / "NOTES")
 img_dir = str(base_dir / "Outputs" / "Images")
 
 excel_dir = base_dir / "Inputs" / "ExcelSheet"
-db_dir = base_dir / "Outputs" / "Databases"
-
-db_dir.mkdir(parents=True, exist_ok=True)
 
 def get_excel_path(batch_year: int) -> str:
     return str(excel_dir / f"result_list_{batch_year}.xlsx")
-
-def get_db_path(batch_year: int) -> str:
-    logger.debug(str(db_dir / f"student_data_{batch_year}.db"))
-    return str(db_dir / f"student_data_{batch_year}.db")
 
 postgres_db_url = settings.database_url
 API_BASE="http://localhost:5000"

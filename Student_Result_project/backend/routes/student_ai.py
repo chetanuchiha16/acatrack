@@ -1,7 +1,7 @@
 # ai_blueprint.py
 from flask import Blueprint, request, jsonify, session
 import numpy as np
-from models.paths import  get_db_path, postgres_db_url
+from models.paths import postgres_db_url
 from models import Student
 from models.helpers import get_batch_year
 from .chatbot import (
@@ -10,6 +10,7 @@ from .chatbot import (
     get_latest_semester, get_student_history, _calculate_backlogs
 )
 from logger_config import get_logger
+from extensions import cache
 
 logger = get_logger(__name__)
 
@@ -34,6 +35,7 @@ def get_student_history_usn(usn, semesters):
 
 # ------------------ 1. AI Summary ------------------ #
 @ai_bp.route("/ai/summary", methods=["GET"])
+@cache.cached(timeout=3600, query_string=True)
 def ai_summary():
     usn = request.args.get("usn")
     batch_year = get_batch_year()   
@@ -141,6 +143,7 @@ def ai_summary():
 
 # ------------------ 2. Trend Analysis ------------------ #
 @ai_bp.route("/ai/trend", methods=["GET"])
+@cache.cached(timeout=3600, query_string=True)
 def ai_trend():
     usn = request.args.get("usn")
     batch_year = get_batch_year()   
@@ -180,6 +183,7 @@ def ai_trend():
 
 # ------------------ 3. Predict Final CGPA ------------------ #
 @ai_bp.route("/ai/predict_cgpa", methods=["GET"])
+@cache.cached(timeout=3600, query_string=True)
 def ai_predict_cgpa():
     usn = request.args.get("usn")
     sems = ["sem1","sem2","sem3","sem4","sem5","sem6","sem7"]
@@ -222,6 +226,7 @@ def ai_predict_cgpa():
 
 # ------------------ 4. Strength/Weakness Profile + Backlogs ------------------ #
 @ai_bp.route("/ai/profile", methods=["GET"])
+@cache.cached(timeout=3600, query_string=True)
 def ai_profile():
     usn = request.args.get("usn")
     batch_year = get_batch_year()   
