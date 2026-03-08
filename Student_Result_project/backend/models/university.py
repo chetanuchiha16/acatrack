@@ -133,7 +133,7 @@ class University:
 
             for student in students:
                 try:
-                    if any(s in ["Fail", "SCR"] for s in student.pass_fail):
+                    if "Fail" in student.pass_fail:
                         failed_students_list.append(
                             {
                                 "name": student.name,

@@ -201,7 +201,7 @@ export default function ParentResult() {
                     {subjects.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             {subjects.map((sub, idx) => {
-                                const isPass = sub.status === "Pass";
+                                const isPass = sub.status === "Pass" || sub.status === "No Credits";
                                 const bgClass = isPass 
                                     ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/40" 
                                     : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/40";
@@ -228,7 +228,11 @@ export default function ParentResult() {
                                                 </div>
                                                 <div className="flex flex-col">
                                                     <span className="text-[10px] uppercase font-bold opacity-60">{t("final")}</span>
-                                                    <span className={`text-sm sm:text-base font-bold ${textClass}`}>{sub.see}</span>
+                                                    <span className={`text-sm sm:text-base font-bold ${textClass}`}>
+                                                        {sub.see === 0 && (sub.ia === sub.total || /(mini project|scr|nss|social connect|physical education|internship|seminar)/i.test(sub.subject_name)) 
+                                                            ? "N/A" 
+                                                            : sub.see}
+                                                    </span>
                                                 </div>
                                             </div>
                                             <div className="flex flex-col text-right">
