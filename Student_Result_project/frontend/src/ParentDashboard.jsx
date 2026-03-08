@@ -146,13 +146,9 @@ export default function ParentDashboard() {
                     className="bg-green-500 dark:bg-green-700 text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-green-600 dark:hover:bg-green-800 transition-all duration-200 flex flex-col items-center justify-center text-center"
                     onClick={() => navigate(`/auth/Parent/${id}/ParentResult`)}
                 >
-                    <div className="text-4xl mb-4">📊</div>
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">
-                        View Student Marks
+                        {t("viewResults")}
                     </h2>
-                    <p className="text-green-100 text-sm sm:text-base font-medium">
-                        Click here to see exam results and progress
-                    </p>
                 </div>
 
 

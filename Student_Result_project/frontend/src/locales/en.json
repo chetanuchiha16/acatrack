@@ -12,5 +12,20 @@
   "card": "Cards",
   "noData": "No data available",
   "chatbot": "Chatbot",
-  "chatbotDesc": "View Chatbot"
+  "chatbotDesc": "View Chatbot",
+  "dashboardTitle": "Parent Dashboard",
+  "resultTitle": "Student Results",
+  "viewResults": "📊 View Student Marks & Progress",
+  "progressSummary": "✨ Progress Summary Dashboard",
+  "subjectPerformance": "Subject Performance",
+  "percentage": "Percentage",
+  "totalMarks": "Total Marks",
+  "sgpa": "Sem Grade (SGPA)",
+  "cgpa": "Overall (CGPA)",
+  "internal": "Internal",
+  "final": "Final",
+  "total": "Total",
+  "downloadReport": "Download Full Report",
+  "noSubjectsFound": "No subjects found for",
+  "errorLoadingAI": "Could not load AI Insights."
 }
