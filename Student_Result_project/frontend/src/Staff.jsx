@@ -7,6 +7,8 @@ import API_BASE from "./config";
 import LogoutButton from "./LogoutButton";
 import useAuthStore from "./useAuthStore";
 import useProtectedPage from "./useProtectedPage";
+import LoadingSpinner from "./LoadingSpinner";
+
 export default function Staff() {
     let navigate = useNavigate();
     // // const location = useLocation();
@@ -29,7 +31,8 @@ export default function Staff() {
     // }, [authLoading, user, navigate]);
     const { user, loading } = useProtectedPage("Staff");
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <LoadingSpinner message="Authenticating Dashboard..." fullScreen={true} />;
+    
     const { id, name, who, mentor_id } = user || {};
     console.log(mentor_id);
     return (

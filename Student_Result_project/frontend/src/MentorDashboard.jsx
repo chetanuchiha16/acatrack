@@ -75,26 +75,35 @@ export default function MentorDashboard() {
             <div className="w-[95%] mx-auto h-[2px] bg-gray-300 my-4 rounded shadow-sm"></div>
 
             <div className="w-full md:max-w-6xl mx-auto p-4 sm:p-6 bg-white dark:bg-gray-800 rounded-lg shadow-2xl">
-                {/* Tabs */}
-                <div className="flex flex-wrap gap-2 b-2">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-t-md transition-colors duration-200
-                                ${activeTab === tab.id
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-                                }`}
-                        >
-                            {tab.icon}
-                            <span>{tab.label}</span>
-                        </button>
-                    ))}
+                {/* Segmented Control Tabs */}
+                <div className="flex justify-center mb-8">
+                    <div className="inline-flex bg-gray-100 dark:bg-gray-800/80 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700/50 shadow-inner">
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ease-in-out
+                                    ${activeTab === tab.id
+                                        ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-md transform scale-100"
+                                        : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/50 transform scale-95"
+                                    }`}
+                            >
+                                <span className={`${activeTab === tab.id ? "animate-pulse" : ""}`}>
+                                    {tab.icon}
+                                </span>
+                                <span>{tab.label}</span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Content */}
-                <div className="p-4 mt-12 rounded-lg bg-gray-50 dark:bg-gray-900">
+                <div className="p-4 sm:p-6 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden">
+                    {/* Background decoration */}
+                    <div className="absolute top-0 right-0 -m-4 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl"></div>
+                    <div className="absolute bottom-0 left-0 -m-4 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl"></div>
+                    
+                    <div className="relative z-10">
                     {batchYear ? (
                         <>
                             {activeTab === "results" && (
@@ -115,10 +124,17 @@ export default function MentorDashboard() {
                             <MentorRecords mentor_id={mentor_id} batchYear={batchYear} />}
                         </>
                     ) : (
-                        <div className="text-center text-gray-500 py-10">
-                            Please select a batch to view mentor details.
+                        <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-full mb-4">
+                                <Users className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">No Batch Selected</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+                                Please select a batch year from the dropdown menu above to view mentor details, results, and communications.
+                            </p>
                         </div>
                     )}
+                    </div>
                 </div>
             </div>
         </div>
