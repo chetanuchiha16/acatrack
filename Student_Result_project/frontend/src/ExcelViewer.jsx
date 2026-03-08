@@ -158,7 +158,6 @@ export default function ExcelViewer({ excel_route }) {
     }, [excelData, sheetIndex, worksheets]);
 
     return (
-    return (
         <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-6">
             <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent mb-6">
                 Spreadsheet Editor
