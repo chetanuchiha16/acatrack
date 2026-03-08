@@ -219,16 +219,23 @@ def _calculate_backlogs(student_data):
             data.get("pass_fail", []),
         ):
             if status == "Fail":
+                # Ensure credit is treated safely; sometimes it might accidentally hold a large number if arrays are dirty
+                safe_credit = float(credit) if credit is not None and str(credit).replace('.','',1).isdigit() else 0.0
+                
+                # If credit is absurdly high (like a total score), default to standard 3
+                if safe_credit > 10:
+                     safe_credit = 3.0
+                     
                 sem_backlogs.append(
                     {
                         "subject": subject,
                         "internal": ia,
                         "external": see,
-                        "credits": credit,
+                        "credits": safe_credit,
                     }
                 )
-                sem_credit_sum += credit
-                total_credits += credit
+                sem_credit_sum += safe_credit
+                total_credits += safe_credit
 
         if sem_backlogs:
             backlogs[sem] = {
