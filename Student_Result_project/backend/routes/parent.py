@@ -30,15 +30,15 @@ def get_student_details():
 
         return jsonify({
             "student": {
-                "usn": student.username,
+                "usn": student.usn,
                 "name": student.name,
                 "email": student.student_email,
                 "phone": student.student_phno
             },
             "mentor": {
-                "id": mentor.id if mentor else None,
-                "name": mentor.name if mentor else None,
+                "id": mentor.id,
+                "name": mentor.name,
                 "email": teacher.email if teacher else None,
                 "phone": teacher.phone if teacher else None,
-            }
+            } if mentor else None
         })

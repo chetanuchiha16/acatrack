@@ -1,35 +1,29 @@
 # student_report_blueprint.py
-from flask import Blueprint, request, jsonify, send_file, session
-from models.helpers import get_batch_year
+import re
+from collections import defaultdict
 from io import BytesIO
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+
+import numpy as np
+from flask import Blueprint, jsonify, request, send_file
+from logger_config import get_logger
+from models.batch_manager import bm
+from models.helpers import get_batch_year
+from rapidfuzz import fuzz, process
+from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib import colors
-from rapidfuzz import process, fuzz
-from collections import defaultdict
- 
-from models.fetch import sem_subjects
-from models.university import University
-from models.batch_manager import bm, BatchManager
-from transformers import pipeline
-import numpy as np
-from sklearn.linear_model import LinearRegression, Ridge
-import re
-from logger_config import get_logger
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from sklearn.linear_model import Ridge
 
 logger = get_logger(__name__)
-
-
 
 
 # ---------------- UNIVERSITY INIT ----------------
 
 
-
-
 # ---------------- BLUEPRINT ----------------
 chatbot_bp = Blueprint("student_report", __name__)
+
 
 # ---------------- PDF GENERATION ----------------
 def generate_pdf_report(student_data, semester=None):
@@ -38,39 +32,56 @@ def generate_pdf_report(student_data, semester=None):
     styles = getSampleStyleSheet()
     story = []
 
-    story.append(Paragraph("<b>Student Academic Report</b>", styles['Title']))
+    story.append(Paragraph("<b>Student Academic Report</b>", styles["Title"]))
     story.append(Spacer(1, 12))
-    story.append(Paragraph(f"<b>Student Name:</b> {student_data['student_name']}", styles['Heading2']))
+    story.append(
+        Paragraph(
+            f"<b>Student Name:</b> {student_data['student_name']}", styles["Heading2"]
+        )
+    )
     story.append(Spacer(1, 12))
 
-    semesters_to_include = {semester: student_data['semesters'][semester]} if semester else student_data['semesters']
+    semesters_to_include = (
+        {semester: student_data["semesters"][semester]}
+        if semester
+        else student_data["semesters"]
+    )
 
     for sem, data in semesters_to_include.items():
-        story.append(Paragraph(f"<b>{sem}</b>", styles['Heading2']))
-        story.append(Paragraph(
-            f"SGPA: {data['sgpa']}, CGPA: {data['cgpa']:.2f}, Percentage: {data['percentage']:.2f}%, Credits Obtained: {data['obtained_credits']}",
-            styles['Normal']
-        ))
-        table_data = [["Subject","Internal","External","Total","Credits","Result"]]
+        story.append(Paragraph(f"<b>{sem}</b>", styles["Heading2"]))
+        story.append(
+            Paragraph(
+                f"SGPA: {data['sgpa']}, CGPA: {data['cgpa']:.2f}, Percentage: {data['percentage']:.2f}%, Credits Obtained: {data['obtained_credits']}",
+                styles["Normal"],
+            )
+        )
+        table_data = [["Subject", "Internal", "External", "Total", "Credits", "Result"]]
         for s_name, s_code, ia, see, credit, status in zip(
-            data["subject_names"], data["subject_codes"],
-            data["ia_marks"], data["see_marks"], data["credits"], data["pass_fail"]
+            data["subject_names"],
+            data["subject_codes"],
+            data["ia_marks"],
+            data["see_marks"],
+            data["credits"],
+            data["pass_fail"],
         ):
             total = ia + see
             table_data.append([f"{s_name} ({s_code})", ia, see, total, credit, status])
-        table = Table(table_data, hAlign='LEFT')
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#ADD8E6')),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-            ('ALIGN', (0,0), (-1,-1), 'CENTER')
-        ]))
+        table = Table(table_data, hAlign="LEFT")
+        table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#ADD8E6")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ]
+            )
+        )
         story.append(table)
-        story.append(Spacer(1,12))
+        story.append(Spacer(1, 12))
 
     doc.build(story)
     buffer.seek(0)
     return buffer
-
 
 
 def generate_backlog_pdf(student_name, backlogs, total_credits):
@@ -80,23 +91,41 @@ def generate_backlog_pdf(student_name, backlogs, total_credits):
     story = []
 
     # Filter out semesters with 0 backlog credits
-    backlogs = {sem: sem_data for sem, sem_data in (backlogs or {}).items()
-                if sem_data.get("semester_backlog_credits", 0) > 0}
+    backlogs = {
+        sem: sem_data
+        for sem, sem_data in (backlogs or {}).items()
+        if sem_data.get("semester_backlog_credits", 0) > 0
+    }
 
     # Title
-    story.append(Paragraph(f"<b>Backlog Report - {student_name}</b>", styles['Title']))
+    story.append(Paragraph(f"<b>Backlog Report - {student_name}</b>", styles["Title"]))
     story.append(Spacer(1, 12))
 
     # No backlogs case
     if not backlogs or total_credits == 0:
-        story.append(Paragraph("<font color='green'><b>✅ No backlogs found.</b></font>", styles['Normal']))
+        story.append(
+            Paragraph(
+                "<font color='green'><b>✅ No backlogs found.</b></font>",
+                styles["Normal"],
+            )
+        )
     else:
         # Has backlogs
-        story.append(Paragraph("<font color='red'><b>⚠️ Student has backlogs!</b></font>", styles['Normal']))
+        story.append(
+            Paragraph(
+                "<font color='red'><b>⚠️ Student has backlogs!</b></font>",
+                styles["Normal"],
+            )
+        )
         story.append(Spacer(1, 12))
 
         if total_credits > 18:
-            story.append(Paragraph("<font color='red'><b>⚠️ Backlog credits exceed 18. Risk of year back.</b></font>", styles['Normal']))
+            story.append(
+                Paragraph(
+                    "<font color='red'><b>⚠️ Backlog credits exceed 18. Risk of year back.</b></font>",
+                    styles["Normal"],
+                )
+            )
             story.append(Spacer(1, 12))
 
         # Iterate over each semester with actual backlogs
@@ -104,36 +133,45 @@ def generate_backlog_pdf(student_name, backlogs, total_credits):
             failed_subjects = sem_data.get("failed_subjects", [])
             sem_credits = sem_data.get("semester_backlog_credits", 0)
 
-            story.append(Paragraph(f"<b>{sem}</b>", styles['Heading2']))
+            story.append(Paragraph(f"<b>{sem}</b>", styles["Heading2"]))
 
             # Table of failed subjects
             table_data = [["Subject", "Internal", "External", "Credits"]]
             for s in failed_subjects:
-                table_data.append([
-                    s.get("subject", "N/A"),
-                    s.get("internal", 0),
-                    s.get("external", 0),
-                    s.get("credits", 0)
-                ])
+                table_data.append(
+                    [
+                        s.get("subject", "N/A"),
+                        s.get("internal", 0),
+                        s.get("external", 0),
+                        s.get("credits", 0),
+                    ]
+                )
 
-            table = Table(table_data, hAlign='LEFT')
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (-1,0), colors.red),
-                ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-                ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-                ('ALIGN', (0,0), (-1,-1), 'CENTER')
-            ]))
+            table = Table(table_data, hAlign="LEFT")
+            table.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.red),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                        ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ]
+                )
+            )
             story.append(table)
             story.append(Spacer(1, 12))
 
         # Total backlog credits at the end
-        story.append(Paragraph(f"<b>Total Backlog Credits:</b> {total_credits}", styles['Normal']))
+        story.append(
+            Paragraph(
+                f"<b>Total Backlog Credits:</b> {total_credits}", styles["Normal"]
+            )
+        )
 
     # Build PDF
     doc.build(story)
     buffer.seek(0)
     return buffer
-
 
 
 # ---------------- HELPERS ----------------
@@ -160,9 +198,10 @@ def fetch_student_data_from_university(batch_year):
             "pass_fail": student.pass_fail,
             "subject_names": student.subject_names,
             "subject_codes": student.subject_codes,
-            "category": student.categorize()
+            "category": student.categorize(),
         }
     return data_map
+
 
 def _calculate_backlogs(student_data):
     backlogs = {}
@@ -177,36 +216,54 @@ def _calculate_backlogs(student_data):
             data.get("see_marks", []),
             data.get("credits", []),
             data.get("subject_names", []),
-            data.get("pass_fail", [])
+            data.get("pass_fail", []),
         ):
             if status == "Fail":
-                sem_backlogs.append({
-                    "subject": subject,
-                    "internal": ia,
-                    "external": see,
-                    "credits": credit
-                })
-                sem_credit_sum += credit
-                total_credits += credit
+                # Ensure credit is treated safely; sometimes it might accidentally hold a large number if arrays are dirty
+                safe_credit = float(credit) if credit is not None and str(credit).replace('.','',1).isdigit() else 0.0
+                
+                # If credit is absurdly high (like a total score), default to standard 3
+                if safe_credit > 10:
+                     safe_credit = 3.0
+                     
+                sem_backlogs.append(
+                    {
+                        "subject": subject,
+                        "internal": ia,
+                        "external": see,
+                        "credits": safe_credit,
+                    }
+                )
+                sem_credit_sum += safe_credit
+                total_credits += safe_credit
 
         if sem_backlogs:
             backlogs[sem] = {
                 "failed_subjects": sem_backlogs,
-                "semester_backlog_credits": sem_credit_sum
+                "semester_backlog_credits": sem_credit_sum,
             }
 
     return backlogs, total_credits
 
+
 def _fuzzy_find_student(name, students, cutoff=70):
     lowered_map = {s.lower(): s for s in students}
-    match = process.extractOne(name.lower(), list(lowered_map.keys()), scorer=fuzz.token_sort_ratio, score_cutoff=cutoff)
+    match = process.extractOne(
+        name.lower(),
+        list(lowered_map.keys()),
+        scorer=fuzz.token_sort_ratio,
+        score_cutoff=cutoff,
+    )
     return lowered_map[match[0]] if match else None
+
 
 def get_latest_semester(student_data):
     # Case 1: Nested "semesters" dict (old format with multiple semesters)
     semesters = student_data.get("semesters")
     if semesters:
-        valid_sems = [sem for sem, data in semesters.items() if data.get("sgpa") is not None]
+        valid_sems = [
+            sem for sem, data in semesters.items() if data.get("sgpa") is not None
+        ]
         if valid_sems:
             # Sort by numeric part of "SEMx"
             valid_sems.sort(key=lambda x: int(x.replace("sem", "")))
@@ -218,7 +275,7 @@ def get_latest_semester(student_data):
         match = re.search(r"(sem\d+)", pdf_url)
         if match:
             return match.group(1)  # e.g. "sem5"
-    
+
     return None
 
 
@@ -226,14 +283,14 @@ def safe_marks(marks):
     return [m if m is not None else 0 for m in marks or []]
 
 
-
 def get_student_history(student_data):
     semesters = student_data.get("semesters", {})
+
     # Extract number from keys like "sem1", "sem2"
     def sem_key(sem):
-        match = re.search(r'\d+', sem)
+        match = re.search(r"\d+", sem)
         return int(match.group()) if match else 0
-    
+
     return [
         (sem, data["sgpa"])
         for sem, data in sorted(semesters.items(), key=lambda x: sem_key(x[0]))
@@ -241,31 +298,59 @@ def get_student_history(student_data):
     ]
 
 
-
 # ---------------- Adaptive AI helpers ----------------
 # A small, extendable keyword map for detecting subject tags
 SUBJECT_TAG_KEYWORDS = {
     "programming": [
-        "programming", "data structures", "algorithms", "dsa", "software", "coding", "java", "python", "c++", "c"
+        "programming",
+        "data structures",
+        "algorithms",
+        "dsa",
+        "software",
+        "coding",
+        "java",
+        "python",
+        "c++",
+        "c",
     ],
     "math": [
-        "math", "mathematics", "discrete", "calculus", "statistics", "probability", "linear algebra"
+        "math",
+        "mathematics",
+        "discrete",
+        "calculus",
+        "statistics",
+        "probability",
+        "linear algebra",
     ],
     "data": [
-        "data", "database", "dbms", "data mining", "data science", "machine learning", "ai", "artificial intelligence"
+        "data",
+        "database",
+        "dbms",
+        "data mining",
+        "data science",
+        "machine learning",
+        "ai",
+        "artificial intelligence",
     ],
     "electronics": [
-        "electronics", "circuit", "microcontroller", "analog", "digital", "signal", "embedded"
+        "electronics",
+        "circuit",
+        "microcontroller",
+        "analog",
+        "digital",
+        "signal",
+        "embedded",
     ],
-    "networking": [
-        "network", "communication", "tcp", "udp", "routing", "networking"
-    ],
+    "networking": ["network", "communication", "tcp", "udp", "routing", "networking"],
     "management": [
-        "management", "economics", "accounts", "business", "marketing", "management studies"
+        "management",
+        "economics",
+        "accounts",
+        "business",
+        "marketing",
+        "management studies",
     ],
-    "communication": [
-        "english", "communication", "soft skills", "interpersonal"
-    ],
+    "communication": ["english", "communication", "soft skills", "interpersonal"],
 }
 
 
@@ -288,6 +373,7 @@ def tag_subject_auto(subject):
                 tags.append(tag)
                 break
     return list(set(tags))
+
 
 def aggregate_tag_scores(student_data):
     """
@@ -322,6 +408,7 @@ def aggregate_tag_scores(student_data):
         tag_avgs[t] = round(tot / max(1, cnt), 2)
     return tag_avgs, dict(tag_counts), subject_tags
 
+
 def classify_tag_strengths(tag_avgs):
     """
     Return three lists: strong (>=70), mid (40-69.99), weak (<40)
@@ -336,6 +423,7 @@ def classify_tag_strengths(tag_avgs):
         else:
             weak.append(tag)
     return strong, mid, weak
+
 
 def predict_next_sgpa_with_confidence(history):
     """
@@ -373,10 +461,13 @@ def predict_next_sgpa_with_confidence(history):
         "ci_low": round(low, 2),
         "ci_high": round(high, 2),
         "model": "ridge",
-        "resid_std": round(resid_std, 3)
+        "resid_std": round(resid_std, 3),
     }
 
-def build_placement_and_skill_advice(strong_tags, mid_tags, weak_tags, trend_data, cgpa_pred, total_backlog_credits):
+
+def build_placement_and_skill_advice(
+    strong_tags, mid_tags, weak_tags, trend_data, cgpa_pred, total_backlog_credits
+):
     """
     Generate human-friendly advice strings using tag strengths, trend, predicted CGPA and backlog info.
     """
@@ -385,52 +476,94 @@ def build_placement_and_skill_advice(strong_tags, mid_tags, weak_tags, trend_dat
 
     # Placement suggestions by tag
     if "programming" in strong_tags:
-        advice.append("Strong in programming → Good fit for software/coding internships. Focus on DSA, system design basics, and personal projects.")
-        learning_plan.append("Practice on coding platforms (DSA), contribute to small projects, build 2-3 demonstrable projects.")
+        advice.append(
+            "Strong in programming → Good fit for software/coding internships. Focus on DSA, system design basics, and personal projects."
+        )
+        learning_plan.append(
+            "Practice on coding platforms (DSA), contribute to small projects, build 2-3 demonstrable projects."
+        )
     elif "programming" in mid_tags:
-        advice.append("Programming is moderate → strengthen algorithms & projects to target coding roles.")
-        learning_plan.append("Daily DSA practice (1–2 problems), small project focusing on implementation and debugging.")
+        advice.append(
+            "Programming is moderate → strengthen algorithms & projects to target coding roles."
+        )
+        learning_plan.append(
+            "Daily DSA practice (1–2 problems), small project focusing on implementation and debugging."
+        )
     elif "programming" in weak_tags:
-        advice.append("Programming is weak → start with fundamentals (syntax, basic algorithms) and small exercises.")
-        learning_plan.append("Beginner tutorials + practice problems, pair-programming, small guided projects.")
+        advice.append(
+            "Programming is weak → start with fundamentals (syntax, basic algorithms) and small exercises."
+        )
+        learning_plan.append(
+            "Beginner tutorials + practice problems, pair-programming, small guided projects."
+        )
 
     if "data" in strong_tags:
-        advice.append("Good data-oriented skills → consider analytics/data science roles; learn SQL, pandas, and basic ML pipelines.")
-        learning_plan.append("Work on data cleaning, SQL queries, mini-ML projects and Kaggle beginner challenges.")
+        advice.append(
+            "Good data-oriented skills → consider analytics/data science roles; learn SQL, pandas, and basic ML pipelines."
+        )
+        learning_plan.append(
+            "Work on data cleaning, SQL queries, mini-ML projects and Kaggle beginner challenges."
+        )
     if "math" in strong_tags:
-        advice.append("Strong mathematical foundation → suitable for analytics, research or systems roles requiring quantitative reasoning.")
-        learning_plan.append("Practice probability/statistics & linear algebra applied to ML/algorithms.")
+        advice.append(
+            "Strong mathematical foundation → suitable for analytics, research or systems roles requiring quantitative reasoning."
+        )
+        learning_plan.append(
+            "Practice probability/statistics & linear algebra applied to ML/algorithms."
+        )
 
     if total_backlog_credits > 0:
-        advice.append("Clear backlogs soon — many recruiters shortlist based on clear academic records.")
-        learning_plan.append("Prioritise backlog clearance and short-term revision plans for failed subjects.")
+        advice.append(
+            "Clear backlogs soon — many recruiters shortlist based on clear academic records."
+        )
+        learning_plan.append(
+            "Prioritise backlog clearance and short-term revision plans for failed subjects."
+        )
 
     # Trend-based advice
     if trend_data:
         if trend_data.get("trend") == "Declining":
-            advice.append("SGPA trend is Declining — identify root causes (attendance, exam prep, fundamentals).")
-            learning_plan.append("Strengthen fundamentals for weak topics, structured weekly study plan, and seek mentoring or extra classes.")
+            advice.append(
+                "SGPA trend is Declining — identify root causes (attendance, exam prep, fundamentals)."
+            )
+            learning_plan.append(
+                "Strengthen fundamentals for weak topics, structured weekly study plan, and seek mentoring or extra classes."
+            )
         else:
-            advice.append("SGPA trend is Improving — maintain study routine and strengthen project-based learning.")
+            advice.append(
+                "SGPA trend is Improving — maintain study routine and strengthen project-based learning."
+            )
 
     # CGPA-based realistic positioning
     if cgpa_pred:
-        final_cgpa = cgpa_pred.get("predicted_final_cgpa") or cgpa_pred.get("predicted_final_cgpa", None)
+        final_cgpa = cgpa_pred.get("predicted_final_cgpa") or cgpa_pred.get(
+            "predicted_final_cgpa", None
+        )
         # if predicted_final_cgpa is present
         if isinstance(final_cgpa, (int, float)):
             if final_cgpa >= 7.5:
-                advice.append("Predicted CGPA is competitive for campus placements at mid-large companies; focus on interview prep & projects.")
+                advice.append(
+                    "Predicted CGPA is competitive for campus placements at mid-large companies; focus on interview prep & projects."
+                )
             elif final_cgpa >= 6.0:
-                advice.append("Predicted CGPA is decent — target internships, niche roles and strengthen practical skills & projects.")
+                advice.append(
+                    "Predicted CGPA is decent — target internships, niche roles and strengthen practical skills & projects."
+                )
             else:
-                advice.append("Predicted CGPA is low — aim for internships, upskilling courses, and consider certification-based skill proof.")
+                advice.append(
+                    "Predicted CGPA is low — aim for internships, upskilling courses, and consider certification-based skill proof."
+                )
 
     # generic suggestions for weak tags
     for t in weak_tags:
         if t == "communication":
-            learning_plan.append("Work on communication: mock interviews, presentation practice, and resume polish.")
+            learning_plan.append(
+                "Work on communication: mock interviews, presentation practice, and resume polish."
+            )
         else:
-            learning_plan.append(f"Review fundamentals for {t}, use guided courses and hands-on mini-projects.")
+            learning_plan.append(
+                f"Review fundamentals for {t}, use guided courses and hands-on mini-projects."
+            )
 
     # dedupe while preserving order
     def dedupe(lst):
@@ -462,14 +595,17 @@ def list_students():
             # New format (flat JSON, only one semester)
             sem_data = data
 
-        students_list.append({
-            "student_name": data.get("student_name") or data.get("name"),  # handle both
-            "latest_semester": latest_sem,
-            "sgpa": sem_data.get("sgpa"),
-            "cgpa": sem_data.get("cgpa"),
-            "percentage": sem_data.get("percentage"),
-            "category": sem_data.get("category")
-        })
+        students_list.append(
+            {
+                "student_name": data.get("student_name")
+                or data.get("name"),  # handle both
+                "latest_semester": latest_sem,
+                "sgpa": sem_data.get("sgpa"),
+                "cgpa": sem_data.get("cgpa"),
+                "percentage": sem_data.get("percentage"),
+                "category": sem_data.get("category"),
+            }
+        )
 
     return jsonify({"students": students_list})
 
@@ -481,17 +617,18 @@ def get_student_report(student_query):
 
     query_lower = student_query.lower()
     possible_matches = [
-        name for name in students.keys()
-        if name.lower().startswith(query_lower)
+        name for name in students.keys() if name.lower().startswith(query_lower)
     ]
 
     if len(possible_matches) > 1:
         formatted_matches = [name.upper() for name in possible_matches]
-        return jsonify({
-            "type": "disambiguation",
-            "message": f"Multiple students found for '{student_query}'. Please specify the full name\nor choose from the dropdown",
-            "options": formatted_matches
-        })
+        return jsonify(
+            {
+                "type": "disambiguation",
+                "message": f"Multiple students found for '{student_query}'. Please specify the full name\nor choose from the dropdown",
+                "options": formatted_matches,
+            }
+        )
 
     matched_name = _fuzzy_find_student(student_query, students.keys())
     if not matched_name:
@@ -503,7 +640,7 @@ def get_student_report(student_query):
     backlogs = {}
     total_backlog_credits = 0
 
-    if "semesters" in student_data:  
+    if "semesters" in student_data:
         # Old format (nested)
         semesters = student_data["semesters"]
         for sem, data in semesters.items():
@@ -511,25 +648,30 @@ def get_student_report(student_query):
             sem_credit_sum = 0
 
             for ia, see, credit, subject, status in zip(
-                data["ia_marks"], data["see_marks"], data["credits"],
-                data["subject_names"], data["pass_fail"]
+                data["ia_marks"],
+                data["see_marks"],
+                data["credits"],
+                data["subject_names"],
+                data["pass_fail"],
             ):
                 if status == "Fail":
-                    sem_backlogs.append({
-                        "subject": subject,
-                        "internal": ia,
-                        "external": see,
-                        "credits": credit
-                    })
+                    sem_backlogs.append(
+                        {
+                            "subject": subject,
+                            "internal": ia,
+                            "external": see,
+                            "credits": credit,
+                        }
+                    )
                     sem_credit_sum += credit
                     total_backlog_credits += credit
 
             if sem_backlogs:
                 backlogs[sem] = {
                     "failed_subjects": sem_backlogs,
-                    "semester_backlog_credits": sem_credit_sum
+                    "semester_backlog_credits": sem_credit_sum,
                 }
-    else:  
+    else:
         # New format (flat JSON)
         sem = get_latest_semester(student_data) or "sem1"
         sem_backlogs = []
@@ -537,19 +679,21 @@ def get_student_report(student_query):
 
         for subj in student_data.get("subjects", []):
             if subj.get("status") == "Fail":
-                sem_backlogs.append({
-                    "subject": subj.get("subject_name"),
-                    "internal": subj.get("ia"),
-                    "external": subj.get("see"),
-                    "credits": subj.get("credit")
-                })
+                sem_backlogs.append(
+                    {
+                        "subject": subj.get("subject_name"),
+                        "internal": subj.get("ia"),
+                        "external": subj.get("see"),
+                        "credits": subj.get("credit"),
+                    }
+                )
                 sem_credit_sum += subj.get("credit", 0)
                 total_backlog_credits += subj.get("credit", 0)
 
         if sem_backlogs:
             backlogs[sem] = {
                 "failed_subjects": sem_backlogs,
-                "semester_backlog_credits": sem_credit_sum
+                "semester_backlog_credits": sem_credit_sum,
             }
 
     # ---------------- AI INSIGHTS ----------------
@@ -567,14 +711,17 @@ def get_student_report(student_query):
             sem_data = student_data
             ia_marks = [subj.get("ia", 0) for subj in sem_data.get("subjects", [])]
             see_marks = [subj.get("see", 0) for subj in sem_data.get("subjects", [])]
-            subjects = [subj.get("subject_name") for subj in sem_data.get("subjects", [])]
+            subjects = [
+                subj.get("subject_name") for subj in sem_data.get("subjects", [])
+            ]
             pass_fail = [subj.get("status") for subj in sem_data.get("subjects", [])]
 
         total_marks = sum([ia + see for ia, see in zip(ia_marks, see_marks)])
         max_total_marks = sum([100] * len(subjects))
 
         ai_summary = {
-            "student_name": student_data.get("student_name") or student_data.get("name"),
+            "student_name": student_data.get("student_name")
+            or student_data.get("name"),
             "usn": sem_data.get("usn", "N/A"),
             "obtained_credits": sem_data.get("obtained_credits", "N/A"),
             "semester": latest_sem,
@@ -583,13 +730,14 @@ def get_student_report(student_query):
             "cgpa": f"{sem_data.get('cgpa', 0):.2f}",
             "percentage": f"{sem_data.get('percentage', 0):.2f}%",
             "backlog_status": (
-                "⚠️ Backlogs detected.\n" + "\n".join(
+                "⚠️ Backlogs detected.\n"
+                + "\n".join(
                     f"{sem}: {details['semester_backlog_credits']} backlog credits"
                     for sem, details in backlogs.items()
                 )
                 if total_backlog_credits > 0
                 else "✅ No backlogs — academic record is clear."
-            )
+            ),
         }
 
         # --- AI profiling, trends, predictions ---
@@ -597,8 +745,12 @@ def get_student_report(student_query):
         strong_tags, mid_tags, weak_tags = classify_tag_strengths(tag_avgs)
 
         latest_scores = np.array(ia_marks) + np.array(see_marks)
-        latest_strong = [sub for sub, mark in zip(subjects, latest_scores) if mark >= 70]
-        latest_mid = [sub for sub, mark in zip(subjects, latest_scores) if 40 <= mark < 70]        
+        latest_strong = [
+            sub for sub, mark in zip(subjects, latest_scores) if mark >= 70
+        ]
+        latest_mid = [
+            sub for sub, mark in zip(subjects, latest_scores) if 40 <= mark < 70
+        ]
         latest_weak = [sub for sub, mark in zip(subjects, latest_scores) if mark < 40]
 
         history = get_student_history(student_data)
@@ -610,40 +762,52 @@ def get_student_report(student_query):
                 trend_data = {
                     "trend": "Improving" if slope > 0 else "Declining",
                     "history": {sem: sgpa for sem, sgpa in history},
-                    "avg_sgpa": round(float(np.mean(sgpas)), 2)
+                    "avg_sgpa": round(float(np.mean(sgpas)), 2),
                 }
-                logger.debug(f"[DEBUG] Trend analysis for {matched_name}: slope={slope:.4f}, sgpas={sgpas}")
+                logger.debug(
+                    f"[DEBUG] Trend analysis for {matched_name}: slope={slope:.4f}, sgpas={sgpas}"
+                )
 
                 pred_info = predict_next_sgpa_with_confidence(history)
                 if pred_info:
                     predicted_next = pred_info["predicted_next_sgpa"]
-                    predicted_final = round(float(np.mean(list(sgpas) + [predicted_next])), 2)
+                    predicted_final = round(
+                        float(np.mean(list(sgpas) + [predicted_next])), 2
+                    )
                     cgpa_prediction = {
                         "predicted_next_sgpa": predicted_next,
                         "predicted_final_cgpa": predicted_final,
                         "ci_low": pred_info["ci_low"],
                         "ci_high": pred_info["ci_high"],
                         "model": pred_info["model"],
-                        "resid_std": pred_info["resid_std"]
+                        "resid_std": pred_info["resid_std"],
                     }
-                    logger.debug(f"[DEBUG] Prediction for {matched_name}: {cgpa_prediction}")
+                    logger.debug(
+                        f"[DEBUG] Prediction for {matched_name}: {cgpa_prediction}"
+                    )
             else:
                 # Only one semester → no slope, fallback prediction
                 trend_data = {
                     "trend": "Insufficient data",
                     "history": {sems[0]: sgpas[0]},
-                    "avg_sgpa": round(float(sgpas[0]), 2)
+                    "avg_sgpa": round(float(sgpas[0]), 2),
                 }
                 cgpa_prediction = {
                     "predicted_next_sgpa": round(float(sgpas[0]), 2),
                     "predicted_final_cgpa": round(float(sgpas[0]), 2),
-                    "note": "Based on one semester, we cannot predict trends. Current SGPA is used as the estimated next SGPA."
+                    "note": "Based on one semester, we cannot predict trends. Current SGPA is used as the estimated next SGPA.",
                 }
-                logger.debug(f"[DEBUG] Fallback prediction for {matched_name}: {cgpa_prediction}")
-
+                logger.debug(
+                    f"[DEBUG] Fallback prediction for {matched_name}: {cgpa_prediction}"
+                )
 
         placement_advice_list, learning_plan_list = build_placement_and_skill_advice(
-            strong_tags, mid_tags, weak_tags, trend_data, cgpa_prediction, total_backlog_credits
+            strong_tags,
+            mid_tags,
+            weak_tags,
+            trend_data,
+            cgpa_prediction,
+            total_backlog_credits,
         )
 
         ai_profile_data = {
@@ -658,21 +822,24 @@ def get_student_report(student_query):
             "mid_tags": mid_tags,
             "weak_tags": weak_tags,
             "placement_advice": placement_advice_list,
-            "learning_plan": learning_plan_list
+            "learning_plan": learning_plan_list,
         }
 
-    return jsonify({
-        "student_name": student_data.get("student_name") or student_data.get("name"),
-        "semesters": student_data.get("semesters") if "semesters" in student_data else {latest_sem: student_data},
-        "backlogs": backlogs,
-        "total_backlog_credits": total_backlog_credits,
-        "ai_summary": ai_summary,
-        "ai_profile": ai_profile_data,
-        "trend": trend_data,
-        "cgpa_prediction": cgpa_prediction
-    })
-
-
+    return jsonify(
+        {
+            "student_name": student_data.get("student_name")
+            or student_data.get("name"),
+            "semesters": student_data.get("semesters")
+            if "semesters" in student_data
+            else {latest_sem: student_data},
+            "backlogs": backlogs,
+            "total_backlog_credits": total_backlog_credits,
+            "ai_summary": ai_summary,
+            "ai_profile": ai_profile_data,
+            "trend": trend_data,
+            "cgpa_prediction": cgpa_prediction,
+        }
+    )
 
 
 @chatbot_bp.route("/report/<student_query>/pdf", methods=["GET"])
@@ -680,7 +847,7 @@ def download_pdf_report(student_query):
     batch_year = get_batch_year()
     students = fetch_student_data_from_university(batch_year=batch_year)
     matched_name = _fuzzy_find_student(student_query, students.keys())
-    
+
     if not matched_name:
         return jsonify({"error": "Student not found"}), 404
 
@@ -701,26 +868,31 @@ def download_pdf_report(student_query):
                 backlogs = {}
                 total_credits = 0
 
-        pdf_buffer = generate_backlog_pdf(student_data["student_name"], backlogs, total_credits)
-        filename = f"{student_data['student_name'].replace(' ', '_')}_Backlog_Report.pdf"
+        pdf_buffer = generate_backlog_pdf(
+            student_data["student_name"], backlogs, total_credits
+        )
+        filename = (
+            f"{student_data['student_name'].replace(' ', '_')}_Backlog_Report.pdf"
+        )
 
     else:
         # Semester or full report PDF
-        pdf_buffer = generate_pdf_report(student_data, semester=semester)  # <-- pass semester
+        pdf_buffer = generate_pdf_report(
+            student_data, semester=semester
+        )  # <-- pass semester
         if semester:
             filename = f"{student_data['student_name'].replace(' ', '_')}_{semester}_Report.pdf"
         else:
-            filename = f"{student_data['student_name'].replace(' ', '_')}_Full_Report.pdf"
+            filename = (
+                f"{student_data['student_name'].replace(' ', '_')}_Full_Report.pdf"
+            )
 
     return send_file(
         pdf_buffer,
         mimetype="application/pdf",
         as_attachment=True,
-        download_name=filename
+        download_name=filename,
     )
-
-
-
 
 
 @chatbot_bp.route("/report/<student_query>/downloads", methods=["GET"])
@@ -728,7 +900,7 @@ def get_download_links(student_query):
     batch_year = get_batch_year()
     students = fetch_student_data_from_university(batch_year=batch_year)
     matched_name = _fuzzy_find_student(student_query, students.keys())
-    
+
     if not matched_name:
         return jsonify({"error": "Student not found"}), 404
 
@@ -736,18 +908,19 @@ def get_download_links(student_query):
 
     download_urls = {
         "full": f"/api/report/{student_name}/pdf?type=full",
-        "backlog": f"/api/report/{student_name}/pdf?type=backlog"
+        "backlog": f"/api/report/{student_name}/pdf?type=backlog",
     }
 
     # Add semester-wise links
     for sem in students[matched_name].get("semesters", {}):
-        download_urls[f"{sem}_report"] = f"/api/report/{student_name}/pdf?type=semester&semester={sem}"
-        download_urls[f"{sem}_backlog"] = f"/api/report/{student_name}/pdf?type=backlog&semester={sem}"
+        download_urls[f"{sem}_report"] = (
+            f"/api/report/{student_name}/pdf?type=semester&semester={sem}"
+        )
+        download_urls[f"{sem}_backlog"] = (
+            f"/api/report/{student_name}/pdf?type=backlog&semester={sem}"
+        )
 
-    return jsonify({
-        "type": "downloads",
-        "downloadUrls": download_urls
-    })
+    return jsonify({"type": "downloads", "downloadUrls": download_urls})
 
 
 @chatbot_bp.route("/chatbot/intent", methods=["POST"])
@@ -764,11 +937,10 @@ def handle_intent():
         # Extract student name if user typed: "download report <student_name>"
         student_name = query.replace("download report", "").strip()
         if not student_name:
-            return jsonify({
-                "message": "Please provide the student name to download the report."
-            })
+            return jsonify(
+                {"message": "Please provide the student name to download the report."}
+            )
 
         # Fetch download links from backend route
 
     return jsonify({"message": "Intent not recognized."})
-

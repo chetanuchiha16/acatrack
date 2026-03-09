@@ -1,30 +1,29 @@
 from flask import Flask, jsonify, request, send_file, Blueprint, session
 from models import University
 from visuals import create_toppers_list_pdf, create_university_report
-from models.paths import  pdf_dir  , get_db_path, postgres_db_url
+from models.paths import  pdf_dir, postgres_db_url
 from io import BytesIO
 from logger_config import get_logger
 
 logger = get_logger(__name__)
 
 from models.helpers import get_batch_year
+from extensions import cache
 
 uni_bp = Blueprint('uni', __name__)
 
 @uni_bp.route('/auth/Staff/overall_res', methods=['GET'])
+@cache.cached(timeout=3600, query_string=True)
 def get_academic_performance():
     semester = request.args.get('semester')
     show_toppers = request.args.get('show_toppers', 'false').lower() == 'true'
     show_failed = request.args.get('show_failed', 'false').lower() == 'true'
     format_type = request.args.get('format', 'json').lower() # default is JSON
-    batch_year = get_batch_year()   
+    batch_year = request.args.get('batch_year') or get_batch_year()   
 
     try:
-        db_path = get_db_path(batch_year)
-        logger.debug(f"{db_path} from university 1")
         logger.debug(f"Batch year in session: {get_batch_year()}" )
         university = University(postgres_url=postgres_db_url, batch_year=batch_year)
-        university.add_students(semester)
         result = university.calculate_academic_performance_by_semester(semester)
 
         if show_toppers:
@@ -53,10 +52,10 @@ def get_academic_performance():
 
 
 @uni_bp.route('/auth/Staff/report/<semester>')
+@cache.cached(timeout=3600)
 def get_report(semester):
-    batch_year = get_batch_year()
+    batch_year = request.args.get('batch_year') or get_batch_year()
     university = University(postgres_url=postgres_db_url, batch_year=batch_year)
-    university.add_students(semester)
 
     # ✅ Generate PDF in-memory
     pdf_bytes = create_university_report(university, semester)
