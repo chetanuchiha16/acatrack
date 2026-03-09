@@ -61,6 +61,7 @@ export default function () {
         const parentRes = http.post(`${BASE_URL}/auth`, parentLogin, {
            headers: { 'Content-Type': 'application/json' }
         });
+        check(parentRes, { 'Parent Login status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
         if (parentRes.status === 200) { parentToken = parentRes.json('token'); }
     });
 
@@ -129,11 +130,12 @@ export default function () {
     // Parent Routes
     // ==========================================
     group('Parent Endpoints', function() {
-        group('Parent Student Details API', function () {
-           const res = http.get(`${BASE_URL}/parent/student-details`, parentParams);
-           // Checking 200 OR 401 because the Parent login above uses dummy defaults that might fail
-           check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
-        });
+        if (parentToken) {
+            group('Parent Student Details API', function () {
+               const res = http.get(`${BASE_URL}/parent/student-details`, parentParams);
+               check(res, { 'status is 200': (r) => r.status === 200 });
+            });
+        }
     });
 
     // ==========================================
