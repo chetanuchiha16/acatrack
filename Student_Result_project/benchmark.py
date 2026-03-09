@@ -8,7 +8,7 @@ import psycopg2
 import sys
 import os
 
-DATABASE_URL = "postgresql://chetan:4myHina!@10.49.58.115:5432/gp_normalised"
+DATABASE_URL = "postgresql://chetan:4myHina!@10.49.58.115:5432/Group_Project"
 
 ram_usage = []
 db_connections = []
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     start_time = time.time()
     try:
         subprocess.run(
-            ["k6", "run", "load_testv1.js", "--summary-export=summaryv1.json"],
+            ["k6", "run", "load_test.js", "--summary-export=summary.json"],
             cwd=BASE_DIR,
             check=True
         )
@@ -109,12 +109,12 @@ if __name__ == "__main__":
     
     # Read k6 summary
     summary_data = {}
-    summary_path = os.path.join(BASE_DIR, "summaryv1.json")
+    summary_path = os.path.join(BASE_DIR, "summary.json")
     try:
         with open(summary_path, "r") as f:
             summary_data = json.load(f)
     except FileNotFoundError:
-        print("❌ summaryv1.json not found! Unable to generate full report.")
+        print("❌ summary.json not found! Unable to generate full report.")
         sys.exit(1)
 
     metrics = summary_data.get("metrics", {})
@@ -150,7 +150,7 @@ if __name__ == "__main__":
 ---
 *Generated automatically by benchmarking monitor.*
 """
-    report_path = os.path.join(BASE_DIR, "load_test_reportv1.md")
+    report_path = os.path.join(BASE_DIR, "load_test_report.md")
     with open(report_path, "w") as f:
         f.write(md_content)
     

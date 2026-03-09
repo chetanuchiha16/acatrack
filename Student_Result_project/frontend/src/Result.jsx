@@ -4,8 +4,6 @@ import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
 import ResultCardView from "./ResultCardView";
 import StudentAIInsights from "./StudentAIInsights";
-import ResultGlossary from "./ResultGlossary";
-
 export default function Result({ usn, semester, view }) {
     const [data, setData] = useState(null);
     const [error, setError] = useState("");
@@ -62,12 +60,9 @@ export default function Result({ usn, semester, view }) {
                 {view === "cards" && data && !loading && (
                     <div className="space-y-5 hidden sm:block">
                         {/* Title */}
-                        <div className="flex flex-col sm:flex-row items-center justify-between mb-4 sm:mb-6">
-                            <h2 className="text-base sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                Student Report
-                            </h2>
-                            <ResultGlossary />
-                        </div>
+                        <h2 className="text-base sm:text-2xl font-bold text-center text-blue-600 dark:text-blue-400">
+                            Student Report
+                        </h2>
 
                         {/* Student Info Grid */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
@@ -224,12 +219,9 @@ export default function Result({ usn, semester, view }) {
                 {view === "table" && data && !loading && (
                     <div className="space-y-5">
                         {/* Title */}
-                        <div className="flex flex-col sm:flex-row items-center justify-between mb-4 sm:mb-6">
-                            <h2 className="text-base sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                Student Report
-                            </h2>
-                            <ResultGlossary />
-                        </div>
+                        <h2 className="text-base sm:text-2xl font-bold text-center text-blue-600 dark:text-blue-400">
+                            Student Report
+                        </h2>
 
                         {/* Student Info */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">

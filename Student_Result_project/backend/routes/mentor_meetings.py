@@ -9,7 +9,7 @@ from models.helpers import get_batch_year
 # Get all meetings for a mentor
 @mentor_meetings_bp.route("<int:mentor_id>", methods=["GET"])
 def get_meetings(mentor_id):
-    batch_year = request.args.get("batch_year") or get_batch_year()
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         meetings = Meeting.query.filter_by(mentor_id=mentor_id).order_by(Meeting.date).all()
         result = [
@@ -39,7 +39,7 @@ def add_meeting(mentor_id):
         meeting_date = datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
         return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
-    batch_year = request.args.get("batch_year") or get_batch_year()
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         meeting = Meeting(mentor_id=mentor_id, title=title, venue = venue, agenda=agenda, date=meeting_date)
         db.session.add(meeting)
@@ -74,7 +74,7 @@ def add_meeting(mentor_id):
 # Delete a meeting
 @mentor_meetings_bp.route("delete/<int:meeting_id>", methods=["DELETE"])
 def delete_meeting(meeting_id):
-    batch_year = request.args.get("batch_year") or get_batch_year()
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         meeting = Meeting.query.get(meeting_id)
         if not meeting:

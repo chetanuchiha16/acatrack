@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
-
-export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
+export default function StudentInsights({ usn = "", semester = "sem1" }) {
     const [aiData, setAiData] = useState(null);
     const [performanceData, setPerformanceData] = useState(null);
     const [loadingAI, setLoadingAI] = useState(false);
@@ -22,8 +21,14 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
         try {
             const [summaryRes, profileRes, trendRes, predictRes] =
                 await Promise.all([
-                    fetchWithAuth(`${API_BASE}/ai/summary?usn=${usn}&semester=${semester}`, {}),
-                    fetchWithAuth(`${API_BASE}/ai/profile?usn=${usn}&semester=${semester}`, {}),
+                    fetchWithAuth(
+                        `${API_BASE}/ai/summary?usn=${usn}&semester=${semester}`,
+                        {}
+                    ),
+                    fetchWithAuth(
+                        `${API_BASE}/ai/profile?usn=${usn}&semester=${semester}`,
+                        {}
+                    ),
                     fetchWithAuth(`${API_BASE}/ai/trend?usn=${usn}`, {}),
                     fetchWithAuth(`${API_BASE}/ai/predict_cgpa?usn=${usn}`, {}),
                 ]);
@@ -64,14 +69,21 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
             if (res.ok) {
                 setPerformanceData({
                     ...data,
-                    subject_analysis: Array.isArray(data.subject_analysis) ? data.subject_analysis : [],
-                    improvement_advice: Array.isArray(data.improvement_advice) ? data.improvement_advice : [],
-                    study_summary: data.study_summary || "Focus on overall improvement.",
+                    subject_analysis: Array.isArray(data.subject_analysis)
+                        ? data.subject_analysis
+                        : [],
+                    improvement_advice: Array.isArray(data.improvement_advice)
+                        ? data.improvement_advice
+                        : [],
+                    study_summary:
+                        data.study_summary || "Focus on overall improvement.", // use the concise summary
                 });
                 fetchChart();
                 setOpenPerf(true);
             } else {
-                setErrorPerf(data?.error || "Failed to fetch student performance");
+                setErrorPerf(
+                    data?.error || "Failed to fetch student performance"
+                );
             }
         } catch (err) {
             setErrorPerf("Server error: " + err.message);
@@ -98,239 +110,312 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
     // Get subject color based on marks
     const getSubjectColor = (subject) => {
         const marks = subject.total || 0;
-        if (marks < 50) return "bg-red-50 dark:bg-red-500/10";
-        if (marks >= 50 && marks <= 80) return "bg-yellow-50 dark:bg-yellow-500/10";
-        return "bg-green-50 dark:bg-green-500/10";
+
+        if (marks < 50)
+            return "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300";
+
+        if (marks >= 50 && marks <= 80)
+            return "bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-300";
+
+        return "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300";
     };
 
     return (
-        <div className="w-full space-y-4">
-            {/* Buttons Container */}
-            <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 shadow-md">
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                    <button
-                        onClick={() => {
-                            if (!aiData) fetchAIInsights();
-                            setOpenAI(true);
-                            setOpenPerf(false);
-                        }}
-                        disabled={loadingAI}
-                        className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-purple-400 border shadow-sm ${
-                            openAI 
-                                ? "bg-purple-600 border-purple-600 text-white" 
-                                : "bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-slate-800/80 hover:text-purple-600 dark:hover:text-purple-400"
-                        }`}
-                    >
-                        <div className="flex items-center justify-center">
-                            <span>✨ AI Insights</span>
-                            {loadingAI && <span className="ml-2 animate-spin">⏳</span>}
-                        </div>
-                    </button>
+        <div className="p-2 rounded space-y-2">
+            {/* Buttons to toggle panels */}
+            <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                    onClick={() => {
+                        if (!aiData) fetchAIInsights();
+                        setOpenAI(true);
+                        setOpenPerf(false);
+                    }}
+                    disabled={loadingAI}
+                    className="flex-1 bg-purple-500 text-white px-3 py-2 rounded hover:bg-purple-600 transition-transform transform hover:scale-102"
+                >
+                    ✨ AI Insights{" "}
+                    {loadingAI && <span className="ml-2 animate-spin">⏳</span>}
+                    {!loadingAI && aiData && (
+                        <span className="ml-2">{openAI ? "▲" : "▼"}</span>
+                    )}
+                </button>
 
-                    <button
-                        onClick={() => {
-                            if (!performanceData) fetchPerformance();
-                            setOpenAI(false);
-                            setOpenPerf(true);
-                        }}
-                        disabled={loadingPerf}
-                        className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-400 border shadow-sm ${
-                            openPerf 
-                                ? "bg-blue-600 border-blue-600 text-white" 
-                                : "bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800/80 hover:text-blue-600 dark:hover:text-blue-400"
-                        }`}
-                    >
-                        <div className="flex items-center justify-center">
-                            <span>📊 Performance Dashboard</span>
-                            {loadingPerf && <span className="ml-2 animate-spin">⏳</span>}
-                        </div>
-                    </button>
-                </div>
-                {(errorAI && openAI) && <p className="mt-3 text-sm text-red-600 text-center font-medium">{errorAI}</p>}
-                {(errorPerf && openPerf) && <p className="mt-3 text-sm text-red-600 text-center font-medium">{errorPerf}</p>}
+                <button
+                    onClick={() => {
+                        if (!performanceData) fetchPerformance();
+                        setOpenAI(false);
+                        setOpenPerf(true);
+                    }}
+                    disabled={loadingPerf}
+                    className="flex-1 bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 transition-transform transform hover:scale-102"
+                >
+                    📊 Performance Dashboard{" "}
+                    {loadingPerf && (
+                        <span className="ml-2 animate-spin">⏳</span>
+                    )}
+                    {!loadingPerf && performanceData && (
+                        <span className="ml-2">{openPerf ? "▲" : "▼"}</span>
+                    )}
+                </button>
             </div>
 
-            {/* AI Insights Content */}
-            {openAI && aiData && (
-                <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 shadow-lg flex flex-col gap-6">
-                    {/* 🧠 AI Summary */}
-                    <div>
-                        <h3 className="text-base sm:text-xl font-bold text-purple-600 dark:text-purple-400 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
-                            🧠 AI Summary
-                        </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs sm:text-sm">
-                            <div>
-                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Student</p>
-                                <p className="font-semibold text-gray-800 dark:text-gray-100 truncate">{aiData.ai_summary.name}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">USN</p>
-                                <p className="font-semibold text-gray-700 dark:text-gray-200 truncate">{aiData.ai_summary.usn}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Semester</p>
-                                <p className="font-semibold text-gray-700 dark:text-gray-200">{aiData.ai_summary.semester}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Percentage</p>
-                                <p className="font-semibold text-gray-700 dark:text-gray-200">{aiData.ai_summary.percentage}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Marks</p>
-                                <p className="font-semibold text-gray-700 dark:text-gray-200">{aiData.ai_summary.total_marks}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Credits</p>
-                                <p className="font-semibold text-gray-700 dark:text-gray-200">{aiData.ai_summary.obtained_credits}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">SGPA</p>
-                                <p className="font-semibold text-gray-700 dark:text-gray-200">{aiData.ai_summary.sgpa}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">CGPA</p>
-                                <p className="font-semibold text-gray-700 dark:text-gray-200">{aiData.ai_summary.cgpa}</p>
-                            </div>
-                        </div>
-
-                        {/* Backlogs */}
-                        <div className="mt-6">
-                            <h4 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2 uppercase tracking-wider">
-                                ⚠️ Backlogs
+            <div className="gap-4">
+                {openAI && aiData && (
+                    <div className="mt-2 space-y-4  p-4 rounded-lg shadow-inner text-gray-800 dark:text-gray-200">
+                        {/* 🧠 AI Summary */}
+                        <div className="bg-white dark:bg-[#2a3447] p-4 rounded-lg shadow">
+                            <h4 className="font-semibold text-purple-300 mb-2">
+                                🧠 AI Summary
                             </h4>
-                            {Object.keys(aiData.ai_profile.backlogs || {}).length === 0 ? (
-                                <div className="inline-block bg-green-50 text-green-700 dark:bg-green-900/40 dark:text-green-300 border border-green-200 dark:border-green-800/50 px-3 py-1.5 rounded-md text-sm font-medium">
-                                    No backlogs
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                    <b>Student:</b> {aiData.ai_summary.name}
                                 </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {Object.entries(aiData.ai_profile.backlogs).map(([sem, semData]) => (
-                                        <div key={sem} className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 p-3 rounded-lg">
-                                            <div className="text-sm font-semibold text-red-800 dark:text-red-300 mb-2 border-b border-red-200 dark:border-red-900/30 pb-1">
-                                                {sem}
+                                <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                    <b>USN:</b> {aiData.ai_summary.usn}
+                                </div>
+                                <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                    <b>Current Semester:</b>{" "}
+                                    {aiData.ai_summary.semester}
+                                </div>
+                                <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                    <b>Marks:</b>{" "}
+                                    {aiData.ai_summary.total_marks}
+                                </div>
+                                <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                    <b>Percentage:</b>{" "}
+                                    {aiData.ai_summary.percentage}
+                                </div>
+                                <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                    <b>Credits:</b>{" "}
+                                    {aiData.ai_summary.obtained_credits}
+                                </div>
+                                <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                    <b>SGPA:</b> {aiData.ai_summary.sgpa}
+                                </div>
+                                <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                    <b>CGPA:</b> {aiData.ai_summary.cgpa}
+                                </div>
+                            </div>
+
+                            {/* Multi-semester Backlogs */}
+                            <div className="mt-4">
+                                <h4 className="font-semibold text-purple-300 mb-2">
+                                    ⚠️ Backlogs
+                                </h4>
+                                {Object.keys(aiData.ai_profile.backlogs || {})
+                                    .length === 0 ? (
+                                    <div className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded text-sm w-fit">
+                                        No backlogs
+                                    </div>
+                                ) : (
+                                    Object.entries(
+                                        aiData.ai_profile.backlogs
+                                    ).map(([sem, semData]) => (
+                                        <div key={sem} className="mb-3">
+                                            <div className="text-gray-700 font-semibold mb-1">
+                                                {sem}:
                                             </div>
-                                            <div className="flex flex-wrap gap-2">
-                                                {(semData.failed_subjects || []).map((subj, idx) => (
-                                                    <span key={idx} className="bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200 px-2.5 py-1 rounded text-xs font-semibold border border-red-200 dark:border-red-800/50">
+                                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                                {(
+                                                    semData.failed_subjects ||
+                                                    []
+                                                ).map((subj, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 px-2 py-2 rounded font-semibold"
+                                                    >
                                                         {subj.subject}
-                                                    </span>
+                                                    </div>
                                                 ))}
                                             </div>
                                         </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 📊 AI Profile */}
+                        <div className="bg-white dark:bg-[#2a3447] p-3 rounded-lg shadow space-y-4">
+                            <h4 className="font-semibold text-purple-300">
+                                📊 AI Profile
+                            </h4>
+
+                            {/* Subject Strengths & Weaknesses */}
+                            <div>
+                                <b>📌 Subject Strengths & Weaknesses:</b>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                                    {(
+                                        aiData.ai_profile
+                                            .latest_strong_subjects || []
+                                    ).map((subj, i) => (
+                                        <div
+                                            key={`strong-${i}`}
+                                            className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded text-sm"
+                                        >
+                                            {subj}
+                                        </div>
                                     ))}
+                                    {(
+                                        aiData.ai_profile.latest_mid_subjects ||
+                                        []
+                                    ).map((subj, i) => (
+                                        <div
+                                            key={`mid-${i}`}
+                                            className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-1 rounded text-sm"
+                                        >
+                                            {subj}
+                                        </div>
+                                    ))}
+                                    {(
+                                        aiData.ai_profile
+                                            .latest_weak_subjects || []
+                                    ).map((subj, i) => (
+                                        <div
+                                            key={`weak-${i}`}
+                                            className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 px-2 py-1 rounded text-sm"
+                                        >
+                                            {subj}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Tags */}
+                            <div>
+                                <b>📚 Tag-level Strengths & Weaknesses:</b>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                                    {(aiData.ai_profile.strong_tags || []).map(
+                                        (tag, i) => (
+                                            <div
+                                                key={`strong-tag-${i}`}
+                                                className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded text-sm"
+                                            >
+                                                {tag}
+                                            </div>
+                                        )
+                                    )}
+                                    {(aiData.ai_profile.mid_tags || []).map(
+                                        (tag, i) => (
+                                            <div
+                                                key={`mid-tag-${i}`}
+                                                className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-1 rounded text-sm"
+                                            >
+                                                {tag}
+                                            </div>
+                                        )
+                                    )}
+                                    {(aiData.ai_profile.weak_tags || []).map(
+                                        (tag, i) => (
+                                            <div
+                                                key={`weak-tag-${i}`}
+                                                className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 px-2 py-1 rounded text-sm"
+                                            >
+                                                {tag}
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Subject Area Averages */}
+                            {aiData.ai_profile.tag_avgs && (
+                                <div>
+                                    <b>📚 Subject Area Averages:</b>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                        {Object.entries(
+                                            aiData.ai_profile.tag_avgs
+                                        ).map(([tag, avg], i) => (
+                                            <div
+                                                key={i}
+                                                className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-sm"
+                                            >
+                                                {tag}:{" "}
+                                                <span className="font-semibold">
+                                                    {avg.toFixed(2)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Learning Plan */}
+                            {aiData.ai_profile.learning_plan?.length > 0 && (
+                                <div>
+                                    <b>📝 Learning Plan:</b>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                        {aiData.ai_profile.learning_plan.map(
+                                            (tip, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-sm"
+                                                >
+                                                    {tip}
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Placement Advice */}
+                            {aiData.ai_profile.placement_advice?.length > 0 && (
+                                <div>
+                                    <b>🎯 Placement Advice:</b>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                        {aiData.ai_profile.placement_advice.map(
+                                            (advice, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-sm"
+                                                >
+                                                    {advice}
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
-                    </div>
 
-                    {/* 📊 AI Profile */}
-                    <div>
-                        <h3 className="text-base sm:text-xl font-bold text-purple-600 dark:text-purple-400 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
-                            📊 AI Profile
-                        </h3>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-                            {/* Left Column */}
-                            <div className="space-y-4">
-                                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
-                                    <h4 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3 uppercase tracking-wider">📌 Subject Strengths & Weaknesses</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {(aiData.ai_profile.latest_strong_subjects || []).map((subj, i) => (
-                                            <span key={`strong-${i}`} className="bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 px-3 py-1 rounded-full text-xs font-medium border border-green-200 dark:border-green-800/50">{subj}</span>
-                                        ))}
-                                        {(aiData.ai_profile.latest_mid_subjects || []).map((subj, i) => (
-                                            <span key={`mid-${i}`} className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 px-3 py-1 rounded-full text-xs font-medium border border-yellow-200 dark:border-yellow-800/50">{subj}</span>
-                                        ))}
-                                        {(aiData.ai_profile.latest_weak_subjects || []).map((subj, i) => (
-                                            <span key={`weak-${i}`} className="bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 px-3 py-1 rounded-full text-xs font-medium border border-red-200 dark:border-red-800/50">{subj}</span>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
-                                    <h4 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3 uppercase tracking-wider">📚 Tag-level Strengths & Weaknesses</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {(aiData.ai_profile.strong_tags || []).map((tag, i) => (
-                                            <span key={`strong-tag-${i}`} className="bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 px-3 py-1 rounded-full text-xs font-medium border border-green-200 dark:border-green-800/50">{tag}</span>
-                                        ))}
-                                        {(aiData.ai_profile.mid_tags || []).map((tag, i) => (
-                                            <span key={`mid-tag-${i}`} className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 px-3 py-1 rounded-full text-xs font-medium border border-yellow-200 dark:border-yellow-800/50">{tag}</span>
-                                        ))}
-                                        {(aiData.ai_profile.weak_tags || []).map((tag, i) => (
-                                            <span key={`weak-tag-${i}`} className="bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 px-3 py-1 rounded-full text-xs font-medium border border-red-200 dark:border-red-800/50">{tag}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right Column */}
-                            <div className="space-y-4">
-                                {aiData.ai_profile.tag_avgs && (
-                                    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
-                                        <h4 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3 uppercase tracking-wider">📚 Subject Area Averages</h4>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {Object.entries(aiData.ai_profile.tag_avgs).map(([tag, avg], i) => (
-                                                <div key={i} className="flex justify-between items-center bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg text-xs sm:text-sm shadow-sm">
-                                                    <span className="text-gray-600 dark:text-gray-400 font-medium">{tag}</span>
-                                                    <span className="font-bold text-gray-900 dark:text-gray-100">{avg.toFixed(2)}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                {aiData.ai_profile.learning_plan?.length > 0 && (
-                                    <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
-                                        <h4 className="text-xs sm:text-sm font-semibold text-blue-800 dark:text-blue-300 mb-3 uppercase tracking-wider">📝 Learning Plan</h4>
-                                        <ul className="list-disc list-inside space-y-1 text-sm text-blue-900 dark:text-blue-200 font-medium">
-                                            {aiData.ai_profile.learning_plan.map((tip, index) => (
-                                                <li key={index} className="leading-snug">{tip}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-
-                                {aiData.ai_profile.placement_advice?.length > 0 && (
-                                    <div className="bg-indigo-50 dark:bg-indigo-900/10 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
-                                        <h4 className="text-xs sm:text-sm font-semibold text-indigo-800 dark:text-indigo-300 mb-3 uppercase tracking-wider">🎯 Placement Advice</h4>
-                                        <ul className="list-disc list-inside space-y-1 text-sm text-indigo-900 dark:text-indigo-200 font-medium">
-                                            {aiData.ai_profile.placement_advice.map((advice, index) => (
-                                                <li key={index} className="leading-snug">{advice}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Footer Row (Trend & Prediction) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6 mt-2 pb-2">
                         {/* 📈 Trend */}
-                        <div className="bg-gray-50 dark:bg-gray-800/50 p-4 sm:p-5 rounded-xl border border-gray-100 dark:border-gray-700 flex flex-col justify-between">
-                            <h4 className="text-sm font-bold text-purple-600 dark:text-purple-400 mb-3 uppercase tracking-wider border-b border-gray-200 dark:border-gray-600 pb-2">
+                        <div className="bg-white dark:bg-[#2a3447] p-3 rounded-lg shadow">
+                            <h4 className="font-semibold text-purple-300">
                                 📈 SGPA Trend
                             </h4>
-                            <div className="flex flex-col gap-2">
-                                <div className="flex justify-between items-center bg-white dark:bg-slate-900 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-                                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Trend</span>
-                                    <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{aiData.trend.trend || "N/A"}</span>
-                                </div>
-                                <div className="flex justify-between items-center bg-white dark:bg-slate-900 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-                                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Average SGPA</span>
-                                    <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{aiData.trend.avg_sgpa || "N/A"}</span>
-                                </div>
-                            </div>
-                            
+                            <p>
+                                <b>Trend:</b> {aiData.trend.trend || "N/A"}
+                            </p>
+                            <p>
+                                <b>Average SGPA:</b>{" "}
+                                {aiData.trend.avg_sgpa || "N/A"}
+                            </p>
                             {aiData.trend.history && (
-                                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                                    <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 block mb-2 uppercase tracking-widest">History</span>
-                                    <div className="flex flex-wrap gap-2">
+                                <div className="mt-2">
+                                    <b>History:</b>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                                         {Object.entries(aiData.trend.history)
-                                            .sort(([a], [b]) => parseInt(a.replace("sem", "")) - parseInt(b.replace("sem", "")))
+                                            .sort(
+                                                ([a], [b]) =>
+                                                    parseInt(
+                                                        a.replace("sem", "")
+                                                    ) -
+                                                    parseInt(
+                                                        b.replace("sem", "")
+                                                    )
+                                            )
                                             .map(([sem, sgpa]) => (
-                                                <div key={sem} className="flex flex-col items-center bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-lg shadow-sm">
-                                                    <span className="text-[10px] text-gray-500 font-semibold uppercase">{sem}</span>
-                                                    <span className="text-xs font-bold text-gray-800 dark:text-gray-100">{Number(sgpa).toFixed(2)}</span>
+                                                <div
+                                                    key={sem}
+                                                    className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-sm"
+                                                >
+                                                    {sem}:{" "}
+                                                    <span className="font-semibold">
+                                                        {Number(sgpa).toFixed(
+                                                            2
+                                                        )}
+                                                    </span>
                                                 </div>
                                             ))}
                                     </div>
@@ -339,159 +424,196 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                         </div>
 
                         {/* 🔮 CGPA Prediction */}
-                        <div className="bg-purple-50 dark:bg-purple-900/10 p-4 sm:p-5 rounded-xl border border-purple-100 dark:border-purple-900/30 flex flex-col justify-between">
-                            <h4 className="text-sm font-bold text-purple-700 dark:text-purple-300 mb-3 uppercase tracking-wider border-b border-purple-200 dark:border-purple-500/30 pb-2">
+                        <div className="bg-white dark:bg-[#2a3447] p-3 rounded-lg shadow">
+                            <h4 className="font-semibold text-purple-300">
                                 🔮 CGPA Prediction
                             </h4>
-                            <div className="flex flex-col gap-3 flex-1 justify-center">
-                                <div className="flex justify-between items-center bg-white dark:bg-slate-900/80 px-4 py-3 rounded-xl border border-purple-100 dark:border-purple-500/20 shadow-sm">
-                                    <span className="text-xs sm:text-sm font-semibold text-purple-800 dark:text-purple-300">Predicted Next SGPA</span>
-                                    <span className="text-lg sm:text-xl font-bold text-purple-900 dark:text-purple-200">{aiData.cgpa_prediction.predicted_next_sgpa || "N/A"}</span>
-                                </div>
-                                <div className="flex justify-between items-center bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md px-4 py-3 rounded-xl">
-                                    <span className="text-xs sm:text-sm font-semibold text-white">Predicted Final CGPA</span>
-                                    <span className="text-xl sm:text-2xl font-black text-white tracking-wider">{aiData.cgpa_prediction.predicted_final_cgpa || "N/A"}</span>
-                                </div>
+                            <p>
+                                <b>Predicted Next SGPA:</b>{" "}
+                                {aiData.cgpa_prediction.predicted_next_sgpa ||
+                                    "N/A"}
+                            </p>
+                            <p>
+                                <b>Predicted Final CGPA:</b>{" "}
+                                {aiData.cgpa_prediction.predicted_final_cgpa ||
+                                    "N/A"}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {openPerf && performanceData && (
+                    <div className="mt-2 space-y-4 bg-gray-50 dark:bg-[#2a3447] p-4 rounded-lg shadow-inner text-gray-800">
+                        <h3 className="font-semibold text-blue-600 mb-2">
+                            📊 Student Performance Dashboard
+                        </h3>
+
+                        {/* Summary */}
+                        <div className="grid grid-cols-2 gap-2 text-sm mb-2">
+                            <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                <b>Name:</b> {performanceData.name}
                             </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Performance Dashboard Content */}
-            {openPerf && performanceData && (
-                <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 shadow-lg flex flex-col gap-6">
-                    <h3 className="text-base sm:text-xl font-bold text-blue-600 dark:text-blue-400 mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                        📊 Student Performance Dashboard
-                    </h3>
-
-                    {/* Summary Info Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs sm:text-sm">
-                        <div>
-                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Candidate Name</p>
-                            <p className="font-semibold text-gray-800 dark:text-gray-100 truncate">{performanceData.name}</p>
-                        </div>
-                        <div>
-                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">USN Identifier</p>
-                            <p className="font-semibold text-gray-700 dark:text-gray-200 truncate">{performanceData.usn}</p>
-                        </div>
-                        <div>
-                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Target Semester</p>
-                            <p className="font-semibold text-gray-700 dark:text-gray-200">{semester}</p>
-                        </div>
-                        <div>
-                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">SGPA</p>
-                            <p className="font-semibold text-gray-700 dark:text-gray-200">{performanceData.sgpa.toFixed(2)}</p>
-                        </div>
-                        <div>
-                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Percentage Achieved</p>
-                            <p className="font-semibold text-gray-700 dark:text-gray-200">{performanceData.percentage.toFixed(2)}%</p>
-                        </div>
-                        <div>
-                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aggregate Marks</p>
-                            <p className="font-semibold text-gray-700 dark:text-gray-200">{performanceData.total_marks}</p>
-                        </div>
-                        <div>
-                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cumulative GPA</p>
-                            <p className="font-semibold text-gray-700 dark:text-gray-200">{performanceData.cgpa.toFixed(2)}</p>
-                        </div>
-                        {performanceData.predicted_next_sgpa && (
-                            <div>
-                                <p className="text-[10px] sm:text-xs text-purple-500 dark:text-purple-400 uppercase tracking-wider font-bold">Predicted Next SGPA</p>
-                                <p className="font-bold text-purple-700 dark:text-purple-300">{performanceData.predicted_next_sgpa.toFixed(2)}</p>
+                            <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                <b>USN:</b> {performanceData.usn}
                             </div>
-                        )}
-                    </div>
+                            <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                <b>Semester:</b> {semester}
+                            </div>
+                            <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                <b>Total Marks:</b>{" "}
+                                {performanceData.total_marks}
+                            </div>
+                            <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                <b>Percentage:</b>{" "}
+                                {performanceData.percentage.toFixed(2)}%
+                            </div>
+                            <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                <b>SGPA:</b> {performanceData.sgpa.toFixed(2)}
+                            </div>
+                            <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                <b>CGPA:</b> {performanceData.cgpa.toFixed(2)}
+                            </div>
 
-                    {/* Subjects Table */}
-                    <div className="w-full overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-                        <table className="min-w-full text-sm sm:text-base border-collapse text-left">
-                            <thead>
-                                <tr className="bg-gray-50 dark:bg-slate-800/80 text-xs sm:text-sm text-gray-500 dark:text-gray-400 uppercase border-b border-gray-200 dark:border-gray-700">
-                                    <th className="px-4 py-3 font-semibold">Code</th>
-                                    <th className="px-4 py-3 font-semibold">Subject</th>
-                                    <th className="px-4 py-3 font-semibold text-center">IA</th>
-                                    <th className="px-4 py-3 font-semibold text-center">SEE</th>
-                                    <th className="px-4 py-3 font-semibold text-center">Total</th>
-                                    <th className="px-4 py-3 font-semibold text-center">Status</th>
-                                    <th className="px-4 py-3 font-semibold">Advice / Tips</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {performanceData.subject_analysis.map((sub, idx) => {
-                                    const baseRowClasses = "border-b border-gray-100 dark:border-gray-800 last:border-0";
-                                    let statusColor = "";
-                                    if (sub.status === "Pass") {
-                                        statusColor = "text-green-600 dark:text-green-400";
-                                    } else {
-                                        statusColor = "text-red-600 dark:text-red-400 font-bold";
-                                    }
+                            {performanceData.predicted_next_sgpa && (
+                                <div className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                                    <b>Predicted Next SGPA:</b>{" "}
+                                    {performanceData.predicted_next_sgpa.toFixed(
+                                        2
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
-                                    return (
-                                        <tr key={idx} className={`${baseRowClasses} ${getSubjectColor(sub)}`}>
-                                            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{sub.code}</td>
-                                            <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{sub.subject_name}</td>
-                                            <td className="px-4 py-3 text-sm text-center font-semibold text-gray-700 dark:text-gray-300">{sub.ia}</td>
-                                            <td className="px-4 py-3 text-sm text-center font-semibold text-gray-700 dark:text-gray-300">{sub.see}</td>
-                                            <td className="px-4 py-3 text-sm text-center font-bold text-gray-900 dark:text-gray-100">{sub.total}</td>
-                                            <td className={`px-4 py-3 text-sm text-center ${statusColor}`}>{sub.status}</td>
-                                            <td className="px-4 py-3 text-xs sm:text-sm">
-                                                {sub.advice && <p className="text-gray-800 dark:text-gray-200 font-medium mb-1">{sub.advice}</p>}
-                                                {sub.tips && <p className="text-blue-600 dark:text-blue-400">{sub.tips}</p>}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                        {/* Subjects Table */}
+                        <div>
+                            <h4 className="font-semibold mb-2">Subjects</h4>
+                            <table className="w-full border text-center">
+                                <thead>
+                                    <tr className="border bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200">
+                                        <th className="border px-2 py-1">
+                                            Code
+                                        </th>
+                                        <th className="border px-2 py-1">
+                                            Subject
+                                        </th>
+                                        <th className="border px-2 py-1">IA</th>
+                                        <th className="border px-2 py-1">
+                                            SEE
+                                        </th>
+                                        <th className="border px-2 py-1">
+                                            Total
+                                        </th>
+                                        <th className="border px-2 py-1">
+                                            Status
+                                        </th>
+                                        <th className="border px-2 py-1">
+                                            Advice / Tips
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {performanceData.subject_analysis.map(
+                                        (sub) => (
+                                            <tr
+                                                key={sub.code}
+                                                className={`border ${getSubjectColor(
+                                                    sub
+                                                )}`}
+                                            >
+                                                <td className="border px-2 py-1">
+                                                    {sub.code}
+                                                </td>
+                                                <td className="border px-2 py-1">
+                                                    {sub.subject_name}
+                                                </td>
+                                                <td className="border px-2 py-1">
+                                                    {sub.ia}
+                                                </td>
+                                                <td className="border px-2 py-1">
+                                                    {sub.see}
+                                                </td>
+                                                <td className="border px-2 py-1">
+                                                    {sub.total}
+                                                </td>
+                                                <td className="border px-2 py-1">
+                                                    {sub.status}
+                                                </td>
+                                                <td className="border px-2 py-1 text-left text-sm">
+                                                    {sub.advice && (
+                                                        <p className="text-black dark:text-white font-medium">
+                                                            {sub.advice}
+                                                        </p>
+                                                    )}
+                                                    {sub.tips && (
+                                                        <p className="text-green-600">
+                                                            {sub.tips}
+                                                        </p>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        )
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Overall Improvement Advice */}
-                        <div className="lg:col-span-2 space-y-4">
-                            <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                📈 Overall Improvement Advice
+                        <div>
+                            <h4 className="font-semibold mb-2">
+                                Overall Improvement Advice
                             </h4>
                             {performanceData.improvement_advice.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {performanceData.improvement_advice.map((advice, i) => (
-                                        <div key={`advice-${i}`} className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 px-4 py-3 rounded-xl shadow-sm hover:shadow-md transition text-sm flex items-start">
-                                            <span className="mr-2 text-blue-500">💡</span> 
-                                            <span className="leading-snug">{advice}</span>
-                                        </div>
-                                    ))}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {performanceData.improvement_advice.map(
+                                        (advice, i) => (
+                                            <div
+                                                key={`advice-${i}`}
+                                                className="bg-gray-100 dark:bg-[#38455c] text-gray-800 dark:text-gray-200 text-black-800 px-4 py-2 rounded shadow-sm hover:shadow-md transition"
+                                            >
+                                                {advice}
+                                            </div>
+                                        )
+                                    )}
                                 </div>
                             ) : (
-                                <div className="bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300 border border-green-200 dark:border-green-800/50 px-4 py-3 rounded-xl shadow-sm font-medium">
-                                    ✨ Excellent performance! Keep it up.
-                                </div>
-                            )}
-
-                            {/* Overall Study Summary */}
-                            {performanceData.study_summary && (
-                                <div className="bg-yellow-50 dark:bg-yellow-900/10 p-4 rounded-xl shadow-sm border border-yellow-100 dark:border-yellow-900/30 text-gray-800 dark:text-gray-200 mt-4">
-                                    <h4 className="text-sm font-bold text-yellow-700 dark:text-yellow-400 mb-2 uppercase tracking-wider">
-                                        📌 Overall Study Advice
-                                    </h4>
-                                    <p className="text-sm leading-relaxed text-yellow-900 dark:text-yellow-200 font-medium">
-                                        {performanceData.study_summary}
-                                    </p>
+                                <div className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 px-4 py-2 rounded shadow-sm">
+                                    Excellent performance! Keep it up.
                                 </div>
                             )}
                         </div>
+
+                        {/* Overall Study Summary */}
+                        {performanceData.study_summary && (
+                            <div
+                                className="bg-yellow-50 dark:bg-yellow-900/40 
+                p-4 rounded-lg shadow-inner 
+                text-gray-800 dark:text-gray-200 mt-4"
+                            >
+                                <h4 className="font-semibold text-yellow-700 dark:text-yellow-300 mb-2">
+                                    📌 Overall Study Advice
+                                </h4>
+                                <p className="text-sm">
+                                    {performanceData.study_summary}
+                                </p>
+                            </div>
+                        )}
 
                         {/* Chart */}
                         {chartUrl && (
-                            <div className="lg:col-span-1 bg-gray-50 dark:bg-slate-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center">
-                                <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 uppercase tracking-wider w-full text-center">
+                            <div className="mt-2">
+                                <h4 className="font-semibold mb-2">
                                     Subject Marks Chart
                                 </h4>
-                                <img src={chartUrl} alt="Student Marks Chart" className="w-full rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 bg-white" />
+                                <img
+                                    src={chartUrl}
+                                    alt="Student Marks Chart"
+                                    className="w-full"
+                                />
                             </div>
                         )}
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }

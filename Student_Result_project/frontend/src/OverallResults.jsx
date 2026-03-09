@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
-export default function OverallResults({ batchYear }) {
+export default function OverallResults() {
     const [semester, setSemester] = useState("");
     const [view, setView] = useState("normal");
     const [data, setData] = useState([]);
@@ -10,20 +10,11 @@ export default function OverallResults({ batchYear }) {
     const [sortDir, setSortDir] = useState("desc");
     const [expandedRow, setExpandedRow] = useState(null);
 
-    const semesterOptions = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"];
-
-    useEffect(() => {
-        if (semester && batchYear) {
-            fetchData();
-        } else {
-            setData([]);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [batchYear, semester, view]);
+    const semesterOptions = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6"];
 
     const fetchData = async () => {
-        if (!semester || !batchYear) return;
-        let url = `${API_BASE}/auth/Staff/overall_res?semester=${semester}&batch_year=${batchYear}`;
+        if (!semester) return;
+        let url = `${API_BASE}/auth/Staff/overall_res?semester=${semester}`;
         if (view === "toppers") url += "&show_toppers=true";
         if (view === "failed") url += "&show_failed=true";
 
@@ -39,10 +30,10 @@ export default function OverallResults({ batchYear }) {
         let url;
         if (view === "toppers") {
             // Top 10 Toppers PDF
-            url = `${API_BASE}/auth/Staff/overall_res?semester=${semester}&show_toppers=true&format=pdf&batch_year=${batchYear}`;
+            url = `${API_BASE}/auth/Staff/overall_res?semester=${semester}&show_toppers=true&format=pdf`;
         } else {
             // Full report as before
-            url = `${API_BASE}/auth/Staff/report/${semester}?batch_year=${batchYear}`;
+            url = `${API_BASE}/auth/Staff/report/${semester}`;
         }
         try {
             const response = await fetchWithAuth(url, {});

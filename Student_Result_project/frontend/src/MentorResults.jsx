@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
-export default function MentorResults({ mentor_id, batchYear }) {
+export default function MentorResults({ mentor_id }) {
     const [semester, setSemester] = useState("sem1");
     const [mentees, setMentees] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -11,14 +11,14 @@ export default function MentorResults({ mentor_id, batchYear }) {
     const [searchTerm, setSearchTerm] = useState(""); // <-- for live search
 
     useEffect(() => {
-        if (mentor_id && batchYear) fetchMentees();
-    }, [mentor_id, semester, batchYear]);
+        if (mentor_id) fetchMentees();
+    }, [mentor_id, semester]);
 
     const fetchMentees = async () => {
         setLoading(true);
         try {
             const res = await fetchWithAuth(
-                `${API_BASE}/auth/Staff/Mentor/result?mentor_id=${mentor_id}&semester=${semester}&batch_year=${batchYear}`,
+                `${API_BASE}/auth/Staff/Mentor/result?mentor_id=${mentor_id}&semester=${semester}`,
                 {}
             );
             const data = await res.json();
@@ -34,7 +34,7 @@ export default function MentorResults({ mentor_id, batchYear }) {
     const fetchChart = async (usn) => {
         try {
             const res = await fetchWithAuth(
-                `${API_BASE}/auth/Staff/Mentor/chart?usn=${usn}&semester=${semester}&batch_year=${batchYear}`,
+                `${API_BASE}/auth/Staff/Mentor/chart?usn=${usn}&semester=${semester}`,
                 {}
             );
             const data = await res.json();

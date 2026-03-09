@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
-export default function MentorSendEmails({ mentorId, batchYear }) {
+
+export default function MentorSendEmails({ mentorId }) {
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(false);
     const [expanded, setExpanded] = useState({});
@@ -17,17 +18,17 @@ export default function MentorSendEmails({ mentorId, batchYear }) {
     const [studentInputs, setStudentInputs] = useState({});
     console.log(studentMessages);
     useEffect(() => {
-        if (mentorId && batchYear) {
+        if (mentorId) {
             fetchStudents();
             fetchMessages();
         }
-    }, [mentorId, batchYear]);
+    }, [mentorId]);
 
     const fetchStudents = async () => {
         setLoading(true);
         try {
             const res = await axiosInstance.get(
-                `${API_BASE}/mentor/${mentorId}/students?batch_year=${batchYear}`
+                `${API_BASE}/mentor/${mentorId}/students`
             );
             setStudents(res.data.students || []);
         } catch (err) {
@@ -40,7 +41,7 @@ export default function MentorSendEmails({ mentorId, batchYear }) {
     const fetchMessages = async () => {
         try {
             const res = await axiosInstance.get(
-                `${API_BASE}/mentor/${mentorId}/messages?batch_year=${batchYear}`
+                `${API_BASE}/mentor/${mentorId}/messages`
             );
             const grouped = {};
             res.data.forEach((msg) => {
@@ -71,7 +72,7 @@ export default function MentorSendEmails({ mentorId, batchYear }) {
 
         try {
             const stored = await axiosInstance.post(
-                `${API_BASE}/mentor/${mentorId}/messages?batch_year=${batchYear}`,
+                `${API_BASE}/mentor/${mentorId}/messages`,
                 { usn, recipientType, subject, message }
             );
             
@@ -95,12 +96,12 @@ export default function MentorSendEmails({ mentorId, batchYear }) {
             let emailRes;
             if (usn) {
                 emailRes = await axiosInstance.post(
-                    `${API_BASE}/mentor/${mentorId}/send-email/student?batch_year=${batchYear}`,
+                    `${API_BASE}/mentor/${mentorId}/send-email/student`,
                     { usn, recipientType, subject, message }
                 );
             } else {
                 emailRes = await axiosInstance.post(
-                    `${API_BASE}/mentor/${mentorId}/send-email/all?batch_year=${batchYear}`,
+                    `${API_BASE}/mentor/${mentorId}/send-email/all`,
                     { recipientType, subject, message }
                 );
             }
@@ -150,7 +151,7 @@ console.log(sessionStorage.getItem("jwt_token"))
     const deleteMessage = async (msgId, usn) => {
         try {
             await axiosInstance.delete(
-                `${API_BASE}/mentor/${mentorId}/messages/${msgId}?batch_year=${batchYear}`
+                `${API_BASE}/mentor/${mentorId}/messages/${msgId}`
             );
             setStudentMessages((prev) => {
                 const key = usn || "all";

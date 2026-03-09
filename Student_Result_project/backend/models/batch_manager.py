@@ -1,25 +1,19 @@
 # models/batch_manager.py
-from contextlib import contextmanager
 from pathlib import Path
-
-from app_init import create_app, db
-from logger_config import get_logger
-from models import University
 from models.data_prep import prepare_data as prep_data
+from app_init import create_app, db
+from contextlib import contextmanager
 from models.fetch import SEMESTERS
+from models import University
+from logger_config import get_logger
 from models.paths import postgres_db_url
-from models.schema import StudentAuth  # Added to query distinct batches
-import os
-import sys
 
-# Ensure the backend directory is in the path so imports work
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 logger = get_logger(__name__)
 
 
 class BatchManager:
     current_batch_year = None
-    _apps = {}  # Cached Flask apps per batch
+    _apps = {}          # Cached Flask apps per batch
     _universities = {}  # Cached University instances
 
     def __init__(self):
@@ -28,25 +22,33 @@ class BatchManager:
         self.excel_dir.mkdir(parents=True, exist_ok=True)
 
     def get_postgres_url(self, batch_year: int):
+        """
+        Return the Postgres connection string for this batch.
+        You can use the same DB for all batches, 
+        tables are distinguished by batch suffix.
+        """
+        # user = "chetan"
+        # password = "chetan"
+        # host = "localhost"
+        # port = 5433
+        # db_name = "Group_Project"
+        # return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db_name}"
         return postgres_db_url
 
     def create_batch(self, batch_year: int):
         """Prepare Excel data and create tables in Postgres."""
         try:
-            app = self.get_flask_app(batch_year)
+            logger.debug(f"[BatchManager] Preparing data for batch {batch_year}")
+            prep_data(batch_year=batch_year)
 
-            # CRITICAL FIX: Everything database-related must be inside the app context
+            app = self.get_flask_app(batch_year)
             with app.app_context():
                 logger.debug(f"[BatchManager] Creating tables for batch {batch_year}")
-                db.create_all()  # 1. Create tables FIRST
-
-                logger.debug(f"[BatchManager] Preparing data for batch {batch_year}")
-                prep_data(batch_year=batch_year)  # 2. Insert data SECOND
+                db.create_all()
 
             logger.debug(f"[BatchManager] ✅ Batch {batch_year} processed in Postgres")
         except Exception as e:
             import traceback
-
             logger.debug(f"[BatchManager] ❌ Failed to create batch {batch_year}: {e}")
             traceback.print_exc()
             raise
@@ -54,13 +56,8 @@ class BatchManager:
     def refresh_batch_data(self, batch_year: int):
         """Re-import Excel sheets to update Postgres tables."""
         try:
-            app = self.get_flask_app(batch_year)
-
-            # CRITICAL FIX: Moved inside app context
-            with app.app_context():
-                logger.debug(f"[BatchManager] Refreshing batch {batch_year}")
-                prep_data(batch_year=batch_year)
-
+            logger.debug(f"[BatchManager] Refreshing batch {batch_year}")
+            prep_data(batch_year=batch_year)
             logger.debug(f"[BatchManager] ✅ Batch {batch_year} refreshed")
         except Exception as e:
             logger.debug(f"[BatchManager] ❌ Failed to refresh batch {batch_year}: {e}")
@@ -68,22 +65,33 @@ class BatchManager:
 
     def list_batches(self):
         """
-        Return all batch years present in PostgreSQL.
-        CRITICAL FIX: Now queries the normalized StudentAuth table instead of looking for dynamic tables.
+        Return all batch years present in PostgreSQL based on table names.
+        Looks for tables like sem1_2022, sem2_2022, etc.
         """
-        try:
-            # We just need a generic app context to query the DB
-            app = self.get_flask_app(0)
-            with app.app_context():
-                # Query distinct batch years from the students table
-                result = db.session.query(StudentAuth.batch_year).distinct().all()
-                batch_years = [row[0] for row in result if row[0] is not None]
-                return sorted(batch_years)
-        except Exception as e:
-            logger.debug(
-                f"[BatchManager] Warning: Could not list batches, tables might not exist yet. Error: {e}"
-            )
-            return []
+        postgres_url = self.get_postgres_url(0)  # batch_year is irrelevant here
+        from sqlalchemy import create_engine, text
+
+        engine = create_engine(postgres_url)
+        query = text(r"""
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema='public'
+            AND table_type='BASE TABLE'
+            AND table_name ~* '^sem[1-6]_\d{4}$'
+        """)
+        with engine.connect() as conn:
+            result = conn.execute(query).fetchall()
+
+        # Extract batch years
+        batch_years = set()
+        for (table_name,) in result:
+            try:
+                year = int(table_name.split("_")[-1])
+                batch_years.add(year)
+            except ValueError:
+                continue
+
+        return sorted(batch_years)
 
     def get_flask_app(self, batch_year: int):
         """Return a Flask app (cached) for this batch."""
@@ -104,6 +112,11 @@ class BatchManager:
         if batch_year not in self._universities:
             postgres_url = self.get_postgres_url(batch_year)
             uni = University(postgres_url=postgres_url, batch_year=batch_year)
+            for sem in SEMESTERS:
+                try:
+                    uni.add_students(selected_semester=sem)
+                except Exception:
+                    continue
             self._universities[batch_year] = uni
         return self._universities[batch_year]
 
@@ -113,7 +126,6 @@ class BatchManager:
         app = self.get_flask_app(batch_year)
         with app.app_context():
             yield db
-
 
 # Global instance
 bm = BatchManager()

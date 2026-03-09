@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import API_BASE from "./config";
-export default function MentorRecords({ mentor_id, batchYear }) {
+
+export default function MentorRecords({ mentor_id }) {
     const [pdfs, setPdfs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -12,7 +13,7 @@ export default function MentorRecords({ mentor_id, batchYear }) {
         const fetchPdfs = async () => {
             try {
                 const res = await axios.get(
-                    `${API_BASE}/mentee/mentor/${mentor_id}/pdfs?batch_year=${batchYear}`
+                    `${API_BASE}/mentee/mentor/${mentor_id}/pdfs`
                 );
                 setPdfs(res.data);
             } catch (err) {
@@ -21,14 +22,14 @@ export default function MentorRecords({ mentor_id, batchYear }) {
                 setLoading(false);
             }
         };
-        if (mentor_id && batchYear) fetchPdfs();
-    }, [mentor_id, batchYear]);
+        fetchPdfs();
+    }, [mentor_id]);
 
     // Fetch signed file URL before viewing/downloading
     const fetchPdfUrl = async (usn) => {
         try {
             const res = await axios.get(
-                `${API_BASE}/mentee/mentor/${mentor_id}/download/${usn}?batch_year=${batchYear}`
+                `${API_BASE}/mentee/mentor/${mentor_id}/download/${usn}`
             );
             setPdfUrl(res.data.file_url);
         } catch {
@@ -41,76 +42,71 @@ export default function MentorRecords({ mentor_id, batchYear }) {
     if (!pdfs.length) return <p className="text-center mt-4">No PDFs found.</p>;
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-100 dark:border-gray-700 p-6">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6">Mentee Records</h2>
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400">
-                        <tr>
-                            <th className="px-6 py-4 font-semibold uppercase tracking-wider text-xs border-b border-gray-200 dark:border-gray-700">USN</th>
-                            <th className="px-6 py-4 font-semibold uppercase tracking-wider text-xs border-b border-gray-200 dark:border-gray-700">Name</th>
-                            <th className="px-6 py-4 font-semibold uppercase tracking-wider text-xs border-b border-gray-200 dark:border-gray-700">Actions</th>
+        <div className="space-y-4">
+            <h2 className="text-xl font-bold mb-2">Mentee Records</h2>
+            <table className="w-full text-left border rounded-lg">
+                <thead>
+                    <tr>
+                        <th className="px-4 py-2">USN</th>
+                        <th className="px-4 py-2">Name</th>
+                        <th className="px-4 py-2">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {pdfs.map((pdf) => (
+                        <tr key={pdf.usn}>
+                            <td className="px-4 py-2">{pdf.usn}</td>
+                            <td className="px-4 py-2">{pdf.name}</td>
+                            <td className="px-4 py-2 flex gap-2">
+                                {/* View button */}
+                                <button
+                                    onClick={() => {
+                                        setSelectedPdf(pdf);
+                                        fetchPdfUrl(pdf.usn);
+                                    }}
+                                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                >
+                                    View
+                                </button>
+                                {/* Download button */}
+                                <button
+                                    onClick={async () => {
+                                        const res = await axios.get(
+                                            `${API_BASE}/mentee/mentor/${mentor_id}/download/${pdf.usn}`
+                                        );
+                                        window.open(
+                                            res.data.file_url,
+                                            "_blank"
+                                        );
+                                    }}
+                                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                >
+                                    Download
+                                </button>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                        {pdfs.map((pdf) => (
-                            <tr key={pdf.usn} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors">
-                                <td className="px-6 py-4 text-sm font-medium text-gray-800 dark:text-gray-200">{pdf.usn}</td>
-                                <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{pdf.name}</td>
-                                <td className="px-6 py-4 flex gap-3">
-                                    <button
-                                        onClick={() => {
-                                            setSelectedPdf(pdf);
-                                            fetchPdfUrl(pdf.usn);
-                                        }}
-                                        className="px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20 rounded-lg text-sm font-medium transition-colors"
-                                    >
-                                        View
-                                    </button>
-                                    <button
-                                        onClick={async () => {
-                                            const res = await axios.get(
-                                                `${API_BASE}/mentee/mentor/${mentor_id}/download/${pdf.usn}?batch_year=${batchYear}`
-                                            );
-                                            window.open(res.data.file_url, "_blank");
-                                        }}
-                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
-                                    >
-                                        Download
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            
+                    ))}
+                </tbody>
+            </table>
             {/* Modal for viewing PDF */}
             {selectedPdf && pdfUrl && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-                    <div className="bg-white dark:bg-gray-800 w-full max-w-5xl h-[85vh] p-6 relative rounded-2xl shadow-2xl flex flex-col">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-                                {selectedPdf.name} ({selectedPdf.usn})
-                            </h3>
-                            <button
-                                onClick={() => {
-                                    setSelectedPdf(null);
-                                    setPdfUrl(null);
-                                }}
-                                className="p-2 bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 dark:bg-gray-700 dark:hover:bg-red-500/20 dark:text-gray-300 dark:hover:text-red-400 rounded-lg transition-colors font-medium text-sm"
-                            >
-                                Close Viewer
-                            </button>
-                        </div>
-                        <div className="flex-1 bg-gray-100 dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
-                            <iframe
-                                src={pdfUrl}
-                                width="100%"
-                                height="100%"
-                                className="w-full h-full"
-                            ></iframe>
-                        </div>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                    <div className="bg-white w-4/5 h-4/5 p-4 relative rounded-lg shadow-lg">
+                        <button
+                            onClick={() => {
+                                setSelectedPdf(null);
+                                setPdfUrl(null);
+                            }}
+                            className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                        >
+                            Close
+                        </button>
+                        <iframe
+                            src={pdfUrl}
+                            width="100%"
+                            height="100%"
+                            className="rounded border"
+                        ></iframe>
                     </div>
                 </div>
             )}

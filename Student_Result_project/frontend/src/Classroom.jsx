@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { FaFolder, FaFilePdf, FaRegFolderOpen } from "react-icons/fa";
+import { FaFolder, FaFilePdf } from "react-icons/fa";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
-import LoadingSpinner from "./LoadingSpinner";
 function FileItem({ name, isFolder, onClick }) {
     return (
         <div
@@ -102,7 +101,7 @@ export default function FileExplorer() {
                 </div>
 
                 {/* File area */}
-                <div className="flex-1 overflow-auto mt-4">
+                <div className="flex-1 overflow-auto">
                     {currentDir ? (
                         Object.keys(currentDir).length > 0 ? (
                             <FileGrid
@@ -111,18 +110,14 @@ export default function FileExplorer() {
                                 setPath={setCurrentPath}
                             />
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                                <div className="bg-indigo-50 dark:bg-indigo-900/30 p-6 rounded-full mb-6 shadow-inner">
-                                    <FaRegFolderOpen className="text-6xl text-indigo-400 dark:text-indigo-500 opacity-80" />
-                                </div>
-                                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">Folder is Empty</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
-                                    There are no files or subdirectories uploaded to this location yet. Check back later or navigate back to the main directory.
-                                </p>
-                            </div>
+                            <p className="text-center text-gray-500 dark:text-gray-400 mt-4">
+                                No files available
+                            </p>
                         )
                     ) : (
-                        <LoadingSpinner message="Fetching classroom materials..." fullScreen={false} />
+                        <p className="text-center text-gray-500 dark:text-gray-400 mt-4">
+                            Loading...
+                        </p>
                     )}
                 </div>
             </div>

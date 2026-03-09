@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
-export default function SemesterResults({ batchYear }) {
+export default function SemesterResults() {
     const [semester, setSemester] = useState("sem1");
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -11,20 +11,16 @@ export default function SemesterResults({ batchYear }) {
     const semesters = ["sem1", "sem2", "sem3", "sem4"];
 
     useEffect(() => {
-        if (semester && batchYear) {
-            fetchResults(semester);
-        } else {
-            setData(null);
-        }
+        fetchResults(semester);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [semester, batchYear]);
+    }, [semester]);
 
     async function fetchResults(selected) {
         setLoading(true);
         setError("");
         setData(null);
         try {
-            const q = new URLSearchParams({ semester: selected, batch_year: batchYear }).toString();
+            const q = new URLSearchParams({ semester: selected }).toString();
             const res = await fetchWithAuth(
                 `${API_BASE}/auth/Staff/sem_res?${q}`,
                 {
@@ -50,7 +46,7 @@ export default function SemesterResults({ batchYear }) {
         if (!semester) return;
         try {
             const response = await fetchWithAuth(
-                `${API_BASE}/auth/Staff/sem_res/report/${semester}?batch_year=${batchYear}`,
+                `${API_BASE}/auth/Staff/sem_res/report/${semester}`,
                 { method: "GET" }
             );
             if (!response.ok) {

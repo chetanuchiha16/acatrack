@@ -1,5 +1,4 @@
-from settings import settings
-
+import os
 
 class Config:
     # Database
@@ -7,15 +6,16 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Flask secret key
-    SECRET_KEY = settings.secret_key
+    SECRET_KEY = os.environ.get("SECRET_KEY")
 
     # Admin secret (for /admin endpoints)
-    ADMIN_SECRET = settings.admin_secret  # fallback for dev
+    ADMIN_SECRET = os.environ.get("ADMIN_SECRET")  # fallback for dev
+
 
     # Session configuration
-    SESSION_TYPE = "filesystem"  # Or 'redis' for production
+    SESSION_TYPE = "filesystem"         # Or 'redis' for production
     SESSION_PERMANENT = False
-    SESSION_USE_SIGNER = True  # Sign cookies for security
-    SESSION_COOKIE_HTTPONLY = True  # JS can't access cookies
-    SESSION_COOKIE_SAMESITE = "None"  # Required for cross-site cookies with React
-    SESSION_COOKIE_SECURE = True  # Only send over HTTPS in production
+    SESSION_USE_SIGNER = True           # Sign cookies for security
+    SESSION_COOKIE_HTTPONLY = True      # JS can't access cookies
+    SESSION_COOKIE_SAMESITE = "None"    # Required for cross-site cookies with React
+    SESSION_COOKIE_SECURE = True        # Only send over HTTPS in production

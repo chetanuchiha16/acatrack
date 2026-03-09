@@ -1,15 +1,12 @@
-# cloud_utils.py
+#cloud_utils.py
 import os
-import tempfile
 from io import BytesIO
 from pathlib import Path
-
-import requests
-from logger_config import get_logger
-from matplotlib.figure import Figure
-from requests.exceptions import RequestException
 from supabase import create_client
 from werkzeug.utils import secure_filename
+from matplotlib.figure import Figure
+import requests
+from logger_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -39,14 +36,8 @@ supabase = None
 if IS_PRODUCTION and SUPABASE_URL and SUPABASE_KEY:
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-
 # === Helper: Upload to Supabase ===
-def upload_to_supabase(
-    file_bytes: bytes,
-    file_name: str,
-    folder: str = "",
-    content_type: str = "application/pdf",
-) -> str:
+def upload_to_supabase(file_bytes: bytes, file_name: str, folder: str = "", content_type: str = "application/pdf") -> str:
     """
     Uploads a file to Supabase Storage via direct HTTP POST to set proper content type.
     Returns public URL.
@@ -54,29 +45,23 @@ def upload_to_supabase(
     if not (SUPABASE_URL and SUPABASE_KEY):
         raise RuntimeError("Supabase credentials not loaded.")
 
-    file_path = (
-        f"{folder}/{secure_filename(file_name)}"
-        if folder
-        else secure_filename(file_name)
-    )
+    file_path = f"{folder}/{secure_filename(file_name)}" if folder else secure_filename(file_name)
 
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
         "Content-Type": content_type,
-        "X-Upsert": "true",  # <-- ADD THIS LINE
+        "X-Upsert": "true",   # <-- ADD THIS LINE
     }
     res = requests.post(
-        f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{file_path}",  # you can remove ?upsert=true if present
+        f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{file_path}",   # you can remove ?upsert=true if present
         headers=headers,
-        data=file_bytes,
+        data=file_bytes
     )
 
     if res.status_code not in [200, 201]:
         raise Exception(f"Supabase upload failed: {res.status_code} {res.text}")
-    public_url = (
-        f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{file_path}"
-    )
+    public_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{file_path}"
     return public_url
 
 
@@ -86,12 +71,8 @@ def save_file(file, filename: str, folder: str = "files") -> str:
     filename = secure_filename(filename)
     file_bytes = file.read() if hasattr(file, "read") else file
     if IS_PRODUCTION:
-        content_type = (
-            "application/pdf" if filename.lower().endswith(".pdf") else "image/png"
-        )
-        return upload_to_supabase(
-            file_bytes, filename, folder, content_type=content_type
-        )
+        content_type = "application/pdf" if filename.lower().endswith(".pdf") else "image/png"
+        return upload_to_supabase(file_bytes, filename, folder, content_type=content_type)
     else:
         # Map folder names to proper paths
         if folder == "files":
@@ -111,7 +92,6 @@ def save_file(file, filename: str, folder: str = "files") -> str:
                 f.write(file)
         return str(save_path)
 
-
 # === Save Matplotlib Figures ===
 def save_plot(fig: Figure, filename: str, folder: str = "plots") -> str:
     """Saves matplotlib figures locally or to Supabase Storage."""
@@ -120,52 +100,38 @@ def save_plot(fig: Figure, filename: str, folder: str = "plots") -> str:
         buf = BytesIO()
         fig.savefig(buf, format="png")
         buf.seek(0)
-        return upload_to_supabase(
-            buf.read(), filename, folder, content_type="image/png"
-        )
+        return upload_to_supabase(buf.read(), filename, folder, content_type="image/png")
     else:
         save_path = IMG_DIR / filename
         fig.savefig(save_path)
         return str(save_path)
 
+import tempfile
 
 def download_excel_from_supabase(excel_filename: str, folder: str) -> str:
     """Downloads an Excel file from Supabase to a local temp path. Returns local path."""
     if not (SUPABASE_URL and SUPABASE_KEY and supabase):
         raise RuntimeError("Supabase credentials not loaded.")
-    res = supabase.storage.from_(SUPABASE_BUCKET).download(
-        f"{folder}/{secure_filename(excel_filename)}"
-    )
+    res = supabase.storage.from_(SUPABASE_BUCKET).download(f"{folder}/{secure_filename(excel_filename)}")
     fd, temp_path = tempfile.mkstemp(suffix=".xlsx")
     with os.fdopen(fd, "wb") as tmp:
         tmp.write(res)
     return temp_path
 
-
 def excel_exists_in_supabase(excel_filename: str, folder: str) -> bool:
     """Checks if Excel file exists in Supabase Storage."""
     files = supabase.storage.from_(SUPABASE_BUCKET).list(folder)
-    return secure_filename(excel_filename) in [f["name"] for f in files]
-
+    return secure_filename(excel_filename) in [f['name'] for f in files]
 
 def upload_pdf_to_supabase(local_pdf_path: str, usn: str, folder: str):
     """Uploads a local PDF to Supabase Storage and returns the public URL."""
     with open(local_pdf_path, "rb") as f:
-        return upload_to_supabase(
-            f.read(), f"{usn}.pdf", folder, content_type="application/pdf"
-        )
-
+        return upload_to_supabase(f.read(), f"{usn}.pdf", folder, content_type="application/pdf")
 
 def upload_excel_to_supabase(local_excel_path: str, excel_filename: str, folder: str):
     """Uploads a local Excel file to Supabase Storage and returns the public URL."""
     with open(local_excel_path, "rb") as f:
-        return upload_to_supabase(
-            f.read(),
-            excel_filename,
-            folder,
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-
+        return upload_to_supabase(f.read(), excel_filename, folder, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 def list_supabase_file_tree(folder: str = "") -> dict:
     """
@@ -187,9 +153,9 @@ def list_supabase_file_tree(folder: str = "") -> dict:
     for entry in files:
         if not entry or not isinstance(entry, dict):
             continue
-        name = entry.get("name")
-        metadata = entry.get("metadata") or {}
-        mimetype = metadata.get("mimetype", "")
+        name = entry.get('name')
+        metadata = entry.get('metadata') or {}
+        mimetype = metadata.get('mimetype', '')
 
         # Recurse into real folders/directories only
         if mimetype == "application/x-directory":
@@ -198,41 +164,30 @@ def list_supabase_file_tree(folder: str = "") -> dict:
             if sub_tree:
                 tree[name] = sub_tree
         # Add only PDFs as files
-        elif name and name.lower().endswith(".pdf"):
+        elif name and name.lower().endswith('.pdf'):
             file_path = f"{folder}/{name}" if folder else name
-            url = (
-                f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{file_path}"
-            )
+            url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{file_path}"
             tree[name] = url
     return tree
 
+
+import requests
+from pathlib import Path
+import tempfile
 
 def download_image_from_url(url: str) -> str:
     """
     Downloads an image from a URL to a temporary local file.
     Returns the local file path as a string.
     """
-    try:
-        # ADD TIMEOUT: If it can't connect in 5 seconds, it will fail fast instead of hanging
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()  # Check for 404/500 errors
-        response = requests.get(url)
-        response.raise_for_status()  # Raise error if download failed
-
-        # Create a temporary file with .png extension
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-
-        # Write image content to temp file
-        temp_file.write(response.content)
-        temp_file.close()
-
-        return temp_file.name
-    except RequestException as e:
-        logger.warning(f"⚠️ Could not download image from {url}: {e}")
-        # Fallback to the local logo if the download fails
-        import os
-
-        fallback_logo = os.path.join(
-            os.path.dirname(__file__), "../Inputs/Images/logo.png"
-        )
-        return fallback_logo
+    response = requests.get(url)
+    response.raise_for_status()  # Raise error if download failed
+    
+    # Create a temporary file with .png extension
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+    
+    # Write image content to temp file
+    temp_file.write(response.content)
+    temp_file.close()
+    
+    return temp_file.name

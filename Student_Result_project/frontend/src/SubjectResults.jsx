@@ -1,25 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import API_BASE from "./config";
 import { semesterOptions, subjectMapping } from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
-export default function SubjectResults({ batchYear }) {
+export default function SubjectResults() {
     const [semester, setSemester] = useState("");
     const [subject, setSubject] = useState("");
     const [data, setData] = useState(null);
 
-    useEffect(() => {
-        if (semester && subject && batchYear) {
-            fetchData();
-        } else {
-            setData(null);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [semester, subject, batchYear]);
-
     const fetchData = async () => {
-        if (!semester || !subject || !batchYear) return;
+        if (!semester || !subject) return;
         const res = await fetchWithAuth(
-            `${API_BASE}/auth/Staff/sub_res?semester=${semester}&subject=${subject}&batch_year=${batchYear}`,
+            `${API_BASE}/auth/Staff/sub_res?semester=${semester}&subject=${subject}`,
             {
                 // <-- this ensures cookies/session are sent
             }
@@ -32,7 +23,7 @@ export default function SubjectResults({ batchYear }) {
         if (!semester) return;
 
         // const token = sessionStorage.getItem("jwt"); // or wherever you store it
-        const url = `${API_BASE}/auth/Staff/sub_res/report?semester=${semester}&subject=${subject}&batch_year=${batchYear}`;
+        const url = `${API_BASE}/auth/Staff/sub_res/report?semester=${semester}&subject=${subject}`;
 
         const response = await fetchWithAuth(url, {
             

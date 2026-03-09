@@ -3,7 +3,8 @@ import axios from "axios";
 import axiosInstance from "./axiosInstance";
 import { CalendarDays } from "lucide-react";
 import API_BASE from "./config";
-export default function MentorMeetings({ mentorId, batchYear }) {
+
+export default function MentorMeetings({ mentorId }) {
     const [meetings, setMeetings] = useState([]);
     const [date, setDate] = useState("");
     const [agenda, setAgenda] = useState("");
@@ -16,7 +17,7 @@ export default function MentorMeetings({ mentorId, batchYear }) {
     const fetchMeetings = async () => {
         try {
             const res = await axiosInstance.get(
-                `${API_BASE}/auth/Staff/Mentor/meeting/${mentorId}?batch_year=${batchYear}`
+                `${API_BASE}/auth/Staff/Mentor/meeting/${mentorId}`
             );
             setMeetings(res.data);
         } catch (err) {
@@ -25,8 +26,8 @@ export default function MentorMeetings({ mentorId, batchYear }) {
     };
 
     useEffect(() => {
-        if (mentorId && batchYear) fetchMeetings();
-    }, [mentorId, batchYear]);
+        fetchMeetings();
+    }, [mentorId]);
 
     // Add a new meeting
     const addMeeting = async () => {
@@ -40,7 +41,7 @@ export default function MentorMeetings({ mentorId, batchYear }) {
 
         try {
             const res = await axiosInstance.post(
-                `${API_BASE}/auth/Staff/Mentor/meeting/${mentorId}?batch_year=${batchYear}`,
+                `${API_BASE}/auth/Staff/Mentor/meeting/${mentorId}`,
                 {
                     title,
                     date,
@@ -71,7 +72,7 @@ export default function MentorMeetings({ mentorId, batchYear }) {
         setMessage("");
         try {
             await axiosInstance.delete(
-                `${API_BASE}/auth/Staff/Mentor/meeting/delete/${id}?batch_year=${batchYear}`
+                `${API_BASE}/auth/Staff/Mentor/meeting/delete/${id}`
             );
             fetchMeetings();
             setMessage("Meeting deleted successfully.");

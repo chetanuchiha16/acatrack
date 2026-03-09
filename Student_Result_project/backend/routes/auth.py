@@ -34,8 +34,10 @@ def auth():
     if who == "Student":
         batch_year = batch_from_usn(username)
     elif who == "Staff":
-        # Staff access all batches. Let them select actively loaded batch in the dashboard UI.
         batch_year = request.json.get("batch_year")
+        if not batch_year:
+            return jsonify({"error": "Batch year required for Staff"}), 400
+        batch_year = int(batch_year)
     elif who == "Parent":
         # For parent, we will detect after loading student
         batch_year = batch_from_usn(username)
@@ -47,20 +49,20 @@ def auth():
     
     with bm.session_scope(batch_year) as db:
         if who == "Student":
-            user = StudentAuth.query.filter_by(usn=username).first()
+            user = StudentAuth.query.filter_by(username=username).first()
         elif who == "Staff":
             user = Teacher.query.filter_by(username=username).first()
         elif who == "Parent":
             user = ParentAuth.query.filter_by(username=username).first()
             logger.debug(f"user parent")
-            logger.debug(f"user and user.student: {user and user.student} {user} {batch_from_usn(user.student.usn) if user and user.student else None}")
+            logger.debug(f"user and user.student: {user and user.student} {user} {batch_from_usn(user.student.username)}")
             if user and user.student:
 
-                batch_year = batch_from_usn(user.student.usn)
+                batch_year = batch_from_usn(user.student.username)
                 logger.debug(f"{batch_year} from parent auth")
         else:
             # fallback, try all
-            user = (StudentAuth.query.filter_by(usn=username).first() or
+            user = (StudentAuth.query.filter_by(username=username).first() or
                     Teacher.query.filter_by(username=username).first() or
                     ParentAuth.query.filter_by(username=username).first())
 
@@ -145,7 +147,7 @@ def save_fcm_token(usn):
         return jsonify({"error": "Missing token"}), 400
 
     with bm.session_scope(batch_year) as db:
-        student = StudentAuth.query.filter_by(usn=usn).first()
+        student = StudentAuth.query.filter_by(username=usn).first()
         if not student:
             return jsonify({"error": "Student not found"}), 404
 

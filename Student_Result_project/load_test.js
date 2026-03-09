@@ -115,12 +115,12 @@ export default function () {
         });
 
         group('Mentor Meetings API', function () {
-           const res = http.get(`${BASE_URL}/auth/Staff/Mentor/meeting/${MENTOR_ID}`, staffParams);
+           const res = http.get(`${BASE_URL}/mentor/${MENTOR_ID}`, staffParams);
            check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
         });
 
         group('Mentor PDFs File Tree API', function () {
-           const res = http.get(`${BASE_URL}/mentee/mentor/${MENTOR_ID}/pdfs`, staffParams);
+           const res = http.get(`${BASE_URL}/mentor/${MENTOR_ID}/pdfs`, staffParams);
            check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
         });
     });

@@ -12,20 +12,5 @@
   "card": "ಕಾರ್ಡ್",
   "noData": "ಡೇಟಾ ಲಭ್ಯವಿಲ್ಲ",
   "chatbot": "ಚಾಟ್‌ಬಾಟ್",
-  "chatbotDesc": "ಚಾಟ್‌ಬಾಟ್ ವೀಕ್ಷಿಸಿ",
-  "dashboardTitle": "ಪಾಲಕರ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
-  "resultTitle": "ವಿದ್ಯಾರ್ಥಿ ಫಲಿತಾಂಶಗಳು",
-  "viewResults": "📊 ವಿದ್ಯಾರ್ಥಿ ಅಂಕಗಳು ಮತ್ತು ಪ್ರಗತಿಯನ್ನು ವೀಕ್ಷಿಸಿ",
-  "progressSummary": "✨ ಪ್ರಗತಿ ಸಾರಾಂಶ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
-  "subjectPerformance": "ವಿಷಯದ ಕಾರ್ಯಕ್ಷಮತೆ",
-  "percentage": "ಶೇಕಡಾವಾರು",
-  "totalMarks": "ಒಟ್ಟು ಅಂಕಗಳು",
-  "sgpa": "ಸೆಮಿಸ್ಟರ್ ಗ್ರೇಡ್ (SGPA)",
-  "cgpa": "ಒಟ್ಟು ಗ್ರೇಡ್ (CGPA)",
-  "internal": "ಆಂತರಿಕ",
-  "final": "ಅಂತಿಮ",
-  "total": "ಒಟ್ಟು",
-  "downloadReport": "ಪೂರ್ಣ ವರದಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ",
-  "noSubjectsFound": "ಯಾವುದೇ ವಿಷಯಗಳು ಕಂಡುಬಂದಿಲ್ಲ",
-  "errorLoadingAI": "AI ಒಳನೋಟಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ."
+  "chatbotDesc": "ಚಾಟ್‌ಬಾಟ್ ವೀಕ್ಷಿಸಿ"
 }

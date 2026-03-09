@@ -9,14 +9,13 @@ import os
 from datetime import datetime, timezone
 from models.helpers import get_batch_year
 from logger_config import get_logger
-from settings import settings
 
 logger = get_logger(__name__)
 
 email_bp = Blueprint("email", __name__)
 
-EMAIL_ADDRESS = settings.a_email
-EMAIL_PASSWORD = settings.email_pass  # App password
+EMAIL_ADDRESS = os.getenv("A_EMAIL")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASS")  # App password
 # -----------------------------
 # Message Model (store messages)
 # -----------------------------

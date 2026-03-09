@@ -1,12 +1,10 @@
-from flask import Blueprint, request, jsonify, redirect, send_from_directory
+from flask import Blueprint, request, jsonify, redirect
 import fitz
 import os
 from models.paths import pdf_dir, img_dir, base_dir
-from models.cloud_utils import save_file, supabase, SUPABASE_BUCKET, SUPABASE_URL
-from models import StudentAuth
+from models.cloud_utils import save_file, supabase, SUPABASE_BUCKET
+from models.users import StudentAuth
 from logger_config import get_logger
-from models.helpers import get_batch_year
-import requests
 
 logger = get_logger(__name__)
 UPLOAD_FOLDER = pdf_dir
@@ -108,14 +106,13 @@ def upload_form():
 
 def get_mentee_pdf_filename(mentee):
     safe_name = mentee.name.replace(" ", "_")  # Convert spaces to underscores
-    return f"{mentee.usn}_{safe_name}_record.pdf"
+    return f"{mentee.username}_{safe_name}_record.pdf"
 
 # ------ List all uploaded files ------
 @mentee_record_bp.route('/files', methods=['GET'])
 def files():
     if not supabase:
-        pdf_names = [f for f in os.listdir(UPLOAD_FOLDER) if f.lower().endswith(".pdf")]
-        return jsonify(pdf_names)
+        return jsonify({"error": "Supabase not configured"}), 500
 
     # List all files in "pdfs" folder inside "uploads" bucket
     response = supabase.storage.from_(SUPABASE_BUCKET).list("pdfs", {"limit": 1000})
@@ -138,7 +135,7 @@ def files():
 @mentee_record_bp.route('/download/<filename>', methods=['GET'])
 def download(filename):
     if not supabase:
-        return send_from_directory(UPLOAD_FOLDER, filename)
+        return jsonify({"error": "Supabase not configured"}), 500
 
     response = supabase.storage.from_(SUPABASE_BUCKET).create_signed_url(f"pdfs/{filename}", 3600)
     signed_url = getattr(response, "data", {}).get("signedURL") if hasattr(response, "data") else None
@@ -149,35 +146,32 @@ def download(filename):
 @mentee_record_bp.route('/mentor/<int:mentor_id>/pdfs', methods=['GET'])
 def list_mentor_pdfs(mentor_id):
     try:
-        batch_year = request.args.get("batch_year") or get_batch_year()
-        mentees = StudentAuth.query.filter_by(mentor_id=mentor_id)
-        if batch_year:
-            mentees = mentees.filter_by(batch_year=batch_year)
-        mentees = mentees.all()
+        mentees = StudentAuth.query.filter_by(mentor_id=mentor_id).all()
 
         # List all PDFs in "pdfs" folder. Response is a plain list.
+        response = supabase.storage.from_(SUPABASE_BUCKET).list("pdfs", {"limit": 1000})
+
+        # Collect all actual PDF filenames (exclude placeholders)
+        pdf_names = [
+            f["name"] for f in response
+            if f["name"] != ".emptyFolderPlaceholder"
+               and f["name"].lower().endswith(".pdf")
+        ]
+
         files = []
         for mentee in mentees:
             filename = get_mentee_pdf_filename(mentee)  # e.g. "1JS23CS032_CHETAN_KISHOR_C_G_record.pdf"
-            if supabase:
-                url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/pdfs/{filename}"
-                try:
-                    resp = requests.head(url, timeout=3)
-                    if resp.status_code == 200:
-                        files.append({
-                            "usn": mentee.usn,
-                            "name": mentee.name,
-                            "file_url": url
-                        })
-                except requests.RequestException:
-                    pass
-            else:
-                if filename in pdf_names:
-                    files.append({
-                        "usn": mentee.usn,
-                        "name": mentee.name,
-                        "file_url": f"/mentee/download/{filename}"
-                    })
+            logger.debug(f"filename: {filename}")
+            logger.debug(f"pdf names: {pdf_names}")
+            if filename in pdf_names:
+                # Create signed URL for private download (expires in 1 hour)
+                file_resp = supabase.storage.from_(SUPABASE_BUCKET).create_signed_url(f"pdfs/{filename}", 3600)
+                url = file_resp.get("signedURL") if isinstance(file_resp, dict) else getattr(file_resp, "data", {}).get("signedURL")
+                files.append({
+                    "usn": mentee.username,
+                    "name": mentee.name,
+                    "file_url": url
+                })
         logger.debug(f"files: {files}")
         return jsonify(files)
     except Exception as e:
@@ -187,28 +181,26 @@ def list_mentor_pdfs(mentor_id):
 
 @mentee_record_bp.route('/mentor/<int:mentor_id>/download/<usn>', methods=['GET'])
 def download_mentee_pdf(mentor_id, usn):
-    student = StudentAuth.query.filter_by(usn=usn).first()
+    student = StudentAuth.query.filter_by(username=usn).first()
     if not student:
         return jsonify({"error": "Student not found"}), 404
     if student.mentor_id != mentor_id:
         return jsonify({"error": "Access denied"}), 403
 
     filename = get_mentee_pdf_filename(student)
-    
-    if supabase:
-        url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/pdfs/{filename}"
-        try:
-            resp = requests.head(url, timeout=3)
-            if resp.status_code == 200:
-                return jsonify({"file_url": url})
-            else:
-                return jsonify({"error": "PDF not found"}), 404
-        except requests.RequestException:
-            return jsonify({"error": "Failed to check file"}), 500
-    else:
-        pdf_names = [f for f in os.listdir(UPLOAD_FOLDER) if f.lower().endswith(".pdf")]
-        if filename not in pdf_names:
-            return jsonify({"error": "PDF not found"}), 404
-        return jsonify({"file_url": f"/mentee/download/{filename}"})
+    response = supabase.storage.from_(SUPABASE_BUCKET).list("pdfs", {"limit": 1000})
+    pdf_names = [
+        f["name"] for f in response
+        if f["name"] != ".emptyFolderPlaceholder" and f["name"].lower().endswith(".pdf")
+    ]
+    if filename not in pdf_names:
+        return jsonify({"error": "PDF not found"}), 404
+
+    file_resp = supabase.storage.from_(SUPABASE_BUCKET).create_signed_url(f"pdfs/{filename}", 3600)
+    signed_url = file_resp.get("signedURL") if isinstance(file_resp, dict) else getattr(file_resp, "data", {}).get("signedURL")
+    if not signed_url:
+        return jsonify({"error": "File not found"}), 404
+
+    return jsonify({"file_url": signed_url})
 
 
