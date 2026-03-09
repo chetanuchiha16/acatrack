@@ -121,6 +121,7 @@ def get_semester_results():
 
 
 @sem_bp.route("/auth/Staff/sem_res/report/<semester>", methods=["GET"])
+@cache.cached(timeout=3600)
 def download_semester_report(semester):
     batch_year = request.args.get("batch_year") or get_batch_year()
     semester_subject_mapping = {

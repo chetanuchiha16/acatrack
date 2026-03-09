@@ -52,6 +52,7 @@ def get_academic_performance():
 
 
 @uni_bp.route('/auth/Staff/report/<semester>')
+@cache.cached(timeout=3600)
 def get_report(semester):
     batch_year = request.args.get('batch_year') or get_batch_year()
     university = University(postgres_url=postgres_db_url, batch_year=batch_year)
