@@ -43,8 +43,8 @@ export default function () {
         // 2. Staff/Mentor Login (Using dummy/placeholder credentials)
         const staffLogin = JSON.stringify({
            who: "Staff",
-           username: "1007", // Dummy teacher ID
-           password: "Sneh007",
+           username: "1000", // Dummy teacher ID
+           password: "Sneh000",
            batch_year: "2022"
         });
         const staffRes = http.post(`${BASE_URL}/auth`, staffLogin, {
