@@ -34,17 +34,17 @@ frontend:
 # Run both backend and frontend
 run:
 	@echo "Starting both backend and frontend..."
-	(cd backend && python app.py) & (cd frontend && npm run dev)
+	(cd backend && uv run python app.py) & (cd frontend && npm run dev)
 
 # Run tests
 test:
 	@echo "Running backend tests..."
-	cd backend && pytest
+	cd backend && uv run pytest
 
 # Run benchmark
 benchmark:
 	@echo "Running benchmark..."
-	python benchmarkv2.py
+	uv run benchmarkv2.py
 
 # Run load test
 load-test:
