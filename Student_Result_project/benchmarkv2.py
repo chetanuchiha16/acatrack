@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# /// script
+# dependencies = [
+#   "psutil",
+#   "psycopg2-binary",
+# ]
+# ///
+
 import subprocess
 import threading
 import time
