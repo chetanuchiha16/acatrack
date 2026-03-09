@@ -6,13 +6,17 @@ from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from models.paths import postgres_db_url
 
-db = SQLAlchemy()
-bcrypt = Bcrypt()
-migrate = Migrate()  # <-- make Migrate global
+from extensions import db, migrate, bcrypt
 
 def create_app(batch_year=None, postgres_url=None):
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    # Configure Redis Cache
+    from settings import settings
+    app.config['CACHE_TYPE'] = 'RedisCache'
+    app.config['CACHE_REDIS_URL'] = settings.redis_url
+    app.config['CACHE_DEFAULT_TIMEOUT'] = 600 # 10 minutes
 
     if postgres_url is None:
         # user = "chetan"
@@ -34,6 +38,9 @@ def create_app(batch_year=None, postgres_url=None):
 
     db.init_app(app)
     migrate.init_app(app, db)  # <-- use global migrate
+    
+    from extensions import cache
+    cache.init_app(app)
 
     CORS(app, supports_credentials=True)
      # Teardown function to close sessions after each request

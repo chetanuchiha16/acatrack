@@ -6,14 +6,18 @@ from logger_config import get_logger
 logger = get_logger(__name__)
 # SubjectResult class
 class SubjectResult:
-    def __init__(self, subject_code, semester, university):
+    def __init__(self, subject_code, semester, university, students=None):
         self.subject_name = sem_subjects[semester].get(subject_code,"Unknown subject")
         self.subject_code = subject_code
         logger.debug(self.subject_code)
         self.semester = semester
         self.university = university  # Instance of the University class
+        self.students = students if students is not None else university.get_students_for_semester(semester)
+        
         self.students_data = self.fetch_students_data()
-        self.total_students = len(university.students)  # Total students for the semester
+        
+        # Total students is the number of students who actually registered for this specific subject
+        self.total_students = len([s for s in self.students if s.semester == self.semester and self.subject_code in s.subject_codes]) 
         self.present_students = len(self.students_data)
         self.absent_students = self.total_students - self.present_students
         self.pass_count, self.fail_count = self.fetch_subject_stats()
@@ -25,8 +29,8 @@ class SubjectResult:
         Fetch student data for the specific subject and semester.
         """
         students_data = []
-        # Filter students from the University instance by semester
-        filtered_students = [student for student in self.university.students if student.semester == self.semester]
+        # Filter from the pre-fetched local students list
+        filtered_students = [student for student in self.students if student.semester == self.semester]
         for student in filtered_students:
             if self.subject_code in student.subject_codes:
                 index = student.subject_codes.index(self.subject_code)
@@ -170,7 +174,7 @@ class SubjectResult:
         plt.title(f'Performance Distribution in {self.subject_code}')
         graph_path=f"{img_dir}/performance_pie_chart.png"
         plt.savefig(graph_path)
-        #plt.show()
+        plt.close(fig) # Prevent memory leak
         return fig,graph_path
 
     def plot_attendance_pie_chart(self):
@@ -187,6 +191,6 @@ class SubjectResult:
         plt.title(f'Attendance Distribution in {self.subject_code}')
         graph_path=f"{img_dir}/attendance_pie_chart.png"
         plt.savefig(graph_path)
-        #plt.show()
+        plt.close(fig) # Prevent memory leak
         return fig,graph_path
     

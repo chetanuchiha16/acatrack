@@ -1,16 +1,32 @@
-import React, { useState } from "react";
-import { BarChart3, Users, CalendarDays, FileText } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { BarChart3, Users, CalendarDays, FileText, ArrowLeft } from "lucide-react";
 import MentorResults from "./MentorResults";
 import MentorSendEmails from "./MentorSendEmails";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import MentorMeetings from "./MentorMeetings";
 import MentorRecords from "./MentorRecord"; // adjust the path if needed
+import API_BASE from "./config";
+import axios from "axios";
 
 export default function MentorDashboard() {
     const [activeTab, setActiveTab] = useState("results");
+    const [batches, setBatches] = useState([]);
+    const [batchYear, setBatchYear] = useState("");
     const [date, setDate] = useState("");
     let { mentor_id } = useLocation().state || {};
     let { finalId } = useParams();
+    let navigate = useNavigate();
+
+    useEffect(() => {
+        axios.get(`${API_BASE}/batches`)
+            .then((res) => {
+                setBatches(res.data.batches);
+                if (res.data.batches && res.data.batches.length > 0) {
+                    setBatchYear(res.data.batches[res.data.batches.length - 1]);
+                }
+            })
+            .catch(() => setBatches([]));
+    }, []);
 
     const tabs = [
         {
@@ -36,51 +52,102 @@ export default function MentorDashboard() {
     ];
 
     return (
-        <div className="p-4 md:p-6 space-y-6">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center">
-                Mentor Dashboard
-            </h1>
-
-            <div className="w-[95%] mx-auto h-[2px] bg-gray-300 my-4 rounded shadow-sm"></div>
-
-            <div className="w-full md:max-w-6xl mx-auto p-4 sm:p-6 bg-white dark:bg-gray-800 rounded-lg shadow-2xl">
-                {/* Tabs */}
-                <div className="flex flex-wrap gap-2 b-2">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-t-md transition-colors duration-200
-                                ${activeTab === tab.id
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-                                }`}
+        <div className="min-h-screen w-full bg-gray-50 dark:bg-[#0b1220] p-4 sm:p-6 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-6">
+                
+                {/* Header Card */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between">
+                    <div className="flex items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
+                        <button 
+                            onClick={() => navigate(-1)} 
+                            className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm"
+                            title="Go Back"
                         >
-                            {tab.icon}
-                            <span>{tab.label}</span>
+                            <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-200" />
                         </button>
-                    ))}
+                        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                            Mentor Dashboard
+                        </h1>
+                    </div>
+
+                    <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-900 p-2 rounded-xl border border-gray-100 dark:border-gray-700 shadow-inner">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-300 px-2">Active Batch:</span>
+                        <select
+                            value={batchYear}
+                            onChange={(e) => setBatchYear(e.target.value)}
+                            className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500 w-32 shadow-sm"
+                        >
+                            <option value="">Select</option>
+                            {batches.map(year => (
+                                <option key={year} value={year}>{year}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="w-full mx-auto p-4 sm:p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+                {/* Segmented Control Tabs */}
+                <div className="flex justify-center mb-8">
+                    <div className="inline-flex bg-gray-100 dark:bg-gray-800/80 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700/50 shadow-inner">
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ease-in-out
+                                    ${activeTab === tab.id
+                                        ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-md transform scale-100"
+                                        : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/50 transform scale-95"
+                                    }`}
+                            >
+                                <span className={`${activeTab === tab.id ? "animate-pulse" : ""}`}>
+                                    {tab.icon}
+                                </span>
+                                <span>{tab.label}</span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Content */}
-                <div className="p-4 mt-12 rounded-lg bg-gray-50 dark:bg-gray-900">
-                    {activeTab === "results" && (
-                        <MentorResults mentor_id={mentor_id} />
-                    )}
+                <div className="p-4 sm:p-6 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden">
+                    {/* Background decoration */}
+                    <div className="absolute top-0 right-0 -m-4 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl"></div>
+                    <div className="absolute bottom-0 left-0 -m-4 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl"></div>
+                    
+                    <div className="relative z-10">
+                        {batchYear ? (
+                            <>
+                                {activeTab === "results" && (
+                                    <MentorResults mentor_id={mentor_id} batchYear={batchYear} />
+                                )}
 
-                    {activeTab === "communication" && (
-                        <MentorSendEmails mentorId={mentor_id} />
-                    )}
+                                {activeTab === "communication" && (
+                                    <MentorSendEmails mentorId={mentor_id} batchYear={batchYear} />
+                                )}
 
-                    {activeTab === "meetings" && (
-                        <div className="flex flex-col gap-3">
-                            <MentorMeetings mentorId={mentor_id} />
-                        </div>
-                    )}
+                                {activeTab === "meetings" && (
+                                    <div className="flex flex-col gap-3">
+                                        <MentorMeetings mentorId={mentor_id} batchYear={batchYear} />
+                                    </div>
+                                )}
 
-                    {activeTab === "records" && 
-                    <MentorRecords mentor_id={mentor_id} />}
-
+                                {activeTab === "records" && (
+                                    <MentorRecords mentor_id={mentor_id} batchYear={batchYear} />
+                                )}
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-full mb-4">
+                                    <Users className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">No Batch Selected</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+                                    Please select a batch year from the dropdown menu above to view mentor details, results, and communications.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
                 </div>
             </div>
         </div>

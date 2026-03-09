@@ -1,90 +1,118 @@
-from flask import Flask, jsonify, request,Blueprint,send_file
-from models import University, SubjectResult, Student
-from models.paths import  pdf_dir  , get_db_path, postgres_db_url
-from visuals import generate_sem_pdf
-import os
+from io import BytesIO
+
+from flask import Blueprint, jsonify, request, send_file
+from models import SubjectResult, University
 from models.fetch import sem_subjects
-from flask import session
 from models.helpers import get_batch_year
-from sqlalchemy import create_engine
-import pandas as pd
+from models.paths import postgres_db_url
+from visuals import generate_sem_pdf
+from extensions import cache
 
-sem_bp = Blueprint('sem_res',__name__)
+sem_bp = Blueprint("sem_res", __name__)
 
-@sem_bp.route('/auth/Staff/sem_res', methods=['GET'])
+
+@sem_bp.route("/auth/Staff/sem_res", methods=["GET"])
+@cache.cached(timeout=3600, query_string=True)
 def get_semester_results():
-    semester = request.args.get('semester')
-    batch_year = get_batch_year()
+    semester = request.args.get("semester")
+    batch_year = request.args.get("batch_year") or get_batch_year()
     if not semester:
         return jsonify({"error": "Missing semester parameter"}), 400
 
     try:
-        # Fast: fetch all students in one query
-        query = f'SELECT * FROM "{semester}_{batch_year}"'
-        df = pd.read_sql(query, create_engine(postgres_db_url))
-        if df.empty:
-            return jsonify({"error": f"No data found for {semester} in batch {batch_year}"}), 404
-
-        # Build Student objects in memory without extra DB hits
-        university = University(postgres_url=postgres_db_url, batch_year=batch_year)
-        students = []
-        for _, row in df.iterrows():
-            student_data = {
-                "usn": row["student_usn"],
-                "name": row["student_name"],
-                "semester": semester,
-                "batch_year": batch_year,
-                "ia_marks": [],
-                "see_marks": [],
-                "credits": [],
-                "subject_codes": [],
-                "subject_names": []
-            }
-            # dynamically gather subject info for this semester
-            for col in df.columns:
-                if "_TOTAL" not in col and "_INTERNALS" in col:
-                    code = col.split("_")[0]
-                    student_data["subject_codes"].append(code)
-                    student_data["ia_marks"].append(row.get(f"{code}_INTERNALS", 0))
-                    student_data["see_marks"].append(row.get(f"{code}_EXTERNALS", 0))
-                    student_data["credits"].append(row.get(f"{code}_CREDITS", 0))
-                    student_data["subject_names"].append(code)  # or map from sem_subjects
-            # Create Student object but skip DB fetch inside
-            student = Student.__new__(Student)
-            student.__dict__.update(student_data)
-            student.total_marks = sum(student.ia_marks) + sum(student.see_marks)
-            student.pass_fail = student.calculate_pass_fail()
-            students.append(student)
-
-        university.students = students
-
         # Map of subjects for this semester
         semester_subject_mapping = {
-            "sem1": ["BMATS101", "BCHES102", "BCEDK103", "BENGK106", "BICOK107", "BIDTK158", "BPLCK105B","BESCK104C", "BESCK104A", "BETCK105H"],
-            "sem2": ["BMAT201", "BPHYS202", "BPOPS203", "BPWSK206", "BKSKK207", "BKBKK207", "BSFHK258", "BPLCK205B", "BESCK204C", "BESCK204D", "BETCK205H"],
-            "sem3": ["BCS301", "BCS302", "BCS303", "BCS304", "BCSL305", "BSCK307", "BNSK359", "BCS306A", "BCS358D"],
-            "sem4": ["BCS401", "BCS402", "BCS403", "BCSL404", "BBOC407", "BUHK408", "BPEK459_PhysicalEducation_OR_BNSK459_NSS_", "BCS405B", "BCSL456D"]
+            "sem1": [
+                "BMATS101",
+                "BCHES102",
+                "BCEDK103",
+                "BENGK106",
+                "BICOK107",
+                "BIDTK158",
+                "BPLCK105B",
+                "BESCK104C",
+                "BESCK104A",
+                "BETCK105H",
+            ],
+            "sem2": [
+                "BMAT201",
+                "BPHYS202",
+                "BPOPS203",
+                "BPWSK206",
+                "BKSKK207",
+                "BKBKK207",
+                "BSFHK258",
+                "BPLCK205B",
+                "BESCK204C",
+                "BESCK204D",
+                "BETCK205H",
+            ],
+            "sem3": [
+                "BCS301",
+                "BCS302",
+                "BCS303",
+                "BCS304",
+                "BCSL305",
+                "BSCK307",
+                "BNSK359",
+                "BCS306A",
+                "BCS358D",
+            ],
+            "sem4": [
+                "BCS401",
+                "BCS402",
+                "BCS403",
+                "BCSL404",
+                "BBOC407",
+                "BUHK408",
+                "BPEK459_PhysicalEducation_OR_BNSK459_NSS_",
+                "BCS405B",
+                "BCSL456D",
+            ],
         }
 
         subjects = semester_subject_mapping.get(semester, [])
         if not subjects:
-            return jsonify({"error": "No subjects found for the selected semester"}), 404
+            return jsonify(
+                {"error": "No subjects found for the selected semester"}
+            ), 404
+
+        # Use the University model which automatically handles the normalized DB fetch
+        university = University(postgres_url=postgres_db_url, batch_year=batch_year)
+
+        students = university.get_students_for_semester(selected_semester=semester)
+        if not students:
+            return jsonify(
+                {"error": f"No data found for {semester} in batch {batch_year}"}
+            ), 404
 
         results = []
         for subject_code in subjects:
-            subject_result = SubjectResult(subject_code, semester, university)
-            results.append({
-                "subject_name": sem_subjects[semester].get(subject_code, "Unknown subject"),
-                "subject_code": subject_code,
-                "total_students": subject_result.total_students,
-                "present_students": subject_result.present_students,
-                "absent_students": subject_result.absent_students,
-                "pass_percentage": round(subject_result.pass_percentage, 2),
-                "fcd_count": subject_result.fcd_count,
-                "fc_count": subject_result.fc_count,
-                "sc_count": subject_result.sc_count,
-                "fail_count": subject_result.fail_count,
-            })
+            subject_result = SubjectResult(subject_code, semester, university, students=students)
+
+            # Skip returning empty stats if no students took the subject
+            if (
+                subject_result.total_students == 0
+                and subject_result.present_students == 0
+            ):
+                continue
+
+            results.append(
+                {
+                    "subject_name": sem_subjects[semester].get(
+                        subject_code, "Unknown subject"
+                    ),
+                    "subject_code": subject_code,
+                    "total_students": subject_result.total_students,
+                    "present_students": subject_result.present_students,
+                    "absent_students": subject_result.absent_students,
+                    "pass_percentage": round(subject_result.pass_percentage, 2),
+                    "fcd_count": subject_result.fcd_count,
+                    "fc_count": subject_result.fc_count,
+                    "sc_count": subject_result.sc_count,
+                    "fail_count": subject_result.fail_count,
+                }
+            )
 
         return jsonify({"semester": semester, "results": results})
 
@@ -92,25 +120,67 @@ def get_semester_results():
         return jsonify({"error": str(e)}), 500
 
 
-
-from io import BytesIO
-from flask import send_file
-
-@sem_bp.route('/auth/Staff/sem_res/report/<semester>', methods=['GET'])
+@sem_bp.route("/auth/Staff/sem_res/report/<semester>", methods=["GET"])
 def download_semester_report(semester):
-    batch_year = get_batch_year()
+    batch_year = request.args.get("batch_year") or get_batch_year()
     semester_subject_mapping = {
-        "sem1": ["BMATS101", "BCHES102", "BCEDK103", "BENGK106", "BICOK107", "BIDTK158", "BPLCK105B","BESCK104C", "BESCK104A", "BETCK105H"],
-        "sem2": ["BMAT201", "BPHYS202", "BPOPS203", "BPWSK206", "BKSKK207", "BKBKK207", "BSFHK258", "BPLCK205B", "BESCK204C", "BESCK204D", "BETCK205H"],
-        "sem3": ["BCS301", "BCS302", "BCS303", "BCS304", "BCSL305", "BSCK307", "BNSK359", "BCS306A", "BCS358D"],
-        "sem4": ["BCS401", "BCS402", "BCS403", "BCSL404", "BBOC407", "BUHK408", "BPEK459_PhysicalEducation_OR_BNSK459_NSS_", "BCS405B", "BCSL456D"]
+        "sem1": [
+            "BMATS101",
+            "BCHES102",
+            "BCEDK103",
+            "BENGK106",
+            "BICOK107",
+            "BIDTK158",
+            "BPLCK105B",
+            "BESCK104C",
+            "BESCK104A",
+            "BETCK105H",
+        ],
+        "sem2": [
+            "BMAT201",
+            "BPHYS202",
+            "BPOPS203",
+            "BPWSK206",
+            "BKSKK207",
+            "BKBKK207",
+            "BSFHK258",
+            "BPLCK205B",
+            "BESCK204C",
+            "BESCK204D",
+            "BETCK205H",
+        ],
+        "sem3": [
+            "BCS301",
+            "BCS302",
+            "BCS303",
+            "BCS304",
+            "BCSL305",
+            "BSCK307",
+            "BNSK359",
+            "BCS306A",
+            "BCS358D",
+        ],
+        "sem4": [
+            "BCS401",
+            "BCS402",
+            "BCS403",
+            "BCSL404",
+            "BBOC407",
+            "BUHK408",
+            "BPEK459_PhysicalEducation_OR_BNSK459_NSS_",
+            "BCS405B",
+            "BCSL456D",
+        ],
     }
 
     # Generate the PDF in-memory
     university = University(postgres_url=postgres_db_url, batch_year=batch_year)
-    university.add_students(selected_semester=semester)
     pdf_bytes = generate_sem_pdf(semester, university, semester_subject_mapping)
     pdf_buffer = BytesIO(pdf_bytes)
     pdf_buffer.seek(0)
-    return send_file(pdf_buffer, as_attachment=True, download_name=f"{semester}_results.pdf", mimetype="application/pdf")
-
+    return send_file(
+        pdf_buffer,
+        as_attachment=True,
+        download_name=f"{semester}_results.pdf",
+        mimetype="application/pdf",
+    )
