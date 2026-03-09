@@ -8,7 +8,8 @@ import psycopg2
 import sys
 import os
 
-DATABASE_URL = "postgresql://chetan:4myHina!@10.49.58.115:5432/gp_normalised"
+# DATABASE_URL = "postgresql://chetan:4myHina!@10.49.58.115:5432/gp_normalised"
+DATABASE_URL = "postgresql://chetan:4myHina!@localhost:5432/gp_normalised"
 
 ram_usage = []
 db_connections = []
