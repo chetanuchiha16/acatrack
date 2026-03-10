@@ -12,9 +12,14 @@ mentor_excel_path = str(base_dir / "Inputs/ExcelSheet/Mentor.xlsx")
 # Your Supabase public URL
 logo_url = "https://hpavqkjevepfegkojisn.supabase.co/storage/v1/object/public/uploads/Inputs/Images/logo.png"
 
-# Download and get a local file path
-logo_path = download_image_from_url(logo_url)
-logger.debug(f"{logo_path}")
+# Download and get a local file path lazily
+_cached_logo_path = None
+def get_logo_path():
+    global _cached_logo_path
+    if not _cached_logo_path:
+        _cached_logo_path = download_image_from_url(logo_url)
+    return _cached_logo_path
+
 # db_path = str(base_dir / "Outputs" / "student_data.db")
 # db_path = str(base_dir / "instance" / "user.db")
 pdf_dir = str(base_dir / "Outputs" / "PDFs")
