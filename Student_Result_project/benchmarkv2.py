@@ -95,22 +95,62 @@ def get_next_test_number(directory):
     return max(numbers) + 1 if numbers else 1
 
 def run_single_user_baseline(base_dir):
-    print("📋 Running Single User Baseline (1 VU, Sequential Requests)...")
-    baseline_summary_path = os.path.join(base_dir, "test_outputs", "baseline_summary.json")
-    try:
-        # We run for slightly longer to ensure metrics are captured
-        subprocess.run(
-            ["k6", "run", "load_testv2.js", "--vus", "1", "--iterations", "1", f"--summary-export={baseline_summary_path}"],
-            cwd=base_dir,
-            check=True,
-            capture_output=True
-        )
-        with open(baseline_summary_path, "r") as f:
-            data = json.load(f)
-            return data
-    except Exception as e:
-        print(f"⚠️ Baseline run failed: {e}")
-        return None
+    print("📋 Running Single User Baseline (1 VU, Sequential Requests with RAM tracking)...")
+    
+    routes = [
+        'Student Analysis API', 'Chart Generation API', 'PDF Report API',
+        'Overall Res API', 'Staff PDF Report API', 'Staff Semester Result API',
+        'Mentor Students List API', 'Mentor Meetings API', 'Mentor PDFs File Tree API',
+        'Parent Student Details API', 'Health Check', 'List Batches API'
+    ]
+    
+    results = []
+    
+    for route in routes:
+        print(f"  - Testing: {route}...")
+        baseline_summary_path = os.path.join(base_dir, "test_outputs", f"baseline_{route.replace(' ', '_')}.json")
+        
+        # Measure RAM before
+        ram_before = get_current_ram()
+        
+        try:
+            # We run for slightly longer to ensure metrics are captured
+            subprocess.run(
+                ["k6", "run", "load_testv2.js", "--vus", "1", "--iterations", "1", 
+                 f"--summary-export={baseline_summary_path}", "-e", f"ROUTE_FILTER={route}"],
+                cwd=base_dir,
+                check=True,
+                capture_output=True
+            )
+            
+            # Measure RAM during/after
+            # Wait a tiny bit for the OS to update process stats
+            time.sleep(0.5)
+            ram_after = get_current_ram()
+            ram_impact = max(0, ram_after - ram_before)
+            
+            with open(baseline_summary_path, "r") as f:
+                data = json.load(f)
+                b_metrics = parse_k6_metrics(data)
+                if b_metrics:
+                    # Filter specifically for the route we intended to run
+                    metric = next((m for m in b_metrics if m['name'] == route), None)
+                    if metric:
+                        metric['ram_impact'] = ram_impact
+                        results.append(metric)
+                    else:
+                        # Fallback if names don't match exactly for some reason
+                        b_metrics[0]['ram_impact'] = ram_impact
+                        results.append(b_metrics[0])
+                    
+            # Cleanup temp summary
+            if os.path.exists(baseline_summary_path):
+                os.remove(baseline_summary_path)
+                
+        except Exception as e:
+            print(f"    ⚠️ Baseline run failed for {route}: {e}")
+            
+    return results
 
 def parse_k6_metrics(summary_data):
     metrics = summary_data.get("metrics", {})
@@ -123,14 +163,17 @@ def parse_k6_metrics(summary_data):
             name_part = key.replace("route_", "")
             route_name = name_part.replace("_", " ").title().replace("Api", "API").replace("Pdf", "PDF")
             
-            # k6 summary structure: { "avg": ..., "p(95)": ..., "count": ... }
-            route_metrics.append({
-                "name": route_name,
-                "avg": value.get("avg", 0),
-                "p95": value.get("p(95)", 0),
-                "max": value.get("max", 0),
-                "count": value.get("count", 0)  # Count might be missing in some k6 versions/configs
-            })
+            # k6 summary structure: { "avg": ..., "p(95)": ... }
+            # Use avg > 0 to detect if the route was actually executed
+            avg_val = value.get("avg", 0)
+            if avg_val > 0:
+                route_metrics.append({
+                    "name": route_name,
+                    "avg": avg_val,
+                    "p95": value.get("p(95)", 0),
+                    "max": value.get("max", 0),
+                    "count": value.get("count", 0)  # Still try to get count if available
+                })
     return route_metrics
 
 if __name__ == "__main__":
@@ -208,12 +251,17 @@ if __name__ == "__main__":
 
     # Baseline table
     baseline_table = ""
+    ram_metrics = []
     if baseline_data:
-        baseline_routes = parse_k6_metrics(baseline_data)
-        if baseline_routes:
-            baseline_table = "| Route | Latency (avg) | Count |\n|-------|---------------|-------|\n"
-            for r in baseline_routes:
-                baseline_table += f"| {r['name']} | {r['avg']:.2f} ms | {int(r['count'])} |\n"
+        baseline_table = "| Route | Latency (avg) | RAM Impact |\n|-------|---------------|------------|\n"
+        for r in baseline_data:
+            baseline_table += f"| {r['name']} | {r['avg']:.2f} ms | {r['ram_impact']:.2f} MB |\n"
+            ram_metrics.append(r)
+        
+        # Sort by RAM impact
+        ram_metrics.sort(key=lambda x: x["ram_impact"], reverse=True)
+        top_ram = ram_metrics[0] if ram_metrics else None
+        least_ram = ram_metrics[-1] if ram_metrics else None
 
     md_content = f"""# 📈 Load Testing Results Report (Test #{next_test_num})
 
@@ -229,7 +277,16 @@ if __name__ == "__main__":
 - **Average RAM Usage**: {avg_ram:.2f} MB
 - **Max Database Connections**: {max_conn}
 - **Average Database Connections**: {avg_conn:.2f}
+"""
 
+    if ram_metrics:
+        md_content += f"""
+### 🧠 RAM Highlights (Per Route Baseline)
+- **Maximum RAM Impact**: {ram_metrics[0]['name']} ({ram_metrics[0]['ram_impact']:.2f} MB)
+- **Minimum RAM Impact**: {ram_metrics[-1]['name']} ({ram_metrics[-1]['ram_impact']:.2f} MB)
+"""
+
+    md_content += f"""
 ## ⚡ HTTP Metrics
 - **Average Response Time**: {http_req_duration.get('avg', 0):.2f} ms
 - **P90 Response Time**: {http_req_duration.get('p(90)', 0):.2f} ms

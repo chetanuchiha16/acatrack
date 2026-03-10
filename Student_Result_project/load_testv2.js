@@ -41,6 +41,12 @@ const USN = __ENV.USN || '1JS23CS032';
 const SEMESTER = __ENV.SEMESTER || 'sem1';
 const MENTOR_ID = __ENV.MENTOR_ID || '1'; // Placeholder mentor ID 
 const ADMIN_SECRET = __ENV.ADMIN_SECRET || 'supersecretkey';
+const ROUTE_FILTER = __ENV.ROUTE_FILTER || ''; // If set, only this route will run
+
+function shouldRun(name) {
+    if (!ROUTE_FILTER) return true;
+    return ROUTE_FILTER === name;
+}
 
 export const options = {
   stages: [
@@ -157,63 +163,81 @@ export default function () {
     // Student Routes
     // ==========================================
     group('Student Endpoints', function () {
-        group('Student Analysis API', function () {
-          const res = track(http.get(`${BASE_URL}/auth/Student/analysis?usn=${USN}&semester=${SEMESTER}`, studentParams('Student Analysis API')), 'Student Analysis API');
-          check(res, { 'status is 200': (r) => r.status === 200 });
-        });
+        if (shouldRun('Student Analysis API')) {
+            group('Student Analysis API', function () {
+              const res = track(http.get(`${BASE_URL}/auth/Student/analysis?usn=${USN}&semester=${SEMESTER}`, studentParams('Student Analysis API')), 'Student Analysis API');
+              check(res, { 'status is 200': (r) => r.status === 200 });
+            });
+        }
 
-        group('Chart Generation API', function () {
-          const res = track(http.get(`${BASE_URL}/auth/Student/chart?usn=${USN}&semester=${SEMESTER}`, studentParams('Chart Generation API')), 'Chart Generation API');
-          check(res, { 'status is 200': (r) => r.status === 200 });
-        });
+        if (shouldRun('Chart Generation API')) {
+            group('Chart Generation API', function () {
+              const res = track(http.get(`${BASE_URL}/auth/Student/chart?usn=${USN}&semester=${SEMESTER}`, studentParams('Chart Generation API')), 'Chart Generation API');
+              check(res, { 'status is 200': (r) => r.status === 200 });
+            });
+        }
 
-        group('PDF Report API', function () {
-          const res = track(http.get(`${BASE_URL}/auth/Student/result?usn=${USN}&semester=${SEMESTER}`, studentParams('PDF Report API')), 'PDF Report API');
-          check(res, { 'status is 200': (r) => r.status === 200 });
-        });
+        if (shouldRun('PDF Report API')) {
+            group('PDF Report API', function () {
+              const res = track(http.get(`${BASE_URL}/auth/Student/result?usn=${USN}&semester=${SEMESTER}`, studentParams('PDF Report API')), 'PDF Report API');
+              check(res, { 'status is 200': (r) => r.status === 200 });
+            });
+        }
     });
 
     // ==========================================
     // Staff / Mentor Routes
     // ==========================================
     group('Staff and Mentor Endpoints', function() {
-        group('Overall Res API', function () {
-           const res = track(http.get(`${BASE_URL}/auth/Staff/overall_res?semester=${SEMESTER}`, staffParams('Overall Res API')), 'Overall Res API');
-           // Can be 200 if valid layout, or 401 if teacher token failed
-           check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
-        });
+        if (shouldRun('Overall Res API')) {
+            group('Overall Res API', function () {
+               const res = track(http.get(`${BASE_URL}/auth/Staff/overall_res?semester=${SEMESTER}`, staffParams('Overall Res API')), 'Overall Res API');
+               // Can be 200 if valid layout, or 401 if teacher token failed
+               check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
+            });
+        }
 
-        group('Staff PDF Report API', function () {
-           const res = track(http.get(`${BASE_URL}/auth/Staff/report/${SEMESTER}`, staffParams('Staff PDF Report API')), 'Staff PDF Report API');
-           check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
-        });
+        if (shouldRun('Staff PDF Report API')) {
+            group('Staff PDF Report API', function () {
+               const res = track(http.get(`${BASE_URL}/auth/Staff/report/${SEMESTER}`, staffParams('Staff PDF Report API')), 'Staff PDF Report API');
+               check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
+            });
+        }
 
-        group('Staff Semester Result API', function () {
-           const res = track(http.get(`${BASE_URL}/auth/Staff/sem_res/report/${SEMESTER}`, staffParams('Staff Semester Result API')), 'Staff Semester Result API');
-           check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
-        });
+        if (shouldRun('Staff Semester Result API')) {
+            group('Staff Semester Result API', function () {
+               const res = track(http.get(`${BASE_URL}/auth/Staff/sem_res/report/${SEMESTER}`, staffParams('Staff Semester Result API')), 'Staff Semester Result API');
+               check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
+            });
+        }
 
-        group('Mentor Students List API', function () {
-           const res = track(http.get(`${BASE_URL}/mentor/${MENTOR_ID}/students`, staffParams('Mentor Students List API')), 'Mentor Students List API');
-           check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
-        });
+        if (shouldRun('Mentor Students List API')) {
+            group('Mentor Students List API', function () {
+               const res = track(http.get(`${BASE_URL}/mentor/${MENTOR_ID}/students`, staffParams('Mentor Students List API')), 'Mentor Students List API');
+               check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
+            });
+        }
 
-        group('Mentor Meetings API', function () {
-           const res = track(http.get(`${BASE_URL}/auth/Staff/Mentor/meeting/${MENTOR_ID}`, staffParams('Mentor Meetings API')), 'Mentor Meetings API');
-           check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
-        });
+        if (shouldRun('Mentor Meetings API')) {
+            group('Mentor Meetings API', function () {
+               const res = track(http.get(`${BASE_URL}/auth/Staff/Mentor/meeting/${MENTOR_ID}`, staffParams('Mentor Meetings API')), 'Mentor Meetings API');
+               check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
+            });
+        }
 
-        group('Mentor PDFs File Tree API', function () {
-           const res = track(http.get(`${BASE_URL}/mentee/mentor/${MENTOR_ID}/pdfs`, staffParams('Mentor PDFs File Tree API')), 'Mentor PDFs File Tree API');
-           check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
-        });
+        if (shouldRun('Mentor PDFs File Tree API')) {
+            group('Mentor PDFs File Tree API', function () {
+               const res = track(http.get(`${BASE_URL}/mentee/mentor/${MENTOR_ID}/pdfs`, staffParams('Mentor PDFs File Tree API')), 'Mentor PDFs File Tree API');
+               check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
+            });
+        }
     });
 
     // ==========================================
     // Parent Routes
     // ==========================================
     group('Parent Endpoints', function() {
-        if (parentToken) {
+        if (parentToken && shouldRun('Parent Student Details API')) {
             group('Parent Student Details API', function () {
                const res = track(http.get(`${BASE_URL}/parent/student-details`, parentParams('Parent Student Details API')), 'Parent Student Details API');
                check(res, { 'status is 200': (r) => r.status === 200 });
@@ -225,18 +249,22 @@ export default function () {
     // Admin Routes
     // ==========================================
     group('Admin Endpoints', function() {
-        group('Health Check', function () {
-          const res = track(http.get(`${BASE_URL}/admin/health`, adminParams('Health Check')), 'Health Check');
-          check(res, {
-            'status is 200': (r) => r.status === 200,
-            'is ok': (r) => r.status === 200 && r.json('status') === 'ok',
-          });
-        });
+        if (shouldRun('Health Check')) {
+            group('Health Check', function () {
+              const res = track(http.get(`${BASE_URL}/admin/health`, adminParams('Health Check')), 'Health Check');
+              check(res, {
+                'status is 200': (r) => r.status === 200,
+                'is ok': (r) => r.status === 200 && r.json('status') === 'ok',
+              });
+            });
+        }
 
-        group('List Batches API', function () {
-          const res = track(http.get(`${BASE_URL}/admin/list-batches`, adminParams('List Batches API')), 'List Batches API');
-           check(res, { 'status is 200': (r) => r.status === 200 });
-        });
+        if (shouldRun('List Batches API')) {
+            group('List Batches API', function () {
+              const res = track(http.get(`${BASE_URL}/admin/list-batches`, adminParams('List Batches API')), 'List Batches API');
+               check(res, { 'status is 200': (r) => r.status === 200 });
+            });
+        }
     });
 
   });
