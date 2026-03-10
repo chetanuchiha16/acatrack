@@ -1,10 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SemesterResults from "./SemesterResults";
 import SubjectResults from "./SubjectResults";
 import OverallResults from "./OverallResults";
+import API_BASE from "./config";
+import axios from "axios";
 
 export default function StaffResults() {
   const [activeTab, setActiveTab] = useState("semester");
+  const [batches, setBatches] = useState([]);
+  const [batchYear, setBatchYear] = useState("");
+
+  useEffect(() => {
+      axios.get(`${API_BASE}/batches`)
+          .then((res) => {
+              setBatches(res.data.batches);
+              if (res.data.batches && res.data.batches.length > 0) {
+                  setBatchYear(res.data.batches[res.data.batches.length - 1]);
+              }
+          })
+          .catch(() => setBatches([]));
+  }, []);
 
   const tabs = [
     { id: "semester", label: "Semester Results" },
@@ -15,7 +30,24 @@ export default function StaffResults() {
   return (
     <div className="min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900">
       <div className="max-w-6xl mx-auto shadow-xl rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
-        
+        {/* Batch Selector Header */}
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">Staff Dashboard</h2>
+            <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Active Batch:</span>
+                <select
+                    value={batchYear}
+                    onChange={(e) => setBatchYear(e.target.value)}
+                    className="p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none w-32"
+                >
+                    <option value="">Select</option>
+                    {batches.map(year => (
+                        <option key={year} value={year}>{year}</option>
+                    ))}
+                </select>
+            </div>
+        </div>
+
         {/* Tabs */}
         <div className="flex flex-col sm:flex-row">
           {tabs.map((tab) => (
@@ -36,9 +68,17 @@ export default function StaffResults() {
 
         {/* Tab Content */}
         <div className="p-5 sm:p-6 text-gray-800 dark:text-gray-100">
-          {activeTab === "semester" && <SemesterResults />}
-          {activeTab === "subject" && <SubjectResults />}
-          {activeTab === "overall" && <OverallResults />}
+          {batchYear ? (
+              <>
+                  {activeTab === "semester" && <SemesterResults batchYear={batchYear} />}
+                  {activeTab === "subject" && <SubjectResults batchYear={batchYear} />}
+                  {activeTab === "overall" && <OverallResults batchYear={batchYear} />}
+              </>
+          ) : (
+              <div className="text-center text-gray-500 py-10">
+                  Please select a batch to view results.
+              </div>
+          )}
         </div>
       </div>
     </div>

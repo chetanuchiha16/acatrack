@@ -12,5 +12,20 @@
   "card": "कार्ड",
   "noData": "कोई डेटा उपलब्ध नहीं है",
   "chatbot": "चैटबोट",
-  "chatbotDesc": "चैटबोट देखें"
+  "chatbotDesc": "चैटबोट देखें",
+  "dashboardTitle": "अभिभावक डैशबोर्ड",
+  "resultTitle": "छात्र परिणाम",
+  "viewResults": "📊 छात्र के अंक और प्रगति देखें",
+  "progressSummary": "✨ प्रगति सारांश डैशबोर्ड",
+  "subjectPerformance": "विषय प्रदर्शन",
+  "percentage": "प्रतिशत",
+  "totalMarks": "कुल अंक",
+  "sgpa": "सेमेस्टर ग्रेड (SGPA)",
+  "cgpa": "कुल ग्रेड (CGPA)",
+  "internal": "आंतरिक",
+  "final": "अंतिम",
+  "total": "कुल",
+  "downloadReport": "पूरी रिपोर्ट डाउनलोड करें",
+  "noSubjectsFound": "के लिए कोई विषय नहीं मिला",
+  "errorLoadingAI": "AI इनसाइट्स लोड नहीं हो सके।"
 }

@@ -1,11 +1,8 @@
 from pathlib import Path
-import os
-import dotenv
+from settings import settings
 from logger_config import get_logger
 from .cloud_utils  import download_image_from_url
 logger = get_logger(__name__)
-
-dotenv.load_dotenv()
 base_dir = Path(__file__).resolve().parent.parent
 # logger.debug("../Inputs")
 excel_path = str(base_dir / "Inputs/ExcelSheet/result list project.xlsx")
@@ -25,18 +22,11 @@ notes_dir = str(base_dir / "Outputs" / "NOTES")
 img_dir = str(base_dir / "Outputs" / "Images")
 
 excel_dir = base_dir / "Inputs" / "ExcelSheet"
-db_dir = base_dir / "Outputs" / "Databases"
-
-db_dir.mkdir(parents=True, exist_ok=True)
 
 def get_excel_path(batch_year: int) -> str:
     return str(excel_dir / f"result_list_{batch_year}.xlsx")
 
-def get_db_path(batch_year: int) -> str:
-    logger.debug(str(db_dir / f"student_data_{batch_year}.db"))
-    return str(db_dir / f"student_data_{batch_year}.db")
-
-postgres_db_url = os.getenv("DATABASE_URL")
+postgres_db_url = settings.database_url
 API_BASE="http://localhost:5000"
 # from models.batch_manager import BatchManager
 
@@ -55,12 +45,3 @@ API_BASE="http://localhost:5000"
 # logger.debug(base_dir)
 # logger.debug(f"[DEBUG] Using DB path: {base_dir}")
 # logger.debug(f"[DEBUG] Exists? {Path(excel_path).exists()}")
-
-from sqlalchemy import create_engine
-engine = create_engine(postgres_db_url)
-
-try:
-    with engine.connect() as connection:
-        logger.debug("Connection successful!")
-except Exception as e:
-    logger.debug(f"Failed to connect: {e}")
