@@ -19,8 +19,6 @@ logger = get_logger(__name__)
 
 class BatchManager:
     current_batch_year = None
-    _apps = {}  # Cached Flask apps per batch
-    _universities = {}  # Cached University instances
 
     def __init__(self):
         self.base_dir = Path(__file__).resolve().parent.parent
@@ -32,11 +30,10 @@ class BatchManager:
 
     def create_batch(self, batch_year: int):
         """Prepare Excel data and create tables in Postgres."""
+        from flask import current_app
         try:
-            app = self.get_flask_app(batch_year)
-
             # CRITICAL FIX: Everything database-related must be inside the app context
-            with app.app_context():
+            with current_app.app_context():
                 logger.debug(f"[BatchManager] Creating tables for batch {batch_year}")
                 db.create_all()  # 1. Create tables FIRST
 
@@ -53,11 +50,10 @@ class BatchManager:
 
     def refresh_batch_data(self, batch_year: int):
         """Re-import Excel sheets to update Postgres tables."""
+        from flask import current_app
         try:
-            app = self.get_flask_app(batch_year)
-
             # CRITICAL FIX: Moved inside app context
-            with app.app_context():
+            with current_app.app_context():
                 logger.debug(f"[BatchManager] Refreshing batch {batch_year}")
                 prep_data(batch_year=batch_year)
 
@@ -71,10 +67,10 @@ class BatchManager:
         Return all batch years present in PostgreSQL.
         CRITICAL FIX: Now queries the normalized StudentAuth table instead of looking for dynamic tables.
         """
+        from flask import current_app
         try:
             # We just need a generic app context to query the DB
-            app = self.get_flask_app(0)
-            with app.app_context():
+            with current_app.app_context():
                 # Query distinct batch years from the students table
                 result = db.session.query(StudentAuth.batch_year).distinct().all()
                 batch_years = [row[0] for row in result if row[0] is not None]
@@ -85,33 +81,24 @@ class BatchManager:
             )
             return []
 
-    def get_flask_app(self, batch_year: int):
-        """Return a Flask app (cached) for this batch."""
-        if batch_year not in self._apps:
-            self._apps[batch_year] = create_app(batch_year=batch_year)
-        return self._apps[batch_year]
-
     def get_db_for_batch(self, batch_year: int):
         """Return SQLAlchemy db and app context for transactions."""
-        app = self.get_flask_app(batch_year)
-        return db, app
+        from flask import current_app
+        return db, current_app
 
     def set_current_batch(self, batch_year: int):
         self.current_batch_year = batch_year
 
-    def get_university(self, batch_year: int):
-        """Return a University object for this batch (cached)."""
-        if batch_year not in self._universities:
-            postgres_url = self.get_postgres_url(batch_year)
-            uni = University(postgres_url=postgres_url, batch_year=batch_year)
-            self._universities[batch_year] = uni
-        return self._universities[batch_year]
+
 
     @contextmanager
     def session_scope(self, batch_year: int):
         """Provide a transactional scope for Postgres via Flask app context."""
-        app = self.get_flask_app(batch_year)
-        with app.app_context():
+        from flask import current_app
+        
+        # If we are already in an app context (e.g. during a request), use it.
+        # Otherwise, this will fail unless an app context is pushed manually.
+        with current_app.app_context():
             yield db
 
 

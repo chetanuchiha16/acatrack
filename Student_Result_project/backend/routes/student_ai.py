@@ -7,7 +7,7 @@ from logger_config import get_logger
 from models import Student
 from models.helpers import get_batch_year
 
-from .chatbot import (
+from .ai_algorithms import (
     _calculate_backlogs,
     aggregate_tag_scores,
     build_placement_and_skill_advice,

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import pathlib
-from models.paths import  pdf_dir, img_dir, logo_path
+from models.paths import  pdf_dir, img_dir, get_logo_path
 from io import BytesIO
 from logger_config import get_logger
 
@@ -24,7 +24,7 @@ def create_student_report(student):
     c.setFont("Helvetica-Bold", 16)
     c.drawString(150, 780, "JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU")
     try:
-        c.drawImage(logo_path, 50, 750, width=50, height=50)
+        c.drawImage(get_logo_path, 50, 750, width=50, height=50)
     except Exception as e:
         logger.debug(f"Warning: Logo not loaded: {e}")
 

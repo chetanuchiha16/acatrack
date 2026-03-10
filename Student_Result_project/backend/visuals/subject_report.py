@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import pathlib
-from models.paths import  pdf_dir, img_dir, logo_path
+from models.paths import  pdf_dir, img_dir, get_logo_path
 # import textwrap
 # from reportlab.lib import colors
 from reportlab.platypus import Image
@@ -55,7 +55,7 @@ def create_subject_report(subject_result):
     c.setFont("Helvetica-Bold", 16)
     c.drawString(100, 750, "JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU")
     try:
-        c.drawImage(logo_path, 50, 735, width=50, height=50)
+        c.drawImage(get_logo_path, 50, 735, width=50, height=50)
     except Exception as e:
         logger.debug(f"Warning: Could not load logo image. {e}")
 
