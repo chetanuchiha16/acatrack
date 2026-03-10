@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 import psycopg2
 import sys
 import os
+import re
 
 # DATABASE_URL = "postgresql://chetan:4myHina!@10.49.58.115:5432/gp_normalised"
 DATABASE_URL = "postgresql://chetan:4myHina!@localhost:5432/gp_normalised"
@@ -75,22 +76,46 @@ def monitor_resources():
     if conn:
         conn.close()
 
+def get_next_test_number(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        return 1
+    
+    files = os.listdir(directory)
+    numbers = []
+    for f in files:
+        match = re.search(r'test(\d+)', f)
+        if match:
+            numbers.append(int(match.group(1)))
+    
+    return max(numbers) + 1 if numbers else 1
+
 if __name__ == "__main__":
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    OUTPUT_DIR = os.path.join(BASE_DIR, "test_outputs")
+    
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
 
-    print("🚀 Starting Resource Benchmark Monitor...")
+    next_test_num = get_next_test_number(OUTPUT_DIR)
+    summary_filename = f"summaryv2-test{next_test_num}.json"
+    report_filename = f"load_test_reportv2-test{next_test_num}.md"
+    summary_path = os.path.join(OUTPUT_DIR, summary_filename)
+    report_path = os.path.join(OUTPUT_DIR, report_filename)
+
+    print(f"🚀 Starting Resource Benchmark Monitor (Test #{next_test_num})...")
     monitor_thread = threading.Thread(target=monitor_resources)
     monitor_thread.start()
 
     # Give it a second to connect
     time.sleep(1)
 
-    print("\n🏃 Running k6 load test...\n")
+    print(f"\n🏃 Running k6 load test (Results: {summary_filename})...\n")
     # Execute k6
     start_time = time.time()
     try:
         subprocess.run(
-            ["k6", "run", "load_testv2.js", "--summary-export=summaryv2.json"],
+            ["k6", "run", "load_testv2.js", f"--summary-export={summary_path}"],
             cwd=BASE_DIR,
             check=True
         )
@@ -110,12 +135,11 @@ if __name__ == "__main__":
     
     # Read k6 summary
     summary_data = {}
-    summary_path = os.path.join(BASE_DIR, "summaryv2.json")
     try:
         with open(summary_path, "r") as f:
             summary_data = json.load(f)
     except FileNotFoundError:
-        print("❌ summaryv2.json not found! Unable to generate full report.")
+        print(f"❌ {summary_filename} not found! Unable to generate full report.")
         sys.exit(1)
 
     metrics = summary_data.get("metrics", {})
@@ -127,7 +151,7 @@ if __name__ == "__main__":
     
     total_time = run_time_seconds
 
-    md_content = f"""# 📈 Load Testing Results Report
+    md_content = f"""# 📈 Load Testing Results Report (Test #{next_test_num})
 
 ## ⏱️ Overview
 - **Total Test Duration**: {total_time:.2f} seconds
@@ -151,7 +175,6 @@ if __name__ == "__main__":
 ---
 *Generated automatically by benchmarking monitor.*
 """
-    report_path = os.path.join(BASE_DIR, "load_test_reportv2.md")
     with open(report_path, "w") as f:
         f.write(md_content)
     
