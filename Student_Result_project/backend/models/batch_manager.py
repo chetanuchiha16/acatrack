@@ -19,7 +19,6 @@ logger = get_logger(__name__)
 
 class BatchManager:
     current_batch_year = None
-    _universities = {}  # Cached University instances
 
     def __init__(self):
         self.base_dir = Path(__file__).resolve().parent.parent
@@ -90,13 +89,7 @@ class BatchManager:
     def set_current_batch(self, batch_year: int):
         self.current_batch_year = batch_year
 
-    def get_university(self, batch_year: int):
-        """Return a University object for this batch (cached)."""
-        if batch_year not in self._universities:
-            postgres_url = self.get_postgres_url(batch_year)
-            uni = University(postgres_url=postgres_url, batch_year=batch_year)
-            self._universities[batch_year] = uni
-        return self._universities[batch_year]
+
 
     @contextmanager
     def session_scope(self, batch_year: int):
