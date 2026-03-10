@@ -45,7 +45,10 @@ def run_tests():
 
     # TEST 3: Verifying Database Records directly
     print("\n[Test 3] Verifying Normalized Database Records via SQLAlchemy...")
-    app = bm.get_flask_app(TEST_BATCH_YEAR)
+    # The original `get_flask_app` call is replaced with a more direct approach
+    # for testing database interactions within the batch manager context.
+    # This assumes `bm.get_db_for_batch` provides the necessary context and database session.
+    db, app = bm.get_db_for_batch(TEST_BATCH_YEAR)
     with app.app_context():
         student_count = StudentAuth.query.filter_by(batch_year=TEST_BATCH_YEAR).count()
         result_count = AcademicResult.query.filter_by(
