@@ -81,6 +81,27 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
                     subject_cols[subj_code]["credits"] = col
         
         # Iterate over rows
+        
+        # --- Pre-fetch data to avoid N+1 queries ---
+        usns_in_df = set()
+        for _, row in df.iterrows():
+            usn_val = str(row[usn_col]).strip()
+            if usn_val and usn_val.lower() != "nan":
+                usns_in_df.add(usn_val)
+                
+        existing_students = StudentAuth.query.filter(StudentAuth.usn.in_(list(usns_in_df))).all()
+        student_map = {s.usn: s for s in existing_students}
+        
+        subject_codes = list(subject_cols.keys())
+        existing_subjects = Subject.query.filter(Subject.subject_code.in_(subject_codes)).all()
+        subject_map = {s.subject_code: s for s in existing_subjects}
+        
+        existing_results = AcademicResult.query.filter(
+            AcademicResult.batch_year == batch_year,
+            AcademicResult.subject_code.in_(subject_codes)
+        ).all()
+        result_map = {(r.student_id, r.subject_code): r for r in existing_results}
+        # ---------------------------------------------
         for _, row in df.iterrows():
             usn_val = str(row[usn_col]).strip()
             if not usn_val or usn_val.lower() == "nan":
@@ -93,11 +114,12 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
             )
 
             # 1. Get or Create Student
-            student = StudentAuth.query.filter_by(usn=usn_val).first()
+            student = student_map.get(usn_val)
             if not student:
                 student = StudentAuth(usn=usn_val, name=name_val, batch_year=batch_year)
                 db.session.add(student)
                 db.session.flush()
+                student_map[usn_val] = student
 
             # 2. Extract and Insert Academic Results / Update Subjects
             for subj_code, metrics in subject_cols.items():
@@ -106,7 +128,7 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
                 real_subject_name = sem_subjects.get(semester_name, {}).get(subj_code, subj_code)
 
                 # Get or Create Subject
-                subject = Subject.query.filter_by(subject_code=subj_code).first()
+                subject = subject_map.get(subj_code)
                 if not subject:
                     subject = Subject(
                         subject_code=subj_code,
@@ -116,6 +138,7 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
                     )
                     db.session.add(subject)
                     db.session.flush()
+                    subject_map[subj_code] = subject
                 else:
                      # Update name if it was a default code before
                      if subject.subject_name == subj_code and real_subject_name != subj_code:
@@ -165,9 +188,7 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
                     continue
 
                 # Get or Create Academic Result
-                result = AcademicResult.query.filter_by(
-                    student_id=student.id, subject_code=subj_code
-                ).first()
+                result = result_map.get((student.id, subj_code))
                 if not result:
                     result = AcademicResult(
                         student_id=student.id,
@@ -178,6 +199,7 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
                         total_marks=total_marks,
                     )
                     db.session.add(result)
+                    result_map[(student.id, subj_code)] = result
                 else:
                     result.ia_marks = ia_marks
                     result.see_marks = see_marks
