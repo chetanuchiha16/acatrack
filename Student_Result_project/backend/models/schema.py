@@ -228,3 +228,11 @@ class Job(db.Model):
     error = db.Column(db.String)
     progress = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+
+class ExportCache(db.Model):
+    __tablename__ = "export_cache"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    batch_year = db.Column(db.Integer, nullable=False, unique=True)
+    csv_content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
