@@ -1,7 +1,8 @@
 import pytest
 import datetime
 from unittest.mock import patch, MagicMock
-from app_init import create_app, bcrypt
+from app_init import create_app
+from extensions import bcrypt
 from routes import register_routes
 
 @pytest.fixture
