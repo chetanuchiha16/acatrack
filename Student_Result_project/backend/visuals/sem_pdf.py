@@ -35,7 +35,7 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping):
        
         # Add logo
         try:
-            logo = Image(get_logo_path, width=50, height=50)  # Adjust size as needed
+            logo = Image(get_logo_path(), width=50, height=50)  # Adjust size as needed
             elements.append(logo)
         except Exception as e:
             logger.debug(f"Warning: Could not load logo image. {e}")
