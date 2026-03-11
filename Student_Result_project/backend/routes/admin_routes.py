@@ -24,6 +24,8 @@ from app_init import bcrypt
 from flask import Blueprint, current_app, jsonify, request, send_file
 from logger_config import get_logger
 from models import Mentor, ParentAuth, StudentAuth, Teacher
+from models.schema import ExportCache
+from services.admin_service import process_mentor_upload_file, process_email_upload_file
 from sqlalchemy.orm import joinedload
 from models.batch_manager import bm
 from models.cloud_utils import download_excel_from_supabase, upload_excel_to_supabase
@@ -258,96 +260,9 @@ def upload_emails():
     #     logger.error(f"Email file upload to Supabase failed: {e}")
     #     emails_upload_url = None
 
-    # Load DataFrame
-    try:
-        df = (
-            pd.read_excel(temp_upload_path)
-            if ext == ".xlsx"
-            else pd.read_csv(temp_upload_path)
-        )
-    except Exception as e:
-        return jsonify({"error": f"Failed to read file: {e}"}), 400
-
-    required_cols = ["student_usn", "student_name", "Parent_Email", "Student_Email"]
-    missing = [c for c in required_cols if c not in df.columns]
-    if missing:
-        return jsonify(
-            {"error": f"Missing required columns: {', '.join(missing)}"}
-        ), 400
-
-    count_inserted = 0
-    count_updated = 0
-
-    with bm.session_scope(batch_year) as db:
-        # Pre-fetch existing students to avoid N+1
-        usns_in_df = [str(usn).strip() for usn in df["student_usn"] if str(usn).strip()]
-        existing_students = StudentAuth.query.options(joinedload(StudentAuth.parent_account)).filter(
-            StudentAuth.usn.in_(usns_in_df)
-        ).all()
-        student_map = {s.usn: s for s in existing_students}
-
-        for _, row in df.iterrows():
-            usn = str(row["student_usn"]).strip()
-            if not usn:
-                continue
-            student = student_map.get(usn)
-
-            if student:
-                # update existing student record
-                student.student_email = str(row.get("Student_Email", "")).strip()
-                student.student_phno = str(row.get("Student_PHNO", "")).strip()
-
-                # update parent (via relationship)
-                if student.parent_account:
-                    student.parent_account.email = str(row["Parent_Email"]).strip()
-                    student.parent_account.phone = str(
-                        row.get("Parent_PHNO", "")
-                    ).strip()
-                else:
-                    parent_username = f"{student.usn}_parent"
-                    plain_parent_pw = "default123"
-                    pw_hash = bcrypt.generate_password_hash(plain_parent_pw).decode(
-                        "utf-8"
-                    )
-                    parent = ParentAuth(
-                        username=parent_username,
-                        password=pw_hash,
-                        email=str(row["Parent_Email"]).strip(),
-                        phone=str(row.get("Parent_PHNO", "")).strip(),
-                        student=student,
-                    )
-                    db.session.add(parent)
-                count_updated += 1
-
-            else:
-                # insert new student + parent records
-                new_student = StudentAuth(
-                    usn=usn,
-                    batch_year=batch_year,
-                    name=str(row["student_name"]).strip(),
-                    student_email=str(row["Student_Email"]).strip(),
-                    student_phno=str(row.get("Student_PHNO", "")).strip(),
-                )
-                db.session.add(new_student)
-
-                parent_username = f"{usn}_parent"
-                plain_parent_pw = "default123"
-                pw_hash = bcrypt.generate_password_hash(plain_parent_pw).decode("utf-8")
-                new_parent = ParentAuth(
-                    username=parent_username,
-                    password=pw_hash,
-                    email=str(row["Parent_Email"]).strip(),
-                    phone=str(row.get("Parent_PHNO", "")).strip(),
-                    student=new_student,
-                    name=str(
-                        row.get("Parent_Name", f"Parent of {row['student_name']}")
-                    ).strip(),
-                    relation=str(row.get("Parent_Relation", "Guardian")).strip(),
-                )
-                db.session.add(new_parent)
-                count_inserted += 1
-
-        db.session.commit()
+    result, status_code = process_email_upload_file(
+        temp_upload_path, ext, batch_year, bm.session_scope, bcrypt, StudentAuth, ParentAuth, joinedload
+    )
 
     # Clean up temp file
     try:
@@ -355,14 +270,7 @@ def upload_emails():
     except Exception as e:
         logger.debug(f"Temp file cleanup failed: {e}")
 
-    response = {
-        "status": "success",
-        "emails_inserted": count_inserted,
-        "emails_updated": count_updated,
-        "batch_year": batch_year,
-        # "file_cloud_url": emails_upload_url
-    }
-    return jsonify(response)
+    return jsonify(result), status_code
 
 
 mentor_csv_cache = {}
@@ -483,8 +391,18 @@ def upload_mentors():
 
         db.session.commit()
 
+    # Save CSV to the database cache instead of RAM
     out.seek(0)
-    mentor_csv_cache[batch_year] = out.getvalue()  # store in-memory (single instance)
+    csv_str = out.getvalue()
+    
+    with bm.session_scope(batch_year) as db:
+        existing_cache = ExportCache.query.filter_by(batch_year=batch_year).first()
+        if existing_cache:
+            existing_cache.csv_content = csv_str
+        else:
+            new_cache = ExportCache(batch_year=batch_year, csv_content=csv_str)
+            db.session.add(new_cache)
+        db.session.commit()
 
     response = {
         "status": "success",
@@ -505,9 +423,13 @@ def download_teachers_csv():
         return jsonify({"error": "Unauthorized"}), 401
 
     batch_year = int(request.args.get("batch_year", 0))
-    csv_content = mentor_csv_cache.get(batch_year)
-    if not csv_content:
-        return jsonify({"error": "No CSV available, please re-upload mentors"}), 404
+    
+    with bm.session_scope(batch_year) as db:
+        cache_entry = ExportCache.query.filter_by(batch_year=batch_year).first()
+        if not cache_entry:
+            return jsonify({"error": "No CSV available, please re-upload mentors"}), 404
+        
+        csv_content = cache_entry.csv_content
 
     return send_file(
         io.BytesIO(csv_content.encode("utf-8")),
