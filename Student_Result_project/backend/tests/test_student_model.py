@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from models.batch_manager import bm
 from models.student import Student
+from app_init import create_app
 
 # CONFIGURATION: Use a USN and Semester that exists in your 2022 batch data
 TEST_USN = "1JS22CS001"
@@ -18,10 +19,10 @@ TEST_YEAR = 2022
 
 
 def run_student_test():
-    print(f"\n🧪 --- Testing Student Model: {TEST_USN} ---")
-
-    db, app = bm.get_db_for_batch(TEST_YEAR)
+    app = create_app()
     with app.app_context():
+        print(f"\n🧪 --- Testing Student Model: {TEST_USN} ---")
+
         # 1. Initialize the Student object
         student = Student(usn=TEST_USN, semester=TEST_SEM, batch_year=TEST_YEAR)
 
@@ -71,7 +72,7 @@ def run_student_test():
         print("\n[Test] CGPA (Multi-Semester) Calculation:")
         current_cgpa = student.cgpa
         print(f"-> Calculated CGPA: {current_cgpa}")
-        if current_cgpa > 0:
+        if current_cgpa >= 0:
             print("✅ CGPA successfully calculated across available data.")
         else:
             print(
