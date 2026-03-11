@@ -20,7 +20,7 @@ TEST_YEAR = 2022
 def run_student_test():
     print(f"\n🧪 --- Testing Student Model: {TEST_USN} ---")
 
-    app = bm.get_flask_app(TEST_YEAR)
+    db, app = bm.get_db_for_batch(TEST_YEAR)
     with app.app_context():
         # 1. Initialize the Student object
         student = Student(usn=TEST_USN, semester=TEST_SEM, batch_year=TEST_YEAR)

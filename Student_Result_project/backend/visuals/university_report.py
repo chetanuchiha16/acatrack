@@ -13,7 +13,7 @@ import pathlib
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from models.paths import  pdf_dir, img_dir, logo_path
+from models.paths import  pdf_dir, img_dir, get_logo_path
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -59,7 +59,7 @@ def create_university_report(university, selected_semester):
     c.setFont("Helvetica-Bold", 16)
     c.drawString(100, 730, "JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU")
     try:
-        c.drawImage(logo_path, 50, 710, width=50, height=50)
+        c.drawImage(get_logo_path, 50, 710, width=50, height=50)
     except Exception as e:
         logger.debug(f"Warning: Could not load logo image. {e}")
 
