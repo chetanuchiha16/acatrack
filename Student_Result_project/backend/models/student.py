@@ -154,17 +154,24 @@ class Student:
         if not student_rec:
             return previous_data
 
+        sem_names = [f"sem{sem}" for sem in range(1, sem_no)]
+        all_results = (
+            db.session.query(AcademicResult, Subject)
+            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
+            .filter(
+                AcademicResult.student_id == student_rec.id,
+                Subject.semester.in_(sem_names),
+            )
+            .all()
+        )
+
+        sem_data = {sem: [] for sem in sem_names}
+        for r, s in all_results:
+            sem_data[s.semester].append((r, s))
+
         for sem in range(1, sem_no):
             sem_name = f"sem{sem}"
-            results = (
-                db.session.query(AcademicResult, Subject)
-                .join(Subject, AcademicResult.subject_code == Subject.subject_code)
-                .filter(
-                    AcademicResult.student_id == student_rec.id,
-                    Subject.semester == sem_name,
-                )
-                .all()
-            )
+            results = sem_data[sem_name]
 
             if results:
                 ia_marks = [(r.ia_marks or 0) for r, s in results]
