@@ -24,6 +24,7 @@ from app_init import bcrypt
 from flask import Blueprint, current_app, jsonify, request, send_file
 from logger_config import get_logger
 from models import Mentor, ParentAuth, StudentAuth, Teacher
+from sqlalchemy.orm import joinedload
 from models.batch_manager import bm
 from models.cloud_utils import download_excel_from_supabase, upload_excel_to_supabase
 from settings import settings
@@ -113,7 +114,7 @@ def generate_accounts():
     with bm.session_scope(batch_year) as db:
         students = _fetch_source_rows(batch_year)
         # Pre-fetch all students in batch to avoid N+1 queries
-        all_students = StudentAuth.query.filter_by(batch_year=batch_year).all()
+        all_students = StudentAuth.query.options(joinedload(StudentAuth.parent_account)).filter_by(batch_year=batch_year).all()
         student_usn_map = {s.usn: s for s in all_students}
 
         # --- Delete existing passwords for 'all' mode
@@ -280,7 +281,7 @@ def upload_emails():
     with bm.session_scope(batch_year) as db:
         # Pre-fetch existing students to avoid N+1
         usns_in_df = [str(usn).strip() for usn in df["student_usn"] if str(usn).strip()]
-        existing_students = StudentAuth.query.filter(
+        existing_students = StudentAuth.query.options(joinedload(StudentAuth.parent_account)).filter(
             StudentAuth.usn.in_(usns_in_df)
         ).all()
         student_map = {s.usn: s for s in existing_students}
