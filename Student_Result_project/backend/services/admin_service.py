@@ -5,6 +5,9 @@ from models.schema import ExportCache
 import tempfile
 import pandas as pd
 import io
+from repositories.student_repository import StudentRepository
+from repositories.mentor_repository import MentorRepository
+from repositories.admin_repository import AdminRepository
 
 logger = get_logger(__name__)
 
@@ -43,24 +46,22 @@ def process_mentor_upload_file(file, batch_year, db_session_maker, bcrypt, Mento
     )  # CSV header
 
     with db_session_maker(batch_year) as db:
+        student_repo = StudentRepository(db.session)
+        mentor_repo = MentorRepository(db.session)
+        admin_repo = AdminRepository(db.session)
+
         # Pre-fetch students, mentors and teachers to avoid N+1
         usns_in_df = [str(usn).strip() for usn in df["student_usn"] if str(usn).strip()]
-        existing_students = StudentAuth.query.filter(
-            StudentAuth.usn.in_(usns_in_df)
-        ).all()
+        existing_students = student_repo.get_auths_by_usns(usns_in_df)
         student_map = {s.usn: s for s in existing_students}
 
         mentor_names_in_df = list(
             set([str(name).strip() for name in df["Mentor_Name"] if str(name).strip()])
         )
-        existing_mentors = Mentor.query.filter(
-            Mentor.name.in_(mentor_names_in_df)
-        ).all()
+        existing_mentors = mentor_repo.get_all_by_names(mentor_names_in_df)
         mentor_cache = {m.name: m for m in existing_mentors}
 
-        existing_teachers = Teacher.query.filter(
-            Teacher.name.in_(mentor_names_in_df)
-        ).all()
+        existing_teachers = mentor_repo.get_teachers_by_names(mentor_names_in_df)
         teacher_cache = {t.name: t for t in existing_teachers}
 
         for _, row in df.iterrows():
@@ -113,7 +114,8 @@ def process_mentor_upload_file(file, batch_year, db_session_maker, bcrypt, Mento
     csv_str = out.getvalue()
     
     with db_session_maker(batch_year) as db:
-        existing_cache = ExportCache.query.filter_by(batch_year=batch_year).first()
+        admin_repo = AdminRepository(db.session)
+        existing_cache = admin_repo.get_export_cache_by_batch(batch_year)
         if existing_cache:
             existing_cache.csv_content = csv_str
         else:
@@ -155,11 +157,11 @@ def process_email_upload_file(temp_upload_path, ext, batch_year, db_session_make
     count_updated = 0
 
     with db_session_maker(batch_year) as db:
+        student_repo = StudentRepository(db.session)
+
         # Pre-fetch existing students to avoid N+1
         usns_in_df = [str(usn).strip() for usn in df["student_usn"] if str(usn).strip()]
-        existing_students = StudentAuth.query.options(joinedload(StudentAuth.parent_account)).filter(
-            StudentAuth.usn.in_(usns_in_df)
-        ).all()
+        existing_students = student_repo.get_auths_with_parents_by_usns(usns_in_df)
         student_map = {s.usn: s for s in existing_students}
 
         for _, row in df.iterrows():

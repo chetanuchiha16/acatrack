@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 from models import StudentAuth  # your existing model
+from repositories.student_repository import StudentRepository
 from models.batch_manager import BatchManager, bm
 from app_init import db          # your DB instance
 import smtplib
@@ -79,13 +80,17 @@ def send_email_to_all():
     try:
         batch_year = get_batch_year()   
         with bm.session_scope(batch_year) as db:
+            student_repo = StudentRepository(db.session)
 
             if recipient_type == "parent":
-                recipients = StudentAuth.query.filter(StudentAuth.parent_email != None).all()
+                # Assuming get_all pulls all, then we just filter memory 
+                # OR we could add a `get_all_with_parents()` - for now we use query
+                recipients = db.session.query(StudentAuth).filter(StudentAuth.parent_email != None).all()
                 email_attr = "parent_email"
                 name_attr = "parent_name"
             else:
-                recipients = StudentAuth.query.all()
+                recipients = student_repo.get_all_mentees_globally() # (Let's stick to db.session for now to keep it safe inside scope)
+                recipients = db.session.query(StudentAuth).all()
                 email_attr = "student_email"
                 name_attr = "name"
 
@@ -124,7 +129,8 @@ def send_email_to_student():
         return jsonify({"error": "USN, subject and message are required"}), 400
     
     with bm.session_scope(batch_year) as db:
-        student = StudentAuth.query.filter_by(username=usn).first()
+        student_repo = StudentRepository(db.session)
+        student = student_repo.get_auth_by_usn(usn)
         if not student:
             return jsonify({"error": "Student not found"}), 404
 
@@ -173,7 +179,7 @@ def get_messages():
     batch_year = get_batch_year()   
     logger.debug(f"{batch_year} from get_messages")
     with bm.session_scope(batch_year) as db:
-        messages = Message.query.order_by(Message.created_at.desc()).all()
+        messages = db.session.query(Message).order_by(Message.created_at.desc()).all()
         return jsonify([m.to_dict() for m in messages]), 200
 
 
@@ -181,7 +187,9 @@ def get_messages():
 def delete_message(msg_id):
     batch_year = get_batch_year()   
     with bm.session_scope(batch_year) as db:
-        msg = Message.query.get_or_404(msg_id)
+        msg = db.session.query(Message).get(msg_id)
+        if not msg:
+            return jsonify({"error": "Message not found"}), 404
         db.session.delete(msg)
         db.session.commit()
         return jsonify({"message": "Message deleted"}), 200

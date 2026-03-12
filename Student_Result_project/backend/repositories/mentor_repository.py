@@ -1,0 +1,46 @@
+# backend/repositories/mentor_repository.py
+from models.schema import Mentor, Teacher, Meeting, MentorMessage, StudentMessageStatus
+
+class MentorRepository:
+    def __init__(self, db_session):
+        self.db = db_session
+
+    # --- Mentors ---
+    def get_by_id(self, mentor_id: int) -> Mentor:
+        return self.db.query(Mentor).get(mentor_id)
+
+    def get_by_name(self, name: str) -> Mentor:
+        return self.db.query(Mentor).filter_by(name=name).first()
+
+    def get_all_by_names(self, names: list) -> list[Mentor]:
+        return self.db.query(Mentor).filter(Mentor.name.in_(names)).all()
+        
+    def get_all(self) -> list[Mentor]:
+        return self.db.query(Mentor).all()
+
+    # --- Teachers ---
+    def get_teacher_by_username(self, username: str) -> Teacher:
+        return self.db.query(Teacher).filter_by(username=username).first()
+
+    def get_teachers_by_names(self, names: list) -> list[Teacher]:
+        return self.db.query(Teacher).filter(Teacher.name.in_(names)).all()
+
+    # --- Meetings ---
+    def get_meetings_by_mentor(self, mentor_id: int) -> list[Meeting]:
+        return self.db.query(Meeting).filter_by(mentor_id=mentor_id).order_by(Meeting.date).all()
+        
+    def get_meeting_by_id(self, meeting_id: int) -> Meeting:
+        return self.db.query(Meeting).get(meeting_id)
+
+    # --- Messages ---
+    def get_messages_by_mentor(self, mentor_id: int) -> list[MentorMessage]:
+        return self.db.query(MentorMessage).filter_by(mentor_id=mentor_id).order_by(MentorMessage.created_at.desc()).all()
+
+    def get_message_by_id_and_mentor(self, msg_id: int, mentor_id: int) -> MentorMessage:
+        return self.db.query(MentorMessage).filter_by(id=msg_id, mentor_id=mentor_id).first()
+        
+    def get_all_messages(self) -> list[MentorMessage]:
+         return self.db.query(MentorMessage).all()
+
+    def delete_message_statuses(self, msg_id: int):
+         self.db.query(StudentMessageStatus).filter_by(msg_id=msg_id).delete()
