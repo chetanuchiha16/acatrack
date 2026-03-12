@@ -3,6 +3,7 @@ from extensions import db  # Use the DB instance
 from logger_config import get_logger
 from models.cloud_utils import download_excel_from_supabase
 from models.schema import AcademicResult, StudentAuth, Subject
+from models.fetch import sem_subjects
 
 from logger_config import get_logger
 from repositories.student_repository import StudentRepository
