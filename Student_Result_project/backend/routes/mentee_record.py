@@ -3,7 +3,7 @@ import fitz
 import os
 from models.paths import pdf_dir, img_dir, base_dir
 from models.cloud_utils import save_file, supabase, SUPABASE_BUCKET, SUPABASE_URL
-from models import StudentAuth
+from repositories.student_repository import StudentRepository
 from logger_config import get_logger
 from models.helpers import get_batch_year
 import requests
@@ -150,10 +150,12 @@ def download(filename):
 def list_mentor_pdfs(mentor_id):
     try:
         batch_year = request.args.get("batch_year") or get_batch_year()
-        mentees = StudentAuth.query.filter_by(mentor_id=mentor_id)
-        if batch_year:
-            mentees = mentees.filter_by(batch_year=batch_year)
-        mentees = mentees.all()
+        with bm.session_scope(batch_year) as db:
+            student_repo = StudentRepository(db.session)
+            if batch_year:
+                mentees = student_repo.get_mentees_by_mentor_and_batch(mentor_id, batch_year)
+            else:
+                mentees = student_repo.get_mentees_by_mentor(mentor_id)
 
         # List all PDFs in "pdfs" folder. Response is a plain list.
         files = []
@@ -187,9 +189,12 @@ def list_mentor_pdfs(mentor_id):
 
 @mentee_record_bp.route('/mentor/<int:mentor_id>/download/<usn>', methods=['GET'])
 def download_mentee_pdf(mentor_id, usn):
-    student = StudentAuth.query.filter_by(usn=usn).first()
-    if not student:
-        return jsonify({"error": "Student not found"}), 404
+    batch_year = request.args.get("batch_year") or get_batch_year()
+    with bm.session_scope(batch_year) as db:
+        student_repo = StudentRepository(db.session)
+        student = student_repo.get_auth_by_usn(usn)
+        if not student:
+            return jsonify({"error": "Student not found"}), 404
     if student.mentor_id != mentor_id:
         return jsonify({"error": "Access denied"}), 403
 

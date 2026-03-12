@@ -8,6 +8,7 @@ import ForgotPassword from "./ForgotPassword";
 import API_BASE from "./config";
 import { requestForToken } from "./firebase";
 import LoadingSpinner from "./LoadingSpinner";
+import { parseJwt } from "./utils/auth";
 
 export default function Auth() {
     let { who } = useParams();
@@ -36,19 +37,13 @@ export default function Auth() {
         const token = sessionStorage.getItem("jwt_token");
         if (!token) return setLoading(false);
 
-        try {
-            const payload = JSON.parse(atob(token.split(".")[1]));
-            const now = Math.floor(Date.now() / 1000);
-            if (payload.exp && payload.exp < now) {
-                sessionStorage.removeItem("jwt_token");
-            } else {
-                navigate(`/auth/${payload.who}/${payload.id}`, {
-                    state: payload,
-                    replace: true,
-                });
-            }
-        } catch (err) {
-            console.warn("Invalid token:", err);
+        const payload = parseJwt(token);
+        if (payload) {
+            navigate(`/auth/${payload.who}/${payload.id}`, {
+                state: payload,
+                replace: true,
+            });
+        } else {
             sessionStorage.removeItem("jwt_token");
         }
 
@@ -73,13 +68,13 @@ export default function Auth() {
 
             sessionStorage.setItem("jwt_token", token);
 
-            const payload = JSON.parse(atob(token.split(".")[1]));
-            const { id, name, mentor_id } = payload;
-            const now = Math.floor(Date.now() / 1000);
-            if (payload.exp && payload.exp < now) {
+            const payload = parseJwt(token);
+            if (!payload) {
                 sessionStorage.removeItem("jwt_token");
                 return;
             }
+            
+            const { id, name, mentor_id } = payload;
 
             // 🔹 request FCM token
             try {
@@ -213,7 +208,7 @@ export default function Auth() {
                     <a href="#" className="hover:text-white text-indigo-700">
                         Need help?
                     </a>
-                </div>
+            </div>
             </div>
         </div>
     );

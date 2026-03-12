@@ -6,6 +6,9 @@ import jwt
 import datetime
 from models.helpers import get_batch_year, get_jwt_payload
 from logger_config import get_logger
+from repositories.student_repository import StudentRepository
+from repositories.mentor_repository import MentorRepository
+from repositories.parent_repository import ParentRepository
 
 logger = get_logger(__name__)
 auth_bp = Blueprint("auth", __name__)
@@ -46,12 +49,16 @@ def auth():
         batch_year = 2022
     
     with bm.session_scope(batch_year) as db:
+        student_repo = StudentRepository(db.session)
+        mentor_repo = MentorRepository(db.session)
+        parent_repo = ParentRepository(db.session)
+
         if who == "Student":
-            user = StudentAuth.query.filter_by(usn=username).first()
+            user = student_repo.get_auth_by_usn(username)
         elif who == "Staff":
-            user = Teacher.query.filter_by(username=username).first()
+            user = mentor_repo.get_teacher_by_username(username)
         elif who == "Parent":
-            user = ParentAuth.query.filter_by(username=username).first()
+            user = parent_repo.get_auth_by_username(username)
             logger.debug(f"user parent")
             logger.debug(f"user and user.student: {user and user.student} {user} {batch_from_usn(user.student.usn) if user and user.student else None}")
             if user and user.student:
@@ -60,9 +67,9 @@ def auth():
                 logger.debug(f"{batch_year} from parent auth")
         else:
             # fallback, try all
-            user = (StudentAuth.query.filter_by(usn=username).first() or
-                    Teacher.query.filter_by(username=username).first() or
-                    ParentAuth.query.filter_by(username=username).first())
+            user = (student_repo.get_auth_by_usn(username) or
+                    mentor_repo.get_teacher_by_username(username) or
+                    parent_repo.get_auth_by_username(username))
 
         if not user:
             return jsonify({"error": "User not found"}), 404
@@ -145,7 +152,8 @@ def save_fcm_token(usn):
         return jsonify({"error": "Missing token"}), 400
 
     with bm.session_scope(batch_year) as db:
-        student = StudentAuth.query.filter_by(usn=usn).first()
+        student_repo = StudentRepository(db.session)
+        student = student_repo.get_auth_by_usn(usn)
         if not student:
             return jsonify({"error": "Student not found"}), 404
 

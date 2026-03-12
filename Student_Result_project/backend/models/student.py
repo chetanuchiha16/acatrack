@@ -1,4 +1,13 @@
-import matplotlib.pyplot as plt
+from logger_config import get_logger
+from models.schema import AcademicResult, StudentAuth, Subject
+from utils.grading import (
+    calculate_pass_fail,
+    calculate_obtained_credits,
+    calculate_sgpa_for_semester,
+    calculate_cgpa,
+    categorize
+)
+from utils.visuals import plot_subject_marks
 from extensions import db
 from logger_config import get_logger
 from models.schema import AcademicResult, StudentAuth, Subject
@@ -35,23 +44,18 @@ class Student:
                 self.see_marks.append(res.see_marks or 0)
                 self.credits.append(sub.credits or 0)
         else:
+            from repositories.student_repository import StudentRepository
+            student_repo = StudentRepository(db.session)
+            
             # 1. Fetch core student details
-            student_rec = StudentAuth.query.filter_by(usn=self.usn).first()
+            student_rec = student_repo.get_auth_by_usn(self.usn)
             if student_rec:
                 self.name = student_rec.name
                 self.found = True
 
                 # 2. Fetch marks for the specific semester
                 if self.semester:
-                    results = (
-                        db.session.query(AcademicResult, Subject)
-                        .join(Subject, AcademicResult.subject_code == Subject.subject_code)
-                        .filter(
-                            AcademicResult.student_id == student_rec.id,
-                            Subject.semester == self.semester,
-                        )
-                        .all()
-                    )
+                    results = student_repo.get_results_by_usn_and_sem(self.usn, self.semester)
 
                     for res, sub in results:
                         self.subject_codes.append(sub.subject_code)
@@ -74,52 +78,10 @@ class Student:
         self.percentage = self.calculate_percentage()
 
     def calculate_pass_fail(self):
-        status_list = []
-        for ia, see, credit in zip(self.ia_marks, self.see_marks, self.credits):
-            if credit == 0:
-                status_list.append("No Credits")
-            elif see == 0:
-                if ia >= 20: 
-                    status_list.append("Pass")
-                else:
-                    status_list.append("Fail")
-            elif ia >= 20 and see >= 18:
-                status_list.append("Pass")
-            else:
-                status_list.append("Fail")
-        return status_list
+        return calculate_pass_fail(self.ia_marks, self.see_marks, self.credits)
 
     def calculate_obtained_credits(self):
-        obtained = 0
-        for ia, see, credit in zip(self.ia_marks, self.see_marks, self.credits):
-            total_score = ia + see
-            if credit == 0:
-                continue
-
-            # Your specific grading logic
-            if total_score >= 90:
-                grade_points = 10
-            elif total_score >= 80:
-                grade_points = 9
-            elif total_score >= 70:
-                grade_points = 8
-            elif total_score >= 60:
-                grade_points = 7
-            elif total_score >= 50:
-                grade_points = 6
-            elif total_score >= 40:
-                grade_points = 5
-            elif total_score >= 30:
-                grade_points = 3
-            elif total_score >= 20:
-                grade_points = 2
-            elif total_score >= 10:
-                grade_points = 1
-            else:
-                grade_points = 0
-
-            obtained += grade_points * credit
-        return obtained
+        return calculate_obtained_credits(self.ia_marks, self.see_marks, self.credits)
 
     def calculate_sgpa(self):
         total_credits = sum(self.credits)
@@ -145,7 +107,7 @@ class Student:
                     credits_list = [(s.credits or 0) for s in sem_data["sub"]]
 
                     if credits_list:
-                        sgpa_i = self.calculate_sgpa_for_semester(ia_marks, see_marks, credits_list)
+                        sgpa_i = calculate_sgpa_for_semester(ia_marks, see_marks, credits_list)
                         total_credits_i = sum(credits_list)
                         previous_data.append({"sgpa": sgpa_i, "credits": total_credits_i})
             return previous_data
@@ -178,106 +140,33 @@ class Student:
                 see_marks = [(r.see_marks or 0) for r, s in results]
                 credits = [(s.credits or 0) for r, s in results]
 
-                sgpa_i = self.calculate_sgpa_for_semester(ia_marks, see_marks, credits)
+                sgpa_i = calculate_sgpa_for_semester(ia_marks, see_marks, credits)
                 total_credits_i = sum(credits)
 
                 previous_data.append({"sgpa": sgpa_i, "credits": total_credits_i})
 
         return previous_data
 
-    def calculate_sgpa_for_semester(self, ia_marks, see_marks, credits):
-        obtained = 0
-        total_credits = sum(credits)
-        if total_credits == 0:
-            return 0
-        for ia, see, credit in zip(ia_marks, see_marks, credits):
-            total_score = ia + see
-            if credit == 0:
-                continue
-            if total_score >= 90:
-                grade_points = 10
-            elif total_score >= 80:
-                grade_points = 9
-            elif total_score >= 70:
-                grade_points = 8
-            elif total_score >= 60:
-                grade_points = 7
-            elif total_score >= 50:
-                grade_points = 6
-            elif total_score >= 40:
-                grade_points = 5
-            elif total_score >= 30:
-                grade_points = 3
-            elif total_score >= 20:
-                grade_points = 2
-            elif total_score >= 10:
-                grade_points = 1
-            else:
-                grade_points = 0
-            obtained += grade_points * credit
-        return obtained / total_credits
+
 
     def calculate_cgpa(self, previous_data):
-        """
-        Calculates VTU accurate CGPA using the semester formula:
-        CGPA = Sum(Semester SGPA * Semester Total Credits) / Sum(Total Credits from all Semesters)
-        """
-        # Append current semester
-        all_semesters = previous_data + [
-            {"sgpa": self.sgpa, "credits": sum(self.credits)}
-        ]
-
-        sum_sgpa_x_credits = 0.0
-        cumulative_credits = 0
-
-        for sem in all_semesters:
-            if sem["credits"] > 0:
-                sum_sgpa_x_credits += sem["sgpa"] * sem["credits"]
-                cumulative_credits += sem["credits"]
-
-        if cumulative_credits == 0:
-            return 0.0
-
-        return round(sum_sgpa_x_credits / cumulative_credits, 2)
+        return calculate_cgpa(previous_data, self.sgpa, sum(self.credits))
 
     def calculate_percentage(self):
         max_total = 100 * len(self.credits)
         return (self.total_marks / max_total * 100) if max_total > 0 else 0
 
     def categorize(self):
-        if self.percentage >= 70:
-            return "First Class with Distinction (FCD)"
-        elif 60 <= self.percentage < 70:
-            return "First Class (FC)"
-        elif 35 <= self.percentage < 60:
-            return "Second Class (SC)"
-        elif "Fail" in self.pass_fail:
-            return "Fail"
-        return "Unknown"
+        return categorize(self.percentage, self.pass_fail)
 
     def plot_subject_marks(self):
-        subjects = [
-            f"{name} ({code})"
-            for name, code in zip(self.subject_names, self.subject_codes)
-        ]
-        fig = plt.figure(figsize=(10, 6))
-
-        plt.bar(subjects, self.ia_marks, label="IA Marks", color="skyblue", alpha=0.7)
-        plt.bar(
-            subjects,
+        return plot_subject_marks(
+            self.subject_names,
+            self.subject_codes,
+            self.ia_marks,
             self.see_marks,
-            label="SEE Marks",
-            color="salmon",
-            alpha=0.7,
-            bottom=self.ia_marks,
+            self.name
         )
-
-        plt.xlabel("Subjects")
-        plt.ylabel("Marks")
-        plt.title(f"Subject-wise IA and SEE Marks for {self.name}")
-        plt.xticks(rotation=45, ha="right")
-        plt.legend()
-        plt.tight_layout()
 
         return fig
 
@@ -340,7 +229,9 @@ class Student:
         required_semesters = [f"sem{i}" for i in range(1, sem_no + 1)]
 
         # Fetch all StudentAuth records
-        student_records = StudentAuth.query.filter(StudentAuth.usn.in_(usns)).all()
+        from repositories.student_repository import StudentRepository
+        student_repo = StudentRepository(db.session)
+        student_records = student_repo.get_auths_by_usns(usns)
         student_map = {s.usn: s for s in student_records}
         student_id_to_usn = {s.id: s.usn for s in student_records}
 
@@ -349,15 +240,7 @@ class Student:
 
         # Fetch AcademicResult and Subject joined over required semesters
         student_ids = list(student_id_to_usn.keys())
-        results = (
-            db.session.query(AcademicResult, Subject)
-            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
-            .filter(
-                AcademicResult.student_id.in_(student_ids),
-                Subject.semester.in_(required_semesters)
-            )
-            .all()
-        )
+        results = student_repo.get_results_by_usns_and_sem(usns, required_semesters)
         
         preloaded_data = {
             usn: {
@@ -396,19 +279,13 @@ class Student:
         """
         required_semesters = [f"sem{i}" for i in range(1, max_sem + 1)]
         
-        student_rec = StudentAuth.query.filter_by(usn=usn).first()
+        from repositories.student_repository import StudentRepository
+        student_repo = StudentRepository(db.session)
+        student_rec = student_repo.get_auth_by_usn(usn)
         if not student_rec:
             return {}
 
-        results = (
-            db.session.query(AcademicResult, Subject)
-            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
-            .filter(
-                AcademicResult.student_id == student_rec.id,
-                Subject.semester.in_(required_semesters)
-            )
-            .all()
-        )
+        results = student_repo.get_results_by_usns_and_sem([usn], required_semesters)
         
         sem_data = {sem: {"res": [], "sub": []} for sem in required_semesters}
         for res, sub in results:

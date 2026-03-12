@@ -3,8 +3,10 @@ from extensions import db  # Use the DB instance
 from logger_config import get_logger
 from models.cloud_utils import download_excel_from_supabase
 from models.schema import AcademicResult, StudentAuth, Subject
-
 from models.fetch import sem_subjects
+
+from logger_config import get_logger
+from repositories.student_repository import StudentRepository
 
 logger = get_logger(__name__)
 
@@ -89,14 +91,16 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
             if usn_val and usn_val.lower() != "nan":
                 usns_in_df.add(usn_val)
                 
-        existing_students = StudentAuth.query.filter(StudentAuth.usn.in_(list(usns_in_df))).all()
+        student_repo = StudentRepository(db.session)
+        
+        existing_students = student_repo.get_auths_by_usns(list(usns_in_df))
         student_map = {s.usn: s for s in existing_students}
         
         subject_codes = list(subject_cols.keys())
-        existing_subjects = Subject.query.filter(Subject.subject_code.in_(subject_codes)).all()
+        existing_subjects = student_repo.get_subjects_by_codes(subject_codes)
         subject_map = {s.subject_code: s for s in existing_subjects}
         
-        existing_results = AcademicResult.query.filter(
+        existing_results = db.session.query(AcademicResult).filter(
             AcademicResult.batch_year == batch_year,
             AcademicResult.subject_code.in_(subject_codes)
         ).all()

@@ -4,10 +4,10 @@ import io
 from flask import Blueprint, jsonify, request, send_from_directory
 from logger_config import get_logger
 from models import (
-    Mentor,
     Student,  # reuse your existing Student class logic
-    StudentAuth,
 )
+from repositories.student_repository import StudentRepository
+from repositories.mentor_repository import MentorRepository
 from models.batch_manager import bm
 from models.helpers import get_batch_year
 from models.paths import pdf_dir
@@ -29,13 +29,14 @@ def get_mentor_students():
 
     try:
         with bm.session_scope(batch_year) as db:
-            mentor = Mentor.query.filter_by(id=mentor_id).first()
+            mentor_repo = MentorRepository(db.session)
+            student_repo = StudentRepository(db.session)
+
+            mentor = mentor_repo.get_by_id(mentor_id)
             if not mentor:
                 return jsonify({"error": "Mentor not found"}), 404
 
-            students = StudentAuth.query.filter_by(
-                mentor_id=mentor_id, batch_year=batch_year
-            ).all()
+            students = student_repo.get_mentees_by_mentor_and_batch(mentor_id, batch_year)
             usns = [s.usn for s in students]
             bulk_students = Student.bulk_fetch(usns, semester, batch_year)
             results = []

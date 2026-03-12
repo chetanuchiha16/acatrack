@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify, session
 from models import Mentor, StudentAuth, MentorMessage, StudentMessageStatus
+from repositories.mentor_repository import MentorRepository
+from repositories.student_repository import StudentRepository
 from sqlalchemy.orm import joinedload
 from email.utils import parseaddr
 import smtplib
@@ -45,7 +47,10 @@ def send_email(to_email, subject, body):
 def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=False):
     batch_year = request.args.get("batch_year") or get_batch_year()
     with bm.session_scope(batch_year) as db:
-        mentor = Mentor.query.get(mentor_id)
+        mentor_repo = MentorRepository(db.session)
+        student_repo = StudentRepository(db.session)
+
+        mentor = mentor_repo.get_by_id(mentor_id)
         sender_info = f"\n\n--\nMessage sent by {mentor.name}"
         if hasattr(mentor, "email"):
             sender_info += f"\nEmail: {mentor.email}"
@@ -53,7 +58,7 @@ def save_message(mentor_id, usn, recipient_type, subject, message, email_failed=
             sender_info += f"\nPhone: {mentor.phone}"
 
         # Lookup student to get ID
-        student = StudentAuth.query.filter_by(usn=usn).first() if usn else None
+        student = student_repo.get_auth_by_usn(usn) if usn else None
 
         # 1️⃣ Create and save the message
         msg = MentorMessage(
@@ -128,7 +133,8 @@ def serialize_message_with_read_status(db, msg, batch_year=None):
 def get_mentor_students(mentor_id):
     batch_year = request.args.get("batch_year") or get_batch_year()
     with bm.session_scope(batch_year) as db:
-        mentor = Mentor.query.get(mentor_id)
+        mentor_repo = MentorRepository(db.session)
+        mentor = mentor_repo.get_by_id(mentor_id)
         if not mentor:
             return jsonify({"error": "Mentor not found"}), 404
         students = []
@@ -150,11 +156,8 @@ def get_mentor_students(mentor_id):
 def get_messages(mentor_id):
     batch_year = request.args.get("batch_year") or get_batch_year()
     with bm.session_scope(batch_year) as db:
-        msgs = (
-            MentorMessage.query.filter_by(mentor_id=mentor_id)
-            .order_by(MentorMessage.id.desc())
-            .all()
-        )
+        mentor_repo = MentorRepository(db.session)
+        msgs = mentor_repo.get_messages_by_mentor(mentor_id)
         return jsonify([serialize_message_with_read_status(db, m, batch_year) for m in msgs])
 
 
@@ -187,7 +190,10 @@ def send_email_student(mentor_id):
     message = data.get("message")
     batch_year = request.args.get("batch_year") or get_batch_year()
     with bm.session_scope(batch_year) as db:
-        student = StudentAuth.query.filter_by(usn=usn).first()
+        student_repo = StudentRepository(db.session)
+        mentor_repo = MentorRepository(db.session)
+
+        student = student_repo.get_auth_by_usn(usn)
         if not student:
             return jsonify({"error": "Student not found"}), 404
 
@@ -198,7 +204,7 @@ def send_email_student(mentor_id):
             to_email = getattr(student, "student_email", None)
             name = student.name
 
-        mentor = Mentor.query.get(mentor_id)
+        mentor = mentor_repo.get_by_id(mentor_id)
         sender_info = f"\n\n--\nMessage sent by {mentor.name} (Mentor)"
         if hasattr(mentor, "email"):
             sender_info += f"\nEmail: {mentor.email}"
@@ -246,7 +252,8 @@ def send_email_all(mentor_id):
     message = data.get("message")
     batch_year = request.args.get("batch_year") or get_batch_year()
     with bm.session_scope(batch_year) as db:
-        mentor = Mentor.query.get(mentor_id)
+        mentor_repo = MentorRepository(db.session)
+        mentor = mentor_repo.get_by_id(mentor_id)
         if not mentor:
             return jsonify({"error": "Mentor not found"}), 404
 
@@ -263,7 +270,6 @@ def send_email_all(mentor_id):
                 name = s.name
 
 
-            mentor = Mentor.query.get(mentor_id)
             sender_info = f"\n\n--\nMessage sent by {mentor.name}"
             if hasattr(mentor, "email"):
                 sender_info += f"\nEmail: {mentor.email}"
@@ -282,10 +288,11 @@ def delete_message(mentor_id, msg_id):
     batch_year = request.args.get("batch_year") or get_batch_year()
     logger.debug(f"from del message {batch_year}")
     with bm.session_scope(batch_year) as db:
-        all_msgs = MentorMessage.query.all()
+        mentor_repo = MentorRepository(db.session)
+        all_msgs = mentor_repo.get_all_messages()
         logger.debug("Existing messages:", [ (m.id, m.mentor_id) for m in all_msgs ])
 
-        msg = MentorMessage.query.filter_by(id=msg_id, mentor_id=mentor_id).first()
+        msg = mentor_repo.get_message_by_id_and_mentor(msg_id, mentor_id)
         if not msg:
             return jsonify({"error": "Message not found"}), 404
 
