@@ -1,4 +1,3 @@
-from extensions import db
 from logger_config import get_logger
 from models.schema import AcademicResult, StudentAuth, Subject
 from utils.grading import (
@@ -45,23 +44,18 @@ class Student:
                 self.see_marks.append(res.see_marks or 0)
                 self.credits.append(sub.credits or 0)
         else:
+            from repositories.student_repository import StudentRepository
+            student_repo = StudentRepository(db.session)
+            
             # 1. Fetch core student details
-            student_rec = StudentAuth.query.filter_by(usn=self.usn).first()
+            student_rec = student_repo.get_auth_by_usn(self.usn)
             if student_rec:
                 self.name = student_rec.name
                 self.found = True
 
                 # 2. Fetch marks for the specific semester
                 if self.semester:
-                    results = (
-                        db.session.query(AcademicResult, Subject)
-                        .join(Subject, AcademicResult.subject_code == Subject.subject_code)
-                        .filter(
-                            AcademicResult.student_id == student_rec.id,
-                            Subject.semester == self.semester,
-                        )
-                        .all()
-                    )
+                    results = student_repo.get_results_by_usn_and_sem(self.usn, self.semester)
 
                     for res, sub in results:
                         self.subject_codes.append(sub.subject_code)
@@ -113,7 +107,7 @@ class Student:
                     credits_list = [(s.credits or 0) for s in sem_data["sub"]]
 
                     if credits_list:
-                        sgpa_i = self.calculate_sgpa_for_semester(ia_marks, see_marks, credits_list)
+                        sgpa_i = calculate_sgpa_for_semester(ia_marks, see_marks, credits_list)
                         total_credits_i = sum(credits_list)
                         previous_data.append({"sgpa": sgpa_i, "credits": total_credits_i})
             return previous_data
@@ -235,7 +229,9 @@ class Student:
         required_semesters = [f"sem{i}" for i in range(1, sem_no + 1)]
 
         # Fetch all StudentAuth records
-        student_records = StudentAuth.query.filter(StudentAuth.usn.in_(usns)).all()
+        from repositories.student_repository import StudentRepository
+        student_repo = StudentRepository(db.session)
+        student_records = student_repo.get_auths_by_usns(usns)
         student_map = {s.usn: s for s in student_records}
         student_id_to_usn = {s.id: s.usn for s in student_records}
 
@@ -244,15 +240,7 @@ class Student:
 
         # Fetch AcademicResult and Subject joined over required semesters
         student_ids = list(student_id_to_usn.keys())
-        results = (
-            db.session.query(AcademicResult, Subject)
-            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
-            .filter(
-                AcademicResult.student_id.in_(student_ids),
-                Subject.semester.in_(required_semesters)
-            )
-            .all()
-        )
+        results = student_repo.get_results_by_usns_and_sem(usns, required_semesters)
         
         preloaded_data = {
             usn: {
@@ -291,19 +279,13 @@ class Student:
         """
         required_semesters = [f"sem{i}" for i in range(1, max_sem + 1)]
         
-        student_rec = StudentAuth.query.filter_by(usn=usn).first()
+        from repositories.student_repository import StudentRepository
+        student_repo = StudentRepository(db.session)
+        student_rec = student_repo.get_auth_by_usn(usn)
         if not student_rec:
             return {}
 
-        results = (
-            db.session.query(AcademicResult, Subject)
-            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
-            .filter(
-                AcademicResult.student_id == student_rec.id,
-                Subject.semester.in_(required_semesters)
-            )
-            .all()
-        )
+        results = student_repo.get_results_by_usns_and_sem([usn], required_semesters)
         
         sem_data = {sem: {"res": [], "sub": []} for sem in required_semesters}
         for res, sub in results:
