@@ -131,14 +131,30 @@ def save_plot(fig: Figure, filename: str, folder: str = "plots") -> str:
 
 def download_excel_from_supabase(excel_filename: str, folder: str) -> str:
     """Downloads an Excel file from Supabase to a local temp path. Returns local path."""
-    if not (SUPABASE_URL and SUPABASE_KEY and supabase):
+    if not (SUPABASE_URL and SUPABASE_KEY):
         raise RuntimeError("Supabase credentials not loaded.")
-    res = supabase.storage.from_(SUPABASE_BUCKET).download(
-        f"{folder}/{secure_filename(excel_filename)}"
-    )
+        
+    file_path = f"{folder}/{secure_filename(excel_filename)}" if folder else secure_filename(excel_filename)
+    url = f"{SUPABASE_URL}/storage/v1/object/authenticated/{SUPABASE_BUCKET}/{file_path}"
+    
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+    }
+    
+    logger.debug(f"Downloading from Supabase (requests): {url}")
+    try:
+        res = requests.get(url, headers=headers, timeout=30)
+        res.raise_for_status()
+    except Exception as e:
+        logger.warning(f"Failed auth download, trying public: {e}")
+        public_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{file_path}"
+        res = requests.get(public_url, timeout=30)
+        res.raise_for_status()
+
     fd, temp_path = tempfile.mkstemp(suffix=".xlsx")
     with os.fdopen(fd, "wb") as tmp:
-        tmp.write(res)
+        tmp.write(res.content)
     return temp_path
 
 
