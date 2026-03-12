@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify, session
 from models import db, Meeting
 from datetime import datetime
 from .mentor_send_email import send_email
+from repositories.mentor_repository import MentorRepository
 mentor_meetings_bp = Blueprint("mentor_meetings", __name__, url_prefix="/auth/Staff/Mentor/meeting/")
 from models.batch_manager import BatchManager, bm
 from models.helpers import get_batch_year
@@ -11,7 +12,8 @@ from models.helpers import get_batch_year
 def get_meetings(mentor_id):
     batch_year = request.args.get("batch_year") or get_batch_year()
     with bm.session_scope(batch_year) as db:
-        meetings = Meeting.query.filter_by(mentor_id=mentor_id).order_by(Meeting.date).all()
+        mentor_repo = MentorRepository(db.session)
+        meetings = mentor_repo.get_meetings_by_mentor(mentor_id)
         result = [
             {
                 "id": m.id,
@@ -47,7 +49,8 @@ def add_meeting(mentor_id):
 
         # ---------------- Send email to all students ----------------
         from models import Mentor, StudentAuth  # ensure these are imported
-        mentor = Mentor.query.get(mentor_id)
+        mentor_repo = MentorRepository(db.session)
+        mentor = mentor_repo.get_by_id(mentor_id)
         if mentor:
             subject = f"New Meeting Scheduled: {title}"
             body = f"""Hello,
@@ -76,7 +79,8 @@ def add_meeting(mentor_id):
 def delete_meeting(meeting_id):
     batch_year = request.args.get("batch_year") or get_batch_year()
     with bm.session_scope(batch_year) as db:
-        meeting = Meeting.query.get(meeting_id)
+        mentor_repo = MentorRepository(db.session)
+        meeting = mentor_repo.get_meeting_by_id(meeting_id)
         if not meeting:
             return jsonify({"error": "Meeting not found"}), 404
 

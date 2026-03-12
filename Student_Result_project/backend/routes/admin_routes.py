@@ -24,6 +24,8 @@ from app_init import bcrypt
 from flask import Blueprint, current_app, jsonify, request, send_file
 from logger_config import get_logger
 from models import Mentor, ParentAuth, StudentAuth, Teacher
+from repositories.student_repository import StudentRepository
+from repositories.mentor_repository import MentorRepository
 from models.schema import ExportCache
 from services.admin_service import process_mentor_upload_file, process_email_upload_file
 from sqlalchemy.orm import joinedload
@@ -63,18 +65,24 @@ def _safe_seed(text: str | None) -> str:
 def _fetch_source_rows(batch_year: int) -> list[tuple[str, str]]:
     students_set = set()
     with bm.session_scope(batch_year) as db:
-        students = StudentAuth.query.filter_by(batch_year=batch_year).all()
+        student_repo = StudentRepository(db.session)
+        students = student_repo.get_auth_by_batch(batch_year)
         for s in students:
             students_set.add((s.usn, s.name))
 
     return list(students_set)
 
 
-def _unique_teacher_username() -> str:
-    while True:
-        candidate = str(random.randint(1000, 1010))
-        if not Teacher.query.filter_by(username=candidate).first():
-            return candidate
+    # this function has no session so we will remove the while loop inside the route instead.
+    # We will keep this for backward compatibility but it should not be used if we can avoid it.
+    from models.batch_manager import bm, get_batch_year
+    batch_year = get_batch_year()
+    with bm.session_scope(batch_year) as db:
+        mentor_repo = MentorRepository(db.session)
+        while True:
+            candidate = str(random.randint(1000, 1010))
+            if not mentor_repo.get_teacher_by_username(candidate):
+                return candidate
 
 
 # ---------- Routes ----------
@@ -114,9 +122,10 @@ def generate_accounts():
     batch_prefix = f"1JS{batch_year % 100}"
 
     with bm.session_scope(batch_year) as db:
+        student_repo = StudentRepository(db.session)
         students = _fetch_source_rows(batch_year)
         # Pre-fetch all students in batch to avoid N+1 queries
-        all_students = StudentAuth.query.options(joinedload(StudentAuth.parent_account)).filter_by(batch_year=batch_year).all()
+        all_students = db.session.query(StudentAuth).options(joinedload(StudentAuth.parent_account)).filter_by(batch_year=batch_year).all()
         student_usn_map = {s.usn: s for s in all_students}
 
         # --- Delete existing passwords for 'all' mode
@@ -197,7 +206,8 @@ def generate_accounts():
 
         if mentor_excel_path and os.path.exists(mentor_excel_path):
             df = pd.read_excel(mentor_excel_path)
-            all_mentors = Mentor.query.all()
+            mentor_repo = MentorRepository(db.session)
+            all_mentors = mentor_repo.get_all_mentors()
             mentor_name_map = {m.name: m for m in all_mentors}
 
             for _, row in df.iterrows():
@@ -326,9 +336,11 @@ def upload_mentors():
     )  # CSV header
 
     with bm.session_scope(batch_year) as db:
+        student_repo = StudentRepository(db.session)
+        mentor_repo = MentorRepository(db.session)
         # Pre-fetch students, mentors and teachers to avoid N+1
         usns_in_df = [str(usn).strip() for usn in df["student_usn"] if str(usn).strip()]
-        existing_students = StudentAuth.query.filter(
+        existing_students = db.session.query(StudentAuth).filter(
             StudentAuth.usn.in_(usns_in_df)
         ).all()
         student_map = {s.usn: s for s in existing_students}
@@ -336,12 +348,12 @@ def upload_mentors():
         mentor_names_in_df = list(
             set([str(name).strip() for name in df["Mentor_Name"] if str(name).strip()])
         )
-        existing_mentors = Mentor.query.filter(
+        existing_mentors = db.session.query(Mentor).filter(
             Mentor.name.in_(mentor_names_in_df)
         ).all()
         mentor_cache = {m.name: m for m in existing_mentors}
 
-        existing_teachers = Teacher.query.filter(
+        existing_teachers = db.session.query(Teacher).filter(
             Teacher.name.in_(mentor_names_in_df)
         ).all()
         teacher_cache = {t.name: t for t in existing_teachers}
@@ -396,7 +408,7 @@ def upload_mentors():
     csv_str = out.getvalue()
     
     with bm.session_scope(batch_year) as db:
-        existing_cache = ExportCache.query.filter_by(batch_year=batch_year).first()
+        existing_cache = db.session.query(ExportCache).filter_by(batch_year=batch_year).first()
         if existing_cache:
             existing_cache.csv_content = csv_str
         else:
@@ -425,7 +437,7 @@ def download_teachers_csv():
     batch_year = int(request.args.get("batch_year", 0))
     
     with bm.session_scope(batch_year) as db:
-        cache_entry = ExportCache.query.filter_by(batch_year=batch_year).first()
+        cache_entry = db.session.query(ExportCache).filter_by(batch_year=batch_year).first()
         if not cache_entry:
             return jsonify({"error": "No CSV available, please re-upload mentors"}), 404
         

@@ -1,14 +1,23 @@
+# Grading Constants
+MIN_IA_PASS = 20
+MIN_SEE_PASS = 18
+
+GRADE_POINTS = [
+    (90, 10), (80, 9), (70, 8), (60, 7),
+    (50, 6), (40, 5), (30, 3), (20, 2), (10, 1)
+]
+
 def calculate_pass_fail(ia_marks, see_marks, credits):
     status_list = []
     for ia, see, credit in zip(ia_marks, see_marks, credits):
         if credit == 0:
             status_list.append("No Credits")
         elif see == 0:
-            if ia >= 20: 
+            if ia >= MIN_IA_PASS: 
                 status_list.append("Pass")
             else:
                 status_list.append("Fail")
-        elif ia >= 20 and see >= 18:
+        elif ia >= MIN_IA_PASS and see >= MIN_SEE_PASS:
             status_list.append("Pass")
         else:
             status_list.append("Fail")
@@ -20,17 +29,12 @@ def calculate_obtained_credits(ia_marks, see_marks, credits):
         total_score = ia + see
         if credit == 0:
             continue
-
-        if total_score >= 90: grade_points = 10
-        elif total_score >= 80: grade_points = 9
-        elif total_score >= 70: grade_points = 8
-        elif total_score >= 60: grade_points = 7
-        elif total_score >= 50: grade_points = 6
-        elif total_score >= 40: grade_points = 5
-        elif total_score >= 30: grade_points = 3
-        elif total_score >= 20: grade_points = 2
-        elif total_score >= 10: grade_points = 1
-        else: grade_points = 0
+            
+        grade_points = 0
+        for threshold, points in GRADE_POINTS:
+            if total_score >= threshold:
+                grade_points = points
+                break
 
         obtained += grade_points * credit
     return obtained

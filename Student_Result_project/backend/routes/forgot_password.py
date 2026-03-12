@@ -1,5 +1,8 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, StudentAuth, ParentAuth, Teacher, PasswordResetToken
+from models import db, PasswordResetToken
+from repositories.student_repository import StudentRepository
+from repositories.parent_repository import ParentRepository
+from repositories.mentor_repository import MentorRepository
 from .send_email import send_email
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -11,13 +14,17 @@ from .auth import batch_from_usn
 
 def find_user(usn, batch_year):
     with bm.session_scope(batch_year) as db:
-        user = StudentAuth.query.filter_by(username=usn).first()
+        student_repo = StudentRepository(db.session)
+        parent_repo = ParentRepository(db.session)
+        mentor_repo = MentorRepository(db.session)
+
+        user = student_repo.get_auth_by_usn(usn)
         if user:
             return user, "student", user.student_email
-        user = ParentAuth.query.filter_by(username=usn).first()
+        user = parent_repo.get_auth_by_username(usn)
         if user:
             return user, "parent", user.email
-        user = Teacher.query.filter_by(username=usn).first()
+        user = mentor_repo.get_teacher_by_username(usn)
         if user:
             return user, "teacher", user.email
         return None, None, None
@@ -89,12 +96,17 @@ def reset_password(token):
             return jsonify({"error": "Invalid or expired token"}), 400
 
         usn, role = reset_token.usn, reset_token.role
+        
+        student_repo = StudentRepository(db.session)
+        parent_repo = ParentRepository(db.session)
+        mentor_repo = MentorRepository(db.session)
+
         if role == "student":
-            user = StudentAuth.query.filter_by(username=usn).first()
+            user = student_repo.get_auth_by_usn(usn)
         elif role == "parent":
-            user = ParentAuth.query.filter_by(username=usn).first()
+            user = parent_repo.get_auth_by_username(usn)
         else:
-            user = Teacher.query.filter_by(username=usn).first()
+            user = mentor_repo.get_teacher_by_username(usn)
 
         if not user:
             return jsonify({"error": "User not found"}), 404
