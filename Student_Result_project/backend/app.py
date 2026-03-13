@@ -27,6 +27,7 @@ register_routes(app)
 
 with app.app_context():
     try:
+        db.create_all()
         db.session.execute(text("SELECT 1"))
         logger.debug("Connection successful!")
     except Exception as e:
