@@ -9,7 +9,7 @@ import base64
 import io
 
 import matplotlib.pyplot as plt
-from models import Student
+from services.student_service import Student
 from utils.helpers import get_batch_year
 from sklearn.linear_model import LinearRegression
 from visuals import create_student_report

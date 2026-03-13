@@ -1,7 +1,7 @@
 # test_university_postgres.py
 
 from logger_config import get_logger
-from models import University
+from services.university_service import University
 from models.paths import postgres_db_url
 from app_init import create_app
 
