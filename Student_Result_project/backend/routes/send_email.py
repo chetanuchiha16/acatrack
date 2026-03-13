@@ -89,7 +89,6 @@ def send_email_to_all():
                 email_attr = "parent_email"
                 name_attr = "parent_name"
             else:
-                recipients = student_repo.get_all_mentees_globally() # (Let's stick to db.session for now to keep it safe inside scope)
                 recipients = db.session.query(StudentAuth).all()
                 email_attr = "student_email"
                 name_attr = "name"

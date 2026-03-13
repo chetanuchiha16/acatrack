@@ -18,9 +18,19 @@ class MentorRepository:
     def get_all(self) -> list[Mentor]:
         return self.db.query(Mentor).all()
 
+    def get_all_mentors(self) -> list[Mentor]:
+        """Alias for get_all for semantic clarity."""
+        return self.db.query(Mentor).all()
+
+    def get_mentors_by_ids(self, ids: list) -> list[Mentor]:
+        return self.db.query(Mentor).filter(Mentor.id.in_(ids)).all()
+
     # --- Teachers ---
     def get_teacher_by_username(self, username: str) -> Teacher:
         return self.db.query(Teacher).filter_by(username=username).first()
+
+    def get_teacher_by_mentor_id(self, mentor_id: int) -> Teacher:
+        return self.db.query(Teacher).filter_by(mentor_id=mentor_id).first()
 
     def get_teachers_by_names(self, names: list) -> list[Teacher]:
         return self.db.query(Teacher).filter(Teacher.name.in_(names)).all()
@@ -44,3 +54,6 @@ class MentorRepository:
 
     def delete_message_statuses(self, msg_id: int):
          self.db.query(StudentMessageStatus).filter_by(msg_id=msg_id).delete()
+
+    def get_message_by_id(self, msg_id: int) -> MentorMessage:
+        return self.db.query(MentorMessage).filter_by(id=msg_id).first()
