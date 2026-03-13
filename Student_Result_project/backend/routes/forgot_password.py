@@ -12,7 +12,7 @@ from repositories.parent_repository import ParentRepository
 from repositories.student_repository import StudentRepository
 from routes.send_email import send_email_async
 
-from .auth import batch_from_usn
+from services.auth_service import batch_from_usn
 
 
 class ForgotPasswordRequest(BaseModel):
