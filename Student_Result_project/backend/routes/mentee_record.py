@@ -2,10 +2,11 @@ from flask import Blueprint, request, jsonify, redirect, send_from_directory
 import fitz
 import os
 from models.paths import pdf_dir, img_dir, base_dir
-from models.cloud_utils import save_file, supabase, SUPABASE_BUCKET, SUPABASE_URL
+from utils.cloud import save_file, supabase, SUPABASE_BUCKET, SUPABASE_URL
+from services.batch_manager import bm
 from repositories.student_repository import StudentRepository
 from logger_config import get_logger
-from models.helpers import get_batch_year
+from utils.helpers import get_batch_year
 import requests
 
 logger = get_logger(__name__)
@@ -174,7 +175,8 @@ def list_mentor_pdfs(mentor_id):
                 except requests.RequestException:
                     pass
             else:
-                if filename in pdf_names:
+                local_pdfs = [f for f in os.listdir(UPLOAD_FOLDER) if f.lower().endswith(".pdf")]
+                if filename in local_pdfs:
                     files.append({
                         "usn": mentee.usn,
                         "name": mentee.name,
@@ -195,10 +197,9 @@ def download_mentee_pdf(mentor_id, usn):
         student = student_repo.get_auth_by_usn(usn)
         if not student:
             return jsonify({"error": "Student not found"}), 404
-    if student.mentor_id != mentor_id:
-        return jsonify({"error": "Access denied"}), 403
-
-    filename = get_mentee_pdf_filename(student)
+        if student.mentor_id != mentor_id:
+            return jsonify({"error": "Access denied"}), 403
+        filename = get_mentee_pdf_filename(student)  # extract while session is open
     
     if supabase:
         url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/pdfs/{filename}"

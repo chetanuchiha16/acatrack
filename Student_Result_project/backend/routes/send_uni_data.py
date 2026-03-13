@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request, send_file, Blueprint, session
-from models import University
+from services.university_service import University
 from visuals import create_toppers_list_pdf, create_university_report
 from models.paths import  pdf_dir, postgres_db_url
 from io import BytesIO
@@ -7,7 +7,7 @@ from logger_config import get_logger
 
 logger = get_logger(__name__)
 
-from models.helpers import get_batch_year
+from utils.helpers import get_batch_year
 from extensions import cache
 
 uni_bp = Blueprint('uni', __name__)

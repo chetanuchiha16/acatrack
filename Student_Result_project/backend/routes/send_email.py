@@ -1,55 +1,52 @@
-from flask import Blueprint, request, jsonify, session
-from models import StudentAuth  # your existing model
-from repositories.student_repository import StudentRepository
-from models.batch_manager import BatchManager, bm
-from app_init import db          # your DB instance
+"""
+Email-related routes.
+
+Key improvements:
+- Pydantic validation on all request bodies (raises 422 on bad input)
+- Non-blocking email: SMTP calls run in background threads so the route
+  returns immediately instead of waiting 2-5s for SMTP roundtrip
+- Message model lives in models/schema.py, not here
+"""
+
 import smtplib
-from email.mime.text import MIMEText
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from email.mime.multipart import MIMEMultipart
-import os
-from datetime import datetime, timezone
-from models.helpers import get_batch_year
+from email.mime.text import MIMEText
+
+from flask import Blueprint, jsonify, request
 from logger_config import get_logger
+from services.batch_manager import bm
+from utils.helpers import get_batch_year
+from models.schema import Message
+from repositories.student_repository import StudentRepository
 from settings import settings
+from validators.email_validators import (
+    SaveMessageRequest,
+    SendAllEmailRequest,
+    SendStudentEmailRequest,
+)
 
 logger = get_logger(__name__)
 
 email_bp = Blueprint("email", __name__)
 
 EMAIL_ADDRESS = settings.a_email
-EMAIL_PASSWORD = settings.email_pass  # App password
-# -----------------------------
-# Message Model (store messages)
-# -----------------------------
-class Message(db.Model):
-    __tablename__ = "messages"
-    id = db.Column(db.Integer, primary_key=True)
-    usn = db.Column(db.String(50), nullable=True)  # null = broadcast
-    recipient_type = db.Column(db.String(20), nullable=False)  # student/parent
-    subject = db.Column(db.String(255), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+EMAIL_PASSWORD = settings.email_pass
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "usn": self.usn,
-            "recipientType": self.recipient_type,
-            "subject": self.subject,
-            "message": self.message,
-            "createdAt": self.created_at.isoformat(),
-        }
+# Thread pool for fire-and-forget email sending (max 5 concurrent SMTP connections)
+_email_executor = ThreadPoolExecutor(max_workers=5, thread_name_prefix="email_worker")
 
 
 # -----------------------------
 # Email Sending Utility
 # -----------------------------
-def send_email(to_email, subject, body):
+def _send_smtp(to_email: str, subject: str, body: str) -> bool:
+    """Blocking SMTP call — always run this inside the executor, never on the main thread."""
     msg = MIMEMultipart()
     msg["From"] = EMAIL_ADDRESS
     msg["To"] = to_email
     msg["Subject"] = subject
-
     msg.attach(MIMEText(body, "plain"))
 
     try:
@@ -57,10 +54,28 @@ def send_email(to_email, subject, body):
             server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.send_message(msg)
+        logger.info(f"Email sent to {to_email}")
         return True
     except Exception as e:
-        logger.debug("Email send error:", e)
+        logger.error(f"SMTP error sending to {to_email}: {e}")
         return False
+
+
+def send_email(to_email: str, subject: str, body: str) -> bool:
+    """
+    Synchronous wrapper kept for caller compatibility (mentor_send_email, etc.).
+    Runs the SMTP call on the current thread — only use from routes that
+    already handle async themselves (e.g. mentor_send_email).
+    """
+    return _send_smtp(to_email, subject, body)
+
+
+def send_email_async(to_email: str, subject: str, body: str) -> None:
+    """
+    Fire-and-forget: submits SMTP call to the thread pool and returns immediately.
+    The route does NOT wait for the email to be sent.
+    """
+    _email_executor.submit(_send_smtp, to_email, subject, body)
 
 
 # -----------------------------
@@ -68,73 +83,54 @@ def send_email(to_email, subject, body):
 # -----------------------------
 @email_bp.route("/send-email/all", methods=["POST"])
 def send_email_to_all():
-    data = request.get_json() or {}
+    # Pydantic validation — raises ValidationError (→ 422) on bad input
+    body = SendAllEmailRequest.model_validate(request.get_json() or {})
 
-    recipient_type = data.get("recipientType", "student").lower()
-    subject = data.get("subject")
-    message = data.get("message")
-    
-    if not subject or not message:
-        return jsonify({"error": "Both 'subject' and 'message' are required"}), 400
+    batch_year = get_batch_year()
+    with bm.session_scope(batch_year) as db:
+        student_repo = StudentRepository(db.session)
 
-    try:
-        batch_year = get_batch_year()   
-        with bm.session_scope(batch_year) as db:
-            student_repo = StudentRepository(db.session)
+        if body.recipientType == "parent":
+            recipients = student_repo.get_all_with_parent_email()
+            email_attr = "parent_email"
+            name_attr = "parent_name"
+        else:
+            recipients = student_repo.get_all()
+            email_attr = "student_email"
+            name_attr = "name"
 
-            if recipient_type == "parent":
-                # Assuming get_all pulls all, then we just filter memory 
-                # OR we could add a `get_all_with_parents()` - for now we use query
-                recipients = db.session.query(StudentAuth).filter(StudentAuth.parent_email != None).all()
-                email_attr = "parent_email"
-                name_attr = "parent_name"
-            else:
-                recipients = student_repo.get_all_mentees_globally() # (Let's stick to db.session for now to keep it safe inside scope)
-                recipients = db.session.query(StudentAuth).all()
-                email_attr = "student_email"
-                name_attr = "name"
+        # Snapshot data before session closes — avoid DetachedInstanceError
+        payloads = []
+        for person in recipients:
+            to_email = getattr(person, email_attr, None)
+            if not to_email:
+                continue
+            name = getattr(person, name_attr, None) or getattr(person, "name", "Student")
+            payloads.append((to_email, name))
 
-            failed = []
-            for person in recipients:
-                to_email = getattr(person, email_attr, None)
-                if not to_email:
-                    failed.append(getattr(person, "usn", "unknown"))
-                    continue
+    # Fire emails asynchronously — session is already closed, data is snaphotted
+    for to_email, name in payloads:
+        personalized_body = f"Hello {name},\n\n{body.message}"
+        send_email_async(to_email, body.subject, personalized_body)
 
-                name = getattr(person, name_attr, None) or getattr(person, "name", "Student")
-                personalized_body = f"Hello {name},\n\n{message}"
-                success = send_email(to_email, subject, personalized_body)
-                if not success:
-                    failed.append(getattr(person, "usn", "unknown"))
-
-            return jsonify({
-                "message": f"Emails sent to all {recipient_type}s",
-                "failed_usns": failed
-            }), (207 if failed else 200)
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return jsonify({
+        "message": f"Queued emails to {len(payloads)} {body.recipientType}(s)",
+        "queued": len(payloads),
+    }), 202  # 202 Accepted = request received, work is in progress
 
 
 @email_bp.route("/send-email/student", methods=["POST"])
 def send_email_to_student():
-    data = request.get_json()
-    usn = data.get("usn")
-    subject = data.get("subject")
-    message = data.get("message")
-    recipient_type = data.get("recipientType", "student").lower()
-    batch_year = get_batch_year()   
+    body = SendStudentEmailRequest.model_validate(request.get_json() or {})
 
-    if not usn or not subject or not message:
-        return jsonify({"error": "USN, subject and message are required"}), 400
-    
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         student_repo = StudentRepository(db.session)
-        student = student_repo.get_auth_by_usn(usn)
+        student = student_repo.get_auth_by_usn(body.usn)
         if not student:
             return jsonify({"error": "Student not found"}), 404
 
-        if recipient_type == "parent":
+        if body.recipientType == "parent":
             to_email = getattr(student, "parent_email", None)
             name = getattr(student, "parent_name", None) or student.name
             if not to_email:
@@ -143,16 +139,13 @@ def send_email_to_student():
             to_email = student.student_email
             name = student.name
 
-        personalized_body = f"Hello {name},\n\n{message}"
+    # Fire email asynchronously; session already closed
+    personalized_body = f"Hello {name},\n\n{body.message}"
+    send_email_async(to_email, body.subject, personalized_body)
 
-        try:
-            success = send_email(to_email, subject, personalized_body)
-            if success:
-                return jsonify({"message": f"Email sent to {recipient_type} with USN {usn}"}), 200
-            else:
-                return jsonify({"error": "Failed to send email"}), 500
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+    return jsonify({
+        "message": f"Email queued for {body.recipientType} with USN {body.usn}"
+    }), 202
 
 
 # -----------------------------
@@ -160,14 +153,14 @@ def send_email_to_student():
 # -----------------------------
 @email_bp.route("/messages", methods=["POST"])
 def save_message():
-    data = request.get_json() or {}
-    batch_year = get_batch_year()   
+    body = SaveMessageRequest.model_validate(request.get_json() or {})
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         new_msg = Message(
-            usn=data.get("usn"),
-            recipient_type=data.get("recipientType"),
-            subject=data.get("subject"),
-            message=data.get("message"),
+            usn=body.usn,
+            recipient_type=body.recipientType,
+            subject=body.subject,
+            message=body.message,
         )
         db.session.add(new_msg)
         db.session.commit()
@@ -176,7 +169,7 @@ def save_message():
 
 @email_bp.route("/messages", methods=["GET"])
 def get_messages():
-    batch_year = get_batch_year()   
+    batch_year = get_batch_year()
     logger.debug(f"{batch_year} from get_messages")
     with bm.session_scope(batch_year) as db:
         messages = db.session.query(Message).order_by(Message.created_at.desc()).all()
@@ -185,7 +178,7 @@ def get_messages():
 
 @email_bp.route("/messages/<int:msg_id>", methods=["DELETE"])
 def delete_message(msg_id):
-    batch_year = get_batch_year()   
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         msg = db.session.query(Message).get(msg_id)
         if not msg:

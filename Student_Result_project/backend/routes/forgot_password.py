@@ -1,16 +1,26 @@
-from flask import Blueprint, request, jsonify, session
-from models import db, PasswordResetToken
-from repositories.student_repository import StudentRepository
-from repositories.parent_repository import ParentRepository
-from repositories.mentor_repository import MentorRepository
-from .send_email import send_email
 import secrets
 from datetime import datetime, timedelta, timezone
+
 from app_init import bcrypt
-from models.batch_manager import bm, BatchManager
+from flask import Blueprint, jsonify, request, session
+from models import PasswordResetToken
+from services.batch_manager import bm
 from models.paths import API_BASE
+from pydantic import BaseModel, Field
+from repositories.mentor_repository import MentorRepository
+from repositories.parent_repository import ParentRepository
+from repositories.student_repository import StudentRepository
+from routes.send_email import send_email_async
+
+from services.auth_service import batch_from_usn
+
+
+class ForgotPasswordRequest(BaseModel):
+    username: str = Field(..., min_length=1)
+
+
 forgot_bp = Blueprint("forgot", __name__, url_prefix="/auth/forgot")
-from .auth import batch_from_usn
+
 
 def find_user(usn, batch_year):
     with bm.session_scope(batch_year) as db:
@@ -32,12 +42,14 @@ def find_user(usn, batch_year):
 
 @forgot_bp.route("/request", methods=["POST"])
 def request_reset():
-    data = request.get_json()
-    username = data.get("username")
-    batch_year = batch_from_usn(username)
+    validated_data = ForgotPasswordRequest.model_validate(request.get_json() or {})
+    username = validated_data.username
+
+    try:
+        batch_year = batch_from_usn(username)
+    except ValueError:
+        batch_year = None
     session["batch_year"] = batch_year
-    if not username:
-        return jsonify({"error": "Username is required"}), 400
 
     user, role, email = find_user(username, batch_year)
     if not user or not email:
@@ -47,41 +59,54 @@ def request_reset():
     token = secrets.token_urlsafe(32)
 
     # store as naive UTC (SQLite safe)
-    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).replace(tzinfo=None)
+    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).replace(
+        tzinfo=None
+    )
     with bm.session_scope(batch_year) as db:
         reset_token = PasswordResetToken(
             token=token,
             usn=username,
-            batch_year=batch_year,   # store it ✅
+            batch_year=batch_year,  # store it ✅
             role=role,
-            expires_at=expires_at
+            expires_at=expires_at,
         )
         db.session.add(reset_token)
         db.session.commit()
 
-        reset_link = f"{API_BASE}/reset-password/{token}"
-        subject = "Password Reset Request"
-        body = f"Hello {user.name},\n\nClick below to reset your password:\n{reset_link}\n\nThis link expires in 15 minutes."
+    # Send email async
+    reset_link = f"{API_BASE}/reset-password?token={token}"
+    subject = "Password Reset Request"
+    body = f"""Hello,
 
-        if not send_email(email, subject, body):
-            return jsonify({"error": "Failed to send reset email"}), 500
+We received a request to reset your password.
+Click the link below to set a new password:
+{reset_link}
 
-        return jsonify({"message": "Password reset link sent"}), 200
+This link is valid for 15 minutes.
+If you did not request this, please ignore this email.
+    """
+    send_email_async(email, subject, body)
+
+    return jsonify({"message": "Password reset link sent to registered email"}), 200
+
+
+class ResetPasswordRequest(BaseModel):
+    password: str = Field(..., min_length=6)
 
 
 @forgot_bp.route("/reset/<token>", methods=["POST"])
 def reset_password(token):
-    data = request.get_json()
-    new_password = data.get("password")
-    if not new_password:
-        return jsonify({"error": "Password is required"}), 400
+    validated_data = ResetPasswordRequest.model_validate(request.get_json() or {})
+    new_password = validated_data.password
 
     # Step 1: Find token in ANY batch (small loop)
     reset_token = None
     token_batch_year = None
     for batch_year in bm.list_batches():
         with bm.session_scope(batch_year) as db:
-            reset_token = PasswordResetToken.query.filter_by(token=token, used=False).first()
+            reset_token = PasswordResetToken.query.filter_by(
+                token=token, used=False
+            ).first()
             if reset_token:
                 token_batch_year = reset_token.batch_year
                 break
@@ -96,7 +121,7 @@ def reset_password(token):
             return jsonify({"error": "Invalid or expired token"}), 400
 
         usn, role = reset_token.usn, reset_token.role
-        
+
         student_repo = StudentRepository(db.session)
         parent_repo = ParentRepository(db.session)
         mentor_repo = MentorRepository(db.session)
@@ -116,4 +141,6 @@ def reset_password(token):
         reset_token.used = True
         db.session.commit()
 
-        return jsonify({"message": f"{role.capitalize()} password reset successful"}), 200
+        return jsonify(
+            {"message": f"{role.capitalize()} password reset successful"}
+        ), 200

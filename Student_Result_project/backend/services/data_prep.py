@@ -1,11 +1,9 @@
 import pandas as pd
 from extensions import db  # Use the DB instance
 from logger_config import get_logger
-from models.cloud_utils import download_excel_from_supabase
+from utils.cloud import download_excel_from_supabase
 from models.schema import AcademicResult, StudentAuth, Subject
-from models.fetch import sem_subjects
-
-from logger_config import get_logger
+from services.fetch_service import sem_subjects
 from repositories.student_repository import StudentRepository
 
 logger = get_logger(__name__)
@@ -100,10 +98,14 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
         existing_subjects = student_repo.get_subjects_by_codes(subject_codes)
         subject_map = {s.subject_code: s for s in existing_subjects}
         
-        existing_results = db.session.query(AcademicResult).filter(
-            AcademicResult.batch_year == batch_year,
-            AcademicResult.subject_code.in_(subject_codes)
-        ).all()
+        student_ids = [s.id for s in existing_students]
+        if student_ids and subject_codes:
+            existing_results = db.session.query(AcademicResult).filter(
+                AcademicResult.student_id.in_(student_ids),
+                AcademicResult.subject_code.in_(subject_codes)
+            ).all()
+        else:
+            existing_results = []
         result_map = {(r.student_id, r.subject_code): r for r in existing_results}
         # ---------------------------------------------
         for _, row in df.iterrows():

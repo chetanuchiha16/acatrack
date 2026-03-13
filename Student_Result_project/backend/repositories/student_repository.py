@@ -1,5 +1,5 @@
 from models.schema import StudentAuth, AcademicResult, Subject, ParentAuth
-from models.student import Student
+from services.student_service import Student
 from sqlalchemy.orm import joinedload
 
 class StudentRepository:
@@ -24,15 +24,23 @@ class StudentRepository:
     def count_by_batch(self, batch_year: int) -> int:
         return self.db.query(StudentAuth).filter_by(batch_year=batch_year).count()
 
+    def get_all(self) -> list[StudentAuth]:
+        return self.db.query(StudentAuth).all()
+
+    def get_all_with_parent_email(self) -> list[StudentAuth]:
+        """Returns all students that have a parent_email set."""
+        return self.db.query(StudentAuth).filter(StudentAuth.parent_email != None).all()
+
     def get_distinct_batch_years(self) -> list:
         return self.db.query(StudentAuth.batch_year).distinct().all()
 
-    # --- Student (Academic/Personal Info) ---
-    def get_student_by_usn(self, usn: str) -> Student:
-        return self.db.query(Student).filter_by(usn=usn).first()
-        
-    def get_students_by_usns(self, usns: list) -> list[Student]:
-         return self.db.query(Student).filter(Student.usn.in_(usns)).all()
+    # --- Student Auth by Batch ---
+    def get_auths_by_batch(self, batch_year: int) -> list[StudentAuth]:
+        return self.db.query(StudentAuth).filter_by(batch_year=batch_year).all()
+
+    def get_auth_by_batch(self, batch_year: int) -> list[StudentAuth]:
+        """Alias for get_auths_by_batch."""
+        return self.get_auths_by_batch(batch_year)
 
     # --- Academic Results & Subjects ---
     def get_results_by_usn(self, usn: str) -> list[tuple]:

@@ -1,13 +1,19 @@
 # backend/services/admin_service.py
-from logger_config import get_logger
-from models.batch_manager import bm
-from models.schema import ExportCache
+import io
+import os
+import random
 import tempfile
 import pandas as pd
-import io
+from sqlalchemy.orm import joinedload
+from app_init import bcrypt
+from logger_config import get_logger
+from services.batch_manager import bm
+from models.schema import ExportCache, ParentAuth, StudentAuth, Teacher
 from repositories.student_repository import StudentRepository
 from repositories.mentor_repository import MentorRepository
 from repositories.admin_repository import AdminRepository
+from utils.cloud import download_excel_from_supabase
+from settings import settings
 
 logger = get_logger(__name__)
 
@@ -80,7 +86,7 @@ def process_mentor_upload_file(file, batch_year, db_session_maker, bcrypt, Mento
 
                 teacher = teacher_cache.get(mentor_name)
                 if not teacher:
-                    username = _unique_teacher_username()
+                    username = _unique_teacher_username(db.session)
                     plain_pw = (
                         f"{_safe_seed(mentor_name.split(' ', 1)[-1])}{username[-3:]}"
                     )
@@ -233,3 +239,127 @@ def process_email_upload_file(temp_upload_path, ext, batch_year, db_session_make
         "updated": count_updated,
         "batch_year": batch_year
     }, 200
+
+def _safe_seed(text: str | None) -> str:
+    base = (text or "user").strip()
+    return base[:4] if len(base) >= 4 else base.ljust(4, "0")
+
+def _unique_teacher_username(db_session) -> str:
+    while True:
+        candidate = str(random.randint(1000, 1010))
+        if not db_session.query(Teacher).filter_by(username=candidate).first():
+            return candidate
+
+def _fetch_source_rows(batch_year: int) -> list[tuple[str, str]]:
+    students_set = set()
+    with bm.session_scope(batch_year) as db:
+        student_repo = StudentRepository(db.session)
+        students = student_repo.get_auths_by_batch(batch_year)
+        for s in students:
+            students_set.add((s.usn, s.name))
+    return list(students_set)
+
+def generate_accounts_csv(mode: str, batch_year: int) -> tuple[io.BytesIO, str]:
+    with bm.session_scope(batch_year) as db:
+        students = _fetch_source_rows(batch_year)
+        # Pre-fetch all students in batch to avoid N+1 queries
+        all_students = db.session.query(StudentAuth).options(joinedload(StudentAuth.parent_account)).filter_by(batch_year=batch_year).all()
+        student_usn_map = {s.usn: s for s in all_students}
+
+        # --- Delete existing passwords for 'all' mode
+        if mode == "all":
+            for s in all_students:
+                s.password = None
+                if s.parent_account:
+                    s.parent_account.password = None
+            db.session.commit()
+
+        out = io.StringIO()
+        out.write("username,name,plain_password,password_hash,role,linked_student\n")
+
+        for usn, name in students:
+            if not usn:
+                continue
+            usn = str(usn).strip()
+            name = (name or "").strip()
+            # --- Skip if mode is 'missing' and password exists
+            existing_student = student_usn_map.get(usn)
+            if not existing_student:
+                continue
+
+            if mode == "missing" and existing_student.password:
+                continue
+
+            with db.session.no_autoflush:
+                # --- Set student password
+                plain_student = f"{_safe_seed(name)}{usn[-3:]}"
+                pw_hash_student = bcrypt.generate_password_hash(
+                    password=plain_student
+                ).decode("utf-8")
+
+                existing_student.password = pw_hash_student
+                if not existing_student.student_email:
+                    existing_student.student_email = settings.c_email
+                if not existing_student.student_phno:
+                    existing_student.student_phno = settings.default_number
+
+                out.write(f"{usn},{name},{plain_student},{pw_hash_student},student,\n")
+
+                # --- Create or Update parent
+                parent_username = f"{usn}_parent"
+                plain_parent = "default123"
+                pw_hash_parent = bcrypt.generate_password_hash(
+                    password=plain_parent
+                ).decode("utf-8")
+
+                if existing_student.parent_account:
+                    parent = existing_student.parent_account
+                    parent.password = pw_hash_parent
+                else:
+                    parent = ParentAuth(
+                        username=parent_username,
+                        password=pw_hash_parent,
+                        student=existing_student,
+                        name=f"Parent of {name}",
+                        email=settings.c_email,
+                        phone="123456789",
+                    )
+                    db.session.add(parent)
+                out.write(
+                    f"{parent_username},Parent of {name},{plain_parent},{pw_hash_parent},parent,{usn}\n"
+                )
+
+        # --- Assign mentors from Excel in Supabase (using new pattern)
+        excel_folder = f"mentors/{batch_year}"
+        excel_filename = f"mentors_{batch_year}.xlsx"
+        mentor_excel_path = None
+        try:
+            mentor_excel_path = download_excel_from_supabase(
+                excel_filename, excel_folder
+            )
+        except Exception as e:
+            logger.debug(
+                f"No mentor excel found in Supabase for batch {batch_year}: {e}"
+            )
+
+        if mentor_excel_path and os.path.exists(mentor_excel_path):
+            df = pd.read_excel(mentor_excel_path)
+            mentor_repo = MentorRepository(db.session)
+            all_mentors = mentor_repo.get_all_mentors()
+            mentor_name_map = {m.name: m for m in all_mentors}
+
+            for _, row in df.iterrows():
+                student_usn = str(row.get("student_usn", "")).strip()
+                mentor_name = str(row.get("Mentor_Name", "")).strip()
+                if not student_usn or not mentor_name:
+                    continue
+                student = student_usn_map.get(student_usn)
+                mentor = mentor_name_map.get(mentor_name)
+                if student and mentor:
+                    student.mentor_id = mentor.id
+
+        db.session.commit()
+
+        out.seek(0)
+        return io.BytesIO(out.getvalue().encode("utf-8")), f"generated_passwords_{batch_year}.csv"
+

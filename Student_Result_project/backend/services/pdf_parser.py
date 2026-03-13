@@ -15,7 +15,7 @@ import pytesseract
 from logger_config import get_logger
 
 # Import your supabase upload helper
-from models.cloud_utils import upload_excel_to_supabase
+from utils.cloud import upload_excel_to_supabase
 from PIL import Image
 
 logger = get_logger(__name__)

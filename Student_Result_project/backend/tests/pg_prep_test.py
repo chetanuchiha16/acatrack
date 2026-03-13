@@ -14,7 +14,7 @@ def run_import():
     load_dotenv()
 
     from app_init import create_app
-    from models.data_prep import prepare_data
+    from services.data_prep import prepare_data
 
     app = create_app()
     with app.app_context():

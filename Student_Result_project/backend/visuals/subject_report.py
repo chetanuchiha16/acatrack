@@ -15,12 +15,12 @@ from reportlab.lib.pagesizes import letter
 # from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 import pathlib
-from models.fetch import sem_subjects
+from services.fetch_service import sem_subjects
 from logger_config import get_logger
 
 logger = get_logger(__name__)
 
-# from models import SubjectResult
+# from services.results_service import SubjectResult
 # from models.config import 
 def create_subject_report(subject_result):
     """
