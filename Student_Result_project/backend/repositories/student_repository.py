@@ -27,12 +27,9 @@ class StudentRepository:
     def get_distinct_batch_years(self) -> list:
         return self.db.query(StudentAuth.batch_year).distinct().all()
 
-    # --- Student (Academic/Personal Info) ---
-    def get_student_by_usn(self, usn: str) -> Student:
-        return self.db.query(Student).filter_by(usn=usn).first()
-        
-    def get_students_by_usns(self, usns: list) -> list[Student]:
-         return self.db.query(Student).filter(Student.usn.in_(usns)).all()
+    # --- Student Auth by Batch ---
+    def get_auths_by_batch(self, batch_year: int) -> list[StudentAuth]:
+        return self.db.query(StudentAuth).filter_by(batch_year=batch_year).all()
 
     # --- Academic Results & Subjects ---
     def get_results_by_usn(self, usn: str) -> list[tuple]:
