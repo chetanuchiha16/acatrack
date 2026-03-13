@@ -86,7 +86,7 @@ def process_mentor_upload_file(file, batch_year, db_session_maker, bcrypt, Mento
 
                 teacher = teacher_cache.get(mentor_name)
                 if not teacher:
-                    username = _unique_teacher_username()
+                    username = _unique_teacher_username(db.session)
                     plain_pw = (
                         f"{_safe_seed(mentor_name.split(' ', 1)[-1])}{username[-3:]}"
                     )
