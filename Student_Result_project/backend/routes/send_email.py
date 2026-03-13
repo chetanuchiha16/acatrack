@@ -16,8 +16,8 @@ from email.mime.text import MIMEText
 
 from flask import Blueprint, jsonify, request
 from logger_config import get_logger
-from models.batch_manager import bm
-from models.helpers import get_batch_year
+from services.batch_manager import bm
+from utils.helpers import get_batch_year
 from models.schema import Message
 from repositories.student_repository import StudentRepository
 from settings import settings

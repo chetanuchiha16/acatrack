@@ -8,7 +8,7 @@ from reportlab.lib.pagesizes import letter
 # from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 import pathlib
-# from models import SubjectResult
+# from services.results_service import SubjectResult
 # from models.config import 
 import matplotlib
 matplotlib.use('Agg')

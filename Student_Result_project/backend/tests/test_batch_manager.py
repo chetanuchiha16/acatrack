@@ -7,7 +7,7 @@ load_dotenv()
 # Ensure the backend directory is in the path so imports work
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from models.batch_manager import bm
+from services.batch_manager import bm
 from models.schema import AcademicResult, StudentAuth, Subject
 from app_init import create_app
 

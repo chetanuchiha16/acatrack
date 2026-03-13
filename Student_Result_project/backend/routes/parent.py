@@ -1,8 +1,8 @@
 from flask import Blueprint, session, jsonify
 from repositories.parent_repository import ParentRepository
 from repositories.mentor_repository import MentorRepository
-from models.batch_manager import bm, BatchManager
-from models.helpers import get_batch_year, get_jwt_payload, get_user_id
+from services.batch_manager import bm, BatchManager
+from utils.helpers import get_batch_year, get_jwt_payload, get_user_id
 parent_bp = Blueprint("parent", __name__)
   # decode JWT from Authorization header
 

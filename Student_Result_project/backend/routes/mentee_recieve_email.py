@@ -5,9 +5,9 @@ from .mentor_send_email import MentorMessage, StudentMessageStatus
 from repositories.student_repository import StudentRepository
 from repositories.mentor_repository import MentorRepository
 from datetime import datetime, timezone
-from models.helpers import get_batch_year
+from utils.helpers import get_batch_year
 student_email_bp = Blueprint("student_email", __name__)
-from models.batch_manager import BatchManager, bm
+from services.batch_manager import BatchManager, bm
 
 # ✅ Utility to serialize MentorMessage with required fields
 def serialize_message(db, msg, student, status_map=None, mentor_map=None):

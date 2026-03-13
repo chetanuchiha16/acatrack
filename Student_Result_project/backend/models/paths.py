@@ -1,7 +1,7 @@
 from pathlib import Path
 from settings import settings
 from logger_config import get_logger
-from .cloud_utils  import download_image_from_url
+from utils.cloud import download_image_from_url
 logger = get_logger(__name__)
 base_dir = Path(__file__).resolve().parent.parent
 # logger.debug("../Inputs")
@@ -33,7 +33,7 @@ def get_excel_path(batch_year: int) -> str:
 
 postgres_db_url = settings.database_url
 API_BASE="http://localhost:5000"
-# from models.batch_manager import BatchManager
+# from services.batch_manager import BatchManager
 
 # current_batch_db_path = None
 

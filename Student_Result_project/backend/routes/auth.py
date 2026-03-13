@@ -1,23 +1,11 @@
-from flask import Blueprint, request, jsonify, session, current_app
-from app_init import bcrypt
-from models import StudentAuth, Teacher, ParentAuth
-from models.batch_manager import BatchManager, bm
-import jwt
-import datetime
-from models.helpers import get_batch_year, get_jwt_payload
+from flask import Blueprint, request, jsonify, session
+from services.batch_manager import bm
+from utils.helpers import get_batch_year, get_jwt_payload
 from logger_config import get_logger
-from repositories.student_repository import StudentRepository
-from repositories.mentor_repository import MentorRepository
-from repositories.parent_repository import ParentRepository
+from services.auth_service import authenticate_user, update_fcm_token
 
 logger = get_logger(__name__)
 auth_bp = Blueprint("auth", __name__)
-
-
-def batch_from_usn(usn: str) -> int:
-    # Example: 1JS23CS001 → "23" → 2023
-    year_suffix = usn[3:5]   # "23"
-    return 2000 + int(year_suffix)
 
 @auth_bp.route("/batches", methods=["GET"])
 def list_batches():
@@ -30,94 +18,24 @@ def auth():
     who = request.json.get("who")
     username = request.json.get("username")
     password = request.json.get("password")
-    batch_year = None
-    user = None
+    provided_batch_year = request.json.get("batch_year")
 
-    # Determine batch_year
-    if who == "Student":
-        batch_year = batch_from_usn(username)
-    elif who == "Staff":
-        # Staff access all batches. Let them select actively loaded batch in the dashboard UI.
-        batch_year = request.json.get("batch_year")
-    elif who == "Parent":
-        # For parent, we will detect after loading student
-        batch_year = batch_from_usn(username)
+    result, error_msg, status_code = authenticate_user(who, username, password, provided_batch_year)
 
-    # Get batch-specific app & enter context
-    if batch_year is None:
-        # fallback: could try default batch 2024
-        batch_year = 2022
-    
-    with bm.session_scope(batch_year) as db:
-        student_repo = StudentRepository(db.session)
-        mentor_repo = MentorRepository(db.session)
-        parent_repo = ParentRepository(db.session)
+    if error_msg:
+        return jsonify({"error": error_msg}), status_code
 
-        if who == "Student":
-            user = student_repo.get_auth_by_usn(username)
-        elif who == "Staff":
-            user = mentor_repo.get_teacher_by_username(username)
-        elif who == "Parent":
-            user = parent_repo.get_auth_by_username(username)
-            logger.debug(f"user parent")
-            logger.debug(f"user and user.student: {user and user.student} {user} {batch_from_usn(user.student.usn) if user and user.student else None}")
-            if user and user.student:
+    # Set session data safely using the dict returned by service
+    session_data = result.get("session_data", {})
+    for k, v in session_data.items():
+        session[k] = v
 
-                batch_year = batch_from_usn(user.student.usn)
-                logger.debug(f"{batch_year} from parent auth")
-        else:
-            # fallback, try all
-            user = (student_repo.get_auth_by_usn(username) or
-                    mentor_repo.get_teacher_by_username(username) or
-                    parent_repo.get_auth_by_username(username))
-
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-
-        # Check password
-        if not bcrypt.check_password_hash(user.password, password):
-            return jsonify({"error": "Invalid credentials"}), 401
-
-        # Determine role if missing
-        if who is None:
-            if isinstance(user, StudentAuth):
-                who = "Student"
-            elif isinstance(user, Teacher):
-                who = "Staff"
-            elif isinstance(user, ParentAuth):
-                who = "Parent"
-
-        # Save session
-        session["user_id"] = username
-        session["who"] = who
-        session["batch_year"] = batch_year
-        session["name"] = getattr(user, "name", username)
-
-        # Mentor info
-        mentor_id = None
-        if who == "Staff":
-            mentor_id = getattr(user, "mentor_id", None)
-        elif who == "Parent" and user.student and user.student.mentor:
-            mentor_id = user.student.mentor.id
-        
-        session["mentor_id"] = mentor_id
-
-    payload = {
-        "id": username,
-        "name": getattr(user, "name", username),
-        "who": who,
-        "batch_year": batch_year,
-        "mentor_id": mentor_id,
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=8)  # expires in 8h
-    }
-
-    token = jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
-    return jsonify({"token": token})
+    return jsonify({"token": result["token"]}), 200
 
 
 @auth_bp.route("/auth/status", methods=["GET"])
 def auth_status():
-    payload = get_jwt_payload()  # decode JWT from Authorization header
+    payload = get_jwt_payload()
     if payload:
         return jsonify({
             "logged_in": True,
@@ -126,15 +44,12 @@ def auth_status():
             "who": payload.get("who"),
             "batch_year": payload.get("batch_year"),
             "mentor_id": payload.get("mentor_id"),
-            
-
         })
     else:
         return jsonify({
             "logged_in": False,
             "message": "Not logged in"
-        }), 401  # <- important
-
+        }), 401
 
 
 @auth_bp.route("/logout", methods=["POST"])
@@ -148,16 +63,8 @@ def save_fcm_token(usn):
     token = request.json.get("fcm_token")
     batch_year = get_batch_year()
 
-    if not token:
-        return jsonify({"error": "Missing token"}), 400
+    success, error_msg, status_code = update_fcm_token(usn, token, batch_year)
+    if not success:
+        return jsonify({"error": error_msg}), status_code
 
-    with bm.session_scope(batch_year) as db:
-        student_repo = StudentRepository(db.session)
-        student = student_repo.get_auth_by_usn(usn)
-        if not student:
-            return jsonify({"error": "Student not found"}), 404
-
-        student.fcm_token = token
-        db.session.commit()
-
-    return jsonify({"success": True})
+    return jsonify({"success": True}), 200

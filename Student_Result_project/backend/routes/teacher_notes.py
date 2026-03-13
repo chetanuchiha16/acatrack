@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request
 from werkzeug.utils import secure_filename
 import tempfile
-from models.cloud_utils import upload_pdf_to_supabase, SUPABASE_URL, SUPABASE_KEY, supabase, SUPABASE_BUCKET
-from models.helpers import get_batch_year
+from utils.cloud import upload_pdf_to_supabase, SUPABASE_URL, SUPABASE_KEY, supabase, SUPABASE_BUCKET
+from utils.helpers import get_batch_year
 from logger_config import get_logger
 
 

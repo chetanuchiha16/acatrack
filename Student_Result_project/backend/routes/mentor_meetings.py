@@ -3,8 +3,8 @@ from datetime import datetime
 
 from flask import Blueprint, jsonify, request
 from models import Meeting
-from models.batch_manager import bm
-from models.helpers import get_batch_year
+from services.batch_manager import bm
+from utils.helpers import get_batch_year
 from pydantic import BaseModel, Field, field_validator
 from repositories.mentor_repository import MentorRepository
 from routes.send_email import send_email_async

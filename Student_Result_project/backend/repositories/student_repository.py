@@ -1,5 +1,5 @@
 from models.schema import StudentAuth, AcademicResult, Subject, ParentAuth
-from models.student import Student
+from services.student_service import Student
 from sqlalchemy.orm import joinedload
 
 class StudentRepository:
