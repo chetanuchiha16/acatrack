@@ -4,7 +4,7 @@ from deep_translator import GoogleTranslator
 from extensions import cache
 from flask import Blueprint, jsonify, request
 from logger_config import get_logger
-from models import Student
+from services.student_service import Student
 from utils.helpers import get_batch_year
 
 from .ai_algorithms import (

@@ -9,7 +9,7 @@ from fpdf import FPDF
 # from reportlab.pdfgen import canvas
 import pathlib
 from models.paths import  pdf_dir, img_dir, get_logo_path
-# from models import SubjectResult
+# from services.results_service import SubjectResult
 # from models.config import 
 
 from fpdf.enums import XPos, YPos  # Import enums for positioning

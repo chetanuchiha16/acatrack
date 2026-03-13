@@ -3,7 +3,7 @@ import io
 
 from flask import Blueprint, jsonify, request, send_from_directory
 from logger_config import get_logger
-from models import (
+from services.student_service import (
     Student,  # reuse your existing Student class logic
 )
 from repositories.student_repository import StudentRepository

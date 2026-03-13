@@ -1,4 +1,4 @@
-# from models import University
+# from services.university_service import University
 # from models.paths import 
 
 # #temp function to print university class data

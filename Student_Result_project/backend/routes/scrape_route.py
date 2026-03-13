@@ -6,7 +6,7 @@ from services.scraper import setup_selenium
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from models import pdftoexcel
+from services import pdf_parser as pdftoexcel
 from utils.cloud import (
     upload_pdf_to_supabase,
     upload_excel_to_supabase,

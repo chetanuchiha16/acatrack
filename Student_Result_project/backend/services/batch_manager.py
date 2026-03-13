@@ -4,7 +4,7 @@ from pathlib import Path
 
 from app_init import create_app, db
 from logger_config import get_logger
-from models import University
+from services.university_service import University
 from services.data_prep import prepare_data as prep_data
 from services.fetch_service import SEMESTERS
 from models.paths import postgres_db_url

@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from pathlib import Path
 import zipfile, rarfile, threading, tempfile, shutil, uuid, time, json, re
-from models import pdftoexcel
+from services import pdf_parser as pdftoexcel
 from utils.cloud import (
     upload_pdf_to_supabase, 
     upload_excel_to_supabase,

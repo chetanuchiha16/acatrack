@@ -1,7 +1,7 @@
 from pathlib import Path
 from settings import settings
 from logger_config import get_logger
-from .cloud_utils  import download_image_from_url
+from utils.cloud import download_image_from_url
 logger = get_logger(__name__)
 base_dir = Path(__file__).resolve().parent.parent
 # logger.debug("../Inputs")
