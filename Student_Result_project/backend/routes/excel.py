@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request, send_file
 import tempfile
 import os
-from models.cloud_utils import upload_excel_to_supabase, download_excel_from_supabase
-from models.helpers import get_batch_year
+from utils.cloud import upload_excel_to_supabase, download_excel_from_supabase
+from utils.helpers import get_batch_year
 excel_bp = Blueprint("excel", __name__)
 
 @excel_bp.route("/excel", methods=["POST"])

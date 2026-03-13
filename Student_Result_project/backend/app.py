@@ -4,7 +4,7 @@ from app_init import create_app, db
 from firebase_admin import credentials
 from flask import jsonify
 from logger_config import get_logger
-from models.batch_manager import BatchManager
+from services.batch_manager import BatchManager
 from routes import register_routes
 from settings import settings
 from sqlalchemy import text

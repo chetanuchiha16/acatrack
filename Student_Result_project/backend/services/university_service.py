@@ -2,7 +2,7 @@ from extensions import db
 from logger_config import get_logger
 from models.paths import img_dir, postgres_db_url
 from models.schema import AcademicResult, StudentAuth, Subject
-from models.student import Student
+from services.student_service import Student
 
 logger = get_logger(__name__)
 

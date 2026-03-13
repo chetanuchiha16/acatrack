@@ -1,10 +1,10 @@
 from flask import Blueprint, request, jsonify, session, current_app
 from app_init import bcrypt
 from models import StudentAuth, Teacher, ParentAuth
-from models.batch_manager import BatchManager, bm
+from services.batch_manager import BatchManager, bm
 import jwt
 import datetime
-from models.helpers import get_batch_year, get_jwt_payload
+from utils.helpers import get_batch_year, get_jwt_payload
 from logger_config import get_logger
 from repositories.student_repository import StudentRepository
 from repositories.mentor_repository import MentorRepository

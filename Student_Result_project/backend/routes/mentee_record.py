@@ -2,11 +2,11 @@ from flask import Blueprint, request, jsonify, redirect, send_from_directory
 import fitz
 import os
 from models.paths import pdf_dir, img_dir, base_dir
-from models.cloud_utils import save_file, supabase, SUPABASE_BUCKET, SUPABASE_URL
-from models.batch_manager import bm
+from utils.cloud import save_file, supabase, SUPABASE_BUCKET, SUPABASE_URL
+from services.batch_manager import bm
 from repositories.student_repository import StudentRepository
 from logger_config import get_logger
-from models.helpers import get_batch_year
+from utils.helpers import get_batch_year
 import requests
 
 logger = get_logger(__name__)

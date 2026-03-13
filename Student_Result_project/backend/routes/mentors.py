@@ -8,8 +8,8 @@ from models import (
 )
 from repositories.student_repository import StudentRepository
 from repositories.mentor_repository import MentorRepository
-from models.batch_manager import bm
-from models.helpers import get_batch_year
+from services.batch_manager import bm
+from utils.helpers import get_batch_year
 from models.paths import pdf_dir
 from visuals import create_student_report
 

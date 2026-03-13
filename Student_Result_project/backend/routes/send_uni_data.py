@@ -7,7 +7,7 @@ from logger_config import get_logger
 
 logger = get_logger(__name__)
 
-from models.helpers import get_batch_year
+from utils.helpers import get_batch_year
 from extensions import cache
 
 uni_bp = Blueprint('uni', __name__)

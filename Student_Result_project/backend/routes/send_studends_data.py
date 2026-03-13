@@ -4,7 +4,7 @@ import io
 from flask import Blueprint, jsonify, request, send_from_directory
 from logger_config import get_logger
 from models import Student
-from models.helpers import get_batch_year
+from utils.helpers import get_batch_year
 from models.paths import pdf_dir, postgres_db_url
 from visuals import create_student_report
 

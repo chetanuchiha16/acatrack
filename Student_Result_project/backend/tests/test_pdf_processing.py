@@ -1,6 +1,6 @@
 import os
 import sys
-from models.pdftoexcel import process_single_pdf
+from services.pdf_parser import process_single_pdf
 import traceback
 
 def main():
