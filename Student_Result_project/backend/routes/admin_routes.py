@@ -66,23 +66,20 @@ def _fetch_source_rows(batch_year: int) -> list[tuple[str, str]]:
     students_set = set()
     with bm.session_scope(batch_year) as db:
         student_repo = StudentRepository(db.session)
-        students = student_repo.get_auth_by_batch(batch_year)
+        students = student_repo.get_auths_by_batch(batch_year)
         for s in students:
             students_set.add((s.usn, s.name))
 
     return list(students_set)
 
 
-    # this function has no session so we will remove the while loop inside the route instead.
-    # We will keep this for backward compatibility but it should not be used if we can avoid it.
-    from models.batch_manager import bm, get_batch_year
-    batch_year = get_batch_year()
-    with bm.session_scope(batch_year) as db:
-        mentor_repo = MentorRepository(db.session)
-        while True:
-            candidate = str(random.randint(1000, 1010))
-            if not mentor_repo.get_teacher_by_username(candidate):
-                return candidate
+def _unique_teacher_username() -> str:
+    from extensions import db
+    from models.schema import Teacher
+    while True:
+        candidate = str(random.randint(1000, 1010))
+        if not db.session.query(Teacher).filter_by(username=candidate).first():
+            return candidate
 
 
 # ---------- Routes ----------

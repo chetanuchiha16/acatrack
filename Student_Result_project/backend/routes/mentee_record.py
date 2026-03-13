@@ -3,6 +3,7 @@ import fitz
 import os
 from models.paths import pdf_dir, img_dir, base_dir
 from models.cloud_utils import save_file, supabase, SUPABASE_BUCKET, SUPABASE_URL
+from models.batch_manager import bm
 from repositories.student_repository import StudentRepository
 from logger_config import get_logger
 from models.helpers import get_batch_year
@@ -174,7 +175,8 @@ def list_mentor_pdfs(mentor_id):
                 except requests.RequestException:
                     pass
             else:
-                if filename in pdf_names:
+                local_pdfs = [f for f in os.listdir(UPLOAD_FOLDER) if f.lower().endswith(".pdf")]
+                if filename in local_pdfs:
                     files.append({
                         "usn": mentee.usn,
                         "name": mentee.name,
