@@ -1,10 +1,23 @@
-// useAuthStore.js
+// useAuthStore.ts
 import { create } from "zustand";
-import axios from "axios";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
 
-const useAuthStore = create((set) => ({
+interface AuthUser {
+    logged_in: boolean;
+    who: string;
+    [key: string]: unknown;
+}
+
+interface AuthState {
+    user: AuthUser | null;
+    loading: boolean;
+    error: string | null;
+    fetchAuthStatus: () => Promise<void>;
+    clearAuth: () => void;
+}
+
+const useAuthStore = create<AuthState>((set) => ({
     user: null,
     loading: false,
     error: null,
@@ -13,15 +26,16 @@ const useAuthStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const res = await axiosInstance.get(`${API_BASE}/auth/status`, {
-                withCredentials: true, // IMPORTANT: keep session cookie
+                withCredentials: true,
             });
             if (res.data.logged_in) {
                 set({ user: res.data, loading: false });
             } else {
                 set({ user: null, loading: false });
             }
-        } catch (err) {
-            set({ error: err.message, loading: false });
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Unknown error";
+            set({ error: message, loading: false });
         }
     },
 
