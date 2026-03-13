@@ -1,4 +1,4 @@
-# from models.fetch import fetch_student_data
+# from services.fetch_service import fetch_student_data
 # from models import Student
 # import sqlite3
 # from models.paths import 

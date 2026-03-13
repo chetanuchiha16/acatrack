@@ -1,4 +1,4 @@
-from models.cloud_utils import SUPABASE_BUCKET, supabase
+from utils.cloud import SUPABASE_BUCKET, supabase
 
 if supabase:
     res = supabase.storage.from_(SUPABASE_BUCKET).list("pdfs")

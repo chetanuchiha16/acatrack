@@ -1,5 +1,5 @@
 from logger_config import get_logger
-from models.batch_manager import bm
+from services.batch_manager import bm
 
 from backend.models.schema import db
 

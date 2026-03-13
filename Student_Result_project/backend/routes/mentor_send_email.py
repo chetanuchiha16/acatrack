@@ -1,8 +1,8 @@
 from firebase_admin import messaging
 from flask import Blueprint, jsonify, request
 from models import Mentor, MentorMessage, StudentMessageStatus
-from models.batch_manager import bm
-from models.helpers import get_batch_year
+from services.batch_manager import bm
+from utils.helpers import get_batch_year
 from repositories.mentor_repository import MentorRepository
 from repositories.student_repository import StudentRepository
 from routes.send_email import send_email_async

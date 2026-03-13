@@ -2,12 +2,12 @@ from flask import Blueprint, request, jsonify
 from threading import Thread
 import os
 import time
-from models.webscrape import setup_selenium
+from services.scraper import setup_selenium
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from models import pdftoexcel
-from models.cloud_utils import (
+from utils.cloud import (
     upload_pdf_to_supabase,
     upload_excel_to_supabase,
     download_excel_from_supabase,

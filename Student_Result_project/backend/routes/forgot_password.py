@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from app_init import bcrypt
 from flask import Blueprint, jsonify, request, session
 from models import PasswordResetToken
-from models.batch_manager import bm
+from services.batch_manager import bm
 from models.paths import API_BASE
 from pydantic import BaseModel, Field
 from repositories.mentor_repository import MentorRepository

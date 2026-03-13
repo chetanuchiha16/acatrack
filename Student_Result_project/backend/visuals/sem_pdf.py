@@ -10,7 +10,7 @@ from reportlab.pdfgen import canvas
 import pathlib
 from models import SubjectResult
 from models.paths import pdf_dir,img_dir, get_logo_path
-from models.fetch import sem_subjects
+from services.fetch_service import sem_subjects
 import io
 from logger_config import get_logger
 

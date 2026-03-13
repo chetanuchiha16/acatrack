@@ -29,8 +29,8 @@ from repositories.mentor_repository import MentorRepository
 from models.schema import ExportCache
 from services.admin_service import process_mentor_upload_file, process_email_upload_file
 from sqlalchemy.orm import joinedload
-from models.batch_manager import bm
-from models.cloud_utils import download_excel_from_supabase, upload_excel_to_supabase
+from services.batch_manager import bm
+from utils.cloud import download_excel_from_supabase, upload_excel_to_supabase
 from settings import settings
 from werkzeug.utils import secure_filename
 

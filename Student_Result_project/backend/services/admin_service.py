@@ -1,6 +1,6 @@
 # backend/services/admin_service.py
 from logger_config import get_logger
-from models.batch_manager import bm
+from services.batch_manager import bm
 from models.schema import ExportCache
 import tempfile
 import pandas as pd

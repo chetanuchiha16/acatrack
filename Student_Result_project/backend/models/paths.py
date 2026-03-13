@@ -33,7 +33,7 @@ def get_excel_path(batch_year: int) -> str:
 
 postgres_db_url = settings.database_url
 API_BASE="http://localhost:5000"
-# from models.batch_manager import BatchManager
+# from services.batch_manager import BatchManager
 
 # current_batch_db_path = None
 

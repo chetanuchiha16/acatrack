@@ -3,7 +3,7 @@ from models import University, SubjectResult
 from models.paths import  pdf_dir, postgres_db_url
 from visuals import create_subject_report
 import os
-from models.helpers import get_batch_year
+from utils.helpers import get_batch_year
 from logger_config import get_logger
 from extensions import cache
 

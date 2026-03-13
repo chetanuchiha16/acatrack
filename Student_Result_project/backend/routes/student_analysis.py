@@ -10,7 +10,7 @@ import io
 
 import matplotlib.pyplot as plt
 from models import Student
-from models.helpers import get_batch_year
+from utils.helpers import get_batch_year
 from sklearn.linear_model import LinearRegression
 from visuals import create_student_report
 

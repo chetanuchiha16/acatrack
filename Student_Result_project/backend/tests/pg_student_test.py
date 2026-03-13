@@ -1,4 +1,4 @@
-from models.student import Student
+from services.student_service import Student
 from app_init import create_app
 from logger_config import get_logger
 
