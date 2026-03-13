@@ -197,10 +197,9 @@ def download_mentee_pdf(mentor_id, usn):
         student = student_repo.get_auth_by_usn(usn)
         if not student:
             return jsonify({"error": "Student not found"}), 404
-    if student.mentor_id != mentor_id:
-        return jsonify({"error": "Access denied"}), 403
-
-    filename = get_mentee_pdf_filename(student)
+        if student.mentor_id != mentor_id:
+            return jsonify({"error": "Access denied"}), 403
+        filename = get_mentee_pdf_filename(student)  # extract while session is open
     
     if supabase:
         url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/pdfs/{filename}"

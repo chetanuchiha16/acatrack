@@ -337,22 +337,16 @@ def upload_mentors():
         mentor_repo = MentorRepository(db.session)
         # Pre-fetch students, mentors and teachers to avoid N+1
         usns_in_df = [str(usn).strip() for usn in df["student_usn"] if str(usn).strip()]
-        existing_students = db.session.query(StudentAuth).filter(
-            StudentAuth.usn.in_(usns_in_df)
-        ).all()
+        existing_students = student_repo.get_auths_by_usns(usns_in_df)
         student_map = {s.usn: s for s in existing_students}
 
         mentor_names_in_df = list(
             set([str(name).strip() for name in df["Mentor_Name"] if str(name).strip()])
         )
-        existing_mentors = db.session.query(Mentor).filter(
-            Mentor.name.in_(mentor_names_in_df)
-        ).all()
+        existing_mentors = mentor_repo.get_mentors_by_names_filter(mentor_names_in_df)
         mentor_cache = {m.name: m for m in existing_mentors}
 
-        existing_teachers = db.session.query(Teacher).filter(
-            Teacher.name.in_(mentor_names_in_df)
-        ).all()
+        existing_teachers = mentor_repo.get_teachers_by_names(mentor_names_in_df)
         teacher_cache = {t.name: t for t in existing_teachers}
 
         for _, row in df.iterrows():

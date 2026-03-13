@@ -24,6 +24,13 @@ class StudentRepository:
     def count_by_batch(self, batch_year: int) -> int:
         return self.db.query(StudentAuth).filter_by(batch_year=batch_year).count()
 
+    def get_all(self) -> list[StudentAuth]:
+        return self.db.query(StudentAuth).all()
+
+    def get_all_with_parent_email(self) -> list[StudentAuth]:
+        """Returns all students that have a parent_email set."""
+        return self.db.query(StudentAuth).filter(StudentAuth.parent_email != None).all()
+
     def get_distinct_batch_years(self) -> list:
         return self.db.query(StudentAuth.batch_year).distinct().all()
 

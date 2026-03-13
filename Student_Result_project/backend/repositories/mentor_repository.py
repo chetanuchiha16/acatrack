@@ -14,6 +14,10 @@ class MentorRepository:
 
     def get_all_by_names(self, names: list) -> list[Mentor]:
         return self.db.query(Mentor).filter(Mentor.name.in_(names)).all()
+
+    def get_mentors_by_names_filter(self, names: list) -> list[Mentor]:
+        """Alias for semantic clarity used in bulk upload routes."""
+        return self.get_all_by_names(names)
         
     def get_all(self) -> list[Mentor]:
         return self.db.query(Mentor).all()
