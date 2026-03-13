@@ -1,15 +1,13 @@
-from flask import Blueprint, request, jsonify, session
-from models import StudentAuth  # your existing model
-from repositories.student_repository import StudentRepository
-from models.batch_manager import BatchManager, bm
-from app_init import db          # your DB instance
 import smtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import os
-from datetime import datetime, timezone
-from models.helpers import get_batch_year
+from email.mime.text import MIMEText
+
+from flask import Blueprint, jsonify, request
 from logger_config import get_logger
+from models.batch_manager import bm
+from models.helpers import get_batch_year
+from models.schema import Message  # your existing model
+from repositories.student_repository import StudentRepository
 from settings import settings
 
 logger = get_logger(__name__)
@@ -18,27 +16,6 @@ email_bp = Blueprint("email", __name__)
 
 EMAIL_ADDRESS = settings.a_email
 EMAIL_PASSWORD = settings.email_pass  # App password
-# -----------------------------
-# Message Model (store messages)
-# -----------------------------
-class Message(db.Model):
-    __tablename__ = "messages"
-    id = db.Column(db.Integer, primary_key=True)
-    usn = db.Column(db.String(50), nullable=True)  # null = broadcast
-    recipient_type = db.Column(db.String(20), nullable=False)  # student/parent
-    subject = db.Column(db.String(255), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "usn": self.usn,
-            "recipientType": self.recipient_type,
-            "subject": self.subject,
-            "message": self.message,
-            "createdAt": self.created_at.isoformat(),
-        }
 
 
 # -----------------------------
@@ -73,12 +50,12 @@ def send_email_to_all():
     recipient_type = data.get("recipientType", "student").lower()
     subject = data.get("subject")
     message = data.get("message")
-    
+
     if not subject or not message:
         return jsonify({"error": "Both 'subject' and 'message' are required"}), 400
 
     try:
-        batch_year = get_batch_year()   
+        batch_year = get_batch_year()
         with bm.session_scope(batch_year) as db:
             student_repo = StudentRepository(db.session)
 
@@ -98,16 +75,20 @@ def send_email_to_all():
                     failed.append(getattr(person, "usn", "unknown"))
                     continue
 
-                name = getattr(person, name_attr, None) or getattr(person, "name", "Student")
+                name = getattr(person, name_attr, None) or getattr(
+                    person, "name", "Student"
+                )
                 personalized_body = f"Hello {name},\n\n{message}"
                 success = send_email(to_email, subject, personalized_body)
                 if not success:
                     failed.append(getattr(person, "usn", "unknown"))
 
-            return jsonify({
-                "message": f"Emails sent to all {recipient_type}s",
-                "failed_usns": failed
-            }), (207 if failed else 200)
+            return jsonify(
+                {
+                    "message": f"Emails sent to all {recipient_type}s",
+                    "failed_usns": failed,
+                }
+            ), (207 if failed else 200)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -120,11 +101,11 @@ def send_email_to_student():
     subject = data.get("subject")
     message = data.get("message")
     recipient_type = data.get("recipientType", "student").lower()
-    batch_year = get_batch_year()   
+    batch_year = get_batch_year()
 
     if not usn or not subject or not message:
         return jsonify({"error": "USN, subject and message are required"}), 400
-    
+
     with bm.session_scope(batch_year) as db:
         student_repo = StudentRepository(db.session)
         student = student_repo.get_auth_by_usn(usn)
@@ -135,7 +116,9 @@ def send_email_to_student():
             to_email = getattr(student, "parent_email", None)
             name = getattr(student, "parent_name", None) or student.name
             if not to_email:
-                return jsonify({"error": "Parent email not found for this student"}), 404
+                return jsonify(
+                    {"error": "Parent email not found for this student"}
+                ), 404
         else:
             to_email = student.student_email
             name = student.name
@@ -145,7 +128,9 @@ def send_email_to_student():
         try:
             success = send_email(to_email, subject, personalized_body)
             if success:
-                return jsonify({"message": f"Email sent to {recipient_type} with USN {usn}"}), 200
+                return jsonify(
+                    {"message": f"Email sent to {recipient_type} with USN {usn}"}
+                ), 200
             else:
                 return jsonify({"error": "Failed to send email"}), 500
         except Exception as e:
@@ -158,7 +143,7 @@ def send_email_to_student():
 @email_bp.route("/messages", methods=["POST"])
 def save_message():
     data = request.get_json() or {}
-    batch_year = get_batch_year()   
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         new_msg = Message(
             usn=data.get("usn"),
@@ -173,7 +158,7 @@ def save_message():
 
 @email_bp.route("/messages", methods=["GET"])
 def get_messages():
-    batch_year = get_batch_year()   
+    batch_year = get_batch_year()
     logger.debug(f"{batch_year} from get_messages")
     with bm.session_scope(batch_year) as db:
         messages = db.session.query(Message).order_by(Message.created_at.desc()).all()
@@ -182,7 +167,7 @@ def get_messages():
 
 @email_bp.route("/messages/<int:msg_id>", methods=["DELETE"])
 def delete_message(msg_id):
-    batch_year = get_batch_year()   
+    batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         msg = db.session.query(Message).get(msg_id)
         if not msg:
