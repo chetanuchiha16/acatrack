@@ -83,13 +83,11 @@ def send_email_to_all():
             student_repo = StudentRepository(db.session)
 
             if recipient_type == "parent":
-                # Assuming get_all pulls all, then we just filter memory 
-                # OR we could add a `get_all_with_parents()` - for now we use query
-                recipients = db.session.query(StudentAuth).filter(StudentAuth.parent_email != None).all()
+                recipients = student_repo.get_all_with_parent_email()
                 email_attr = "parent_email"
                 name_attr = "parent_name"
             else:
-                recipients = db.session.query(StudentAuth).all()
+                recipients = student_repo.get_all()
                 email_attr = "student_email"
                 name_attr = "name"
 
