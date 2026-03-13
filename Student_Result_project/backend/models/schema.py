@@ -236,3 +236,26 @@ class ExportCache(db.Model):
     batch_year = db.Column(db.Integer, nullable=False, unique=True)
     csv_content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+# -----------------------------
+# Message Model (store messages)
+# -----------------------------
+class Message(db.Model):
+    __tablename__ = "messages"
+    id = db.Column(db.Integer, primary_key=True)
+    usn = db.Column(db.String(50), nullable=True)  # null = broadcast
+    recipient_type = db.Column(db.String(20), nullable=False)  # student/parent
+    subject = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "usn": self.usn,
+            "recipientType": self.recipient_type,
+            "subject": self.subject,
+            "message": self.message,
+            "createdAt": self.created_at.isoformat(),
+        }
