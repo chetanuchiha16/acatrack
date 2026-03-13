@@ -1,4 +1,16 @@
+"""
+Email-related routes.
+
+Key improvements:
+- Pydantic validation on all request bodies (raises 422 on bad input)
+- Non-blocking email: SMTP calls run in background threads so the route
+  returns immediately instead of waiting 2-5s for SMTP roundtrip
+- Message model lives in models/schema.py, not here
+"""
+
 import smtplib
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -6,27 +18,35 @@ from flask import Blueprint, jsonify, request
 from logger_config import get_logger
 from models.batch_manager import bm
 from models.helpers import get_batch_year
-from models.schema import Message  # your existing model
+from models.schema import Message
 from repositories.student_repository import StudentRepository
 from settings import settings
+from validators.email_validators import (
+    SaveMessageRequest,
+    SendAllEmailRequest,
+    SendStudentEmailRequest,
+)
 
 logger = get_logger(__name__)
 
 email_bp = Blueprint("email", __name__)
 
 EMAIL_ADDRESS = settings.a_email
-EMAIL_PASSWORD = settings.email_pass  # App password
+EMAIL_PASSWORD = settings.email_pass
+
+# Thread pool for fire-and-forget email sending (max 5 concurrent SMTP connections)
+_email_executor = ThreadPoolExecutor(max_workers=5, thread_name_prefix="email_worker")
 
 
 # -----------------------------
 # Email Sending Utility
 # -----------------------------
-def send_email(to_email, subject, body):
+def _send_smtp(to_email: str, subject: str, body: str) -> bool:
+    """Blocking SMTP call — always run this inside the executor, never on the main thread."""
     msg = MIMEMultipart()
     msg["From"] = EMAIL_ADDRESS
     msg["To"] = to_email
     msg["Subject"] = subject
-
     msg.attach(MIMEText(body, "plain"))
 
     try:
@@ -34,10 +54,28 @@ def send_email(to_email, subject, body):
             server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.send_message(msg)
+        logger.info(f"Email sent to {to_email}")
         return True
     except Exception as e:
-        logger.debug("Email send error:", e)
+        logger.error(f"SMTP error sending to {to_email}: {e}")
         return False
+
+
+def send_email(to_email: str, subject: str, body: str) -> bool:
+    """
+    Synchronous wrapper kept for caller compatibility (mentor_send_email, etc.).
+    Runs the SMTP call on the current thread — only use from routes that
+    already handle async themselves (e.g. mentor_send_email).
+    """
+    return _send_smtp(to_email, subject, body)
+
+
+def send_email_async(to_email: str, subject: str, body: str) -> None:
+    """
+    Fire-and-forget: submits SMTP call to the thread pool and returns immediately.
+    The route does NOT wait for the email to be sent.
+    """
+    _email_executor.submit(_send_smtp, to_email, subject, body)
 
 
 # -----------------------------
@@ -45,96 +83,69 @@ def send_email(to_email, subject, body):
 # -----------------------------
 @email_bp.route("/send-email/all", methods=["POST"])
 def send_email_to_all():
-    data = request.get_json() or {}
+    # Pydantic validation — raises ValidationError (→ 422) on bad input
+    body = SendAllEmailRequest.model_validate(request.get_json() or {})
 
-    recipient_type = data.get("recipientType", "student").lower()
-    subject = data.get("subject")
-    message = data.get("message")
+    batch_year = get_batch_year()
+    with bm.session_scope(batch_year) as db:
+        student_repo = StudentRepository(db.session)
 
-    if not subject or not message:
-        return jsonify({"error": "Both 'subject' and 'message' are required"}), 400
+        if body.recipientType == "parent":
+            recipients = student_repo.get_all_with_parent_email()
+            email_attr = "parent_email"
+            name_attr = "parent_name"
+        else:
+            recipients = student_repo.get_all()
+            email_attr = "student_email"
+            name_attr = "name"
 
-    try:
-        batch_year = get_batch_year()
-        with bm.session_scope(batch_year) as db:
-            student_repo = StudentRepository(db.session)
+        # Snapshot data before session closes — avoid DetachedInstanceError
+        payloads = []
+        for person in recipients:
+            to_email = getattr(person, email_attr, None)
+            if not to_email:
+                continue
+            name = getattr(person, name_attr, None) or getattr(person, "name", "Student")
+            payloads.append((to_email, name))
 
-            if recipient_type == "parent":
-                recipients = student_repo.get_all_with_parent_email()
-                email_attr = "parent_email"
-                name_attr = "parent_name"
-            else:
-                recipients = student_repo.get_all()
-                email_attr = "student_email"
-                name_attr = "name"
+    # Fire emails asynchronously — session is already closed, data is snaphotted
+    for to_email, name in payloads:
+        personalized_body = f"Hello {name},\n\n{body.message}"
+        send_email_async(to_email, body.subject, personalized_body)
 
-            failed = []
-            for person in recipients:
-                to_email = getattr(person, email_attr, None)
-                if not to_email:
-                    failed.append(getattr(person, "usn", "unknown"))
-                    continue
-
-                name = getattr(person, name_attr, None) or getattr(
-                    person, "name", "Student"
-                )
-                personalized_body = f"Hello {name},\n\n{message}"
-                success = send_email(to_email, subject, personalized_body)
-                if not success:
-                    failed.append(getattr(person, "usn", "unknown"))
-
-            return jsonify(
-                {
-                    "message": f"Emails sent to all {recipient_type}s",
-                    "failed_usns": failed,
-                }
-            ), (207 if failed else 200)
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return jsonify({
+        "message": f"Queued emails to {len(payloads)} {body.recipientType}(s)",
+        "queued": len(payloads),
+    }), 202  # 202 Accepted = request received, work is in progress
 
 
 @email_bp.route("/send-email/student", methods=["POST"])
 def send_email_to_student():
-    data = request.get_json()
-    usn = data.get("usn")
-    subject = data.get("subject")
-    message = data.get("message")
-    recipient_type = data.get("recipientType", "student").lower()
+    body = SendStudentEmailRequest.model_validate(request.get_json() or {})
+
     batch_year = get_batch_year()
-
-    if not usn or not subject or not message:
-        return jsonify({"error": "USN, subject and message are required"}), 400
-
     with bm.session_scope(batch_year) as db:
         student_repo = StudentRepository(db.session)
-        student = student_repo.get_auth_by_usn(usn)
+        student = student_repo.get_auth_by_usn(body.usn)
         if not student:
             return jsonify({"error": "Student not found"}), 404
 
-        if recipient_type == "parent":
+        if body.recipientType == "parent":
             to_email = getattr(student, "parent_email", None)
             name = getattr(student, "parent_name", None) or student.name
             if not to_email:
-                return jsonify(
-                    {"error": "Parent email not found for this student"}
-                ), 404
+                return jsonify({"error": "Parent email not found for this student"}), 404
         else:
             to_email = student.student_email
             name = student.name
 
-        personalized_body = f"Hello {name},\n\n{message}"
+    # Fire email asynchronously; session already closed
+    personalized_body = f"Hello {name},\n\n{body.message}"
+    send_email_async(to_email, body.subject, personalized_body)
 
-        try:
-            success = send_email(to_email, subject, personalized_body)
-            if success:
-                return jsonify(
-                    {"message": f"Email sent to {recipient_type} with USN {usn}"}
-                ), 200
-            else:
-                return jsonify({"error": "Failed to send email"}), 500
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+    return jsonify({
+        "message": f"Email queued for {body.recipientType} with USN {body.usn}"
+    }), 202
 
 
 # -----------------------------
@@ -142,14 +153,14 @@ def send_email_to_student():
 # -----------------------------
 @email_bp.route("/messages", methods=["POST"])
 def save_message():
-    data = request.get_json() or {}
+    body = SaveMessageRequest.model_validate(request.get_json() or {})
     batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
         new_msg = Message(
-            usn=data.get("usn"),
-            recipient_type=data.get("recipientType"),
-            subject=data.get("subject"),
-            message=data.get("message"),
+            usn=body.usn,
+            recipient_type=body.recipientType,
+            subject=body.subject,
+            message=body.message,
         )
         db.session.add(new_msg)
         db.session.commit()

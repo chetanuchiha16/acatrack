@@ -50,4 +50,7 @@ def create_app(batch_year=None, postgres_url=None):
     # Import models here so Flask-Migrate sees them
     from models import StudentAuth, Teacher, Mentor, ParentAuth, Meeting, PasswordResetToken, StudentMessageStatus, MentorMessage
 
+    from errors import register_error_handlers
+    register_error_handlers(app)
+
     return app
