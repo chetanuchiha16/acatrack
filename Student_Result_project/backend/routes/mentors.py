@@ -1,17 +1,8 @@
-import base64
-import io
-
 from flask import Blueprint, jsonify, request, send_from_directory
 from logger_config import get_logger
-from services.student_service import (
-    Student,  # reuse your existing Student class logic
-)
-from repositories.student_repository import StudentRepository
-from repositories.mentor_repository import MentorRepository
-from services.batch_manager import bm
 from utils.helpers import get_batch_year
 from models.paths import pdf_dir
-from visuals import create_student_report
+from services.mentor_service import get_mentor_students_data, generate_mentee_chart_base64
 
 logger = get_logger(__name__)
 
@@ -24,77 +15,12 @@ def get_mentor_students():
     semester = request.args.get("semester")
     batch_year = request.args.get("batch_year") or get_batch_year()
 
-    if not mentor_id or not semester:
-        return jsonify({"error": "mentor_id and semester are required"}), 400
+    results, status_code, error_msg = get_mentor_students_data(mentor_id, semester, batch_year)
+    
+    if error_msg:
+        return jsonify({"error": error_msg}), status_code
 
-    try:
-        with bm.session_scope(batch_year) as db:
-            mentor_repo = MentorRepository(db.session)
-            student_repo = StudentRepository(db.session)
-
-            mentor = mentor_repo.get_by_id(mentor_id)
-            if not mentor:
-                return jsonify({"error": "Mentor not found"}), 404
-
-            students = student_repo.get_mentees_by_mentor_and_batch(mentor_id, batch_year)
-            usns = [s.usn for s in students]
-            bulk_students = Student.bulk_fetch(usns, semester, batch_year)
-            results = []
-
-            for s in students:
-                try:
-                    student = bulk_students.get(s.usn)
-                    if not student:
-                        raise ValueError(f"No student data found for USN {s.usn}")
-
-                    # Generate PDF in memory
-                    pdf_bytes = create_student_report(student)  # returns bytes
-                    pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
-                    pdf_url = f"data:application/pdf;base64,{pdf_base64}"
-
-                    results.append(
-                        {
-                            "name": student.name,
-                            "usn": student.usn,
-                            "total_marks": student.total_marks,
-                            "percentage": student.percentage,
-                            "credits": student.obtained_credits,
-                            "sgpa": student.sgpa,
-                            "cgpa": student.cgpa,
-                            "subjects": [
-                                {
-                                    "subject_name": subject_name,
-                                    "code": code,
-                                    "ia": ia,
-                                    "see": see,
-                                    "total": ia + see,
-                                    "credit": credit,
-                                    "status": status,
-                                }
-                                for code, subject_name, ia, see, credit, status in zip(
-                                    student.subject_codes,
-                                    student.subject_names,
-                                    student.ia_marks,
-                                    student.see_marks,
-                                    student.credits,
-                                    student.pass_fail,
-                                )
-                            ],
-                            "pdf_url": pdf_url,  # inline Base64 PDF
-                        }
-                    )
-
-                except Exception as e:
-                    logger.debug(
-                        f"[WARNING] Student data not found for USN {s.usn}: {e}"
-                    )
-                    results.append({"usn": s.usn, "error": "Student data not found"})
-
-            return jsonify(results)
-
-    except Exception as e:
-        logger.debug(f"[ERROR] {e}")
-        return jsonify({"error": str(e)}), 400
+    return jsonify(results)
 
 
 # Route to download mentee PDF reports
@@ -110,30 +36,9 @@ def get_mentee_chart():
     semester = request.args.get("semester")
     batch_year = request.args.get("batch_year") or get_batch_year()
 
-    if not usn or not semester:
-        return jsonify({"error": "usn and semester are required"}), 400
+    image_url, status_code, error_msg = generate_mentee_chart_base64(usn, semester, batch_year)
+    
+    if error_msg:
+        return jsonify({"error": error_msg}), status_code
 
-    try:
-        with bm.session_scope(batch_year) as db:
-            # Create Student object
-            student = Student(usn=usn, semester=semester, batch_year=batch_year)
-
-            # Generate figure in memory
-            fig = student.plot_subject_marks()
-
-            # Convert figure to in-memory PNG
-            buf = io.BytesIO()
-            fig.savefig(buf, format="png")
-            buf.seek(0)
-            img_base64 = base64.b64encode(buf.read()).decode("utf-8")
-
-            # Close figure to free memory
-            import matplotlib.pyplot as plt
-            plt.close(fig)
-
-            # Return inline Base64 image
-            return jsonify({"image": f"data:image/png;base64,{img_base64}"})
-
-    except Exception as e:
-        logger.debug(f"[ERROR] {e}")
-        return jsonify({"error": str(e)}), 400
+    return jsonify({"image": image_url})
