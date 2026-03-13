@@ -31,6 +31,10 @@ class StudentRepository:
     def get_auths_by_batch(self, batch_year: int) -> list[StudentAuth]:
         return self.db.query(StudentAuth).filter_by(batch_year=batch_year).all()
 
+    def get_auth_by_batch(self, batch_year: int) -> list[StudentAuth]:
+        """Alias for get_auths_by_batch."""
+        return self.get_auths_by_batch(batch_year)
+
     # --- Academic Results & Subjects ---
     def get_results_by_usn(self, usn: str) -> list[tuple]:
         return self.db.query(AcademicResult, Subject).join(Subject).join(StudentAuth).filter(StudentAuth.usn == usn).all()
