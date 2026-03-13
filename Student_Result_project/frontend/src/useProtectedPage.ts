@@ -1,10 +1,11 @@
+// useProtectedPage.ts
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "./useAuthStore";
 import useStudentStore from "./useStudentStore";
 
 // role param = "Student" | "Parent" | "Staff" | null
-export default function useProtectedPage(role = null) {
+export default function useProtectedPage(role: string | null = null) {
   const navigate = useNavigate();
   const { user, fetchAuthStatus, loading: authLoading } = useAuthStore();
   const {
