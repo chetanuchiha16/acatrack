@@ -1,6 +1,14 @@
 import React from "react";
 
-export default function LoadingSpinner({ message = "Loading...", fullScreen = true }) {
+interface LoadingSpinnerProps {
+    message?: string;
+    fullScreen?: boolean;
+}
+
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
+    message = "Loading...", 
+    fullScreen = true 
+}) => {
     const content = (
         <div className="flex flex-col items-center justify-center space-y-4">
             <div className="relative w-16 h-16">
@@ -28,4 +36,6 @@ export default function LoadingSpinner({ message = "Loading...", fullScreen = tr
             {content}
         </div>
     );
-}
+};
+
+export default LoadingSpinner;
