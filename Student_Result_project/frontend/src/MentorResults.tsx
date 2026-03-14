@@ -1,14 +1,40 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
-export default function MentorResults({ mentor_id, batchYear }) {
-    const [semester, setSemester] = useState("sem1");
-    const [mentees, setMentees] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [selectedMentee, setSelectedMentee] = useState(null);
-    const [chartData, setChartData] = useState("");
-    const [expandedMentees, setExpandedMentees] = useState({});
-    const [searchTerm, setSearchTerm] = useState(""); // <-- for live search
+
+interface Subject {
+    code: string;
+    subject_name: string;
+    ia: number;
+    see: number;
+    total: number;
+    credit: number;
+    status: string;
+}
+
+interface MenteeResult {
+    name: string;
+    usn: string;
+    total_marks: number;
+    sgpa: number;
+    cgpa: number;
+    pdf_url: string;
+    subjects: Subject[];
+}
+
+interface MentorResultsProps {
+    mentor_id?: string;
+    batchYear: string;
+}
+
+const MentorResults: React.FC<MentorResultsProps> = ({ mentor_id, batchYear }) => {
+    const [semester, setSemester] = useState<string>("sem1");
+    const [mentees, setMentees] = useState<MenteeResult[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [selectedMentee, setSelectedMentee] = useState<string | null>(null);
+    const [chartData, setChartData] = useState<string>("");
+    const [expandedMentees, setExpandedMentees] = useState<Record<string, boolean>>({});
+    const [searchTerm, setSearchTerm] = useState<string>("");
 
     useEffect(() => {
         if (mentor_id && batchYear) fetchMentees();
@@ -21,7 +47,7 @@ export default function MentorResults({ mentor_id, batchYear }) {
                 `${API_BASE}/auth/Staff/Mentor/result?mentor_id=${mentor_id}&semester=${semester}&batch_year=${batchYear}`,
                 {}
             );
-            const data = await res.json();
+            const data: MenteeResult[] = await res.json();
             setMentees(data);
         } catch (err) {
             console.error(err);
@@ -31,14 +57,13 @@ export default function MentorResults({ mentor_id, batchYear }) {
         }
     };
 
-    const fetchChart = async (usn) => {
+    const fetchChart = async (usn: string) => {
         try {
             const res = await fetchWithAuth(
                 `${API_BASE}/auth/Staff/Mentor/chart?usn=${usn}&semester=${semester}&batch_year=${batchYear}`,
                 {}
             );
             const data = await res.json();
-            // console.log("Chart response:", data);  // <--- check this
             setChartData(data.image);
             setSelectedMentee(usn);
         } catch (err) {
@@ -47,7 +72,7 @@ export default function MentorResults({ mentor_id, batchYear }) {
         }
     };
 
-    const toggleExpand = (usn) => {
+    const toggleExpand = (usn: string) => {
         setExpandedMentees((prev) => ({
             ...prev,
             [usn]: !prev[usn],
@@ -126,29 +151,6 @@ export default function MentorResults({ mentor_id, batchYear }) {
                                         {mentee.cgpa}
                                     </p>
                                 </div>
-
-                                {/* <div className="flex space-x-2 mt-3 md:mt-0">
-                  <a
-                    href={mentee.pdf_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-blue-600 !text-white px-3 py-1 rounded hover:bg-blue-700 transition"
-                  >
-                    Download PDF
-                  </a>
-                  <button
-                    onClick={() => fetchChart(mentee.usn)}
-                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
-                  >
-                    View Chart
-                  </button>
-                  <button
-                    onClick={() => toggleExpand(mentee.usn)}
-                    className=" text-gray-800 px-3 py-1 rounded hover:bg-gray-300 transition"
-                  >
-                    {expandedMentees[mentee.usn] ? "Hide Subjects" : "View Subjects"}
-                  </button>
-                </div> */}
 
                                 <div className="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0 mt-3 md:mt-0">
                                     <a
@@ -273,4 +275,6 @@ export default function MentorResults({ mentor_id, batchYear }) {
             )}
         </div>
     );
-}
+};
+
+export default MentorResults;

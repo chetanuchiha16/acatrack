@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Info } from "lucide-react";
 
-export default function ResultGlossary() {
-    const [isOpen, setIsOpen] = useState(false);
+const ResultGlossary: React.FC = () => {
+    const [isOpen, setIsOpen] = useState<boolean>(false);
 
     return (
         <div className="relative mt-2 sm:mt-0">
@@ -44,4 +44,6 @@ export default function ResultGlossary() {
             )}
         </div>
     );
-}
+};
+
+export default ResultGlossary;

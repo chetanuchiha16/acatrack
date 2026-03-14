@@ -1,9 +1,16 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaFolder, FaFilePdf, FaRegFolderOpen } from "react-icons/fa";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
 import LoadingSpinner from "./LoadingSpinner";
-function FileItem({ name, isFolder, onClick }) {
+
+interface FileItemProps {
+    name: string;
+    isFolder: boolean;
+    onClick: () => void;
+}
+
+const FileItem: React.FC<FileItemProps> = ({ name, isFolder, onClick }) => {
     return (
         <div
             className="flex flex-col items-center p-3 rounded-lg cursor-pointer transition 
@@ -22,9 +29,20 @@ function FileItem({ name, isFolder, onClick }) {
             </div>
         </div>
     );
+};
+
+// Represents a nested directory structure where string values are usually file URLs or metadata
+interface FileTree {
+    [key: string]: FileTree | string;
 }
 
-function FileGrid({ tree, path = "", setPath }) {
+interface FileGridProps {
+    tree: FileTree;
+    path?: string;
+    setPath: (path: string) => void;
+}
+
+const FileGrid: React.FC<FileGridProps> = ({ tree, path = "", setPath }) => {
     const entries = Object.entries(tree);
 
     return (
@@ -51,27 +69,28 @@ function FileGrid({ tree, path = "", setPath }) {
             })}
         </div>
     );
-}
+};
 
-function getDirAtPath(tree, path) {
+function getDirAtPath(tree: FileTree | null, path: string): FileTree | null {
+    if (!tree) return null;
     if (!path) return tree;
     const parts = path.split("/").filter(Boolean);
-    let current = tree;
+    let current: any = tree;
     for (let part of parts) {
         current = current?.[part];
         if (!current) return {};
     }
-    return current;
+    return current as FileTree;
 }
 
-export default function FileExplorer() {
-    const [fileTree, setFileTree] = useState(null);
-    const [currentPath, setCurrentPath] = useState("");
+const FileExplorer: React.FC = () => {
+    const [fileTree, setFileTree] = useState<FileTree | null>(null);
+    const [currentPath, setCurrentPath] = useState<string>("");
 
     useEffect(() => {
         fetchWithAuth(`${API_BASE}/auth/Student/notes`)
             .then((res) => res.json())
-            .then(setFileTree)
+            .then((data: FileTree) => setFileTree(data))
             .catch((err) => console.error("Failed to load notes:", err));
     }, []);
 
@@ -128,4 +147,6 @@ export default function FileExplorer() {
             </div>
         </div>
     );
-}
+};
+
+export default FileExplorer;

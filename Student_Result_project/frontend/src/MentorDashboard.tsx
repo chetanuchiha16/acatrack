@@ -8,21 +8,32 @@ import MentorRecords from "./MentorRecord"; // adjust the path if needed
 import API_BASE from "./config";
 import axios from "axios";
 
-export default function MentorDashboard() {
-    const [activeTab, setActiveTab] = useState("results");
-    const [batches, setBatches] = useState([]);
-    const [batchYear, setBatchYear] = useState("");
-    const [date, setDate] = useState("");
-    let { mentor_id } = useLocation().state || {};
-    let { finalId } = useParams();
-    let navigate = useNavigate();
+interface LocationState {
+    mentor_id?: string;
+}
+
+const MentorDashboard: React.FC = () => {
+    const [activeTab, setActiveTab] = useState<string>("results");
+    const [batches, setBatches] = useState<string[]>([]);
+    const [batchYear, setBatchYear] = useState<string>("");
+    
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [_, setDate] = useState<string>("");
+    
+    const locationState = useLocation().state as LocationState | null;
+    const mentor_id = locationState?.mentor_id;
+    
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { finalId } = useParams<{ finalId: string }>();
+    const navigate = useNavigate();
 
     useEffect(() => {
         axios.get(`${API_BASE}/batches`)
             .then((res) => {
-                setBatches(res.data.batches);
-                if (res.data.batches && res.data.batches.length > 0) {
-                    setBatchYear(res.data.batches[res.data.batches.length - 1]);
+                const fetchedBatches: string[] = res.data.batches || [];
+                setBatches(fetchedBatches);
+                if (fetchedBatches.length > 0) {
+                    setBatchYear(fetchedBatches[fetchedBatches.length - 1]);
                 }
             })
             .catch(() => setBatches([]));
@@ -152,4 +163,6 @@ export default function MentorDashboard() {
             </div>
         </div>
     );
-}
+};
+
+export default MentorDashboard;
