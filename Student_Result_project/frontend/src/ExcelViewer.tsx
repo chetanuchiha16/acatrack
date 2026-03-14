@@ -5,30 +5,45 @@ import React, {
     useCallback,
     useMemo,
 } from "react";
-import * as ExcelJs from "exceljs";
+import ExcelJs from "exceljs";
 import API_BASE from "./config";
 import { subjectMapping } from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
-const EditableCell = React.memo(function EditableCell({
-    value,
-    rowIndex,
-    cellIndex,
-    handleCommit,
-}) {
-    return (
-        <td className="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
-            <input
-                defaultValue={value ?? ""}
-                onBlur={(e) =>
-                    handleCommit(e.target.value, rowIndex, cellIndex)
-                }
-                className="w-full px-2 py-1.5 rounded-md text-sm bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors"
-            />
-        </td>
-    );
-});
 
-const Row = React.memo(function Row({ row, rowIndex, updateCell }) {
+interface EditableCellProps {
+    value: string | number | undefined | null;
+    rowIndex: number;
+    cellIndex: number;
+    handleCommit: (newValue: string, r: number, c: number) => void;
+}
+
+const EditableCell: React.FC<EditableCellProps> = React.memo(
+    function EditableCell({ value, rowIndex, cellIndex, handleCommit }) {
+        return (
+            <td className="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+                <input
+                    defaultValue={value ?? ""}
+                    onBlur={(e) =>
+                        handleCommit(e.target.value, rowIndex, cellIndex)
+                    }
+                    className="w-full px-2 py-1.5 rounded-md text-sm bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors"
+                />
+            </td>
+        );
+    }
+);
+
+interface RowProps {
+    row: any[];
+    rowIndex: number;
+    updateCell: (newValue: string, r: number, c: number) => void;
+}
+
+const Row: React.FC<RowProps> = React.memo(function Row({
+    row,
+    rowIndex,
+    updateCell,
+}) {
     return (
         <tr>
             {row.map((cellValue, cellIndex) => (
@@ -44,11 +59,17 @@ const Row = React.memo(function Row({ row, rowIndex, updateCell }) {
     );
 });
 
-export default function ExcelViewer({ excel_route }) {
-    const [worksheets, setWorksheets] = useState(null);
-    const workbookRef = useRef(null);
-    const [sheetIndex, setSheetIndex] = useState(0);
-    const [excelData, setExcelData] = useState([]);
+interface ExcelViewerProps {
+    excel_route: string;
+}
+
+export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
+    const [worksheets, setWorksheets] = useState<ExcelJs.Worksheet[] | null>(
+        null
+    );
+    const workbookRef = useRef<ExcelJs.Workbook | null>(null);
+    const [sheetIndex, setSheetIndex] = useState<number>(0);
+    const [excelData, setExcelData] = useState<any[][]>([]);
 
     // Load Excel file once
     useEffect(() => {
@@ -65,7 +86,7 @@ export default function ExcelViewer({ excel_route }) {
     useEffect(() => {
         if (!worksheets || !worksheets[sheetIndex]) return;
 
-        let rows = [];
+        let rows: any[][] = [];
         let maxCols = 0;
         const sheet = worksheets[sheetIndex];
 
@@ -74,9 +95,13 @@ export default function ExcelViewer({ excel_route }) {
         });
 
         sheet.eachRow((row) => {
-            let values = row.values.slice(1);
-            while (values.length < maxCols) values.push("");
-            rows.push(values);
+            let values = row.values;
+            // The row.values array from ExcelJS often is 1-indexed (index 0 is null/empty)
+            // So slice(1) typically grabs the actual cell values.
+            let cellValues: any[] = Array.isArray(values) ? values.slice(1) : [];
+
+            while (cellValues.length < maxCols) cellValues.push("");
+            rows.push(cellValues);
         });
 
         setExcelData(rows);
@@ -84,7 +109,7 @@ export default function ExcelViewer({ excel_route }) {
 
     // Commit change to both state + workbook
     const updateCell = useCallback(
-        (newValue, r, c) => {
+        (newValue: string, r: number, c: number) => {
             setExcelData((prev) => {
                 const copy = [...prev];
                 const rowCopy = [...copy[r]];
@@ -93,17 +118,20 @@ export default function ExcelViewer({ excel_route }) {
                 return copy;
             });
 
-            const worksheet = workbookRef.current.worksheets[sheetIndex];
-            const row = worksheet.getRow(r + 1);
-            row.getCell(c + 1).value = isNaN(newValue)
-                ? newValue
-                : Number(newValue);
-            row.commit();
+            if (workbookRef.current) {
+                const worksheet = workbookRef.current.worksheets[sheetIndex];
+                const row = worksheet.getRow(r + 1);
+                row.getCell(c + 1).value = isNaN(Number(newValue))
+                    ? newValue
+                    : Number(newValue);
+                row.commit();
+            }
         },
         [sheetIndex]
     );
 
     async function toExcel() {
+        if (!workbookRef.current) return;
         const buffer = await workbookRef.current.xlsx.writeBuffer();
         let blob = new Blob([buffer], { type: "application/octet-stream" });
 
@@ -129,22 +157,25 @@ export default function ExcelViewer({ excel_route }) {
 
         const firstRow = excelData[0];
         const codes = firstRow
-            .filter((cell) => !/usn|name/i.test(cell))
-            .reduce((acc, cell) => {
+            .filter((cell) => !/usn|name/i.test(String(cell)))
+            .reduce((acc: string[], cell) => {
                 const [code] = String(cell).split("_");
                 if (!acc.includes(code)) acc.push(code);
                 return acc;
             }, []);
 
+        const currentSheetName = worksheets?.[sheetIndex]?.name || "";
+        const mappingDictionary = subjectMapping as Record<string, Record<string, string>>;
+
         const main = codes.map((code) => ({
             code,
-            colSpan: firstRow.filter((c) => c.startsWith(code)).length,
+            colSpan: firstRow.filter((c) => String(c).startsWith(code)).length,
             label:
-                subjectMapping[worksheets?.[sheetIndex]?.name]?.[code] || code,
+                mappingDictionary[currentSheetName]?.[code] || code,
         }));
 
         const sub = firstRow
-            .filter((cell) => !/usn|name/i.test(cell))
+            .filter((cell) => !/usn|name/i.test(String(cell)))
             .map((cell) => {
                 const [, ...rest] = String(cell).split("_");
                 const label = rest

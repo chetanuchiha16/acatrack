@@ -1,8 +1,8 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-export default function HelpCard() {
-    const [open, setOpen] = useState(false);
+const HelpCard: React.FC = () => {
+    const [open, setOpen] = useState<boolean>(false);
 
     return (
         <div className="bg-gradient-to-br from-purple-50 to-white border border-purple-200 rounded-2xl shadow-md mt-4 p-4 max-w-sm text-sm">
@@ -49,5 +49,6 @@ export default function HelpCard() {
             )}
         </div>
     );
+};
 
-}
+export default HelpCard;
