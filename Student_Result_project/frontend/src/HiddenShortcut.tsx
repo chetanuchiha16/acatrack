@@ -1,11 +1,11 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function HiddenShortcut() {
+const HiddenShortcut: React.FC = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const handler = (e) => {
+        const handler = (e: KeyboardEvent) => {
             console.log("Key pressed:", e.key, e.shiftKey, e.altKey);
             if (e.shiftKey && e.altKey && e.key.toLowerCase() === "a") {
                 navigate("/admin");
@@ -17,4 +17,6 @@ export default function HiddenShortcut() {
     }, [navigate]);
 
     return null; // nothing visible
-}
+};
+
+export default HiddenShortcut;
