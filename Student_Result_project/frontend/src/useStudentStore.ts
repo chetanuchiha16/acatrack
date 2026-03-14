@@ -3,8 +3,28 @@ import { create } from "zustand";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
 
+// Typed from actual API shape used across components
+export interface StudentInfo {
+    usn: string;
+    name: string;
+    [key: string]: unknown; // allow extra fields from API
+}
+
+export interface MentorInfo {
+    name: string;
+    email: string;
+    phone: string;
+    [key: string]: unknown;
+}
+
+export interface StudentData {
+    student: StudentInfo;
+    mentor: MentorInfo | null;
+    [key: string]: unknown;
+}
+
 interface StudentState {
-    studentData: unknown;
+    studentData: StudentData | null;
     loading: boolean;
     error: string | null;
     fetchStudentData: () => Promise<void>;
@@ -23,7 +43,7 @@ const useStudentStore = create<StudentState>((set) => ({
                 `${API_BASE}/parent/student-details`,
                 {}
             );
-            const data = await res.json();
+            const data: StudentData = await res.json();
             set({ studentData: data, loading: false });
         } catch (err: unknown) {
             console.error(err);

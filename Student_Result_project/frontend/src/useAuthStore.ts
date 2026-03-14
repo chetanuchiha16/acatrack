@@ -3,7 +3,7 @@ import { create } from "zustand";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
 
-interface AuthUser {
+export interface AuthUser {
     logged_in: boolean;
     who: string;
     [key: string]: unknown;
