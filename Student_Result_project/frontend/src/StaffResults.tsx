@@ -5,17 +5,22 @@ import OverallResults from "./OverallResults";
 import API_BASE from "./config";
 import axios from "axios";
 
-export default function StaffResults() {
-  const [activeTab, setActiveTab] = useState("semester");
-  const [batches, setBatches] = useState([]);
-  const [batchYear, setBatchYear] = useState("");
+interface BatchesResponse {
+  batches: string[];
+}
+
+const StaffResults: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<string>("semester");
+  const [batches, setBatches] = useState<string[]>([]);
+  const [batchYear, setBatchYear] = useState<string>("");
 
   useEffect(() => {
-      axios.get(`${API_BASE}/batches`)
+      axios.get<BatchesResponse>(`${API_BASE}/batches`)
           .then((res) => {
-              setBatches(res.data.batches);
-              if (res.data.batches && res.data.batches.length > 0) {
-                  setBatchYear(res.data.batches[res.data.batches.length - 1]);
+              const fetchedBatches = res.data.batches || [];
+              setBatches(fetchedBatches);
+              if (fetchedBatches.length > 0) {
+                  setBatchYear(fetchedBatches[fetchedBatches.length - 1]);
               }
           })
           .catch(() => setBatches([]));
@@ -37,7 +42,7 @@ export default function StaffResults() {
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Active Batch:</span>
                 <select
                     value={batchYear}
-                    onChange={(e) => setBatchYear(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setBatchYear(e.target.value)}
                     className="p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none w-32"
                 >
                     <option value="">Select</option>
@@ -83,4 +88,6 @@ export default function StaffResults() {
       </div>
     </div>
   );
-}
+};
+
+export default StaffResults;
