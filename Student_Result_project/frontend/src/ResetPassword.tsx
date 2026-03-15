@@ -1,35 +1,49 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
-import axios from "axios";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
+import axios, { AxiosError } from "axios";
 
-export default function ResetPassword() {
-    const { token } = useParams();
+interface ResetResponse {
+    message?: string;
+    error?: string;
+}
+
+const ResetPassword: React.FC = () => {
+    const { token } = useParams<{ token: string }>();
     const navigate = useNavigate();
 
-    const [password, setPassword] = useState("");
-    const [confirm, setConfirm] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirm, setShowConfirm] = useState(false);
-    const [status, setStatus] = useState("");
+    const [password, setPassword] = useState<string>("");
+    const [confirm, setConfirm] = useState<string>("");
+    const [showPassword, setShowPassword] = useState<boolean>(false);
+    const [showConfirm, setShowConfirm] = useState<boolean>(false);
+    const [status, setStatus] = useState<string>("");
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        
+        // This is a common bug catch! The original author used err.response inside catch block, but setStatus in the try too.
+        // Also original code had a bug where the try setting status overrode the error caught in the UI if we don't return early.
         if (password !== confirm) {
             setStatus("Passwords do not match");
             return;
         }
+        
         try {
-            const res = await axiosInstance.post(
+            const res = await axiosInstance.post<ResetResponse>(
                 `${API_BASE}/auth/forgot/reset/${token}`,
                 { password }
             );
-            setStatus(res.data.message);
+            setStatus(res.data.message || "Success");
             setTimeout(() => navigate("/auth"), 2000);
-        } catch (err) {
-            setStatus(err.response?.data?.error || "Something went wrong");
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                const axiosErr = err as AxiosError<ResetResponse>;
+                setStatus(axiosErr.response?.data?.error || "Something went wrong");
+            } else {
+                setStatus("Something went wrong");
+            }
         }
     };
 
@@ -57,7 +71,7 @@ export default function ResetPassword() {
                             type={showPassword ? "text" : "password"}
                             placeholder="New Password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                             className="w-full pl-10 pr-10 py-2 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-400"
                         />
                         <div
@@ -74,7 +88,7 @@ export default function ResetPassword() {
                             type={showConfirm ? "text" : "password"}
                             placeholder="Confirm Password"
                             value={confirm}
-                            onChange={(e) => setConfirm(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirm(e.target.value)}
                             className="w-full pl-10 pr-10 py-2 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-400"
                         />
                         <div
@@ -101,4 +115,6 @@ export default function ResetPassword() {
             </div>
         </div>
     );
-}
+};
+
+export default ResetPassword;

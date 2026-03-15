@@ -1,12 +1,15 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function AdminLogin() {
-  const [secret, setSecret] = useState("");
+const AdminLogin: React.FC = () => {
+  const [secret, setSecret] = useState<string>("");
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    if (!secret) return alert("Enter admin secret");
+  const handleLogin = (): void => {
+    if (!secret) {
+        alert("Enter admin secret");
+        return;
+    }
     localStorage.setItem("admin_secret", "supersecretkey");
     navigate("/admin/panel");
   };
@@ -19,7 +22,7 @@ export default function AdminLogin() {
           type="password"
           placeholder="Enter secret"
           value={secret}
-          onChange={(e) => setSecret(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSecret(e.target.value)}
           className="w-full border rounded p-2 mb-4 bg-gray-50 dark:bg-[#0f1720] border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
@@ -31,4 +34,6 @@ export default function AdminLogin() {
       </div>
     </div>
   );
-}
+};
+
+export default AdminLogin;
