@@ -1,40 +1,20 @@
-import React, { useState } from "react";
+import React from "react";
 import jssLogo from "./assets/jssLogo.png";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
-import axiosInstance from "./axiosInstance";
-import API_BASE from "./config";
+import { useNavigate } from "react-router-dom";
 import LogoutButton from "./LogoutButton";
-import useAuthStore from "./useAuthStore";
 import useProtectedPage from "./useProtectedPage";
 import LoadingSpinner from "./LoadingSpinner";
 
-export default function Staff() {
-    let navigate = useNavigate();
-    // // const location = useLocation();
-    // // const params = useParams();
-    // const { user, fetchAuthStatus, loading: authLoading } = useAuthStore();
-    // // const { who, id, name, mentor_id } = location.state || {};
-    // // const finalWho = who || params.who;
-    // // const finalId = id || params.id;
-
-    // // console.log("finalId:", finalId);
-    // // const [isDark, setIsDark] = useState(false);
-    // useEffect(() => {
-    //     if (!user) fetchAuthStatus();
-    // }, [user, fetchAuthStatus]);
-    // if (authLoading) return <div>Loading...</div>;
-    // useEffect(() => {
-    //     if (!authLoading && !user) {
-    //         navigate("/auth");
-    //     }
-    // }, [authLoading, user, navigate]);
+const Staff: React.FC = () => {
+    const navigate = useNavigate();
     const { user, loading } = useProtectedPage("Staff");
 
     if (loading) return <LoadingSpinner message="Authenticating Dashboard..." fullScreen={true} />;
     
-    const { id, name, who, mentor_id } = user || {};
-    console.log(mentor_id);
+    const id = user?.id;
+    const name = user?.name;
+    const mentor_id = user?.mentor_id;
+    
     return (
         <div className="min-h-screen w-screen bg-gray-100 dark:bg-gray-900 px-4 sm:px-8 md:px-16 py-4 sm:py-6">
             {/* Header */}
@@ -142,4 +122,6 @@ export default function Staff() {
             </div>
         </div>
     );
-}
+};
+
+export default Staff;

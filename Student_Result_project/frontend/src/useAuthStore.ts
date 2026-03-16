@@ -4,6 +4,9 @@ import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
 
 export interface AuthUser {
+    id?: string;
+    name?: string;
+    mentor_id?: string;
     logged_in: boolean;
     who: string;
     [key: string]: unknown;

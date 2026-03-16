@@ -1,26 +1,35 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import jssLogo from "./assets/jssLogo.png";
-import axios from "axios";
 import axiosInstance from "./axiosInstance";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import ForgotPassword from "./ForgotPassword";
 import API_BASE from "./config";
 import { requestForToken } from "./firebase";
 import LoadingSpinner from "./LoadingSpinner";
 import { parseJwt } from "./utils/auth";
+import axios, { AxiosError } from "axios";
 
-export default function Auth() {
-    let { who } = useParams();
+interface AuthResponse {
+    token: string;
+}
+
+interface ErrorResponse {
+    error?: string;
+}
+
+const Auth: React.FC = () => {
+    let { who } = useParams<{ who?: string }>();
     who = who || "Student";
     const navigate = useNavigate();
 
-    const [showPassword, setShowPassword] = useState(false);
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [user, setUser] = useState(null);
-    const [showForgot, setShowForgot] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [showPassword, setShowPassword] = useState<boolean>(false);
+    const [username, setUsername] = useState<string>("");
+    const [password, setPassword] = useState<string>("");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [user, setUser] = useState<any>(null);
+    const [showForgot, setShowForgot] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
         document.body.style.backgroundImage = "url('/jss-1.jpeg')";
@@ -50,11 +59,11 @@ export default function Auth() {
         setLoading(false);
     }, [navigate]);
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         try {
-            const res = await axiosInstance.post(`${API_BASE}/auth`, {
+            const res = await axiosInstance.post<AuthResponse>(`${API_BASE}/auth`, {
                 who,
                 username,
                 password,
@@ -93,11 +102,15 @@ export default function Auth() {
             navigate(`/auth/${who}/${id}`, {
                 state: { who, id, name, mentor_id },
             });
-        } catch (err) {
-            alert(err.response?.data?.error || "Login failed");
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                const axiosErr = err as AxiosError<ErrorResponse>;
+                alert(axiosErr.response?.data?.error || "Login failed");
+            } else {
+                alert("Login failed");
+            }
         }
     };
-    // `batches` logic removed - Staff will select batch in their dashboard
 
     if (loading) {
         return <LoadingSpinner message="Checking authentication status..." fullScreen={true} />;
@@ -161,7 +174,7 @@ export default function Auth() {
                             type="text"
                             placeholder="Username"
                             value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm sm:text-base"
                         />
                     </div>
@@ -172,13 +185,12 @@ export default function Auth() {
                             type={showPassword ? "text" : "password"}
                             placeholder="Password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                             className="w-full pl-10 pr-10 py-2 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm sm:text-base"
                         />
                         <div
-                            type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 inset-y-0 flex items-center text-white/70 rounded-xl"
+                            className="absolute right-3 inset-y-0 flex items-center text-white/70 rounded-xl cursor-pointer"
                             tabIndex={-1}
                         >
                             {showPassword ? <FaEyeSlash /> : <FaEye />}
@@ -208,8 +220,10 @@ export default function Auth() {
                     <a href="#" className="hover:text-white text-indigo-700">
                         Need help?
                     </a>
-            </div>
+                </div>
             </div>
         </div>
     );
-}
+};
+
+export default Auth;

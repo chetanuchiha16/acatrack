@@ -2,10 +2,37 @@ import React, { useState, useEffect } from "react";
 import API_BASE from "./config";
 import { semesterOptions, subjectMapping } from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
-export default function SubjectResults({ batchYear }) {
-    const [semester, setSemester] = useState("");
-    const [subject, setSubject] = useState("");
-    const [data, setData] = useState(null);
+
+interface SubjectResultsProps {
+    batchYear: string;
+}
+
+interface StatProps {
+    label: string;
+    value: string | number;
+    highlight?: boolean;
+    danger?: boolean;
+}
+
+interface SubjectData {
+    subject_name: string;
+    subject_code: string;
+    semester: string;
+    total_students: number;
+    present_students: number;
+    absent_students: number;
+    pass_percentage: number;
+    pass_count: number;
+    fcd_count: number;
+    fc_count: number;
+    sc_count: number;
+    fail_count: number;
+}
+
+const SubjectResults: React.FC<SubjectResultsProps> = ({ batchYear }) => {
+    const [semester, setSemester] = useState<string>("");
+    const [subject, setSubject] = useState<string>("");
+    const [data, setData] = useState<SubjectData | null>(null);
 
     useEffect(() => {
         if (semester && subject && batchYear) {
@@ -18,39 +45,48 @@ export default function SubjectResults({ batchYear }) {
 
     const fetchData = async () => {
         if (!semester || !subject || !batchYear) return;
-        const res = await fetchWithAuth(
-            `${API_BASE}/auth/Staff/sub_res?semester=${semester}&subject=${subject}&batch_year=${batchYear}`,
-            {
-                // <-- this ensures cookies/session are sent
-            }
-        );
-        const json = await res.json();
-        setData(json);
+        try {
+            const res = await fetchWithAuth(
+                `${API_BASE}/auth/Staff/sub_res?semester=${semester}&subject=${subject}&batch_year=${batchYear}`,
+                {}
+            );
+            const json: SubjectData = await res.json();
+            setData(json);
+        } catch (error) {
+            console.error("Failed to fetch subject data:", error);
+            setData(null);
+        }
     };
 
     const downloadPDF = async () => {
         if (!semester) return;
 
-        // const token = sessionStorage.getItem("jwt"); // or wherever you store it
         const url = `${API_BASE}/auth/Staff/sub_res/report?semester=${semester}&subject=${subject}&batch_year=${batchYear}`;
 
-        const response = await fetchWithAuth(url, {
-            
-        });
+        try {
+            const response = await fetchWithAuth(url, {});
 
-        if (!response.ok) {
-            console.error("PDF download failed");
-            return;
+            if (!response.ok) {
+                console.error("PDF download failed");
+                return;
+            }
+
+            const blob = await response.blob();
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `${semester}_report.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error("Failed to download PDF:", error);
         }
-
-        const blob = await response.blob();
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = `${semester}_report.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
     };
+    
+    // Safety check to handle potential unmapped semesters gracefully
+    const mappedSubjects = semester && subjectMapping[semester] 
+        ? Object.entries(subjectMapping[semester]) 
+        : [];
 
     return (
         <div className="max-w-3xl mx-auto p-6 rounded-lg bg-[var(--background)] text-[var(--foreground)] transition-colors">
@@ -60,7 +96,7 @@ export default function SubjectResults({ batchYear }) {
             <div className="flex flex-wrap gap-3 mb-6">
                 <select
                     value={semester}
-                    onChange={(e) => {
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                         setSemester(e.target.value);
                         setSubject("");
                     }}
@@ -76,16 +112,16 @@ export default function SubjectResults({ batchYear }) {
 
                 <select
                     value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSubject(e.target.value)}
                     className="border rounded-lg px-3 py-2 text-sm bg-[var(--background)] text-[var(--foreground)] border-gray-400"
                     disabled={!semester}
                 >
                     <option value="">Select Subject</option>
                     {semester &&
-                        Object.entries(subjectMapping[semester]).map(
+                        mappedSubjects.map(
                             ([code, name]) => (
                                 <option key={code} value={code}>
-                                    {name}
+                                    {String(name)}
                                 </option>
                             )
                         )}
@@ -93,7 +129,7 @@ export default function SubjectResults({ batchYear }) {
 
                 <button
                     onClick={fetchData}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!semester || !subject}
                 >
                     Fetch
@@ -101,7 +137,7 @@ export default function SubjectResults({ batchYear }) {
 
                 <button
                     onClick={downloadPDF}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm"
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!semester || !subject}
                 >
                     PDF
@@ -141,14 +177,20 @@ export default function SubjectResults({ batchYear }) {
             )}
         </div>
     );
-}
+};
 
-function Stat({ label, value, highlight, danger }) {
+const Stat: React.FC<StatProps> = ({ label, value, highlight, danger }) => {
     let classes =
         "flex flex-col items-center justify-center p-3 rounded-lg shadow-sm";
-    if (highlight) classes += " bg-green-200 text-green-900";
-    else if (danger) classes += " bg-red-200 text-red-900";
-    else classes += " bg-[var(--background)] text-[var(--foreground)]";
+    
+    // Fix string assignment spacing properly avoiding potential missing spaces
+    if (highlight) {
+        classes += " bg-green-200 text-green-900";
+    } else if (danger) {
+        classes += " bg-red-200 text-red-900";
+    } else {
+        classes += " bg-[var(--background)] text-[var(--foreground)]";
+    }
 
     return (
         <div className={classes}>
@@ -156,4 +198,6 @@ function Stat({ label, value, highlight, danger }) {
             <div className="text-lg font-bold">{value}</div>
         </div>
     );
-}
+};
+
+export default SubjectResults;

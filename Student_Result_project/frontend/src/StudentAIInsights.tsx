@@ -210,7 +210,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                                 {sem}
                                             </div>
                                             <div className="flex flex-wrap gap-2">
-                                                {(semData.failed_subjects || []).map((subj, idx) => (
+                                                {((semData as { failed_subjects?: { subject: string }[] }).failed_subjects || []).map((subj: any, idx: number) => (
                                                     <span key={idx} className="bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200 px-2.5 py-1 rounded text-xs font-semibold border border-red-200 dark:border-red-800/50">
                                                         {subj.subject}
                                                     </span>
@@ -271,7 +271,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                             {Object.entries(aiData.ai_profile.tag_avgs).map(([tag, avg], i) => (
                                                 <div key={i} className="flex justify-between items-center bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg text-xs sm:text-sm shadow-sm">
                                                     <span className="text-gray-600 dark:text-gray-400 font-medium">{tag}</span>
-                                                    <span className="font-bold text-gray-900 dark:text-gray-100">{avg.toFixed(2)}</span>
+                                                    <span className="font-bold text-gray-900 dark:text-gray-100">{Number(avg).toFixed(2)}</span>
                                                 </div>
                                             ))}
                                         </div>
