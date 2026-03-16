@@ -6,26 +6,32 @@ import Classroom from "./Classroom";
 import LogoutButton from "./LogoutButton";
 import MenteeRecieveEmails from "./MenteeRecieveEmails";
 import { onMessage } from "firebase/messaging";
-import { messaging } from "./firebase"; // your firebase.js
+import { messaging } from "./firebase";
 import useProtectedPage from "./useProtectedPage";
 import MenteeRecordFilling from "./MenteeRecordFilling.jsx";
 import LoadingSpinner from "./LoadingSpinner";
 
-export default function Student() {
+interface LocationState {
+    branch?: string;
+    [key: string]: any;
+}
+
+const Student: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const params = useParams();
-    const [view, setView] = useState("cards");
-    // const { name: locName, id: locId, usn: locUsn, branch: locBranch } =
-    //   location.state || {};
-    const [selectedTab, setSelectedTab] = useState("result");
-    const [currentSem, setCurrentSem] = useState("sem1");
-    const { user, studentData, loading } = useProtectedPage("Student");
+    const params = useParams<{ branch?: string; [key: string]: any }>();
+    
+    const [view, setView] = useState<string>("cards");
+    const [selectedTab, setSelectedTab] = useState<string>("result");
+    const [currentSem, setCurrentSem] = useState<string>("sem1");
+    
+    const { user, loading } = useProtectedPage("Student");
+
     useEffect(() => {
         if (!user) return; // wait for auth
 
         const unsubscribe = onMessage(messaging, (payload) => {
-            alert("📩 New notification: " + payload.notification?.title);
+            alert(`📩 New notification: ${payload.notification?.title}`);
         });
 
         return () => unsubscribe();
@@ -34,25 +40,20 @@ export default function Student() {
     useEffect(() => {
         if (selectedTab !== "result") setCurrentSem("");
     }, [selectedTab]);
-    const { branch: locBranch } = location.state || {};
 
-    // const finalName = locName || params.name || "Student Name";
-    // const finalUsn = locUsn || locId || params.id || "UNKNOWN";
-    const finalBranch =
-        locBranch || params.branch || "BE in Computer Science and Engineeing";
+    const locationState = location.state as LocationState | null;
+    const locBranch = locationState?.branch;
 
-    // Tabs: "", "result", "classroom", "mentee"
+    const finalBranch = locBranch || params.branch || "BE in Computer Science and Engineeing";
 
-    const { id, name, who, batch_year } = user || {};
-    const finalName = name;
-    const finalUsn = id;
+    // Tabs: "", "result", "classroom", "mentee", "record"
+    const id = user?.id;
+    const name = user?.name;
+    const finalName = name || "";
+    const finalUsn = id || "";
 
-    const sems = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"];
+    const sems: string[] = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"];
 
-    // onMessage(messaging, (payload) => {
-    //     console.log("Message received. ", payload);
-    //     alert("📩 New notification: " + payload.notification.title);
-    // });
     if (loading) return <LoadingSpinner message="Authenticating Dashboard..." fullScreen={true} />;
     
     return (
@@ -188,7 +189,7 @@ export default function Student() {
                                 <label className="relative block w-40">
                                     <select
                                         value={currentSem}
-                                        onChange={(e) =>
+                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                                             setCurrentSem(e.target.value)
                                         }
                                         className="appearance-none w-full px-3 py-2 rounded-md bg-white dark:bg-[#0f1720] text-sm text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -281,4 +282,6 @@ export default function Student() {
 
         </main>
     );
-}
+};
+
+export default Student;

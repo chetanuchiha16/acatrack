@@ -1,7 +1,11 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-const LogoutButton: React.FC = () => {
+interface LogoutButtonProps {
+    size?: string;
+}
+
+const LogoutButton: React.FC<LogoutButtonProps> = ({ size }) => {
     const navigate = useNavigate();
 
     const handleLogout = async (): Promise<void> => {

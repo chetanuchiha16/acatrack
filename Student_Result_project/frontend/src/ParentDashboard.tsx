@@ -1,64 +1,26 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import jssLogo from "./assets/jssLogo.png";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
-import axiosInstance from "./axiosInstance";
-import API_BASE from "./config";
+import { useNavigate } from "react-router-dom";
 import LogoutButton from "./LogoutButton";
 import { useTranslation } from "react-i18next";
-import useAuthStore from "./useAuthStore";
-import useStudentStore from "./useStudentStore";
 import useProtectedPage from "./useProtectedPage";
-export default function ParentDashboard() {
-    let navigate = useNavigate();
+import LoadingSpinner from "./LoadingSpinner";
+
+const ParentDashboard: React.FC = () => {
+    const navigate = useNavigate();
     const { t, i18n } = useTranslation();
-    // const location = useLocation();
-    // const params = useParams();
-    // const { user, fetchAuthStatus, loading: authLoading } = useAuthStore();
-    // const {
-    //     studentData,
-    //     fetchStudentData,
-    //     loading: studentLoading,
-    // } = useStudentStore();
-
-    // // const { who, id, name, mentor_id } = location.state || {};
-    // // const finalWho = who || params.who;
-    // // const finalId = id || params.id;
-
-    // // console.log("finalId:", finalId);
-    // // console.log("mentor_id", mentor_id);
-    // // const [isDark, setIsDark] = useState(false);
-
-    // // Fetch student details
-    // // const { studentData, fetchStudentData, loading } = useStudentStore();
-    // // Fetch auth status on mount
-    // useEffect(() => {
-    //     if (!user) fetchAuthStatus();
-    // }, [user, fetchAuthStatus]);
-
-    // // useEffect(() => {
-    // //     if (!studentData) fetchStudentData();
-    // // }, [studentData, fetchStudentData]);
-    // // Fetch student details after auth is ready
-    // useEffect(() => {
-    //     if (user && !studentData) fetchStudentData();
-    // }, [user, studentData, fetchStudentData]);
-
-    // useEffect(() => {
-    //     if (!authLoading && !user) {
-    //         navigate("/auth");
-    //     }
-    // }, [authLoading, user, navigate]);
-    // // if (loading) return <div>Loading...</div>;
-    // if (authLoading || studentLoading) return <div>Loading...</div>;
+    
     const { user, studentData, loading } = useProtectedPage("Parent");
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <LoadingSpinner message="Authenticating Dashboard..." fullScreen={true} />;
 
     // Switch language function
-    const changeLanguage = (lng) => i18n.changeLanguage(lng);
+    const changeLanguage = async (lng: string): Promise<void> => {
+        await i18n.changeLanguage(lng);
+    };
 
-    const { id, name, who } = user || {};
+    const { id } = user || {};
+    
     return (
         <div className="min-h-screen w-screen dark:bg-gray-900 px-4 sm:px-8 md:px-16 py-4 sm:py-6">
             {/* Header */}
@@ -75,7 +37,7 @@ export default function ParentDashboard() {
                 <div className="flex justify-end gap-2 mb-4">
                     <select
                         value={i18n.language}
-                        onChange={(e) => changeLanguage(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => changeLanguage(e.target.value)}
                         className="px-2 py-1 border rounded-md text-sm dark:bg-gray-800 dark:text-gray-100"
                     >
                         <option value="en">
@@ -105,7 +67,7 @@ export default function ParentDashboard() {
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8">
                     <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-4">
                         {studentData?.mentor
-                            ? `${studentData.student.name}'s Mentor`
+                            ? `${studentData.student?.name || "Student"}'s Mentor`
                             : "Mentor Contact"}
                     </h2>
 
@@ -156,4 +118,6 @@ export default function ParentDashboard() {
             </div>
         </div>
     );
-}
+};
+
+export default ParentDashboard;

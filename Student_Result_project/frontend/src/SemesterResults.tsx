@@ -1,14 +1,42 @@
 import React, { useEffect, useState } from "react";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
-export default function SemesterResults({ batchYear }) {
-    const [semester, setSemester] = useState("sem1");
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [view, setView] = useState("cards");
 
-    const semesters = ["sem1", "sem2", "sem3", "sem4"];
+interface SemesterResultsProps {
+    batchYear: string;
+}
+
+interface SemesterDataResult {
+    subject_code: string;
+    subject_name: string;
+    total_students: number;
+    pass_percentage: number;
+    present_students: number;
+    absent_students: number;
+    fail_count: number;
+    fcd_count: number;
+    fc_count: number;
+    sc_count: number;
+}
+
+interface SemesterData {
+    semester: string;
+    results: SemesterDataResult[];
+}
+
+interface StatProps {
+    label: string;
+    value: string | number;
+}
+
+const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
+    const [semester, setSemester] = useState<string>("sem1");
+    const [data, setData] = useState<SemesterData | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string>("");
+    const [view, setView] = useState<string>("cards");
+
+    const semesters: string[] = ["sem1", "sem2", "sem3", "sem4"];
 
     useEffect(() => {
         if (semester && batchYear) {
@@ -19,7 +47,7 @@ export default function SemesterResults({ batchYear }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [semester, batchYear]);
 
-    async function fetchResults(selected) {
+    async function fetchResults(selected: string): Promise<void> {
         setLoading(true);
         setError("");
         setData(null);
@@ -27,9 +55,7 @@ export default function SemesterResults({ batchYear }) {
             const q = new URLSearchParams({ semester: selected, batch_year: batchYear }).toString();
             const res = await fetchWithAuth(
                 `${API_BASE}/auth/Staff/sem_res?${q}`,
-                {
-                    // <-- this ensures cookies/session are sent
-                }
+                {}
             );
             if (!res.ok) {
                 const json = await res.json().catch(() => null);
@@ -37,16 +63,16 @@ export default function SemesterResults({ batchYear }) {
                     json?.error || `Request failed with ${res.status}`
                 );
             }
-            const json = await res.json();
+            const json: SemesterData = await res.json();
             setData(json);
-        } catch (err) {
+        } catch (err: any) {
             setError(err.message || "Unknown error");
         } finally {
             setLoading(false);
         }
     }
 
-    const downloadPDF = async () => {
+    const downloadPDF = async (): Promise<void> => {
         if (!semester) return;
         try {
             const response = await fetchWithAuth(
@@ -65,21 +91,25 @@ export default function SemesterResults({ batchYear }) {
             link.setAttribute("download", `${semester}_results.pdf`);
             document.body.appendChild(link);
             link.click();
-            link.parentNode.removeChild(link);
+            if (link.parentNode) {
+                link.parentNode.removeChild(link);
+            }
             window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error("Error downloading PDF:", error);
         }
     };
 
-    function Stat({ label, value }) {
+    // Kept as requested pattern but strongly typed matching the UI design specs.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const Stat: React.FC<StatProps> = ({ label, value }) => {
         return (
             <div className="flex flex-col items-center justify-center p-2">
                 <div className="text-xs uppercase text-slate-400">{label}</div>
                 <div className="text-xl font-semibold">{value}</div>
             </div>
         );
-    }
+    };
 
     return (
         <div className="max-w-6xl mx-auto p-4 sm:p-6">
@@ -94,7 +124,7 @@ export default function SemesterResults({ batchYear }) {
                     <label className="flex items-center gap-2 backdrop-blur px-3 py-2 rounded-xl  w-40">
                         <select
                             value={semester}
-                            onChange={(e) => setSemester(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSemester(e.target.value)}
                             className="appearance-none bg-transparent outline-none text-sm font-medium "
                         >
                             {semesters.map((s) => (
@@ -333,4 +363,6 @@ export default function SemesterResults({ batchYear }) {
             </main>
         </div>
     );
-}
+};
+
+export default SemesterResults;

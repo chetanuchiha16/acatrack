@@ -146,7 +146,7 @@ export default function MentorMeetings({ mentorId, batchYear }) {
             ) : (
                 <ul className="space-y-2">
                     {meetings
-                        .sort((a, b) => new Date(b.date) - new Date(a.date))
+                        .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
                         .map((m) => (
                             <li
                                 key={m.id}
