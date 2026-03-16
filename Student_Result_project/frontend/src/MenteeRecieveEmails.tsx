@@ -143,7 +143,7 @@ export default function MenteeRecieveEmails({ usn }) {
                             {meetings
                                 .sort(
                                     (a, b) =>
-                                        new Date(a.date) - new Date(b.date)
+                                        new Date(a.date).getTime() - new Date(b.date).getTime()
                                 )
                                 .map((m) => (
                                     <li

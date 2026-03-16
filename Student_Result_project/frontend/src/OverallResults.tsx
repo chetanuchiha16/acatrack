@@ -1,16 +1,33 @@
 import React, { useState, useEffect } from "react";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
-export default function OverallResults({ batchYear }) {
-    const [semester, setSemester] = useState("");
-    const [view, setView] = useState("normal");
-    const [data, setData] = useState([]);
-    const [search, setSearch] = useState("");
-    const [sortBy, setSortBy] = useState("cgpa");
-    const [sortDir, setSortDir] = useState("desc");
-    const [expandedRow, setExpandedRow] = useState(null);
 
-    const semesterOptions = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"];
+interface OverallResultsProps {
+    batchYear: string;
+}
+
+interface StudentResult {
+    name: string;
+    usn: string;
+    cgpa: number;
+    percentage: number;
+    obtained_credits: number;
+    pass_fail: string[];
+    ia_marks: number[];
+    see_marks: number[];
+    subject_names: string[];
+}
+
+const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
+    const [semester, setSemester] = useState<string>("");
+    const [view, setView] = useState<string>("normal");
+    const [data, setData] = useState<StudentResult[]>([]);
+    const [search, setSearch] = useState<string>("");
+    const [sortBy, setSortBy] = useState<keyof StudentResult | "">("cgpa");
+    const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+    const [expandedRow, setExpandedRow] = useState<number | null>(null);
+
+    const semesterOptions: string[] = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"];
 
     useEffect(() => {
         if (semester && batchYear) {
@@ -27,16 +44,19 @@ export default function OverallResults({ batchYear }) {
         if (view === "toppers") url += "&show_toppers=true";
         if (view === "failed") url += "&show_failed=true";
 
-        const res = await fetchWithAuth(url, {
-            // <-- this ensures cookies/session are sent
-        });
-        const json = await res.json();
-        setData(json);
+        try {
+            const res = await fetchWithAuth(url, {});
+            const json: StudentResult[] = await res.json();
+            setData(json);
+        } catch (error) {
+            console.error("Failed to fetch overall results:", error);
+            setData([]);
+        }
     };
 
     const downloadPDF = async () => {
         if (!semester) return;
-        let url;
+        let url: string;
         if (view === "toppers") {
             // Top 10 Toppers PDF
             url = `${API_BASE}/auth/Staff/overall_res?semester=${semester}&show_toppers=true&format=pdf&batch_year=${batchYear}`;
@@ -44,6 +64,7 @@ export default function OverallResults({ batchYear }) {
             // Full report as before
             url = `${API_BASE}/auth/Staff/report/${semester}?batch_year=${batchYear}`;
         }
+
         try {
             const response = await fetchWithAuth(url, {});
             if (!response.ok) {
@@ -66,8 +87,8 @@ export default function OverallResults({ batchYear }) {
         }
     };
 
-    // Filter out invalid entries first
-    const validData = data.filter((student) => student.name && student.usn);
+    // Filter out invalid entries first safely
+    const validData = Array.isArray(data) ? data.filter((student) => student?.name && student?.usn) : [];
 
     // Then apply search and sorting
     const filteredData = validData
@@ -77,11 +98,20 @@ export default function OverallResults({ batchYear }) {
                 student.usn.toLowerCase().includes(search.toLowerCase())
         )
         .sort((a, b) => {
-            if (sortDir === "asc") return a[sortBy] > b[sortBy] ? 1 : -1;
-            else return a[sortBy] < b[sortBy] ? 1 : -1;
+            if (!sortBy) return 0;
+            const aVal = a[sortBy];
+            const bVal = b[sortBy];
+            
+            if (aVal === undefined || bVal === undefined) return 0;
+
+            if (sortDir === "asc") {
+                return aVal > bVal ? 1 : -1;
+            } else {
+                return aVal < bVal ? 1 : -1;
+            }
         });
 
-    const toggleSort = (column) => {
+    const toggleSort = (column: keyof StudentResult) => {
         if (sortBy === column) {
             setSortDir(sortDir === "asc" ? "desc" : "asc");
         } else {
@@ -100,7 +130,7 @@ export default function OverallResults({ batchYear }) {
             <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 mb-4 items-start sm:items-center">
                 <select
                     value={semester}
-                    onChange={(e) => setSemester(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSemester(e.target.value)}
                     className="border border-gray-400 rounded-lg px-3 py-2 text-sm w-full sm:w-auto"
                 >
                     <option value="">Select Semester</option>
@@ -113,7 +143,7 @@ export default function OverallResults({ batchYear }) {
 
                 <select
                     value={view}
-                    onChange={(e) => setView(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setView(e.target.value)}
                     className="border border-gray-400 rounded-lg px-3 py-2 text-sm w-full sm:w-auto"
                 >
                     <option value="normal">Full Results</option>
@@ -123,7 +153,7 @@ export default function OverallResults({ batchYear }) {
 
                 <button
                     onClick={fetchData}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm w-full sm:w-auto"
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!semester}
                 >
                     Fetch
@@ -131,7 +161,7 @@ export default function OverallResults({ batchYear }) {
 
                 <button
                     onClick={downloadPDF}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm w-full sm:w-auto"
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!semester}
                 >
                     PDF
@@ -141,7 +171,7 @@ export default function OverallResults({ batchYear }) {
                     type="text"
                     placeholder="Search by name or USN"
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
                     className="border border-gray-400 rounded-lg px-3 py-2 text-sm w-full sm:w-auto sm:ml-auto"
                 />
             </div>
@@ -151,14 +181,14 @@ export default function OverallResults({ batchYear }) {
                 <table className="min-w-full border-collapse border border-gray-400 text-sm">
                     <thead>
                         <tr className="bg-gray-200 dark:bg-gray-700">
-                            {["name", "usn", "cgpa", "percentage"].map(
+                            {(["name", "usn", "cgpa", "percentage"] as Array<keyof StudentResult>).map(
                                 (col) => (
                                     <th
                                         key={col}
                                         className="border border-gray-400 px-3 py-2 cursor-pointer whitespace-nowrap"
                                         onClick={() => toggleSort(col)}
                                     >
-                                        {col.toUpperCase()}{" "}
+                                        {String(col).toUpperCase()}{" "}
                                         {sortBy === col
                                             ? sortDir === "asc"
                                                 ? "↑"
@@ -187,10 +217,10 @@ export default function OverallResults({ batchYear }) {
                             </tr>
                         )}
                         {filteredData.map((student, idx) => {
-                            const passCount = student.pass_fail.filter(
+                            const passCount = (student.pass_fail || []).filter(
                                 (p) => p === "Pass"
                             ).length;
-                            const failCount = student.pass_fail.filter(
+                            const failCount = (student.pass_fail || []).filter(
                                 (p) => p === "Fail"
                             ).length;
                             const isExpanded = expandedRow === idx;
@@ -216,10 +246,10 @@ export default function OverallResults({ batchYear }) {
                                             {student.usn}
                                         </td>
                                         <td className="border border-gray-400 px-3 py-2">
-                                            {student.cgpa.toFixed(2)}
+                                            {student.cgpa !== undefined ? student.cgpa.toFixed(2) : "0.00"}
                                         </td>
                                         <td className="border border-gray-400 px-3 py-2">
-                                            {student.percentage.toFixed(2)}%
+                                            {student.percentage !== undefined ? student.percentage.toFixed(2) : "0.00"}%
                                         </td>
                                         <td className="border border-gray-400 px-3 py-2">
                                             {student.obtained_credits}
@@ -243,15 +273,11 @@ export default function OverallResults({ batchYear }) {
                                                             IA Marks:
                                                         </strong>
                                                         <ul className="list-disc list-inside">
-                                                            {student.ia_marks.map(
+                                                            {(student.ia_marks || []).map(
                                                                 (mark, i) => (
-                                                                    // <li key={i}>Subject {i + 1}: {mark}</li>
                                                                     <li key={i}>
                                                                         {
-                                                                            student
-                                                                                .subject_names[
-                                                                                i
-                                                                            ]
+                                                                            (student.subject_names || [])[i] || `Subject ${i + 1}`
                                                                         }
                                                                         : {mark}
                                                                     </li>
@@ -264,15 +290,11 @@ export default function OverallResults({ batchYear }) {
                                                             SEE Marks:
                                                         </strong>
                                                         <ul className="list-disc list-inside">
-                                                            {student.see_marks.map(
+                                                            {(student.see_marks || []).map(
                                                                 (mark, i) => (
-                                                                    // <li key={i}>Subject {i + 1}: {mark}</li>
                                                                     <li key={i}>
                                                                         {
-                                                                            student
-                                                                                .subject_names[
-                                                                                i
-                                                                            ]
+                                                                            (student.subject_names || [])[i] || `Subject ${i + 1}`
                                                                         }
                                                                         : {mark}
                                                                     </li>
@@ -285,15 +307,11 @@ export default function OverallResults({ batchYear }) {
                                                             Pass/Fail:
                                                         </strong>
                                                         <ul className="list-disc list-inside">
-                                                            {student.pass_fail.map(
+                                                            {(student.pass_fail || []).map(
                                                                 (pf, i) => (
-                                                                    // <li key={i}>Subject {i + 1}: {pf}</li>
                                                                     <li key={i}>
                                                                         {
-                                                                            student
-                                                                                .subject_names[
-                                                                                i
-                                                                            ]
+                                                                            (student.subject_names || [])[i] || `Subject ${i + 1}`
                                                                         }
                                                                         : {pf}
                                                                     </li>
@@ -313,4 +331,6 @@ export default function OverallResults({ batchYear }) {
             </div>
         </div>
     );
-}
+};
+
+export default OverallResults;
