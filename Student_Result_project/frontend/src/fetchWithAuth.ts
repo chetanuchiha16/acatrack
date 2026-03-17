@@ -1,10 +1,36 @@
 // fetchWithAuth.ts
-export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
-    const token = sessionStorage.getItem("jwt_token");
-    const headers: HeadersInit = {
-        ...(options.headers as Record<string, string>),
-        Authorization: token ? `Bearer ${token}` : "",
-        "Content-Type": "application/json",
+import { getToken } from "./utils/storage";
+
+export interface FetchWithAuthOptions extends RequestInit {
+    /**
+     * When false, the `Content-Type: application/json` header is omitted.
+     * Set this to false for multipart/form-data uploads so the browser
+     * can set the boundary automatically.
+     * @default true
+     */
+    setJsonContentType?: boolean;
+}
+
+/**
+ * Wrapper around the native Fetch API that automatically attaches the JWT
+ * Authorization header from sessionStorage.
+ *
+ * @param url     - The endpoint URL (absolute or relative)
+ * @param options - Standard RequestInit options + `setJsonContentType`
+ */
+export async function fetchWithAuth(
+    url: string,
+    options: FetchWithAuthOptions = {}
+): Promise<Response> {
+    const { setJsonContentType = true, ...fetchOptions } = options;
+
+    const token = getToken();
+
+    const baseHeaders: Record<string, string> = {
+        ...(fetchOptions.headers as Record<string, string>),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(setJsonContentType ? { "Content-Type": "application/json" } : {}),
     };
-    return fetch(url, { ...options, headers });
+
+    return fetch(url, { ...fetchOptions, headers: baseHeaders });
 }
