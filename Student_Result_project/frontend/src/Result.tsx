@@ -1,15 +1,21 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
 import ResultCardView from "./ResultCardView";
 import StudentAIInsights from "./StudentAIInsights";
 import ResultGlossary from "./ResultGlossary";
+import type { StudentResult, Semester } from "./types";
 
-export default function Result({ usn, semester, view }) {
-    const [data, setData] = useState(null);
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+interface ResultProps {
+    usn: string;
+    semester: Semester;
+    view: "table" | "cards" | "ai";
+}
+
+export default function Result({ usn, semester, view }: ResultProps) {
+    const [data, setData] = useState<StudentResult | null>(null);
+    const [error, setError] = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(false);
     // const [view, setView] = useState("table");
 
     const fetchStudent = async () => {
@@ -26,8 +32,9 @@ export default function Result({ usn, semester, view }) {
             );
             setData(res.data);
             setError("");
-        } catch (err) {
-            setError(err.response?.data?.error || "Something went wrong.");
+        } catch (err: unknown) {
+            const e = err as { response?: { data?: { error?: string } } };
+            setError(e.response?.data?.error ?? "Something went wrong.");
             setData(null);
         } finally {
             setLoading(false);

@@ -1,10 +1,32 @@
 import { useEffect, useState } from "react";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
-export default function MenteeRecieveEmails({ usn }) {
-    const [messages, setMessages] = useState([]);
-    const [selectedMessage, setSelectedMessage] = useState(null);
-    const [meetings, setMeetings] = useState([]);
+
+interface MenteeRecieveEmailsProps {
+    usn: string;
+}
+
+interface InboxMessage {
+    id: number | string;
+    subject?: string;
+    message?: string;
+    mentor_name?: string;
+    created_at: string;
+    [key: string]: unknown;
+}
+
+interface MeetingEntry {
+    id: number | string;
+    title: string;
+    date: string;
+    agenda?: string;
+    [key: string]: unknown;
+}
+
+export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
+    const [messages, setMessages] = useState<InboxMessage[]>([]);
+    const [selectedMessage, setSelectedMessage] = useState<InboxMessage | null>(null);
+    const [meetings, setMeetings] = useState<MeetingEntry[]>([]);
     const [loadingMessages, setLoadingMessages] = useState(true);
     const [loadingMeetings, setLoadingMeetings] = useState(true);
 
@@ -42,7 +64,7 @@ export default function MenteeRecieveEmails({ usn }) {
         }
     };
 
-    const fetchMessageDetail = async (msgId) => {
+    const fetchMessageDetail = async (msgId: number | string) => {
         try {
             const res = await fetchWithAuth(
                 `${API_BASE}/student/${usn}/messages/${msgId}`,
@@ -57,7 +79,7 @@ export default function MenteeRecieveEmails({ usn }) {
         }
     };
 
-    const markAsRead = async (msgId) => {
+    const markAsRead = async (msgId: number | string) => {
         try {
             await fetchWithAuth(
                 `${API_BASE}/student/${usn}/messages/${msgId}/read`,
