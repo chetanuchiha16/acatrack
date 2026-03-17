@@ -1,9 +1,48 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 import API_BASE from "./config";
 
-export default function MenteeRecordFilling({ usn, name }) {
-    const [formData, setFormData] = useState({
+interface MenteeRecordFillingProps {
+    usn: string;
+    name: string;
+}
+
+interface RecordEntry {
+    [key: string]: string;
+}
+
+interface MenteeSummary {
+    cultural_activities: string;
+    co_curricular_activities: string;
+    hackathon: string;
+    coding_competitions: string;
+    other_achievements: string;
+}
+
+interface MenteeFormData {
+    name: string;
+    usn: string;
+    mentor_name: string;
+    mentor_phone: string;
+    phone_number: string;
+    email: string;
+    temporary_address: string;
+    permanent_address: string;
+    father_name: string;
+    Contact: string;
+    Occupation: string;
+    mother_name: string;
+    Contact_Mother: string;
+    Occupation_Mother: string;
+    sgpa: string[];
+    projects: RecordEntry[];
+    internships: RecordEntry[];
+    activities: RecordEntry[];
+    summary: MenteeSummary;
+}
+
+export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingProps) {
+    const [formData, setFormData] = useState<MenteeFormData>({
         name: name || "",
         usn: usn || "",
         mentor_name: "",
@@ -34,34 +73,40 @@ export default function MenteeRecordFilling({ usn, name }) {
     const [message, setMessage] = useState("");
 
     // Handle normal input changes
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
     // Handle array inputs like SGPA
-    const handleArrayChange = (index, value, key) => {
-        const newArr = [...formData[key]];
+    const handleArrayChange = (index: number, value: string, key: keyof MenteeFormData) => {
+        const currentArr = formData[key] as string[];
+        const newArr = [...currentArr];
         newArr[index] = value;
         setFormData((prev) => ({ ...prev, [key]: newArr }));
     };
 
     // Add dynamic rows for projects, internships, activities
-    const addRow = (key) => {
+    const addRow = (key: "projects" | "internships" | "activities") => {
         setFormData((prev) => ({
             ...prev,
             [key]: [...prev[key], {}],
         }));
     };
 
-    const handleObjectArrayChange = (key, index, field, value) => {
+    const handleObjectArrayChange = (
+        key: "projects" | "internships" | "activities",
+        index: number,
+        field: string,
+        value: string
+    ) => {
         const newArr = [...formData[key]];
         newArr[index] = { ...newArr[index], [field]: value };
         setFormData((prev) => ({ ...prev, [key]: newArr }));
     };
 
     // Submit form
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         try {
             const res = await axios.post(

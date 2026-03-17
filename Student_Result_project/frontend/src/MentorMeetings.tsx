@@ -1,10 +1,24 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { useState, useEffect } from "react";
 import axiosInstance from "./axiosInstance";
 import { CalendarDays } from "lucide-react";
 import API_BASE from "./config";
-export default function MentorMeetings({ mentorId, batchYear }) {
-    const [meetings, setMeetings] = useState([]);
+
+interface MentorMeetingsProps {
+    mentorId: string;
+    batchYear: string;
+}
+
+interface MeetingRecord {
+    id: number | string;
+    title: string;
+    date: string;
+    venue: string;
+    agenda?: string;
+    [key: string]: unknown;
+}
+
+export default function MentorMeetings({ mentorId, batchYear }: MentorMeetingsProps) {
+    const [meetings, setMeetings] = useState<MeetingRecord[]>([]);
     const [date, setDate] = useState("");
     const [agenda, setAgenda] = useState("");
     const [title, setTitle] = useState("");
@@ -66,7 +80,7 @@ export default function MentorMeetings({ mentorId, batchYear }) {
     };
 
     // Delete a meeting
-    const removeMeeting = async (id) => {
+    const removeMeeting = async (id: number | string) => {
         setLoading(true);
         setMessage("");
         try {
@@ -146,7 +160,7 @@ export default function MentorMeetings({ mentorId, batchYear }) {
             ) : (
                 <ul className="space-y-2">
                     {meetings
-                        .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                        .sort((a: MeetingRecord, b: MeetingRecord) => new Date(b.date).getTime() - new Date(a.date).getTime())
                         .map((m) => (
                             <li
                                 key={m.id}

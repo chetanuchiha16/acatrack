@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
+import type { StudentResult, Semester } from "./types";
 
-export default function ResultCardView({ usn, semester }) {
-    const [data, setData] = useState(null);
-    const [loading, setloading] = useState("");
+interface ResultCardViewProps {
+    usn: string;
+    semester: Semester;
+}
+
+export default function ResultCardView({ usn, semester }: ResultCardViewProps) {
+    const [data, setData] = useState<StudentResult | null>(null);
+    const [error, setError] = useState<string>("");
 
     const fetchStudent = async () => {
         try {
@@ -15,9 +20,10 @@ export default function ResultCardView({ usn, semester }) {
                     params: { usn, semester }}            );
             setData(res.data);
             console.log(res.data, res.status);
-            setloading("");
-        } catch (err) {
-            setloading(err.response?.data?.loading || "Something went wrong.");
+            setError("");
+        } catch (err: unknown) {
+            const e = err as { response?: { data?: { error?: string } } };
+            setError(e.response?.data?.error ?? "Something went wrong.");
         }
     };
 
@@ -29,9 +35,9 @@ export default function ResultCardView({ usn, semester }) {
 
     return (
         <div>
-            {loading && (
+            {error && (
                 <p className="text-red-500 font-semibold text-center">
-                    {loading}
+                    {error}
                 </p>
             )}
 

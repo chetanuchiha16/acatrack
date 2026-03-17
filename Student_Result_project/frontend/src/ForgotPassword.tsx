@@ -1,14 +1,22 @@
 import { useState } from "react";
 import { FaUser } from "react-icons/fa";
-import axios from "axios";
 import axiosInstance from "./axiosInstance";
-import API_BASE from "./config"; // make sure this is correct
+import API_BASE from "./config";
 
-export default function ForgotPassword({ onClose }) {
-    const [username, setUsername] = useState("");
-    const [status, setStatus] = useState(null); // { type: "success" | "error", message: string }
+interface ForgotPasswordProps {
+    onClose: () => void;
+}
 
-    async function handleSubmit(e) {
+interface StatusMessage {
+    type: "success" | "error";
+    message: string;
+}
+
+export default function ForgotPassword({ onClose }: ForgotPasswordProps) {
+    const [username, setUsername] = useState<string>("");
+    const [status, setStatus] = useState<StatusMessage | null>(null);
+
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setStatus(null); // clear previous messages
 
@@ -24,12 +32,11 @@ export default function ForgotPassword({ onClose }) {
                 message: res.data.message || "Reset link sent successfully!",
             });
             setUsername(""); // optional: clear input
-        } catch (err) {
+        } catch (err: unknown) {
+            const e = err as { response?: { data?: { error?: string } } };
             setStatus({
                 type: "error",
-                message:
-                    err.response?.data?.error ||
-                    "Something went wrong. Please try again.",
+                message: e.response?.data?.error ?? "Something went wrong. Please try again.",
             });
         }
     }

@@ -1,12 +1,24 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import API_BASE from "./config";
-export default function MentorRecords({ mentor_id, batchYear }) {
-    const [pdfs, setPdfs] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [selectedPdf, setSelectedPdf] = useState(null);
-    const [pdfUrl, setPdfUrl] = useState(null); // For viewing
+
+interface MentorRecordsProps {
+    mentor_id: string;
+    batchYear: string;
+}
+
+interface PdfEntry {
+    usn: string;
+    name: string;
+    [key: string]: unknown;
+}
+
+export default function MentorRecords({ mentor_id, batchYear }: MentorRecordsProps) {
+    const [pdfs, setPdfs] = useState<PdfEntry[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const [selectedPdf, setSelectedPdf] = useState<PdfEntry | null>(null);
+    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchPdfs = async () => {

@@ -1,20 +1,53 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { useEffect, useState } from "react";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
-export default function MentorSendEmails({ mentorId, batchYear }) {
-    const [students, setStudents] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [expanded, setExpanded] = useState({});
-    const [studentMessages, setStudentMessages] = useState({});
-    const [loadingMessages, setLoadingMessages] = useState(true);
-    const [feedback, setFeedback] = useState({ text: "", type: "" });
-    const [search, setSearch] = useState("");
 
-    // Controlled inputs
-    const [broadcastSubject, setBroadcastSubject] = useState("");
-    const [broadcastMsg, setBroadcastMsg] = useState("");
-    const [studentInputs, setStudentInputs] = useState({});
+interface MentorSendEmailsProps {
+    mentorId: string;
+    batchYear: string;
+}
+
+interface StudentEntry {
+    usn: string;
+    name: string;
+    parent_name?: string;
+    parent_email?: string;
+    parent_phone?: string;
+    [key: string]: unknown;
+}
+
+interface ReadStatus {
+    usn: string;
+    read: boolean;
+}
+
+interface MessageEntry {
+    id: number | string;
+    subject: string;
+    message: string;
+    student_usn?: string;
+    created_at: string;
+    email_failed?: boolean;
+    read_status?: ReadStatus[];
+    [key: string]: unknown;
+}
+
+interface StudentInput {
+    subject: string;
+    message: string;
+}
+
+export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmailsProps) {
+    const [students, setStudents] = useState<StudentEntry[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+    const [studentMessages, setStudentMessages] = useState<Record<string, MessageEntry[]>>({});
+    const [loadingMessages, setLoadingMessages] = useState<boolean>(true);
+    const [feedback, setFeedback] = useState<{ text: string; type: "" | "success" | "error" }>({ text: "", type: "" });
+    const [search, setSearch] = useState<string>("");
+    const [broadcastSubject, setBroadcastSubject] = useState<string>("");
+    const [broadcastMsg, setBroadcastMsg] = useState<string>("");
+    const [studentInputs, setStudentInputs] = useState<Record<string, StudentInput>>({});
     console.log(studentMessages);
     useEffect(() => {
         if (mentorId && batchYear) {
@@ -56,11 +89,16 @@ export default function MentorSendEmails({ mentorId, batchYear }) {
         }
     };
 
-    const toggleExpand = (usn) => {
+    const toggleExpand = (usn: string) => {
         setExpanded((prev) => ({ ...prev, [usn]: !prev[usn] }));
     };
 
-    const sendEmail = async (recipientType, usn, subject, message) => {
+    const sendEmail = async (
+        recipientType: string,
+        usn: string | null,
+        subject: string,
+        message: string
+    ) => {
         if (!subject.trim() || !message.trim()) {
             setFeedback({
                 text: "Subject and message are required.",
@@ -147,7 +185,7 @@ export default function MentorSendEmails({ mentorId, batchYear }) {
     };
 console.log(sessionStorage.getItem("jwt_token"))
 
-    const deleteMessage = async (msgId, usn) => {
+    const deleteMessage = async (msgId: number | string, usn: string | null) => {
         try {
             await axiosInstance.delete(
                 `${API_BASE}/mentor/${mentorId}/messages/${msgId}?batch_year=${batchYear}`
@@ -361,13 +399,9 @@ console.log(sessionStorage.getItem("jwt_token"))
                                                             (prev) => ({
                                                                 ...prev,
                                                                 [s.usn]: {
-                                                                    ...(prev[
-                                                                        s.usn
-                                                                    ] || {}),
-                                                                    subject:
-                                                                        e.target
-                                                                            .value,
-                                                                },
+                                                                    subject: e.target.value,
+                                                                    message: prev[s.usn]?.message ?? "",
+                                                                } satisfies StudentInput,
                                                             })
                                                         )
                                                     }
@@ -385,13 +419,9 @@ console.log(sessionStorage.getItem("jwt_token"))
                                                             (prev) => ({
                                                                 ...prev,
                                                                 [s.usn]: {
-                                                                    ...(prev[
-                                                                        s.usn
-                                                                    ] || {}),
-                                                                    message:
-                                                                        e.target
-                                                                            .value,
-                                                                },
+                                                                    subject: prev[s.usn]?.subject ?? "",
+                                                                    message: e.target.value,
+                                                                } satisfies StudentInput,
                                                             })
                                                         )
                                                     }
