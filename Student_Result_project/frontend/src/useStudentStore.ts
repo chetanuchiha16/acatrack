@@ -2,26 +2,10 @@
 import { create } from "zustand";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
+import type { StudentInfo, MentorInfo, StudentData } from "./types";
 
-// Typed from actual API shape used across components
-export interface StudentInfo {
-    usn: string;
-    name: string;
-    [key: string]: unknown; // allow extra fields from API
-}
-
-export interface MentorInfo {
-    name: string;
-    email: string;
-    phone: string;
-    [key: string]: unknown;
-}
-
-export interface StudentData {
-    student: StudentInfo;
-    mentor: MentorInfo | null;
-    [key: string]: unknown;
-}
+// Re-export for consumers that previously imported from this file
+export type { StudentInfo, MentorInfo, StudentData } from "./types";
 
 interface StudentState {
     studentData: StudentData | null;
