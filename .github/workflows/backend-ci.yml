@@ -5,17 +5,18 @@ name: Backend CI
   push:
     branches: [main]
     paths:
-      - "backend/**"
+      - "Student_Result_project/backend/**"
       - ".github/workflows/backend-ci.yml"
   pull_request:
     branches: [main]
     paths:
-      - "backend/**"
+      - "Student_Result_project/backend/**"
       - ".github/workflows/backend-ci.yml"
+  workflow_call:
 
 defaults:
   run:
-    working-directory: backend
+    working-directory: Student_Result_project/backend
 
 jobs:
   lint:
