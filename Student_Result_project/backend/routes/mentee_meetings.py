@@ -1,7 +1,6 @@
-from flask import Blueprint, request, jsonify, session
-from models import db, Meeting, StudentAuth as Student
-from datetime import datetime
-from services.batch_manager import BatchManager, bm
+from flask import Blueprint, jsonify
+from models import Meeting, StudentAuth as Student
+from services.batch_manager import bm
 from utils.helpers import get_batch_year
 mentee_meetings_bp = Blueprint(
     "mentee_meetings", __name__, url_prefix="/auth/Student/Mentee/meeting"

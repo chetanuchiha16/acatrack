@@ -9,7 +9,6 @@ Key improvements:
 """
 
 import smtplib
-import threading
 from concurrent.futures import ThreadPoolExecutor
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText

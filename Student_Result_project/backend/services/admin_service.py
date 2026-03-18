@@ -7,7 +7,7 @@ import pandas as pd
 from app_init import bcrypt
 from logger_config import get_logger
 from services.batch_manager import bm
-from models.schema import ExportCache, ParentAuth, StudentAuth, Teacher
+from models.schema import ExportCache, ParentAuth
 from repositories.student_repository import StudentRepository
 from repositories.mentor_repository import MentorRepository
 from repositories.admin_repository import AdminRepository

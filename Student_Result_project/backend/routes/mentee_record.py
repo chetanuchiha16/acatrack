@@ -1,7 +1,7 @@
-from flask import Blueprint, request, jsonify, redirect, send_from_directory
+from flask import Blueprint, request, jsonify, send_from_directory
 import fitz
 import os
-from models.paths import pdf_dir, img_dir, base_dir
+from models.paths import pdf_dir, base_dir
 from utils.cloud import save_file, supabase, SUPABASE_BUCKET, SUPABASE_URL
 from services.batch_manager import bm
 from repositories.student_repository import StudentRepository

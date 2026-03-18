@@ -7,9 +7,8 @@ from typing import Generator
 import os
 import sys
 
-from app_init import create_app, db
+from app_init import db
 from logger_config import get_logger
-from models.paths import postgres_db_url
 from models.schema import StudentAuth
 from services.data_prep import prepare_data as prep_data
 

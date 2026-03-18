@@ -1,7 +1,7 @@
-from flask import Flask, jsonify, request, send_file, Blueprint, session
+from flask import jsonify, request, send_file, Blueprint
 from services.university_service import University
 from visuals import create_toppers_list_pdf, create_university_report
-from models.paths import  pdf_dir, postgres_db_url
+from models.paths import  postgres_db_url
 from io import BytesIO
 from logger_config import get_logger
 

@@ -1,15 +1,9 @@
-import textwrap
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle ,Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import inch
-from fpdf import FPDF
-from reportlab.lib.pagesizes import letter, landscape
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-import pathlib
+from reportlab.lib.pagesizes import letter
 from services.results_service import SubjectResult
-from models.paths import pdf_dir,img_dir, get_logo_path
+from models.paths import get_logo_path
 from services.fetch_service import sem_subjects
 import io
 from logger_config import get_logger
