@@ -1,4 +1,0 @@
-Bucket: uploads
-Root items:
-
-PDFs items:

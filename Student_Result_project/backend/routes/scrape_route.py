@@ -53,7 +53,7 @@ def _fetch_single_result(usn, exam_url, batch_year, sem):
             time.sleep(5)
             logger.debug(f"Files in tmpdir after download: {os.listdir(tmpdir)}")
 
-            latest_pdf = pdftoexcel.wait_and_rename_pdf(tmpdir, usn)
+            _ = pdftoexcel.wait_and_rename_pdf(tmpdir, usn)
             local_pdf = os.path.join(tmpdir, f"{usn}.pdf")
             logger.debug(f"local_pdf: {local_pdf}")
 

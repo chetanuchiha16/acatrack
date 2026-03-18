@@ -11,3 +11,16 @@ from .schema import (
 )
 
 from .config import Config
+
+__all__ = [
+    "db",
+    "Teacher",
+    "StudentAuth",
+    "Mentor",
+    "ParentAuth",
+    "Meeting",
+    "PasswordResetToken",
+    "StudentMessageStatus",
+    "MentorMessage",
+    "Config",
+]
