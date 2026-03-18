@@ -1,4 +1,4 @@
-import React, { StrictMode, ReactNode } from "react";
+import React, { StrictMode, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App";
@@ -22,38 +22,32 @@ import ParentDashboard from "./ParentDashboard";
 import ParentResult from "./ParentResult";
 import ResetPassword from "./ResetPassword";
 
-interface RootLayoutProps {
-  children: ReactNode;
-}
-
-const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
-  return (
-    <>
-      <HiddenShortcut />
-      {children}
-    </>
-  );
-};
+const withHiddenShortcut = (children: ReactNode) => (
+  <>
+    <HiddenShortcut />
+    {children}
+  </>
+);
 
 const route = createBrowserRouter([
-  { path: "/auth/Parent/:id/ParentResult", element: <RootLayout><ParentResult /></RootLayout> },
-  { path: "/auth/Parent/:id", element: <RootLayout><ParentDashboard /></RootLayout> },
-  { path: "/auth/Staff/:id/MentorDashboard", element: <RootLayout><MentorDashboard /></RootLayout> },
-  { path: "/auth/Staff/:id/MentorResults", element: <RootLayout><MentorResults batchYear="" /></RootLayout> },
-  { path: "/auth/Staff/:id/SendEmails", element: <RootLayout><SendEmails /></RootLayout> },
-  { path: "/auth/Staff/:id/UploadResults", element: <RootLayout><ExcelViewer excel_route={`${API_BASE}/excel/template.xlsx`} /></RootLayout> },
-  { path: "/auth/Staff/:id/StaffClassroom", element: <RootLayout><TeacherNotesUploader /></RootLayout> },
-  { path: "/auth/Staff/:id/StaffResults", element: <RootLayout><StaffResults /></RootLayout> },
-  { path: "/auth/Staff/:id", element: <RootLayout><Staff /></RootLayout> },
-  { path: "/auth/Student/:id", element: <RootLayout><Student /></RootLayout> },
-  { path: "/auth/:who", element: <RootLayout><Auth /></RootLayout> },
-  { path: "/reset-password/:token", element: <RootLayout><ResetPassword /></RootLayout> },
-  { path: "/auth/", element: <RootLayout><Auth /></RootLayout> },
-  { path: "/auth", element: <RootLayout><Auth /></RootLayout> },
-  { path: "/admin/panel", element: <RootLayout><AdminPanel /></RootLayout> },
-  { path: "/admin", element: <RootLayout><AdminLogin /></RootLayout> },
-  { path: "/", element: <RootLayout><App /></RootLayout> },
-  { path: "*", element: <RootLayout><ErrorPage /></RootLayout> },
+  { path: "/auth/Parent/:id/ParentResult", element: withHiddenShortcut(<ParentResult />) },
+  { path: "/auth/Parent/:id", element: withHiddenShortcut(<ParentDashboard />) },
+  { path: "/auth/Staff/:id/MentorDashboard", element: withHiddenShortcut(<MentorDashboard />) },
+  { path: "/auth/Staff/:id/MentorResults", element: withHiddenShortcut(<MentorResults batchYear="" />) },
+  { path: "/auth/Staff/:id/SendEmails", element: withHiddenShortcut(<SendEmails />) },
+  { path: "/auth/Staff/:id/UploadResults", element: withHiddenShortcut(<ExcelViewer excel_route={`${API_BASE}/excel/template.xlsx`} />) },
+  { path: "/auth/Staff/:id/StaffClassroom", element: withHiddenShortcut(<TeacherNotesUploader />) },
+  { path: "/auth/Staff/:id/StaffResults", element: withHiddenShortcut(<StaffResults />) },
+  { path: "/auth/Staff/:id", element: withHiddenShortcut(<Staff />) },
+  { path: "/auth/Student/:id", element: withHiddenShortcut(<Student />) },
+  { path: "/auth/:who", element: withHiddenShortcut(<Auth />) },
+  { path: "/reset-password/:token", element: withHiddenShortcut(<ResetPassword />) },
+  { path: "/auth/", element: withHiddenShortcut(<Auth />) },
+  { path: "/auth", element: withHiddenShortcut(<Auth />) },
+  { path: "/admin/panel", element: withHiddenShortcut(<AdminPanel />) },
+  { path: "/admin", element: withHiddenShortcut(<AdminLogin />) },
+  { path: "/", element: withHiddenShortcut(<App />) },
+  { path: "*", element: withHiddenShortcut(<ErrorPage />) },
 ]);
 
 // 🔥 Register Firebase Messaging Service Worker
