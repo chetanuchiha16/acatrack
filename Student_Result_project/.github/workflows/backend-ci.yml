@@ -1,0 +1,88 @@
+---
+name: Backend CI
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  lint:
+    name: Lint & Format (Ruff)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          allow-prereleases: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Ruff — check linting
+        run: uv run ruff check .
+
+      - name: Ruff — check formatting
+        run: uv run ruff format --check .
+
+  test:
+    name: pytest
+    runs-on: ubuntu-latest
+    needs: lint
+
+    env:
+      FIREBASE_CRED_PATH: ${{ secrets.FIREBASE_CRED_PATH }}
+      EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+      A_EMAIL: ${{ secrets.A_EMAIL }}
+      DEFAULT_NUMBER: ${{ secrets.DEFAULT_NUMBER }}
+      C_EMAIL: ${{ secrets.C_EMAIL }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      ADMIN_SECRET: ${{ secrets.ADMIN_SECRET }}
+      user: ${{ secrets.DB_USER }}
+      password: ${{ secrets.DB_PASSWORD }}
+      host: ${{ secrets.DB_HOST }}
+      port: ${{ secrets.DB_PORT }}
+      dbname: ${{ secrets.DB_NAME }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      SUPABASE_BUCKET: ${{ secrets.SUPABASE_BUCKET }}
+      RENDER: ${{ secrets.RENDER }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          allow-prereleases: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run pytest
+        run: uv run pytest --tb=short -q
