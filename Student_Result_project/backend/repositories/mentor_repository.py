@@ -7,7 +7,7 @@ class MentorRepository:
 
     # --- Mentors ---
     def get_by_id(self, mentor_id: int) -> Mentor:
-        return self.db.query(Mentor).get(mentor_id)
+        return self.db.get(Mentor, mentor_id)
 
     def get_by_name(self, name: str) -> Mentor:
         return self.db.query(Mentor).filter_by(name=name).first()
@@ -48,7 +48,7 @@ class MentorRepository:
         return self.db.query(Meeting).filter_by(mentor_id=mentor_id).order_by(Meeting.date).all()
         
     def get_meeting_by_id(self, meeting_id: int) -> Meeting:
-        return self.db.query(Meeting).get(meeting_id)
+        return self.db.get(Meeting, meeting_id)
 
     # --- Messages ---
     def get_messages_by_mentor(self, mentor_id: int) -> list[MentorMessage]:
