@@ -146,17 +146,6 @@ class SubjectResult:
         """
         Display the results for the subject, either to the console or to a widget.
         """
-        result_str = (
-            f"Results for Subject: {self.subject_code} in {self.semester}\n"
-            f"Total Students: {self.total_students}\n"
-            f"Present: {self.present_students}, Absent: {self.absent_students}\n"
-            f"Passed: {self.pass_count}, Failed: {self.fail_count}\n"
-            f"Pass Percentage: {self.pass_percentage:.2f}%\n"
-            f"FCD (>70%): {self.fcd_count}\n"
-            f"FC (60-70%): {self.fc_count}\n"
-            f"SC (50-60%): {self.sc_count}\n" + "-" * 50 + "\n"
-            "PDF Saved"
-        )
 
     def get_subject_results_dict(self):
         return {

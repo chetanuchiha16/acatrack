@@ -11,7 +11,7 @@ mentee_meetings_bp = Blueprint(
 @mentee_meetings_bp.route("/<string:student_usn>", methods=["GET"])
 def get_mentee_meetings(student_usn):
     batch_year = get_batch_year()
-    with bm.session_scope(batch_year) as db:
+    with bm.session_scope(batch_year) as _:
         student = Student.query.filter_by(usn=student_usn).first()
         if not student:
             return jsonify({"error": "Student not found"}), 404

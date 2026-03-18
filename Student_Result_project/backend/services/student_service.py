@@ -267,7 +267,6 @@ class Student:
             return {}
 
         # Fetch AcademicResult and Subject joined over required semesters
-        student_ids = list(student_id_to_usn.keys())
         results = student_repo.get_results_by_usns_and_sem(usns, required_semesters)
 
         preloaded_data = {

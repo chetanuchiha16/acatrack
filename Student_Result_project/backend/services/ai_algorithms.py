@@ -124,7 +124,6 @@ def generate_backlog_pdf(student_name, backlogs, total_credits):
         # Iterate over each semester with actual backlogs
         for sem, sem_data in backlogs.items():
             failed_subjects = sem_data.get("failed_subjects", [])
-            sem_credits = sem_data.get("semester_backlog_credits", 0)
 
             story.append(Paragraph(f"<b>{sem}</b>", styles["Heading2"]))
 

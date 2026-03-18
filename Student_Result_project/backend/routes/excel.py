@@ -13,7 +13,6 @@ def excel():
     file = request.files.get("file")
     if not file:
         return jsonify({"error": "No file uploaded"}), 400
-    filename = file.filename or "uploaded.xlsx"
     batch_year = get_batch_year()
 
     with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
