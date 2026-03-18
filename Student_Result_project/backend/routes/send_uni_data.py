@@ -1,14 +1,13 @@
 from flask import jsonify, request, send_file, Blueprint
+from extensions import cache
 from services.university_service import University
 from visuals import create_toppers_list_pdf, create_university_report
 from models.paths import postgres_db_url
 from io import BytesIO
 from logger_config import get_logger
+from utils.helpers import get_batch_year
 
 logger = get_logger(__name__)
-
-from utils.helpers import get_batch_year
-from extensions import cache
 
 uni_bp = Blueprint("uni", __name__)
 
@@ -62,7 +61,6 @@ def get_report(semester):
 
     # ✅ Generate PDF in-memory
     pdf_bytes = create_university_report(university, semester)
-    from io import BytesIO
 
     pdf_buffer = BytesIO(pdf_bytes)
     pdf_buffer.seek(0)
