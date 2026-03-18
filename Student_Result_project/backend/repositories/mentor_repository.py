@@ -30,8 +30,12 @@ class MentorRepository:
         return self.db.query(Mentor).filter(Mentor.id.in_(ids)).all()
 
     # --- Teachers ---
-    def get_teacher_by_username(self, username: str) -> Teacher:
+    def get_teacher_by_username(self, username: str) -> Teacher | None:
         return self.db.query(Teacher).filter_by(username=username).first()
+
+    def teacher_username_exists(self, username: str) -> bool:
+        """Lightweight check used during unique-username generation."""
+        return self.db.query(Teacher.username).filter_by(username=username).first() is not None
 
     def get_teacher_by_mentor_id(self, mentor_id: int) -> Teacher:
         return self.db.query(Teacher).filter_by(mentor_id=mentor_id).first()

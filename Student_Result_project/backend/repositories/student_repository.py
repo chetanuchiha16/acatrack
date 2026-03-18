@@ -44,6 +44,15 @@ class StudentRepository:
     def get_auths_by_batch(self, batch_year: int) -> list[StudentAuth]:
         return self.db.query(StudentAuth).filter_by(batch_year=batch_year).all()
 
+    def get_auths_with_parents_by_batch(self, batch_year: int) -> list[StudentAuth]:
+        """Bulk-fetch all students for a batch with their parent accounts eagerly loaded."""
+        return (
+            self.db.query(StudentAuth)
+            .options(joinedload(StudentAuth.parent_account))
+            .filter_by(batch_year=batch_year)
+            .all()
+        )
+
     def get_auth_by_batch(self, batch_year: int) -> list[StudentAuth]:
         """Alias for get_auths_by_batch."""
         return self.get_auths_by_batch(batch_year)
