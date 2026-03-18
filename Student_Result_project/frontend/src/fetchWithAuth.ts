@@ -1,7 +1,7 @@
 // fetchWithAuth.ts
 import { getToken } from "./utils/storage";
 
-export interface FetchWithAuthOptions extends RequestInit {
+export interface FetchWithAuthOptions extends globalThis.RequestInit {
     /**
      * When false, the `Content-Type: application/json` header is omitted.
      * Set this to false for multipart/form-data uploads so the browser

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import axios from "axios";
 import API_BASE from "./config";
 
@@ -73,7 +73,7 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
     const [message, setMessage] = useState("");
 
     // Handle normal input changes
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
@@ -106,7 +106,7 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
     };
 
     // Submit form
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         try {
             const res = await axios.post(

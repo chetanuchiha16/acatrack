@@ -7,23 +7,27 @@ interface MentorRecordsProps {
     batchYear: string;
 }
 
-interface PdfEntry {
+interface MentorPdfEntry {
     usn: string;
     name: string;
-    [key: string]: unknown;
+    file_url?: string;
+}
+
+interface MentorPdfDownloadResponse {
+    file_url: string;
 }
 
 export default function MentorRecords({ mentor_id, batchYear }: MentorRecordsProps) {
-    const [pdfs, setPdfs] = useState<PdfEntry[]>([]);
+    const [pdfs, setPdfs] = useState<MentorPdfEntry[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedPdf, setSelectedPdf] = useState<PdfEntry | null>(null);
+    const [selectedPdf, setSelectedPdf] = useState<MentorPdfEntry | null>(null);
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchPdfs = async () => {
             try {
-                const res = await axios.get(
+                const res = await axios.get<MentorPdfEntry[]>(
                     `${API_BASE}/mentee/mentor/${mentor_id}/pdfs?batch_year=${batchYear}`
                 );
                 setPdfs(res.data);
@@ -37,14 +41,16 @@ export default function MentorRecords({ mentor_id, batchYear }: MentorRecordsPro
     }, [mentor_id, batchYear]);
 
     // Fetch signed file URL before viewing/downloading
-    const fetchPdfUrl = async (usn) => {
+    const fetchPdfUrl = async (usn: string): Promise<string | null> => {
         try {
-            const res = await axios.get(
+            const res = await axios.get<MentorPdfDownloadResponse>(
                 `${API_BASE}/mentee/mentor/${mentor_id}/download/${usn}?batch_year=${batchYear}`
             );
             setPdfUrl(res.data.file_url);
+            return res.data.file_url;
         } catch {
             setError("Failed to load the PDF.");
+            return null;
         }
     };
 
@@ -81,10 +87,10 @@ export default function MentorRecords({ mentor_id, batchYear }: MentorRecordsPro
                                     </button>
                                     <button
                                         onClick={async () => {
-                                            const res = await axios.get(
-                                                `${API_BASE}/mentee/mentor/${mentor_id}/download/${pdf.usn}?batch_year=${batchYear}`
-                                            );
-                                            window.open(res.data.file_url, "_blank");
+                                            const url = await fetchPdfUrl(pdf.usn);
+                                            if (url) {
+                                                window.open(url, "_blank");
+                                            }
                                         }}
                                         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
                                     >

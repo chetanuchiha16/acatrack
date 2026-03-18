@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import jssLogo from "./assets/jssLogo.png";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import Result from "./Result";
 import Classroom from "./Classroom";
 import LogoutButton from "./LogoutButton";
@@ -8,22 +8,25 @@ import MenteeRecieveEmails from "./MenteeRecieveEmails";
 import { onMessage } from "firebase/messaging";
 import { messaging } from "./firebase";
 import useProtectedPage from "./useProtectedPage";
-import MenteeRecordFilling from "./MenteeRecordFilling.jsx";
+import MenteeRecordFilling from "./MenteeRecordFilling";
 import LoadingSpinner from "./LoadingSpinner";
+import type { Semester } from "./types";
+
+type StudentTab = "result" | "classroom" | "mentee" | "record";
+type ResultViewMode = "table" | "cards" | "ai";
+type StudentSemester = Semester | "";
 
 interface LocationState {
     branch?: string;
-    [key: string]: any;
 }
 
 const Student: React.FC = () => {
-    const navigate = useNavigate();
     const location = useLocation();
-    const params = useParams<{ branch?: string; [key: string]: any }>();
-    
-    const [view, setView] = useState<string>("cards");
-    const [selectedTab, setSelectedTab] = useState<string>("result");
-    const [currentSem, setCurrentSem] = useState<string>("sem1");
+    const params = useParams<{ branch?: string }>();
+
+    const [view, setView] = useState<ResultViewMode>("cards");
+    const [selectedTab, setSelectedTab] = useState<StudentTab>("result");
+    const [currentSem, setCurrentSem] = useState<StudentSemester>("sem1");
     
     const { user, loading } = useProtectedPage("Student");
 
@@ -52,7 +55,9 @@ const Student: React.FC = () => {
     const finalName = name || "";
     const finalUsn = id || "";
 
-    const sems: string[] = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"];
+    const sems: Semester[] = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"];
+    const isSemester = (value: string): value is Semester =>
+        sems.includes(value as Semester);
 
     if (loading) return <LoadingSpinner message="Authenticating Dashboard..." fullScreen={true} />;
     
@@ -127,12 +132,11 @@ const Student: React.FC = () => {
                     <div className="w-full flex justify-center sm:justify-start">
                         <nav
                             className="inline-flex rounded-md bg-gray-50 dark:bg-[#0b1220] border border-gray-200 dark:border-gray-700 overflow-hidden"
-                            role="tablist"
+                            role="group"
                             aria-label="Student tabs"
                         >
                             <button
-                                role="tab"
-                                aria-selected={selectedTab === "result"}
+                                aria-pressed={selectedTab === "result"}
                                 onClick={() => setSelectedTab("result")}
                                 className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "result"
                                     ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
@@ -143,8 +147,7 @@ const Student: React.FC = () => {
                             </button>
 
                             <button
-                                role="tab"
-                                aria-selected={selectedTab === "classroom"}
+                                aria-pressed={selectedTab === "classroom"}
                                 onClick={() => setSelectedTab("classroom")}
                                 className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "classroom"
                                     ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
@@ -155,8 +158,7 @@ const Student: React.FC = () => {
                             </button>
 
                             <button
-                                role="tab"
-                                aria-selected={selectedTab === "mentee"}
+                                aria-pressed={selectedTab === "mentee"}
                                 onClick={() => setSelectedTab("mentee")}
                                 className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "mentee"
                                     ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
@@ -167,8 +169,7 @@ const Student: React.FC = () => {
                             </button>
                             {/* ✅ Record button */}
                             <button
-                                role="tab"
-                                aria-selected={selectedTab === "record"}
+                                aria-pressed={selectedTab === "record"}
                                 onClick={() => setSelectedTab("record")}
                                 className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "record"
                                     ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
@@ -187,11 +188,16 @@ const Student: React.FC = () => {
                             <>
                                 {/* Semester Select */}
                                 <label className="relative block w-40">
+                                    <span className="sr-only">Select semester</span>
                                     <select
+                                        aria-label="Select semester"
                                         value={currentSem}
-                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                                            setCurrentSem(e.target.value)
-                                        }
+                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                            const nextSem = e.target.value;
+                                            if (nextSem === "" || isSemester(nextSem)) {
+                                                setCurrentSem(nextSem);
+                                            }
+                                        }}
                                         className="appearance-none w-full px-3 py-2 rounded-md bg-white dark:bg-[#0f1720] text-sm text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
                                         <option value="">
@@ -250,16 +256,6 @@ const Student: React.FC = () => {
 
                 {/* Main content */}
                 <section>
-                    {selectedTab === "" && (
-                        <div className="max-w-3xl mx-auto text-center text-sm text-gray-600 dark:text-gray-300 py-6">
-                            Please select{" "}
-                            <span className="font-medium">Result</span>,{" "}
-                            <span className="font-medium">Classroom</span>, or{" "}
-                            <span className="font-medium">Mentee</span> to
-                            continue.
-                        </div>
-                    )}
-
                     <div className="w-full">
                         {selectedTab === "result" && currentSem !== "" && (
                             <Result

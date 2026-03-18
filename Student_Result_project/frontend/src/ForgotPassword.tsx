@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { FaUser } from "react-icons/fa";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
@@ -16,7 +16,7 @@ export default function ForgotPassword({ onClose }: ForgotPasswordProps) {
     const [username, setUsername] = useState<string>("");
     const [status, setStatus] = useState<StatusMessage | null>(null);
 
-    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    async function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setStatus(null); // clear previous messages
 
