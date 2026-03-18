@@ -285,7 +285,6 @@ export default function AdminPanel() {
                 `${API_BASE}/pdf/job_status/${jobId}`
             );
             const data = await res.json();
-            console.log(data);
             if (data.status === "done") {
                 setStatus(`✅ Done! Excel at ${data.excel_path}`);
             } else {
