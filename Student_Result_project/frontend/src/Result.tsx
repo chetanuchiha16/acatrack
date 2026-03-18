@@ -42,7 +42,7 @@ export default function Result({ usn, semester, view }: ResultProps) {
     };
 
     useEffect(() => {
-        fetchStudent();
+        void fetchStudent();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [usn, semester]);
 
