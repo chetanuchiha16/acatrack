@@ -1,18 +1,19 @@
-from models.schema import StudentAuth, AcademicResult, Subject, ParentAuth
-from services.student_service import Student
-from sqlalchemy.orm import joinedload
+from __future__ import annotations
+
+from sqlalchemy.orm import Session, joinedload
+from models.schema import AcademicResult, ParentAuth, StudentAuth, Subject
 
 class StudentRepository:
-    def __init__(self, db_session):
+    def __init__(self, db_session: Session) -> None:
         self.db = db_session
 
-    def get_auth_by_usn(self, usn: str) -> StudentAuth:
+    def get_auth_by_usn(self, usn: str) -> StudentAuth | None:
         return self.db.query(StudentAuth).filter_by(usn=usn).first()
 
-    def get_auths_by_usns(self, usns: list) -> list[StudentAuth]:
+    def get_auths_by_usns(self, usns: list[str]) -> list[StudentAuth]:
         return self.db.query(StudentAuth).filter(StudentAuth.usn.in_(usns)).all()
 
-    def get_auths_with_parents_by_usns(self, usns: list) -> list[StudentAuth]:
+    def get_auths_with_parents_by_usns(self, usns: list[str]) -> list[StudentAuth]:
         return self.db.query(StudentAuth).options(joinedload(StudentAuth.parent_account)).filter(StudentAuth.usn.in_(usns)).all()
         
     def get_mentees_by_mentor_and_batch(self, mentor_id: int, batch_year: int) -> list[StudentAuth]:
@@ -28,10 +29,15 @@ class StudentRepository:
         return self.db.query(StudentAuth).all()
 
     def get_all_with_parent_email(self) -> list[StudentAuth]:
-        """Returns all students that have a parent_email set."""
-        return self.db.query(StudentAuth).filter(StudentAuth.parent_email != None).all()
+        """Returns all students that have a linked parent account with an email."""
+        return (
+            self.db.query(StudentAuth)
+            .join(ParentAuth, ParentAuth.student_id == StudentAuth.id)
+            .filter(ParentAuth.email.isnot(None))
+            .all()
+        )
 
-    def get_distinct_batch_years(self) -> list:
+    def get_distinct_batch_years(self) -> list[int]:
         return self.db.query(StudentAuth.batch_year).distinct().all()
 
     # --- Student Auth by Batch ---
@@ -43,19 +49,19 @@ class StudentRepository:
         return self.get_auths_by_batch(batch_year)
 
     # --- Academic Results & Subjects ---
-    def get_results_by_usn(self, usn: str) -> list[tuple]:
+    def get_results_by_usn(self, usn: str) -> list[tuple[AcademicResult, Subject]]:
         return self.db.query(AcademicResult, Subject).join(Subject).join(StudentAuth).filter(StudentAuth.usn == usn).all()
 
-    def get_results_in_usns(self, usns: list) -> list[tuple]:
+    def get_results_in_usns(self, usns: list[str]) -> list[tuple[AcademicResult, Subject]]:
         return self.db.query(AcademicResult, Subject).join(Subject).join(StudentAuth).filter(StudentAuth.usn.in_(usns)).all()
 
-    def get_results_by_usns_and_sem(self, usns: list, semesters: list) -> list[tuple]:
+    def get_results_by_usns_and_sem(self, usns: list[str], semesters: list[str]) -> list[tuple[AcademicResult, Subject]]:
         return self.db.query(AcademicResult, Subject).join(Subject).join(StudentAuth).filter(
             StudentAuth.usn.in_(usns),
             Subject.semester.in_(semesters)
         ).all()
         
-    def get_results_by_usn_and_sem(self, usn: str, semester: str) -> list[tuple]:
+    def get_results_by_usn_and_sem(self, usn: str, semester: str) -> list[tuple[AcademicResult, Subject]]:
         return self.db.query(AcademicResult, Subject).join(Subject).join(StudentAuth).filter(
             StudentAuth.usn == usn,
             Subject.semester == semester
@@ -64,7 +70,7 @@ class StudentRepository:
     def count_results_by_batch(self, batch_year: int) -> int:
         return self.db.query(AcademicResult).filter_by(batch_year=batch_year).count()
 
-    def get_subjects_by_codes(self, subject_codes: list) -> list[Subject]:
+    def get_subjects_by_codes(self, subject_codes: list[str]) -> list[Subject]:
          return self.db.query(Subject).filter(Subject.subject_code.in_(subject_codes)).all()
 
     def count_subjects(self) -> int:
