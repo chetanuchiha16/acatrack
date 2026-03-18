@@ -8,6 +8,7 @@ import requests
 from logger_config import get_logger
 from matplotlib.figure import Figure
 from requests.exceptions import RequestException, Timeout
+from settings import settings
 from supabase import create_client
 from werkzeug.utils import secure_filename
 
@@ -16,7 +17,7 @@ logger = get_logger(__name__)
 # === Environment Setup ===
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-IS_PRODUCTION = os.getenv("RENDER") == "true"  # Render sets this automatically
+IS_PRODUCTION = settings.render == "true"  # Render sets this automatically
 
 # Local directories
 IMG_DIR = BASE_DIR / "Outputs" / "Images"
@@ -30,8 +31,8 @@ if not IS_PRODUCTION:
     NOTES_DIR.mkdir(parents=True, exist_ok=True)
 
 # === Supabase Setup ===
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE_URL = settings.supabase_url
+SUPABASE_KEY = settings.supabase_key
 SUPABASE_BUCKET = "uploads"
 
 supabase = None
