@@ -42,7 +42,13 @@ def create_app(batch_year=None, postgres_url=None):
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     cache.init_app(app)
-    CORS(app, supports_credentials=True)
+    
+    # CORS: Restrict to specific origins if configured
+    cors_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "*") # Allow setting via env
+    if cors_origins == "*":
+        logger.warning("CORS allowed origins is set to '*'. This is insecure for production.")
+    
+    CORS(app, supports_credentials=True, origins=cors_origins.split(",") if cors_origins != "*" else "*")
 
     # Teardown: close DB sessions after each request
     @app.teardown_appcontext

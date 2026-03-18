@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, redirect
-from utils.cloud import SUPABASE_URL, supabase, SUPABASE_BUCKET
+from utils.cloud import SUPABASE_URL, supabase, SUPABASE_BUCKET, sanitize_folder
 from utils.helpers import get_batch_year
 
 student_notes_bp = Blueprint("notes", __name__)
@@ -55,7 +55,7 @@ def list_notes():
     """
     try:
         batch_year = request.args.get("batch", get_batch_year())
-        relative_path = request.args.get("path", "").strip("/")
+        relative_path = sanitize_folder(request.args.get("path", "").strip("/"))
         prefix = (
             f"notes/{batch_year}/{relative_path}"
             if relative_path
@@ -63,8 +63,8 @@ def list_notes():
         )
         structure = build_supabase_file_tree(prefix)
         return jsonify(structure)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        return jsonify({"error": "Failed to list notes."}), 500
 
 
 @student_notes_bp.route("/auth/Student/notes/<path:file_path>", methods=["GET"])
@@ -83,5 +83,5 @@ def get_note(file_path):
 
         # Redirect to public URL
         return redirect(url)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        return jsonify({"error": "Failed to retrieve note."}), 500

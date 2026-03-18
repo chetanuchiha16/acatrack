@@ -119,8 +119,9 @@ def get_semester_results():
 
         return jsonify({"semester": semester, "results": results})
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        logger.exception("Error in get_semester_results")
+        return jsonify({"error": "Failed to fetch semester results."}), 500
 
 
 @sem_bp.route("/auth/Staff/sem_res/report/<semester>", methods=["GET"])

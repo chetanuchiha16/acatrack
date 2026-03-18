@@ -189,12 +189,13 @@ def list_mentor_pdfs(mentor_id):
             if supabase:
                 url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/pdfs/{filename}"
                 try:
-                    resp = requests.head(url, timeout=3)
+                    resp = requests.head(url, timeout=5)
                     if resp.status_code == 200:
                         files.append(
                             {"usn": mentee.usn, "name": mentee.name, "file_url": url}
                         )
                 except requests.RequestException:
+                    logger.debug(f"File not found or unreachable: {url}")
                     pass
             else:
                 local_pdfs = [
@@ -210,8 +211,9 @@ def list_mentor_pdfs(mentor_id):
                     )
         logger.debug(f"files: {files}")
         return jsonify(files)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        logger.exception("List mentor PDFs failed")
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @mentee_record_bp.route("/mentor/<int:mentor_id>/download/<usn>", methods=["GET"])

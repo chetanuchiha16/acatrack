@@ -25,5 +25,5 @@ def get_student_analysis():
             analysis["study_summary"] = "Focus on overall improvement."
 
         return jsonify(analysis)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    except Exception:
+        return jsonify({"error": "Failed to perform student analysis."}), 500
