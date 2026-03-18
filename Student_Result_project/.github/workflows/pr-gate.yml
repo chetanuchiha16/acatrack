@@ -1,0 +1,24 @@
+---
+name: PR Gate
+
+"on":
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-gate:
+    name: Backend CI (lint + test)
+    uses: ./.github/workflows/backend-ci.yml
+    secrets: inherit
+
+  frontend-gate:
+    name: Frontend CI (lint + build)
+    uses: ./.github/workflows/frontend-ci.yml
+    secrets: inherit
+
+  all-checks-passed:
+    name: All Checks Passed
+    runs-on: ubuntu-latest
+    needs: [backend-gate, frontend-gate]
+    steps:
+      - run: echo "All CI checks passed ✅"
