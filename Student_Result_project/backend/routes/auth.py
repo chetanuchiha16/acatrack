@@ -7,6 +7,7 @@ from services.auth_service import authenticate_user, update_fcm_token
 logger = get_logger(__name__)
 auth_bp = Blueprint("auth", __name__)
 
+
 @auth_bp.route("/batches", methods=["GET"])
 def list_batches():
     batches = bm.list_batches()
@@ -20,7 +21,9 @@ def auth():
     password = request.json.get("password")
     provided_batch_year = request.json.get("batch_year")
 
-    result, error_msg, status_code = authenticate_user(who, username, password, provided_batch_year)
+    result, error_msg, status_code = authenticate_user(
+        who, username, password, provided_batch_year
+    )
 
     if error_msg:
         return jsonify({"error": error_msg}), status_code
@@ -37,19 +40,18 @@ def auth():
 def auth_status():
     payload = get_jwt_payload()
     if payload:
-        return jsonify({
-            "logged_in": True,
-            "id": payload.get("id"),
-            "name": payload.get("name"),
-            "who": payload.get("who"),
-            "batch_year": payload.get("batch_year"),
-            "mentor_id": payload.get("mentor_id"),
-        })
+        return jsonify(
+            {
+                "logged_in": True,
+                "id": payload.get("id"),
+                "name": payload.get("name"),
+                "who": payload.get("who"),
+                "batch_year": payload.get("batch_year"),
+                "mentor_id": payload.get("mentor_id"),
+            }
+        )
     else:
-        return jsonify({
-            "logged_in": False,
-            "message": "Not logged in"
-        }), 401
+        return jsonify({"logged_in": False, "message": "Not logged in"}), 401
 
 
 @auth_bp.route("/logout", methods=["POST"])

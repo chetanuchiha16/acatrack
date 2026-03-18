@@ -1,8 +1,9 @@
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from models.paths import  get_logo_path
+from models.paths import get_logo_path
 from io import BytesIO
 from logger_config import get_logger
 
@@ -40,8 +41,14 @@ def create_student_report(student):
     y_position = 540
     line_spacing = 20
     for i, (subject_name, subject_code, ia, see, credit, status) in enumerate(
-        zip(student.subject_names, student.subject_codes, student.ia_marks,
-            student.see_marks, student.credits, student.pass_fail)
+        zip(
+            student.subject_names,
+            student.subject_codes,
+            student.ia_marks,
+            student.see_marks,
+            student.credits,
+            student.pass_fail,
+        )
     ):
         c.drawString(50, y_position, str(i + 1))
         c.drawString(100, y_position, f"{subject_name} {subject_code}")

@@ -39,13 +39,16 @@ class Student:
         self.ia_marks = []
         self.see_marks = []
         self.credits = []
-        
+
         self._preloaded_data = preloaded_data
 
         if preloaded_data:
             self.name = preloaded_data["student"].name
             self.found = True
-            for res, sub in zip(preloaded_data["current_semester"]["res"], preloaded_data["current_semester"]["sub"]):
+            for res, sub in zip(
+                preloaded_data["current_semester"]["res"],
+                preloaded_data["current_semester"]["sub"],
+            ):
                 self.subject_codes.append(sub.subject_code)
                 self.subject_names.append(sub.subject_name or sub.subject_code)
                 self.ia_marks.append(res.ia_marks or 0)
@@ -53,8 +56,9 @@ class Student:
                 self.credits.append(sub.credits or 0)
         else:
             from repositories.student_repository import StudentRepository
+
             student_repo = StudentRepository(db.session)
-            
+
             # 1. Fetch core student details
             student_rec = student_repo.get_auth_by_usn(self.usn)
             if student_rec:
@@ -63,7 +67,9 @@ class Student:
 
                 # 2. Fetch marks for the specific semester
                 if self.semester:
-                    results = student_repo.get_results_by_usn_and_sem(self.usn, self.semester)
+                    results = student_repo.get_results_by_usn_and_sem(
+                        self.usn, self.semester
+                    )
 
                     for res, sub in results:
                         self.subject_codes.append(sub.subject_code)
@@ -80,7 +86,7 @@ class Student:
         self.pass_fail: list[str] = self.calculate_pass_fail()
         self.obtained_credits: float = self.calculate_obtained_credits()
         self.sgpa: float = self.calculate_sgpa()
-        
+
         previous_data: list[dict] = self.fetch_previous_sgpas()
         self.cgpa: float = self.calculate_cgpa(previous_data)
         self.percentage: float = self.calculate_percentage()
@@ -109,18 +115,28 @@ class Student:
             for sem in range(1, sem_no):
                 sem_name: str = f"sem{sem}"
                 if sem_name in self._preloaded_data["previous_semesters"]:
-                    sem_data: dict = self._preloaded_data["previous_semesters"][sem_name]
+                    sem_data: dict = self._preloaded_data["previous_semesters"][
+                        sem_name
+                    ]
                     ia_marks: list[int] = [(r.ia_marks or 0) for r in sem_data["res"]]
                     see_marks: list[int] = [(r.see_marks or 0) for r in sem_data["res"]]
-                    credits_list: list[int] = [(s.credits or 0) for s in sem_data["sub"]]
+                    credits_list: list[int] = [
+                        (s.credits or 0) for s in sem_data["sub"]
+                    ]
 
                     if credits_list:
-                        sgpa_i: float = calculate_sgpa_for_semester(ia_marks, see_marks, credits_list)
+                        sgpa_i: float = calculate_sgpa_for_semester(
+                            ia_marks, see_marks, credits_list
+                        )
                         total_credits_i: int = sum(credits_list)
-                        previous_data.append({"sgpa": sgpa_i, "credits": total_credits_i})
+                        previous_data.append(
+                            {"sgpa": sgpa_i, "credits": total_credits_i}
+                        )
             return previous_data
 
-        student_rec: Optional[StudentAuth] = StudentAuth.query.filter_by(usn=self.usn).first()
+        student_rec: Optional[StudentAuth] = StudentAuth.query.filter_by(
+            usn=self.usn
+        ).first()
         if not student_rec:
             return previous_data
 
@@ -135,7 +151,9 @@ class Student:
             .all()
         )
 
-        sem_data: dict[str, list[tuple[AcademicResult, Subject]]] = {sem: [] for sem in sem_names}
+        sem_data: dict[str, list[tuple[AcademicResult, Subject]]] = {
+            sem: [] for sem in sem_names
+        }
         for r, s in all_results:
             sem_data[s.semester].append((r, s))
 
@@ -229,16 +247,17 @@ class Student:
             return {}
 
         semester = semester.lower().strip() if semester else None
-        
+
         try:
             sem_no = int(semester[-1]) if semester else 1
         except Exception:
             sem_no = 1
-            
+
         required_semesters = [f"sem{i}" for i in range(1, sem_no + 1)]
 
         # Fetch all StudentAuth records
         from repositories.student_repository import StudentRepository
+
         student_repo = StudentRepository(db.session)
         student_records = student_repo.get_auths_by_usns(usns)
         student_map = {s.usn: s for s in student_records}
@@ -250,13 +269,15 @@ class Student:
         # Fetch AcademicResult and Subject joined over required semesters
         student_ids = list(student_id_to_usn.keys())
         results = student_repo.get_results_by_usns_and_sem(usns, required_semesters)
-        
+
         preloaded_data = {
             usn: {
                 "student": student_map[usn],
                 "current_semester": {"res": [], "sub": []},
-                "previous_semesters": {}
-            } for usn in usns if usn in student_map
+                "previous_semesters": {},
+            }
+            for usn in usns
+            if usn in student_map
         }
 
         for res, sub in results:
@@ -266,15 +287,24 @@ class Student:
                 preloaded_data[usn]["current_semester"]["sub"].append(sub)
             else:
                 if sub.semester not in preloaded_data[usn]["previous_semesters"]:
-                    preloaded_data[usn]["previous_semesters"][sub.semester] = {"res": [], "sub": []}
-                preloaded_data[usn]["previous_semesters"][sub.semester]["res"].append(res)
-                preloaded_data[usn]["previous_semesters"][sub.semester]["sub"].append(sub)
+                    preloaded_data[usn]["previous_semesters"][sub.semester] = {
+                        "res": [],
+                        "sub": [],
+                    }
+                preloaded_data[usn]["previous_semesters"][sub.semester]["res"].append(
+                    res
+                )
+                preloaded_data[usn]["previous_semesters"][sub.semester]["sub"].append(
+                    sub
+                )
 
         # Instantiate memory-fed objects
         instantiated_students = {}
         for usn, data in preloaded_data.items():
             try:
-                instantiated_students[usn] = cls(usn, semester, batch_year, preloaded_data=data)
+                instantiated_students[usn] = cls(
+                    usn, semester, batch_year, preloaded_data=data
+                )
             except ValueError:
                 pass
 
@@ -288,19 +318,20 @@ class Student:
         max_sem: int = 6,
     ) -> dict[str, "Student"]:
         """
-        Fetches all semesters for a given USN in 2 queries, returning a dict of 
+        Fetches all semesters for a given USN in 2 queries, returning a dict of
         instantiated Student objects mapping semester name (e.g. 'sem1') to Student.
         """
         required_semesters = [f"sem{i}" for i in range(1, max_sem + 1)]
-        
+
         from repositories.student_repository import StudentRepository
+
         student_repo = StudentRepository(db.session)
         student_rec = student_repo.get_auth_by_usn(usn)
         if not student_rec:
             return {}
 
         results = student_repo.get_results_by_usns_and_sem([usn], required_semesters)
-        
+
         sem_data = {sem: {"res": [], "sub": []} for sem in required_semesters}
         for res, sub in results:
             if sub.semester in sem_data:
@@ -313,15 +344,19 @@ class Student:
             preloaded = {
                 "student": student_rec,
                 "current_semester": sem_data[sem],
-                "previous_semesters": {s: sem_data[s] for s in required_semesters if int(s[-1]) < sem_index}
+                "previous_semesters": {
+                    s: sem_data[s] for s in required_semesters if int(s[-1]) < sem_index
+                },
             }
             try:
-                # If current semester has no results but student exists, Student__init__ 
+                # If current semester has no results but student exists, Student__init__
                 # might still initialize if it doesn't strictly throw error for empty current_semester array
                 # But it's safer to check if there are results
                 if sem_data[sem]["res"]:
-                    instantiated[sem] = cls(usn, sem, batch_year, preloaded_data=preloaded)
+                    instantiated[sem] = cls(
+                        usn, sem, batch_year, preloaded_data=preloaded
+                    )
             except ValueError:
                 pass
-                
+
         return instantiated

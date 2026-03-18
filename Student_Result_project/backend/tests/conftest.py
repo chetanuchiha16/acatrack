@@ -33,7 +33,7 @@ def client(app):
 @pytest.fixture
 def mock_bm():
     """Mocks the BatchManager instance across routes.
-    
+
     patch.object the source (services.batch_manager) plus all route modules
     that do `from services.batch_manager import bm`. This is required because
     Python's import system binds the name at import time; patching only the

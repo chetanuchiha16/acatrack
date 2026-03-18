@@ -1,9 +1,11 @@
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from models.paths import  img_dir, get_logo_path
+from models.paths import img_dir, get_logo_path
+
 # import textwrap
 # from reportlab.lib import colors
 # from reportlab.lib.styles import getSampleStyleSheet
@@ -13,22 +15,26 @@ from logger_config import get_logger
 
 logger = get_logger(__name__)
 
+
 # from services.results_service import SubjectResult
-# from models.config import 
+# from models.config import
 def create_subject_report(subject_result):
     """
     Create a PDF report for subject-wise performance with graphs in-memory.
     Returns PDF bytes.
     """
     import io
+
     pdf_buffer = io.BytesIO()
 
     # Generate a graph for subject-wise pass/fail count
-    labels = ['Pass', 'Fail']
+    labels = ["Pass", "Fail"]
     counts = [subject_result.pass_count, subject_result.fail_count]
     fig, ax = plt.subplots()
-    ax.bar(labels, counts, color=['green', 'red'])
-    ax.set_title(f"Performance in {subject_result.subject_name} {subject_result.subject_code}")
+    ax.bar(labels, counts, color=["green", "red"])
+    ax.set_title(
+        f"Performance in {subject_result.subject_name} {subject_result.subject_code}"
+    )
     ax.set_ylabel("Number of Students")
     graph_path = f"{img_dir}/subject_graph.png"
     plt.savefig(graph_path)
@@ -41,7 +47,7 @@ def create_subject_report(subject_result):
     # Create PDF
 
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
-    
+
     # College Name & Logo
     c.setFont("Helvetica-Bold", 16)
     c.drawString(100, 750, "JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU")
@@ -52,7 +58,11 @@ def create_subject_report(subject_result):
 
     # Title
     c.setFont("Helvetica-Bold", 14)
-    c.drawString(100, 715, f"Subject Report for {subject_result.subject_name} {subject_result.subject_code} ({subject_result.semester})")
+    c.drawString(
+        100,
+        715,
+        f"Subject Report for {subject_result.subject_name} {subject_result.subject_code} ({subject_result.semester})",
+    )
 
     # Insert charts
     c.drawImage(graph_path, 100, 500, width=400, height=200)
@@ -62,8 +72,16 @@ def create_subject_report(subject_result):
     # Performance data
     c.setFont("Helvetica", 12)
     c.drawString(100, 280, f"Total Students: {subject_result.total_students}")
-    c.drawString(100, 260, f"Present: {subject_result.present_students} Absent: {subject_result.absent_students}")
-    c.drawString(100, 240, f"Pass: {subject_result.pass_count}, Fail: {subject_result.fail_count}")
+    c.drawString(
+        100,
+        260,
+        f"Present: {subject_result.present_students} Absent: {subject_result.absent_students}",
+    )
+    c.drawString(
+        100,
+        240,
+        f"Pass: {subject_result.pass_count}, Fail: {subject_result.fail_count}",
+    )
     c.drawString(100, 220, f"Pass Percentage: {subject_result.pass_percentage:.2f}%")
     c.drawString(100, 200, f"FCD (>70%): {subject_result.fcd_count}")
     c.drawString(100, 180, f"FC (60-70%): {subject_result.fc_count}")

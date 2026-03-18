@@ -20,6 +20,8 @@ from .pdftoexcel_route import pdftoexcel_bp
 from .student_ai import ai_bp
 from .student_analysis import student_api_bp
 from .mentee_record import mentee_record_bp
+
+
 def register_routes(app):
     app.register_blueprint(auth_bp)
     app.register_blueprint(student_bp)
@@ -43,4 +45,3 @@ def register_routes(app):
     app.register_blueprint(ai_bp)
     app.register_blueprint(student_api_bp)
     app.register_blueprint(mentee_record_bp)
-    

@@ -1,6 +1,7 @@
 # backend/repositories/mentor_repository.py
 from models.schema import Mentor, Teacher, Meeting, MentorMessage, StudentMessageStatus
 
+
 class MentorRepository:
     def __init__(self, db_session):
         self.db = db_session
@@ -18,7 +19,7 @@ class MentorRepository:
     def get_mentors_by_names_filter(self, names: list) -> list[Mentor]:
         """Alias for semantic clarity used in bulk upload routes."""
         return self.get_all_by_names(names)
-        
+
     def get_all(self) -> list[Mentor]:
         return self.db.query(Mentor).all()
 
@@ -35,7 +36,10 @@ class MentorRepository:
 
     def teacher_username_exists(self, username: str) -> bool:
         """Lightweight check used during unique-username generation."""
-        return self.db.query(Teacher.username).filter_by(username=username).first() is not None
+        return (
+            self.db.query(Teacher.username).filter_by(username=username).first()
+            is not None
+        )
 
     def get_teacher_by_mentor_id(self, mentor_id: int) -> Teacher:
         return self.db.query(Teacher).filter_by(mentor_id=mentor_id).first()
@@ -45,23 +49,39 @@ class MentorRepository:
 
     # --- Meetings ---
     def get_meetings_by_mentor(self, mentor_id: int) -> list[Meeting]:
-        return self.db.query(Meeting).filter_by(mentor_id=mentor_id).order_by(Meeting.date).all()
-        
+        return (
+            self.db.query(Meeting)
+            .filter_by(mentor_id=mentor_id)
+            .order_by(Meeting.date)
+            .all()
+        )
+
     def get_meeting_by_id(self, meeting_id: int) -> Meeting:
         return self.db.get(Meeting, meeting_id)
 
     # --- Messages ---
     def get_messages_by_mentor(self, mentor_id: int) -> list[MentorMessage]:
-        return self.db.query(MentorMessage).filter_by(mentor_id=mentor_id).order_by(MentorMessage.created_at.desc()).all()
+        return (
+            self.db.query(MentorMessage)
+            .filter_by(mentor_id=mentor_id)
+            .order_by(MentorMessage.created_at.desc())
+            .all()
+        )
 
-    def get_message_by_id_and_mentor(self, msg_id: int, mentor_id: int) -> MentorMessage:
-        return self.db.query(MentorMessage).filter_by(id=msg_id, mentor_id=mentor_id).first()
-        
+    def get_message_by_id_and_mentor(
+        self, msg_id: int, mentor_id: int
+    ) -> MentorMessage:
+        return (
+            self.db.query(MentorMessage)
+            .filter_by(id=msg_id, mentor_id=mentor_id)
+            .first()
+        )
+
     def get_all_messages(self) -> list[MentorMessage]:
-         return self.db.query(MentorMessage).all()
+        return self.db.query(MentorMessage).all()
 
     def delete_message_statuses(self, msg_id: int):
-         self.db.query(StudentMessageStatus).filter_by(msg_id=msg_id).delete()
+        self.db.query(StudentMessageStatus).filter_by(msg_id=msg_id).delete()
 
     def get_message_by_id(self, msg_id: int) -> MentorMessage:
         return self.db.query(MentorMessage).filter_by(id=msg_id).first()

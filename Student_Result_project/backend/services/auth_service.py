@@ -11,17 +11,21 @@ from logger_config import get_logger
 
 logger = get_logger(__name__)
 
+
 def batch_from_usn(usn: str) -> int:
     # Example: 1JS23CS001 → "23" → 2023
     try:
         if len(usn) > 5:
-            year_suffix = usn[3:5]   # "23"
+            year_suffix = usn[3:5]  # "23"
             return 2000 + int(year_suffix)
     except Exception:
         pass
-    return 2022 # fallback
+    return 2022  # fallback
 
-def authenticate_user(who: str, username: str, password: str, provided_batch_year: int = None):
+
+def authenticate_user(
+    who: str, username: str, password: str, provided_batch_year: int = None
+):
     batch_year = None
     user = None
 
@@ -35,7 +39,7 @@ def authenticate_user(who: str, username: str, password: str, provided_batch_yea
 
     if batch_year is None:
         batch_year = 2022
-    
+
     with bm.session_scope(batch_year) as db:
         student_repo = StudentRepository(db.session)
         mentor_repo = MentorRepository(db.session)
@@ -51,9 +55,11 @@ def authenticate_user(who: str, username: str, password: str, provided_batch_yea
                 batch_year = batch_from_usn(user.student.usn)
         else:
             # fallback, try all
-            user = (student_repo.get_auth_by_usn(username) or
-                    mentor_repo.get_teacher_by_username(username) or
-                    parent_repo.get_auth_by_username(username))
+            user = (
+                student_repo.get_auth_by_usn(username)
+                or mentor_repo.get_teacher_by_username(username)
+                or parent_repo.get_auth_by_username(username)
+            )
 
         if not user:
             return None, "User not found", 404
@@ -82,7 +88,7 @@ def authenticate_user(who: str, username: str, password: str, provided_batch_yea
             "who": who,
             "batch_year": batch_year,
             "name": getattr(user, "name", username),
-            "mentor_id": mentor_id
+            "mentor_id": mentor_id,
         }
 
     payload = {
@@ -91,7 +97,7 @@ def authenticate_user(who: str, username: str, password: str, provided_batch_yea
         "who": who,
         "batch_year": batch_year,
         "mentor_id": mentor_id,
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=8),
     }
 
     try:
@@ -102,6 +108,7 @@ def authenticate_user(who: str, username: str, password: str, provided_batch_yea
         return None, "Token generation failed", 500
 
     return {"token": token, "session_data": session_data}, None, 200
+
 
 def update_fcm_token(usn: str, token: str, batch_year: int):
     if not token:

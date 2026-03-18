@@ -1,7 +1,7 @@
 # from services.fetch_service import fetch_student_data
 # from services.student_service import Student
 # import sqlite3
-# from models.paths import 
+# from models.paths import
 
 # #temp function to print Student class  dat
 # def print_student_data_by_usn(usn, db_path=db_path):

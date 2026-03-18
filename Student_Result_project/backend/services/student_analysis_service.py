@@ -2,11 +2,13 @@ import io
 import base64
 import numpy as np
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from services.student_service import Student
 from visuals import create_student_report
+
 
 def get_student_result(usn: str, semester: str, batch_year: int):
     # Create DB engine and Student object

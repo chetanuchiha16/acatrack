@@ -5,7 +5,7 @@ from services.student_ai_service import (
     get_ai_summary_data,
     get_ai_trend_data,
     get_ai_cgpa_prediction,
-    get_ai_profile_data
+    get_ai_profile_data,
 )
 
 ai_bp = Blueprint("ai", __name__)
@@ -54,4 +54,3 @@ def ai_profile():
 
     result, status_code = get_ai_profile_data(usn, lng, batch_year)
     return jsonify(result), status_code
-

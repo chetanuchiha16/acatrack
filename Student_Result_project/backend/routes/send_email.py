@@ -104,7 +104,9 @@ def send_email_to_all():
             to_email = getattr(person, email_attr, None)
             if not to_email:
                 continue
-            name = getattr(person, name_attr, None) or getattr(person, "name", "Student")
+            name = getattr(person, name_attr, None) or getattr(
+                person, "name", "Student"
+            )
             payloads.append((to_email, name))
 
     # Fire emails asynchronously — session is already closed, data is snaphotted
@@ -112,10 +114,12 @@ def send_email_to_all():
         personalized_body = f"Hello {name},\n\n{body.message}"
         send_email_async(to_email, body.subject, personalized_body)
 
-    return jsonify({
-        "message": f"Queued emails to {len(payloads)} {body.recipientType}(s)",
-        "queued": len(payloads),
-    }), 202  # 202 Accepted = request received, work is in progress
+    return jsonify(
+        {
+            "message": f"Queued emails to {len(payloads)} {body.recipientType}(s)",
+            "queued": len(payloads),
+        }
+    ), 202  # 202 Accepted = request received, work is in progress
 
 
 @email_bp.route("/send-email/student", methods=["POST"])
@@ -133,7 +137,9 @@ def send_email_to_student():
             to_email = getattr(student, "parent_email", None)
             name = getattr(student, "parent_name", None) or student.name
             if not to_email:
-                return jsonify({"error": "Parent email not found for this student"}), 404
+                return jsonify(
+                    {"error": "Parent email not found for this student"}
+                ), 404
         else:
             to_email = student.student_email
             name = student.name
@@ -142,9 +148,9 @@ def send_email_to_student():
     personalized_body = f"Hello {name},\n\n{body.message}"
     send_email_async(to_email, body.subject, personalized_body)
 
-    return jsonify({
-        "message": f"Email queued for {body.recipientType} with USN {body.usn}"
-    }), 202
+    return jsonify(
+        {"message": f"Email queued for {body.recipientType} with USN {body.usn}"}
+    ), 202
 
 
 # -----------------------------

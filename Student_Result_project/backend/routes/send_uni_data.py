@@ -1,7 +1,7 @@
 from flask import jsonify, request, send_file, Blueprint
 from services.university_service import University
 from visuals import create_toppers_list_pdf, create_university_report
-from models.paths import  postgres_db_url
+from models.paths import postgres_db_url
 from io import BytesIO
 from logger_config import get_logger
 
@@ -10,38 +10,41 @@ logger = get_logger(__name__)
 from utils.helpers import get_batch_year
 from extensions import cache
 
-uni_bp = Blueprint('uni', __name__)
+uni_bp = Blueprint("uni", __name__)
 
-@uni_bp.route('/auth/Staff/overall_res', methods=['GET'])
+
+@uni_bp.route("/auth/Staff/overall_res", methods=["GET"])
 @cache.cached(timeout=3600, query_string=True)
 def get_academic_performance():
-    semester = request.args.get('semester')
-    show_toppers = request.args.get('show_toppers', 'false').lower() == 'true'
-    show_failed = request.args.get('show_failed', 'false').lower() == 'true'
-    format_type = request.args.get('format', 'json').lower() # default is JSON
-    batch_year = request.args.get('batch_year') or get_batch_year()   
+    semester = request.args.get("semester")
+    show_toppers = request.args.get("show_toppers", "false").lower() == "true"
+    show_failed = request.args.get("show_failed", "false").lower() == "true"
+    format_type = request.args.get("format", "json").lower()  # default is JSON
+    batch_year = request.args.get("batch_year") or get_batch_year()
 
     try:
-        logger.debug(f"Batch year in session: {get_batch_year()}" )
+        logger.debug(f"Batch year in session: {get_batch_year()}")
         university = University(postgres_url=postgres_db_url, batch_year=batch_year)
         result = university.calculate_academic_performance_by_semester(semester)
 
         if show_toppers:
-            toppers = sorted(result, key=lambda x: x['percentage'], reverse=True)[:10]
-            if format_type == 'pdf':
+            toppers = sorted(result, key=lambda x: x["percentage"], reverse=True)[:10]
+            if format_type == "pdf":
                 # Create in-memory PDF for the top 10 students
                 # --- assume create_toppers_list_pdf returns bytes instead of saving ---
-                pdf_bytes = create_toppers_list_pdf(toppers, semester) # <--- SHOULD RETURN bytes, not save to disk
+                pdf_bytes = create_toppers_list_pdf(
+                    toppers, semester
+                )  # <--- SHOULD RETURN bytes, not save to disk
                 pdf_buffer = BytesIO(pdf_bytes)
                 pdf_buffer.seek(0)
                 return send_file(
                     pdf_buffer,
                     as_attachment=True,
                     download_name=f"{semester}_toppers_list.pdf",
-                    mimetype="application/pdf"
-                )    
+                    mimetype="application/pdf",
+                )
             return jsonify(toppers)
-        
+
         elif show_failed:
             failed_students = university.find_failed_students(semester)
             return jsonify(failed_students)
@@ -51,15 +54,16 @@ def get_academic_performance():
         return jsonify({"error": str(e)}), 500
 
 
-@uni_bp.route('/auth/Staff/report/<semester>')
+@uni_bp.route("/auth/Staff/report/<semester>")
 @cache.cached(timeout=3600)
 def get_report(semester):
-    batch_year = request.args.get('batch_year') or get_batch_year()
+    batch_year = request.args.get("batch_year") or get_batch_year()
     university = University(postgres_url=postgres_db_url, batch_year=batch_year)
 
     # ✅ Generate PDF in-memory
     pdf_bytes = create_university_report(university, semester)
     from io import BytesIO
+
     pdf_buffer = BytesIO(pdf_bytes)
     pdf_buffer.seek(0)
 
@@ -67,6 +71,5 @@ def get_report(semester):
         pdf_buffer,
         as_attachment=True,
         download_name=f"{semester}_report.pdf",
-        mimetype="application/pdf"
+        mimetype="application/pdf",
     )
-
