@@ -28,9 +28,9 @@ def get_mentor_students():
     return jsonify(results)
 
 
-# Route to download mentee PDF reports
 @mentor_bp.route("/auth/Staff/Mentor/report/<filename>", methods=["GET"])
 def download_mentee_report(filename):
+    filename = secure_filename(filename)
     return send_from_directory(pdf_dir, filename, as_attachment=True)
 
 

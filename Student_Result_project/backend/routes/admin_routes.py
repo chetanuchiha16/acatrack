@@ -35,16 +35,14 @@ logger = get_logger(__name__)
 # ---------- Blueprint ----------
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
-# Fallback secret if neither env nor app.config provides one (change this!)
-DEFAULT_ADMIN_SECRET = "supersecretkey"
-
-
 def _get_admin_secret() -> str:
-    return (
-        settings.admin_secret
-        or current_app.config.get("ADMIN_SECRET")
-        or DEFAULT_ADMIN_SECRET
-    )
+    secret = settings.admin_secret or current_app.config.get("ADMIN_SECRET")
+    if not secret:
+        logger.critical("ADMIN_SECRET not configured!")
+        # In a real app, you might want to raise an error here
+        # but for now we'll just return a value that won't match anything
+        return "NOT_CONFIGURED"
+    return secret
 
 
 def _check_secret(req) -> bool:
@@ -70,8 +68,9 @@ def list_batches():
         batches = (
             bm.list_batches()
         )  # should return list of integers, e.g. [2022, 2023, 2024]
-    except Exception as e:
-        return jsonify({"error": f"Failed to get batches: {e}"}), 500
+    except Exception:
+        logger.exception("Failed to get batches")
+        return jsonify({"error": "Failed to retrieve batch list."}), 500
 
     return jsonify({"batches": batches})
 
@@ -240,8 +239,9 @@ def create_batch():
     try:
         bm.create_batch(batch_year)
         return jsonify({"status": "success", "batch_year": batch_year})
-    except Exception as e:
-        return jsonify({"error": f"Failed to create batch: {e}"}), 500
+    except Exception:
+        logger.exception("Failed to create batch")
+        return jsonify({"error": "Failed to create batch."}), 500
 
 
 @admin_bp.route("/refresh-batch", methods=["POST"])
@@ -257,5 +257,6 @@ def refresh_batch():
     try:
         bm.refresh_batch_data(batch_year)
         return jsonify({"status": "success", "batch_year": batch_year})
-    except Exception as e:
-        return jsonify({"error": f"Failed to refresh batch: {e}"})
+    except Exception:
+        logger.exception("Failed to refresh batch")
+        return jsonify({"error": "Failed to refresh batch data."}), 500

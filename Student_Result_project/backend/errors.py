@@ -38,7 +38,14 @@ def register_error_handlers(app):
     @app.errorhandler(Exception)
     def handle_generic_exception(e):
         """Catch-all for unexpected exceptions — never leak tracebacks."""
-        logger.error(f"Unhandled exception: {e}", exc_info=True)
-        return jsonify(
-            {"error": "An internal server error occurred.", "code": 500}
-        ), 500
+        if isinstance(e, HTTPException):
+            return handle_http_exception(e)
+
+        # Log the full exception internally
+        logger.error(f"Unhandled exception: {str(e)}", exc_info=True)
+
+        # Return a generic message to the client
+        return jsonify({
+            "error": "An internal server error occurred.",
+            "code": 500
+        }), 500

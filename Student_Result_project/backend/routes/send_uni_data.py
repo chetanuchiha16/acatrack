@@ -49,8 +49,9 @@ def get_academic_performance():
             return jsonify(failed_students)
         else:
             return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        logger.exception("Error in fetching academic performance")
+        return jsonify({"error": "Failed to fetch academic performance data."}), 500
 
 
 @uni_bp.route("/auth/Staff/report/<semester>")

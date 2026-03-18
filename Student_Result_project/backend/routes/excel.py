@@ -24,9 +24,10 @@ def excel():
             excel_name = f"result_list_{batch_year}.xlsx"
             cloud_url = upload_excel_to_supabase(tmp.name, excel_name, folder)
             message = "File uploaded successfully"
-        except Exception as e:
+        except Exception:
             cloud_url = None
-            message = f"File uploaded but cloud upload failed: {e}"
+            message = "File uploaded but cloud storage is currently unavailable."
+            logger.exception("Cloud upload failed during manual excel upload")
 
     # Clean up temp file
     try:
@@ -45,5 +46,6 @@ def get_template():
     try:
         local_path = download_excel_from_supabase(excel_name, folder)
         return send_file(local_path, download_name=excel_name, as_attachment=True)
-    except Exception as e:
-        return jsonify({"error": f"Template not found: {e}"}), 404
+    except Exception:
+        logger.exception(f"Failed to download template: {excel_name}")
+        return jsonify({"error": "Template not found or unavailable."}), 404
