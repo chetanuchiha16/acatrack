@@ -1,12 +1,12 @@
+from datetime import timezone
 from flask import Blueprint, jsonify
+from services.batch_manager import bm
 from .mentor_send_email import MentorMessage, StudentMessageStatus
 from repositories.student_repository import StudentRepository
 from repositories.mentor_repository import MentorRepository
-from datetime import timezone
 from utils.helpers import get_batch_year
 
 student_email_bp = Blueprint("student_email", __name__)
-from services.batch_manager import bm
 
 
 # ✅ Utility to serialize MentorMessage with required fields
@@ -58,7 +58,7 @@ def get_student_messages(usn):
             db.session.query(MentorMessage)
             .filter(
                 (MentorMessage.student_id == student.id)
-                | (MentorMessage.student_id == None)
+                | (MentorMessage.student_id is None)
             )
             .order_by(MentorMessage.id.desc())
             .all()

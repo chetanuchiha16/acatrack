@@ -4,7 +4,7 @@ import logging
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
-from utils.cloud import supabase, SUPABASE_BUCKET
+from utils.cloud import supabase, SUPABASE_BUCKET  # noqa: E402
 
 if supabase:
     print(f"Bucket: {SUPABASE_BUCKET}")

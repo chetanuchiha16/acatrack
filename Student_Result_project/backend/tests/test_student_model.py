@@ -8,8 +8,8 @@ env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".env")
 load_dotenv(env_path)
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from services.student_service import Student
-from app_init import create_app
+from services.student_service import Student  # noqa: E402
+from app_init import create_app  # noqa: E402
 
 # CONFIGURATION: Use a USN and Semester that exists in your 2022 batch data
 TEST_USN = "1JS22CS001"
