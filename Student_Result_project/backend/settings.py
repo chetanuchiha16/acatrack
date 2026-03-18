@@ -16,11 +16,14 @@ class Settings(BaseSettings):
     render: str = "false"
     supabase_url: Optional[str] = None
     supabase_key: Optional[str] = None
+    testing: bool = False
+    cors_allowed_origins: str = "*"
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(__file__), ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
+        env_prefix="",  # Default, but explicit
     )
 
 
