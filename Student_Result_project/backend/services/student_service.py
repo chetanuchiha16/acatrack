@@ -76,9 +76,6 @@ class Student:
             raise ValueError(f"No student data found for USN {usn}")
 
         # 3. Calculate derived attributes (Matching your old methods exactly)
-        self.total_marks = sum(self.ia_marks) + sum(self.see_marks)
-        self.pass_fail = self.calculate_pass_fail()
-        self.obtained_credits = self.calculate_obtained_credits()
         self.total_marks: int = sum(self.ia_marks) + sum(self.see_marks)
         self.pass_fail: list[str] = self.calculate_pass_fail()
         self.obtained_credits: float = self.calculate_obtained_credits()
