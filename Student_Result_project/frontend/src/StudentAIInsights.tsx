@@ -1,17 +1,93 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
 
+// ─── AI API response shapes ──────────────────────────────────────────────────
+interface AiSummary {
+    name?: string;
+    usn?: string;
+    semester?: string;
+    percentage?: number;
+    total_marks?: number;
+    obtained_credits?: number;
+    sgpa?: number;
+    cgpa?: number;
+    backlog_status?: string;
+    [key: string]: unknown;
+}
+
+interface BacklogSemData {
+    failed_subjects?: { subject: string }[];
+}
+
+interface AiProfile {
+    backlogs?: Record<string, BacklogSemData>;
+    latest_strong_subjects?: string[];
+    latest_mid_subjects?: string[];
+    latest_weak_subjects?: string[];
+    strong_tags?: string[];
+    mid_tags?: string[];
+    weak_tags?: string[];
+    tag_avgs?: Record<string, number | string>;
+    learning_plan?: string[];
+    placement_advice?: string[];
+    [key: string]: unknown;
+}
+
+interface AiTrend {
+    trend?: string;
+    avg_sgpa?: number | string;
+    history?: Record<string, number | string>;
+}
+
+interface CgpaPrediction {
+    predicted_next_sgpa?: number | string;
+    predicted_final_cgpa?: number | string;
+}
+
+interface AiData {
+    ai_summary: AiSummary;
+    ai_profile: AiProfile;
+    trend: AiTrend;
+    cgpa_prediction: CgpaPrediction;
+}
+
+// ─── Performance API response shapes ────────────────────────────────────────
+interface SubjectAnalysis {
+    code?: string;
+    subject_name?: string;
+    ia?: number;
+    see?: number;
+    total?: number;
+    status?: string;
+    advice?: string;
+    tips?: string;
+}
+
+interface PerformanceData {
+    name?: string;
+    usn?: string;
+    sgpa?: number;
+    percentage?: number;
+    total_marks?: number;
+    cgpa?: number;
+    predicted_next_sgpa?: number;
+    subject_analysis: SubjectAnalysis[];
+    improvement_advice: string[];
+    study_summary?: string;
+    [key: string]: unknown;
+}
+
 export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
-    const [aiData, setAiData] = useState(null);
-    const [performanceData, setPerformanceData] = useState(null);
-    const [loadingAI, setLoadingAI] = useState(false);
-    const [loadingPerf, setLoadingPerf] = useState(false);
-    const [errorAI, setErrorAI] = useState("");
-    const [errorPerf, setErrorPerf] = useState("");
-    const [openAI, setOpenAI] = useState(false);
-    const [openPerf, setOpenPerf] = useState(false);
-    const [chartUrl, setChartUrl] = useState("");
+    const [aiData, setAiData] = useState<AiData | null>(null);
+    const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null);
+    const [loadingAI, setLoadingAI] = useState<boolean>(false);
+    const [loadingPerf, setLoadingPerf] = useState<boolean>(false);
+    const [errorAI, setErrorAI] = useState<string>("");
+    const [errorPerf, setErrorPerf] = useState<string>("");
+    const [openAI, setOpenAI] = useState<boolean>(false);
+    const [openPerf, setOpenPerf] = useState<boolean>(false);
+    const [chartUrl, setChartUrl] = useState<string>("");
 
     // Fetch AI Insights
     const fetchAIInsights = async () => {
@@ -73,8 +149,8 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
             } else {
                 setErrorPerf(data?.error || "Failed to fetch student performance");
             }
-        } catch (err) {
-            setErrorPerf("Server error: " + err.message);
+        } catch (err: unknown) {
+            setErrorPerf("Server error: " + (err instanceof Error ? err.message : "Unknown"));
         } finally {
             setLoadingPerf(false);
         }
@@ -96,8 +172,8 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
     };
 
     // Get subject color based on marks
-    const getSubjectColor = (subject) => {
-        const marks = subject.total || 0;
+    const getSubjectColor = (subject: SubjectAnalysis): string => {
+        const marks = subject.total ?? 0;
         if (marks < 50) return "bg-red-50 dark:bg-red-500/10";
         if (marks >= 50 && marks <= 80) return "bg-yellow-50 dark:bg-yellow-500/10";
         return "bg-green-50 dark:bg-green-500/10";
@@ -204,13 +280,13 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {Object.entries(aiData.ai_profile.backlogs).map(([sem, semData]) => (
+                                    {Object.entries(aiData.ai_profile.backlogs ?? {}).map(([sem, semData]) => (
                                         <div key={sem} className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 p-3 rounded-lg">
                                             <div className="text-sm font-semibold text-red-800 dark:text-red-300 mb-2 border-b border-red-200 dark:border-red-900/30 pb-1">
                                                 {sem}
                                             </div>
                                             <div className="flex flex-wrap gap-2">
-                                                {((semData as { failed_subjects?: { subject: string }[] }).failed_subjects || []).map((subj: any, idx: number) => (
+                                                {(semData.failed_subjects ?? []).map((subj, idx) => (
                                                     <span key={idx} className="bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200 px-2.5 py-1 rounded text-xs font-semibold border border-red-200 dark:border-red-800/50">
                                                         {subj.subject}
                                                     </span>
@@ -278,22 +354,22 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                     </div>
                                 )}
                                 
-                                {aiData.ai_profile.learning_plan?.length > 0 && (
+                                {aiData.ai_profile.learning_plan?.length && aiData.ai_profile.learning_plan.length > 0 && (
                                     <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
                                         <h4 className="text-xs sm:text-sm font-semibold text-blue-800 dark:text-blue-300 mb-3 uppercase tracking-wider">📝 Learning Plan</h4>
                                         <ul className="list-disc list-inside space-y-1 text-sm text-blue-900 dark:text-blue-200 font-medium">
-                                            {aiData.ai_profile.learning_plan.map((tip, index) => (
+                                            {(aiData.ai_profile.learning_plan ?? []).map((tip, index) => (
                                                 <li key={index} className="leading-snug">{tip}</li>
                                             ))}
                                         </ul>
                                     </div>
                                 )}
 
-                                {aiData.ai_profile.placement_advice?.length > 0 && (
+                                {aiData.ai_profile.placement_advice?.length && aiData.ai_profile.placement_advice.length > 0 && (
                                     <div className="bg-indigo-50 dark:bg-indigo-900/10 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
                                         <h4 className="text-xs sm:text-sm font-semibold text-indigo-800 dark:text-indigo-300 mb-3 uppercase tracking-wider">🎯 Placement Advice</h4>
                                         <ul className="list-disc list-inside space-y-1 text-sm text-indigo-900 dark:text-indigo-200 font-medium">
-                                            {aiData.ai_profile.placement_advice.map((advice, index) => (
+                                            {(aiData.ai_profile.placement_advice ?? []).map((advice, index) => (
                                                 <li key={index} className="leading-snug">{advice}</li>
                                             ))}
                                         </ul>
@@ -381,11 +457,11 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                         </div>
                         <div>
                             <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">SGPA</p>
-                            <p className="font-semibold text-gray-700 dark:text-gray-200">{performanceData.sgpa.toFixed(2)}</p>
+                            <p className="font-semibold text-gray-700 dark:text-gray-200">{(performanceData.sgpa ?? 0).toFixed(2)}</p>
                         </div>
                         <div>
                             <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Percentage Achieved</p>
-                            <p className="font-semibold text-gray-700 dark:text-gray-200">{performanceData.percentage.toFixed(2)}%</p>
+                            <p className="font-semibold text-gray-700 dark:text-gray-200">{(performanceData.percentage ?? 0).toFixed(2)}%</p>
                         </div>
                         <div>
                             <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aggregate Marks</p>
@@ -393,7 +469,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                         </div>
                         <div>
                             <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cumulative GPA</p>
-                            <p className="font-semibold text-gray-700 dark:text-gray-200">{performanceData.cgpa.toFixed(2)}</p>
+                            <p className="font-semibold text-gray-700 dark:text-gray-200">{(performanceData.cgpa ?? 0).toFixed(2)}</p>
                         </div>
                         {performanceData.predicted_next_sgpa && (
                             <div>
