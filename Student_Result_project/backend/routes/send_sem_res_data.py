@@ -8,6 +8,9 @@ from utils.helpers import get_batch_year
 from models.paths import postgres_db_url
 from visuals import generate_sem_pdf
 from extensions import cache
+from logger_config import get_logger
+
+logger = get_logger(__name__)
 
 sem_bp = Blueprint("sem_res", __name__)
 
