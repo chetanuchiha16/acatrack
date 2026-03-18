@@ -4,7 +4,6 @@ import os
 import random
 import tempfile
 import pandas as pd
-from sqlalchemy.orm import joinedload
 from app_init import bcrypt
 from logger_config import get_logger
 from services.batch_manager import bm
@@ -245,9 +244,10 @@ def _safe_seed(text: str | None) -> str:
     return base[:4] if len(base) >= 4 else base.ljust(4, "0")
 
 def _unique_teacher_username(db_session) -> str:
+    mentor_repo = MentorRepository(db_session)
     while True:
         candidate = str(random.randint(1000, 1010))
-        if not db_session.query(Teacher).filter_by(username=candidate).first():
+        if not mentor_repo.teacher_username_exists(candidate):
             return candidate
 
 def _fetch_source_rows(batch_year: int) -> list[tuple[str, str]]:
@@ -261,9 +261,10 @@ def _fetch_source_rows(batch_year: int) -> list[tuple[str, str]]:
 
 def generate_accounts_csv(mode: str, batch_year: int) -> tuple[io.BytesIO, str]:
     with bm.session_scope(batch_year) as db:
+        student_repo = StudentRepository(db.session)
         students = _fetch_source_rows(batch_year)
         # Pre-fetch all students in batch to avoid N+1 queries
-        all_students = db.session.query(StudentAuth).options(joinedload(StudentAuth.parent_account)).filter_by(batch_year=batch_year).all()
+        all_students = student_repo.get_auths_with_parents_by_batch(batch_year)
         student_usn_map = {s.usn: s for s in all_students}
 
         # --- Delete existing passwords for 'all' mode
