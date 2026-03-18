@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
 import type { StudentResult, Semester } from "./types";
+import { parseApiError } from "./utils/errorHandler";
 
 interface ResultCardViewProps {
     usn: string;
@@ -14,15 +15,15 @@ export default function ResultCardView({ usn, semester }: ResultCardViewProps) {
 
     const fetchStudent = async () => {
         try {
-            const res = await axiosInstance.get(
+            const res = await axiosInstance.get<StudentResult>(
                 `${API_BASE}/auth/Student/result`,
                 {
-                    params: { usn, semester }}            );
+                    params: { usn, semester }}
+            );
             setData(res.data);
             setError("");
         } catch (err: unknown) {
-            const e = err as { response?: { data?: { error?: string } } };
-            setError(e.response?.data?.error ?? "Something went wrong.");
+            setError(parseApiError(err));
         }
     };
 

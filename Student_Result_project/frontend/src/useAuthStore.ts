@@ -2,6 +2,7 @@
 import { create } from "zustand";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
+import type { AuthStatusResponse } from "./types";
 
 export interface AuthUser {
     id?: string;
@@ -28,7 +29,7 @@ const useAuthStore = create<AuthState>((set) => ({
     fetchAuthStatus: async () => {
         set({ loading: true, error: null });
         try {
-            const res = await axiosInstance.get(`${API_BASE}/auth/status`, {
+            const res = await axiosInstance.get<AuthStatusResponse>(`${API_BASE}/auth/status`, {
                 withCredentials: true,
             });
             if (res.data.logged_in) {
