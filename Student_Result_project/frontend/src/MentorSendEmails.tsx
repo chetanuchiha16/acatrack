@@ -71,12 +71,12 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
 
     const fetchMessages = async () => {
         try {
-            const res = await axiosInstance.get(
+            const res = await axiosInstance.get<MessageEntry[]>(
                 `${API_BASE}/mentor/${mentorId}/messages?batch_year=${batchYear}`
             );
-            const grouped = {};
-            res.data.forEach((msg) => {
-                const usn = msg.student_usn || "all";
+            const grouped: Record<string, MessageEntry[]> = {};
+            res.data.forEach((msg: MessageEntry) => {
+                const usn = (msg.student_usn as string | undefined) || "all";
                 if (!grouped[usn]) grouped[usn] = [];
                 grouped[usn].push(msg);
             });
@@ -107,17 +107,17 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
         }
 
         try {
-            const stored = await axiosInstance.post(
+            const stored = await axiosInstance.post<MessageEntry>(
                 `${API_BASE}/mentor/${mentorId}/messages?batch_year=${batchYear}`,
                 { usn, recipientType, subject, message }
             );
             
             setStudentMessages((prev) => {
                 const key = usn || "all";
-                const newMsg = {
+                const newMsg: MessageEntry = {
                     ...stored.data,
                     read_status:
-                        stored.data.read_status?.map((s) => ({
+                        stored.data.read_status?.map((s: ReadStatus) => ({
                             ...s,
                             read: false,
                         })) || [],
