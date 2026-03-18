@@ -65,8 +65,8 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
             }
             const json: SemesterData = await res.json();
             setData(json);
-        } catch (err: any) {
-            setError(err.message || "Unknown error");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Unknown error");
         } finally {
             setLoading(false);
         }
