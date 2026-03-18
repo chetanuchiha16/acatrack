@@ -19,7 +19,6 @@ export default function ResultCardView({ usn, semester }: ResultCardViewProps) {
                 {
                     params: { usn, semester }}            );
             setData(res.data);
-            console.log(res.data, res.status);
             setError("");
         } catch (err: unknown) {
             const e = err as { response?: { data?: { error?: string } } };
@@ -129,13 +128,17 @@ export default function ResultCardView({ usn, semester }: ResultCardViewProps) {
 
                     {/* Download Button */}
                     <div className="text-center">
-                        <a
-                            href={data.pdf_url}
-                            download
-                            className="inline-block px-4 sm:px-6 py-2 rounded-full bg-blue-600 !text-white font-bold text-sm sm:text-base hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all"
-                        >
-                            📄 Download Report
-                        </a>
+                        {data.pdf_url ? (
+                            <a
+                                href={data.pdf_url}
+                                download
+                                className="inline-block px-4 sm:px-6 py-2 rounded-full bg-blue-600 !text-white font-bold text-sm sm:text-base hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all"
+                            >
+                                📄 Download Report
+                            </a>
+                        ) : (
+                            <span className="text-sm text-gray-500 dark:text-gray-400">No downloadable report available</span>
+                        )}
                     </div>
                 </div>
             )}

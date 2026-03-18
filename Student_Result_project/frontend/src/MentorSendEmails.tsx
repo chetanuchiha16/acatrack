@@ -48,7 +48,6 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
     const [broadcastSubject, setBroadcastSubject] = useState<string>("");
     const [broadcastMsg, setBroadcastMsg] = useState<string>("");
     const [studentInputs, setStudentInputs] = useState<Record<string, StudentInput>>({});
-    console.log(studentMessages);
     useEffect(() => {
         if (mentorId && batchYear) {
             fetchStudents();
@@ -123,7 +122,6 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
                             read: false,
                         })) || [],
                 };
-                console.log(newMsg);
                 return {
                     ...prev,
                     [key]: [newMsg, ...(prev[key] || [])],
@@ -183,7 +181,6 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
             });
         }
     };
-console.log(sessionStorage.getItem("jwt_token"))
 
     const deleteMessage = async (msgId: number | string, usn: string | null) => {
         try {
