@@ -130,12 +130,12 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
 
             let emailRes;
             if (usn) {
-                emailRes = await axiosInstance.post(
+                emailRes = await axiosInstance.post<void>(
                     `${API_BASE}/mentor/${mentorId}/send-email/student?batch_year=${batchYear}`,
                     { usn, recipientType, subject, message }
                 );
             } else {
-                emailRes = await axiosInstance.post(
+                emailRes = await axiosInstance.post<void>(
                     `${API_BASE}/mentor/${mentorId}/send-email/all?batch_year=${batchYear}`,
                     { recipientType, subject, message }
                 );
