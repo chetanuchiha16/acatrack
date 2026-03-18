@@ -3,11 +3,20 @@
 //     : `http://${window.location.hostname}:5000`;
 // // const API_BASE = "https://student-result-backend.onrender.com";
 
-const API_BASE = import.meta.env.VITE_API_BASE;
+import type { Semester } from "./types";
+
+const API_BASE: string = import.meta.env.VITE_API_BASE as string;
 export default API_BASE;
 
-export const semesterOptions = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"];
-export const subjectMapping = {
+/** All semesters in order — use this for dropdowns and iteration. */
+export const semesterOptions: Semester[] = [
+    "sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8",
+];
+/**
+ * Subject-code → human-readable-name map, keyed by semester.
+ * Partial because only the populated semesters are included.
+ */
+export const subjectMapping: Partial<Record<Semester, Record<string, string>>> = {
     sem1: {
         BMATS101: "Mathematics for CSE Stream-I",
         BCHES102: "Applied Chemistry for CSE Stream",

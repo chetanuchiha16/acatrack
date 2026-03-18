@@ -3,9 +3,17 @@ MIN_IA_PASS = 20
 MIN_SEE_PASS = 18
 
 GRADE_POINTS = [
-    (90, 10), (80, 9), (70, 8), (60, 7),
-    (50, 6), (40, 5), (30, 3), (20, 2), (10, 1)
+    (90, 10),
+    (80, 9),
+    (70, 8),
+    (60, 7),
+    (50, 6),
+    (40, 5),
+    (30, 3),
+    (20, 2),
+    (10, 1),
 ]
+
 
 def calculate_pass_fail(ia_marks, see_marks, credits):
     status_list = []
@@ -13,7 +21,7 @@ def calculate_pass_fail(ia_marks, see_marks, credits):
         if credit == 0:
             status_list.append("No Credits")
         elif see == 0:
-            if ia >= MIN_IA_PASS: 
+            if ia >= MIN_IA_PASS:
                 status_list.append("Pass")
             else:
                 status_list.append("Fail")
@@ -23,13 +31,14 @@ def calculate_pass_fail(ia_marks, see_marks, credits):
             status_list.append("Fail")
     return status_list
 
+
 def calculate_obtained_credits(ia_marks, see_marks, credits):
     obtained = 0
     for ia, see, credit in zip(ia_marks, see_marks, credits):
         total_score = ia + see
         if credit == 0:
             continue
-            
+
         grade_points = 0
         for threshold, points in GRADE_POINTS:
             if total_score >= threshold:
@@ -39,16 +48,17 @@ def calculate_obtained_credits(ia_marks, see_marks, credits):
         obtained += grade_points * credit
     return obtained
 
+
 def calculate_sgpa_for_semester(ia_marks, see_marks, credits):
     obtained = calculate_obtained_credits(ia_marks, see_marks, credits)
     total_credits = sum(credits)
-    if total_credits == 0: return 0
+    if total_credits == 0:
+        return 0
     return obtained / total_credits
 
+
 def calculate_cgpa(previous_data, current_sgpa, current_credits):
-    all_semesters = previous_data + [
-        {"sgpa": current_sgpa, "credits": current_credits}
-    ]
+    all_semesters = previous_data + [{"sgpa": current_sgpa, "credits": current_credits}]
 
     sum_sgpa_x_credits = 0.0
     cumulative_credits = 0
@@ -62,6 +72,7 @@ def calculate_cgpa(previous_data, current_sgpa, current_credits):
         return 0.0
 
     return round(sum_sgpa_x_credits / cumulative_credits, 2)
+
 
 def categorize(percentage, pass_fail_list):
     if percentage >= 70:

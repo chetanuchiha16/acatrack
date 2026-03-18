@@ -7,7 +7,7 @@ Usage:
 """
 
 from typing import Literal, Optional
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator
 
 
 class SendAllEmailRequest(BaseModel):

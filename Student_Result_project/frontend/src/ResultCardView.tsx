@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
 import type { StudentResult, Semester } from "./types";
+import { parseApiError } from "./utils/errorHandler";
 
 interface ResultCardViewProps {
     usn: string;
@@ -14,16 +15,15 @@ export default function ResultCardView({ usn, semester }: ResultCardViewProps) {
 
     const fetchStudent = async () => {
         try {
-            const res = await axiosInstance.get(
+            const res = await axiosInstance.get<StudentResult>(
                 `${API_BASE}/auth/Student/result`,
                 {
-                    params: { usn, semester }}            );
+                    params: { usn, semester }}
+            );
             setData(res.data);
-            console.log(res.data, res.status);
             setError("");
         } catch (err: unknown) {
-            const e = err as { response?: { data?: { error?: string } } };
-            setError(e.response?.data?.error ?? "Something went wrong.");
+            setError(parseApiError(err));
         }
     };
 
@@ -129,13 +129,17 @@ export default function ResultCardView({ usn, semester }: ResultCardViewProps) {
 
                     {/* Download Button */}
                     <div className="text-center">
-                        <a
-                            href={data.pdf_url}
-                            download
-                            className="inline-block px-4 sm:px-6 py-2 rounded-full bg-blue-600 !text-white font-bold text-sm sm:text-base hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all"
-                        >
-                            📄 Download Report
-                        </a>
+                        {data.pdf_url ? (
+                            <a
+                                href={data.pdf_url}
+                                download
+                                className="inline-block px-4 sm:px-6 py-2 rounded-full bg-blue-600 !text-white font-bold text-sm sm:text-base hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all"
+                            >
+                                📄 Download Report
+                            </a>
+                        ) : (
+                            <span className="text-sm text-gray-500 dark:text-gray-400">No downloadable report available</span>
+                        )}
                     </div>
                 </div>
             )}

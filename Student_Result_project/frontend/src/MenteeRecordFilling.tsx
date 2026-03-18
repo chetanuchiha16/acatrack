@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import axios from "axios";
 import API_BASE from "./config";
 
@@ -17,6 +17,7 @@ interface MenteeSummary {
     hackathon: string;
     coding_competitions: string;
     other_achievements: string;
+    [key: string]: string; // allows dynamic key access in Object.keys() map
 }
 
 interface MenteeFormData {
@@ -39,6 +40,7 @@ interface MenteeFormData {
     internships: RecordEntry[];
     activities: RecordEntry[];
     summary: MenteeSummary;
+    [key: string]: unknown; // allows dynamic field access from field-name arrays
 }
 
 export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingProps) {
@@ -73,7 +75,7 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
     const [message, setMessage] = useState("");
 
     // Handle normal input changes
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
@@ -106,7 +108,7 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
     };
 
     // Submit form
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         try {
             const res = await axios.post(
@@ -115,8 +117,6 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
             );
             if (res.data.status === "success") {
                 setMessage(`PDF generated successfully: ${res.data.filename}`);
-                console.log(formData.Contact_Mother, formData.Occupation_Mother);
-
             }
         } catch (err) {
             setMessage("Error submitting form.");
@@ -154,7 +154,7 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                                 placeholder={field
                                     .replace("_", " ")
                                     .toUpperCase()}
-                                value={formData[field]}
+                                value={(formData as Record<string, string>)[field]}
                                 onChange={handleChange}
                                 rows={5} // fixed visible height
                                 maxLength={100} // ✅ limit characters
@@ -170,7 +170,7 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                                 placeholder={field
                                     .replace("_", " ")
                                     .toUpperCase()}
-                                value={formData[field]}
+                                value={(formData as Record<string, string>)[field]}
                                 onChange={handleChange}
                                 className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm h-12 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
                             />
@@ -195,7 +195,7 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                                 placeholder={field
                                     .replace("_", " ")
                                     .toUpperCase()}
-                                value={formData[field] || ""}
+                                value={(formData as Record<string, string>)[field] || ""}
                                 onChange={handleChange}
                                 rows={2}
                                 maxLength={20}
@@ -210,7 +210,7 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                                 placeholder={field
                                     .replace("_", " ")
                                     .toUpperCase()}
-                                value={formData[field] || ""}
+                                value={(formData as Record<string, string>)[field] || ""}
                                 onChange={handleChange}
                                 className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm h-12 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
                             />

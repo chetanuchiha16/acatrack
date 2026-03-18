@@ -6,7 +6,6 @@ const HiddenShortcut: React.FC = () => {
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
-            console.log("Key pressed:", e.key, e.shiftKey, e.altKey);
             if (e.shiftKey && e.altKey && e.key.toLowerCase() === "a") {
                 navigate("/admin");
             }

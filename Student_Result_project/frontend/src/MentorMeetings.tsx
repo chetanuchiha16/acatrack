@@ -29,7 +29,7 @@ export default function MentorMeetings({ mentorId, batchYear }: MentorMeetingsPr
     // Fetch meetings from backend
     const fetchMeetings = async () => {
         try {
-            const res = await axiosInstance.get(
+            const res = await axiosInstance.get<MeetingRecord[]>(
                 `${API_BASE}/auth/Staff/Mentor/meeting/${mentorId}?batch_year=${batchYear}`
             );
             setMeetings(res.data);
@@ -39,7 +39,7 @@ export default function MentorMeetings({ mentorId, batchYear }: MentorMeetingsPr
     };
 
     useEffect(() => {
-        if (mentorId && batchYear) fetchMeetings();
+        if (mentorId && batchYear) void fetchMeetings();
     }, [mentorId, batchYear]);
 
     // Add a new meeting
@@ -53,7 +53,7 @@ export default function MentorMeetings({ mentorId, batchYear }: MentorMeetingsPr
         setMessage(""); // Clear previous message
 
         try {
-            const res = await axiosInstance.post(
+            await axiosInstance.post<MeetingRecord>(
                 `${API_BASE}/auth/Staff/Mentor/meeting/${mentorId}?batch_year=${batchYear}`,
                 {
                     title,
@@ -69,7 +69,7 @@ export default function MentorMeetings({ mentorId, batchYear }: MentorMeetingsPr
             setVenue("");
             setAgenda("");
 
-            fetchMeetings(); // Refresh list
+            void fetchMeetings(); // Refresh list
             setMessage("Meeting added successfully and emails sent!"); // Success message
         } catch (err) {
             console.error(err);
@@ -87,7 +87,7 @@ export default function MentorMeetings({ mentorId, batchYear }: MentorMeetingsPr
             await axiosInstance.delete(
                 `${API_BASE}/auth/Staff/Mentor/meeting/delete/${id}?batch_year=${batchYear}`
             );
-            fetchMeetings();
+            void fetchMeetings();
             setMessage("Meeting deleted successfully.");
         } catch (err) {
             console.error(err);

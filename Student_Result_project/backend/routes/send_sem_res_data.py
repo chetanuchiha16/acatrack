@@ -8,6 +8,9 @@ from utils.helpers import get_batch_year
 from models.paths import postgres_db_url
 from visuals import generate_sem_pdf
 from extensions import cache
+from logger_config import get_logger
+
+logger = get_logger(__name__)
 
 sem_bp = Blueprint("sem_res", __name__)
 
@@ -89,7 +92,9 @@ def get_semester_results():
 
         results = []
         for subject_code in subjects:
-            subject_result = SubjectResult(subject_code, semester, university, students=students)
+            subject_result = SubjectResult(
+                subject_code, semester, university, students=students
+            )
 
             # Skip returning empty stats if no students took the subject
             if (
@@ -117,8 +122,9 @@ def get_semester_results():
 
         return jsonify({"semester": semester, "results": results})
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        logger.exception("Error in get_semester_results")
+        return jsonify({"error": "Failed to fetch semester results."}), 500
 
 
 @sem_bp.route("/auth/Staff/sem_res/report/<semester>", methods=["GET"])

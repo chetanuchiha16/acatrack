@@ -39,11 +39,11 @@
 #         for table in tables:
 #             table_name = table[0]
 #             logger.debug(f"/nColumns in table '{table_name}':")
-            
+
 #             # Get column names for the current table
 #             cursor.execute(f"PRAGMA table_info({table_name});")
 #             columns = cursor.fetchall()
-            
+
 #             for column in columns:
 #                 logger.debug(column[1])  # Column name is the second item in each row of PRAGMA result
 

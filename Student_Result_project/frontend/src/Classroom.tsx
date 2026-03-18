@@ -31,9 +31,13 @@ const FileItem: React.FC<FileItemProps> = ({ name, isFolder, onClick }) => {
     );
 };
 
-// Represents a nested directory structure where string values are usually file URLs or metadata
-interface FileTree {
-    [key: string]: FileTree | string;
+export type FileTreeNode = string | FileTree;
+export interface FileTree {
+    [key: string]: FileTreeNode;
+}
+
+function isFileTree(node: unknown): node is FileTree {
+    return typeof node === "object" && node !== null && !Array.isArray(node);
 }
 
 interface FileGridProps {
@@ -49,7 +53,7 @@ const FileGrid: React.FC<FileGridProps> = ({ tree, path = "", setPath }) => {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {entries.map(([name, value]) => {
                 const fullPath = `${path}/${name}`;
-                const isFolder = typeof value === "object" && value !== null;
+                const isFolder = isFileTree(value);
 
                 return (
                     <FileItem
@@ -74,13 +78,18 @@ const FileGrid: React.FC<FileGridProps> = ({ tree, path = "", setPath }) => {
 function getDirAtPath(tree: FileTree | null, path: string): FileTree | null {
     if (!tree) return null;
     if (!path) return tree;
+
     const parts = path.split("/").filter(Boolean);
-    let current: any = tree;
-    for (let part of parts) {
-        current = current?.[part];
-        if (!current) return {};
+    let current: FileTreeNode = tree;
+
+    for (const part of parts) {
+        if (!isFileTree(current)) return {};
+        const next = current[part];
+        if (!next) return {};
+        current = next;
     }
-    return current as FileTree;
+
+    return isFileTree(current) ? current : {};
 }
 
 const FileExplorer: React.FC = () => {
@@ -90,7 +99,9 @@ const FileExplorer: React.FC = () => {
     useEffect(() => {
         fetchWithAuth(`${API_BASE}/auth/Student/notes`)
             .then((res) => res.json())
-            .then((data: FileTree) => setFileTree(data))
+            .then((data: unknown) => {
+                setFileTree(isFileTree(data) ? data : {});
+            })
             .catch((err) => console.error("Failed to load notes:", err));
     }, []);
 

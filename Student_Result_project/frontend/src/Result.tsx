@@ -5,6 +5,7 @@ import ResultCardView from "./ResultCardView";
 import StudentAIInsights from "./StudentAIInsights";
 import ResultGlossary from "./ResultGlossary";
 import type { StudentResult, Semester } from "./types";
+import { parseApiError } from "./utils/errorHandler";
 
 interface ResultProps {
     usn: string;
@@ -33,8 +34,7 @@ export default function Result({ usn, semester, view }: ResultProps) {
             setData(res.data);
             setError("");
         } catch (err: unknown) {
-            const e = err as { response?: { data?: { error?: string } } };
-            setError(e.response?.data?.error ?? "Something went wrong.");
+            setError(parseApiError(err));
             setData(null);
         } finally {
             setLoading(false);
@@ -42,7 +42,7 @@ export default function Result({ usn, semester, view }: ResultProps) {
     };
 
     useEffect(() => {
-        fetchStudent();
+        void fetchStudent();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [usn, semester]);
 

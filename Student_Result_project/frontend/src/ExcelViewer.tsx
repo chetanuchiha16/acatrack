@@ -10,8 +10,12 @@ import API_BASE from "./config";
 import { subjectMapping } from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
 
+type ExcelCellValue = string | number | boolean | Date | null | undefined;
+type ExcelRowData = ExcelCellValue[];
+type ExcelGridData = ExcelRowData[];
+
 interface EditableCellProps {
-    value: string | number | undefined | null;
+    value: ExcelCellValue;
     rowIndex: number;
     cellIndex: number;
     handleCommit: (newValue: string, r: number, c: number) => void;
@@ -19,10 +23,19 @@ interface EditableCellProps {
 
 const EditableCell: React.FC<EditableCellProps> = React.memo(
     function EditableCell({ value, rowIndex, cellIndex, handleCommit }) {
+        const displayValue =
+            typeof value === "string" || typeof value === "number"
+                ? value
+                : value instanceof Date
+                ? value.toISOString()
+                : value === null || value === undefined
+                ? ""
+                : String(value);
+
         return (
             <td className="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
                 <input
-                    defaultValue={value ?? ""}
+                    defaultValue={displayValue}
                     onBlur={(e) =>
                         handleCommit(e.target.value, rowIndex, cellIndex)
                     }
@@ -34,7 +47,7 @@ const EditableCell: React.FC<EditableCellProps> = React.memo(
 );
 
 interface RowProps {
-    row: any[];
+    row: ExcelRowData;
     rowIndex: number;
     updateCell: (newValue: string, r: number, c: number) => void;
 }
@@ -63,13 +76,44 @@ interface ExcelViewerProps {
     excel_route: string;
 }
 
+interface ExcelUploadResponse {
+    message?: string;
+    error?: string;
+}
+
+interface HeaderMainItem {
+    code: string;
+    colSpan: number;
+    label: string;
+}
+
+interface ComputedHeaders {
+    main: HeaderMainItem[];
+    sub: string[];
+}
+
+function normalizeCellValue(value: unknown): ExcelCellValue {
+    if (
+        value === null ||
+        value === undefined ||
+        typeof value === "string" ||
+        typeof value === "number" ||
+        typeof value === "boolean" ||
+        value instanceof Date
+    ) {
+        return value as ExcelCellValue;
+    }
+
+    return String(value);
+}
+
 export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
     const [worksheets, setWorksheets] = useState<ExcelJs.Worksheet[] | null>(
         null
     );
     const workbookRef = useRef<ExcelJs.Workbook | null>(null);
     const [sheetIndex, setSheetIndex] = useState<number>(0);
-    const [excelData, setExcelData] = useState<any[][]>([]);
+    const [excelData, setExcelData] = useState<ExcelGridData>([]);
 
     // Load Excel file once
     useEffect(() => {
@@ -86,7 +130,7 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
     useEffect(() => {
         if (!worksheets || !worksheets[sheetIndex]) return;
 
-        let rows: any[][] = [];
+        const rows: ExcelGridData = [];
         let maxCols = 0;
         const sheet = worksheets[sheetIndex];
 
@@ -95,10 +139,11 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
         });
 
         sheet.eachRow((row) => {
-            let values = row.values;
+            const values = row.values;
             // The row.values array from ExcelJS often is 1-indexed (index 0 is null/empty)
             // So slice(1) typically grabs the actual cell values.
-            let cellValues: any[] = Array.isArray(values) ? values.slice(1) : [];
+            const rawValues = Array.isArray(values) ? values.slice(1) : [];
+            const cellValues: ExcelRowData = rawValues.map(normalizeCellValue);
 
             while (cellValues.length < maxCols) cellValues.push("");
             rows.push(cellValues);
@@ -112,7 +157,7 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
         (newValue: string, r: number, c: number) => {
             setExcelData((prev) => {
                 const copy = [...prev];
-                const rowCopy = [...copy[r]];
+                const rowCopy = [...(copy[r] ?? [])];
                 rowCopy[c] = newValue;
                 copy[r] = rowCopy;
                 return copy;
@@ -142,17 +187,19 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
             method: "POST",
             body: formData,
         });
-        const data = await res.json();
+        const data = (await res.json()) as ExcelUploadResponse;
         alert(data.message || data.error);
     }
 
     function addRow() {
-        let newRow = new Array(excelData[0]?.length || 1).fill("");
+        const newRow: ExcelRowData = new Array(excelData[0]?.length || 1).fill(
+            ""
+        );
         setExcelData((prev) => [...prev, newRow]);
     }
 
     // Memoized headers
-    const headers = useMemo(() => {
+    const headers = useMemo<ComputedHeaders>(() => {
         if (!excelData[0]) return { main: [], sub: [] };
 
         const firstRow = excelData[0];
@@ -165,7 +212,10 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
             }, []);
 
         const currentSheetName = worksheets?.[sheetIndex]?.name || "";
-        const mappingDictionary = subjectMapping as Record<string, Record<string, string>>;
+        const mappingDictionary = subjectMapping as Record<
+            string,
+            Record<string, string>
+        >;
 
         const main = codes.map((code) => ({
             code,

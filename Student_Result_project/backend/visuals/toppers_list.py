@@ -7,10 +7,8 @@ from fpdf import FPDF
 # from reportlab.lib.pagesizes import letter, landscape
 # from reportlab.lib.pagesizes import A4
 # from reportlab.pdfgen import canvas
-import pathlib
-from models.paths import  pdf_dir, img_dir, get_logo_path
 # from services.results_service import SubjectResult
-# from models.config import 
+# from models.config import
 
 from fpdf.enums import XPos, YPos  # Import enums for positioning
 from logger_config import get_logger
@@ -34,7 +32,14 @@ def create_toppers_list_pdf(toppers, selected_semester):
 
     # Title
     pdf.set_font("Helvetica", style="B", size=16)
-    pdf.cell(0, 10, f"Toppers List - {selected_semester}", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
+    pdf.cell(
+        0,
+        10,
+        f"Toppers List - {selected_semester}",
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+        align="C",
+    )
     pdf.ln(10)  # Add some vertical space
 
     # Table Header
@@ -49,16 +54,16 @@ def create_toppers_list_pdf(toppers, selected_semester):
     pdf.set_font("Helvetica", size=12)
     for i, topper in enumerate(toppers, start=1):
         pdf.cell(10, 10, str(i), border=1, align="C")
-        pdf.cell(40, 10, topper['usn'], border=1, align="C")
-        pdf.cell(80, 10, topper['name'], border=1, align="L")
+        pdf.cell(40, 10, topper["usn"], border=1, align="C")
+        pdf.cell(80, 10, topper["name"], border=1, align="L")
         pdf.cell(30, 10, f"{topper['percentage']:.2f}%", border=1, align="C")
         pdf.ln()
 
     # Output PDF to bytes
-    pdf_data = pdf.output(dest='S')
+    pdf_data = pdf.output(dest="S")
     if isinstance(pdf_data, str):
         # FPDF v1 — string, must encode
-        pdf_bytes = pdf_data.encode('latin1')
+        pdf_bytes = pdf_data.encode("latin1")
     else:
         # FPDF2 — already bytes/bytearray, use directly
         pdf_bytes = bytes(pdf_data)

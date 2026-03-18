@@ -1,30 +1,37 @@
 import { useState, useEffect } from "react";
 import API_BASE from "./config";
 import { useNavigate } from "react-router-dom";
-import { fetchWithAuth } from "./fetchWithAuth";
+
+/** Safely extracts a human-readable message from an unknown catch value */
+function getErrMsg(err: unknown): string {
+    if (err instanceof Error) return err.message;
+    if (typeof err === "string") return err;
+    return "Unknown error";
+}
+
 export default function AdminPanel() {
     const navigate = useNavigate();
     const savedSecret = localStorage.getItem("admin_secret");
 
-    const [secret, setSecret] = useState(savedSecret || "");
-    const [mode, setMode] = useState("missing");
-    const [status, setStatus] = useState("");
+    const [secret, setSecret] = useState<string>(savedSecret ?? "");
+    const [mode, setMode] = useState<string>("missing");
+    const [status, setStatus] = useState<string>("");
 
-    const [batchYear, setBatchYear] = useState(null);
-    const [availableBatches, setAvailableBatches] = useState([]);
+    const [batchYear, setBatchYear] = useState<number | null>(null);
+    const [availableBatches, setAvailableBatches] = useState<number[]>([]);
 
-    const [emailFile, setEmailFile] = useState(null);
-    const [mentorFile, setMentorFile] = useState(null);
-    const [newBatchYear, setNewBatchYear] = useState("");
+    const [emailFile, setEmailFile] = useState<File | null>(null);
+    const [mentorFile, setMentorFile] = useState<File | null>(null);
+    const [newBatchYear, setNewBatchYear] = useState<string>("");
 
     // Webscrape states
-    const [usnPrefix, setUsnPrefix] = useState("");
-    const [usnStart, setUsnStart] = useState("");
-    const [usnEnd, setUsnEnd] = useState("");
-    const [sem, setSem] = useState("");
-    const [downloadDir, setDownloadDir] = useState("");
-    const [pdfZipFile, setPdfZipFile] = useState(null);
-    const [pdfExcelFilename, setPdfExcelFilename] = useState(
+    const [usnPrefix, setUsnPrefix] = useState<string>("");
+    const [usnStart, setUsnStart] = useState<string>("");
+    const [usnEnd, setUsnEnd] = useState<string>("");
+    const [sem, setSem] = useState<string>("");
+    const [downloadDir, setDownloadDir] = useState<string>("");
+    const [pdfZipFile, setPdfZipFile] = useState<File | null>(null);
+    const [pdfExcelFilename, setPdfExcelFilename] = useState<string>(
         "result_list_YEAR.xlsx"
     );
     // Redirect if no secret
@@ -72,10 +79,7 @@ export default function AdminPanel() {
         setStatus("Generating accounts...");
         try {
             const res = await fetch(
-                `${API_BASE}/admin/generate-accounts?mode=${mode}&batch_year=${parseInt(
-                    batchYear,
-                    10
-                )}`,
+                `${API_BASE}/admin/generate-accounts?mode=${mode}&batch_year=${batchYear}`,
                 { method: "POST", headers: { "X-Admin-Secret": secret } }
             );
             if (!res.ok) throw new Error(await res.text());
@@ -86,8 +90,8 @@ export default function AdminPanel() {
             a.download = "generated_passwords.csv";
             a.click();
             setStatus("✅ Accounts generated and CSV downloaded");
-        } catch (err) {
-            setStatus("❌ Error: " + err.message);
+        } catch (err: unknown) {
+            setStatus("❌ Error: " + getErrMsg(err));
         }
     };
 
@@ -101,10 +105,7 @@ export default function AdminPanel() {
 
         try {
             const res = await fetch(
-                `${API_BASE}/admin/upload-emails?batch_year=${parseInt(
-                    batchYear,
-                    10
-                )}`,
+                `${API_BASE}/admin/upload-emails?batch_year=${batchYear}`,
                 {
                     method: "POST",
                     headers: { "X-Admin-Secret": secret },
@@ -116,8 +117,8 @@ export default function AdminPanel() {
             setStatus(
                 `✅ Uploaded emails. Inserted ${data.emails_inserted} records and Updated ${data.emails_updated} records.`
             );
-        } catch (err) {
-            setStatus("❌ Error: " + err.message);
+        } catch (err: unknown) {
+            setStatus("❌ Error: " + getErrMsg(err));
         }
     };
 
@@ -131,10 +132,7 @@ export default function AdminPanel() {
 
         try {
             const res = await fetch(
-                `${API_BASE}/admin/upload-mentors?batch_year=${parseInt(
-                    batchYear,
-                    10
-                )}`,
+                `${API_BASE}/admin/upload-mentors?batch_year=${batchYear}`,
                 {
                     method: "POST",
                     headers: { "X-Admin-Secret": secret },
@@ -166,8 +164,8 @@ export default function AdminPanel() {
                     window.URL.revokeObjectURL(url);
                 }
             }
-        } catch (err) {
-            setStatus("❌ Error: " + err.message);
+        } catch (err: unknown) {
+            setStatus("❌ Error: " + getErrMsg(err));
         }
     };
 
@@ -193,8 +191,8 @@ export default function AdminPanel() {
             setStatus(`✅ Batch ${newBatchYear} created successfully.`);
             setNewBatchYear("");
             fetchBatches();
-        } catch (err) {
-            setStatus("❌ Error: " + err.message);
+        } catch (err: unknown) {
+            setStatus("❌ Error: " + getErrMsg(err));
         }
     };
 
@@ -210,13 +208,13 @@ export default function AdminPanel() {
                     "Content-Type": "application/json",
                     "X-Admin-Secret": secret,
                 },
-                body: JSON.stringify({ batch_year: parseInt(batchYear, 10) }),
+                body: JSON.stringify({ batch_year: batchYear }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Unknown error");
             setStatus(`✅ Batch ${batchYear} refreshed successfully.`);
-        } catch (err) {
-            setStatus("❌ Error: " + err.message);
+        } catch (err: unknown) {
+            setStatus("❌ Error: " + getErrMsg(err));
         }
     };
 
@@ -246,8 +244,8 @@ export default function AdminPanel() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Unknown error");
             setStatus(`✅ Fetch started: ${data.message}`);
-        } catch (err) {
-            setStatus("❌ Error: " + err.message);
+        } catch (err: unknown) {
+            setStatus("❌ Error: " + getErrMsg(err));
         }
     };
 
@@ -276,27 +274,26 @@ export default function AdminPanel() {
             setStatus(
                 `✅ Processed ${data.processed_files.length} PDFs. Excel saved at: ${data.excel_path}`
             );
-        } catch (err) {
-            setStatus("❌ Error: " + err.message);
+        } catch (err: unknown) {
+            setStatus("❌ Error: " + getErrMsg(err));
         }
     };
 
-    const pollJobStatus = async (jobId) => {
+    const pollJobStatus = async (jobId: string | number) => {
         try {
             const res = await fetch(
                 `${API_BASE}/pdf/job_status/${jobId}`
             );
             const data = await res.json();
-            console.log(data);
             if (data.status === "done") {
                 setStatus(`✅ Done! Excel at ${data.excel_path}`);
             } else {
                 setStatus(`Processing... ${data.progress} PDFs done`);
                 setTimeout(() => pollJobStatus(jobId), 1000); // poll every second
             }
-        } catch (err) {
+        } catch (err: unknown) {
             console.error(err);
-            setStatus("❌ Error fetching job status: " + err.message);
+            setStatus("❌ Error fetching job status: " + getErrMsg(err));
         }
     };
 
@@ -385,7 +382,7 @@ export default function AdminPanel() {
                     <input
                         type="file"
                         accept=".zip,.rar"
-                        onChange={(e) => setPdfZipFile(e.target.files[0])}
+                        onChange={(e) => setPdfZipFile(e.target.files?.[0] ?? null)}
                         className="w-full text-gray-700 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-teal-600 file:text-white hover:file:bg-teal-700 mb-2 cursor-pointer transition-colors"
                     />
                     <button
@@ -450,9 +447,9 @@ export default function AdminPanel() {
                             Active Batch
                         </label>
                         <select
-                            value={batchYear || ""}
+                            value={batchYear ?? ""}
                             onChange={(e) =>
-                                setBatchYear(parseInt(e.target.value, 10))
+                                setBatchYear(e.target.value ? parseInt(e.target.value, 10) : null)
                             }
                             className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0f1720] border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 mb-4 focus:outline-none focus:ring-2 focus:ring-orange-500"
                         >
@@ -559,7 +556,7 @@ export default function AdminPanel() {
                                     type="file"
                                     accept=".xlsx,.csv"
                                     onChange={(e) =>
-                                        setEmailFile(e.target.files[0])
+                                        setEmailFile(e.target.files?.[0] ?? null)
                                     }
                                     className="w-full text-gray-700 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-green-600 file:text-white hover:file:bg-green-700 cursor-pointer transition-colors"
                                 />
@@ -661,7 +658,7 @@ export default function AdminPanel() {
                                     type="file"
                                     accept=".xlsx"
                                     onChange={(e) =>
-                                        setMentorFile(e.target.files[0])
+                                        setMentorFile(e.target.files?.[0] ?? null)
                                     }
                                     className="w-full text-gray-700 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer transition-colors"
                                 />

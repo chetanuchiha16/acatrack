@@ -5,6 +5,7 @@ from flask import Flask
 from flask_cors import CORS
 from models.config import Config
 from models.paths import postgres_db_url
+from settings import settings
 
 
 def create_app(batch_year=None, postgres_url=None):
@@ -18,9 +19,7 @@ def create_app(batch_year=None, postgres_url=None):
     app.config["SQLALCHEMY_DATABASE_URI"] = postgres_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    import os
-
-    if os.environ.get("TESTING") == "true":
+    if settings.testing:
         app.config["CACHE_TYPE"] = "SimpleCache"
         # SQLite doesn't support these pool args
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {}
@@ -31,7 +30,6 @@ def create_app(batch_year=None, postgres_url=None):
             "max_overflow": 0,
             "pool_recycle": 1800,
         }
-        from settings import settings
 
         app.config["CACHE_TYPE"] = "RedisCache"
         app.config["CACHE_REDIS_URL"] = settings.redis_url
@@ -42,7 +40,15 @@ def create_app(batch_year=None, postgres_url=None):
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     cache.init_app(app)
-    CORS(app, supports_credentials=True)
+    
+    # CORS: Restrict to specific origins if configured
+    cors_origins = settings.cors_allowed_origins
+    
+    CORS(
+        app,
+        supports_credentials=True,
+        origins=cors_origins.split(",") if cors_origins != "*" else "*",
+    )
 
     # Teardown: close DB sessions after each request
     @app.teardown_appcontext

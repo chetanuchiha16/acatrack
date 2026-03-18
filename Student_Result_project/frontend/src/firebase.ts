@@ -31,7 +31,6 @@ export async function requestForToken(): Promise<string | null> {
     const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
 
     if (currentToken) {
-      console.log("FCM Token:", currentToken);
       return currentToken;
     }
 

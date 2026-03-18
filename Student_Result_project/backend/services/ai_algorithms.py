@@ -5,9 +5,7 @@ from io import BytesIO
 
 import numpy as np
 from logger_config import get_logger
-from services.batch_manager import bm
-from utils.helpers import get_batch_year
-from rapidfuzz import fuzz, process
+from rapidfuzz import fuzz
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
@@ -18,8 +16,6 @@ logger = get_logger(__name__)
 
 
 # ---------------- UNIVERSITY INIT ----------------
-
-
 
 
 # ---------------- PDF GENERATION ----------------
@@ -128,7 +124,6 @@ def generate_backlog_pdf(student_name, backlogs, total_credits):
         # Iterate over each semester with actual backlogs
         for sem, sem_data in backlogs.items():
             failed_subjects = sem_data.get("failed_subjects", [])
-            sem_credits = sem_data.get("semester_backlog_credits", 0)
 
             story.append(Paragraph(f"<b>{sem}</b>", styles["Heading2"]))
 
@@ -191,12 +186,16 @@ def _calculate_backlogs(student_data):
         ):
             if status == "Fail":
                 # Ensure credit is treated safely; sometimes it might accidentally hold a large number if arrays are dirty
-                safe_credit = float(credit) if credit is not None and str(credit).replace('.','',1).isdigit() else 0.0
-                
+                safe_credit = (
+                    float(credit)
+                    if credit is not None and str(credit).replace(".", "", 1).isdigit()
+                    else 0.0
+                )
+
                 # If credit is absurdly high (like a total score), default to standard 3
                 if safe_credit > 10:
-                     safe_credit = 3.0
-                     
+                    safe_credit = 3.0
+
                 sem_backlogs.append(
                     {
                         "subject": subject,
@@ -215,9 +214,6 @@ def _calculate_backlogs(student_data):
             }
 
     return backlogs, total_credits
-
-
-
 
 
 def get_latest_semester(student_data):
