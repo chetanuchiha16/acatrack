@@ -66,7 +66,6 @@ sem_credits = {
         "BSCK307": 1,
         "BNSK359": 0,
         "BCS306A": 4,
-        "BCS358D": 0,
         "BCS358D": 1,
     },
     "sem4": {

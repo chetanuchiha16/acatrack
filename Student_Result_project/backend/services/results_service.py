@@ -1,27 +1,40 @@
-
-from models.paths import pdf_dir, img_dir
+from models.paths import img_dir
 from services.fetch_service import sem_subjects
 from logger_config import get_logger
 
 logger = get_logger(__name__)
+
+
 # SubjectResult class
 class SubjectResult:
     def __init__(self, subject_code, semester, university, students=None):
-        self.subject_name = sem_subjects[semester].get(subject_code,"Unknown subject")
+        self.subject_name = sem_subjects[semester].get(subject_code, "Unknown subject")
         self.subject_code = subject_code
         logger.debug(self.subject_code)
         self.semester = semester
         self.university = university  # Instance of the University class
-        self.students = students if students is not None else university.get_students_for_semester(semester)
-        
+        self.students = (
+            students
+            if students is not None
+            else university.get_students_for_semester(semester)
+        )
+
         self.students_data = self.fetch_students_data()
-        
+
         # Total students is the number of students who actually registered for this specific subject
-        self.total_students = len([s for s in self.students if s.semester == self.semester and self.subject_code in s.subject_codes]) 
+        self.total_students = len(
+            [
+                s
+                for s in self.students
+                if s.semester == self.semester and self.subject_code in s.subject_codes
+            ]
+        )
         self.present_students = len(self.students_data)
         self.absent_students = self.total_students - self.present_students
         self.pass_count, self.fail_count = self.fetch_subject_stats()
-        self.fcd_count, self.fc_count, self.sc_count = self.fetch_performance_categories()
+        self.fcd_count, self.fc_count, self.sc_count = (
+            self.fetch_performance_categories()
+        )
         self.pass_percentage = self.calculate_pass_percentage()
 
     def fetch_students_data(self):
@@ -30,18 +43,23 @@ class SubjectResult:
         """
         students_data = []
         # Filter from the pre-fetched local students list
-        filtered_students = [student for student in self.students if student.semester == self.semester]
+        filtered_students = [
+            student for student in self.students if student.semester == self.semester
+        ]
         for student in filtered_students:
             if self.subject_code in student.subject_codes:
                 index = student.subject_codes.index(self.subject_code)
-                students_data.append({
-                    "name": student.name ,
-                    "USN": student.usn,
-                    "ia": student.ia_marks[index] ,
-                    "see": student.see_marks[index] ,
-                    "Total_Marks": student.ia_marks[index] + student.see_marks[index],
-                    "Credits": student.credits[index]
-                })
+                students_data.append(
+                    {
+                        "name": student.name,
+                        "USN": student.usn,
+                        "ia": student.ia_marks[index],
+                        "see": student.see_marks[index],
+                        "Total_Marks": student.ia_marks[index]
+                        + student.see_marks[index],
+                        "Credits": student.credits[index],
+                    }
+                )
         return students_data
 
     # def fetch_subject_stats(self):
@@ -50,12 +68,12 @@ class SubjectResult:
     #     """
     #     pass_count = sum(1 for student in self.students_data if (student["ia"]>=18 and student["see"]>=18))
     #     fail_count = self.present_students - pass_count
-        # for student in self.students_data:
-            # if (student["ia"]<20 and student["see"]<18):
-                # logger.debug("failed students",student["name"])
-        #return pass_count, fail_count
+    # for student in self.students_data:
+    # if (student["ia"]<20 and student["see"]<18):
+    # logger.debug("failed students",student["name"])
+    # return pass_count, fail_count
 
-    #new logic
+    # new logic
 
     def fetch_subject_stats(self):
         """
@@ -77,7 +95,6 @@ class SubjectResult:
         fail_count = self.present_students - pass_count
         return pass_count, fail_count
 
-
     # def fetch_performance_categories(self):
     #     """
     #     Calculate counts for performance categories (FCD, FC, SC).
@@ -87,7 +104,7 @@ class SubjectResult:
     #     sc_count = sum(1 for student in self.students_data if 50 <= student["Total_Marks"] < 60)
     #     return fcd_count, fc_count, sc_count
 
-    #new logic
+    # new logic
 
     def fetch_performance_categories(self):
         """
@@ -114,37 +131,25 @@ class SubjectResult:
                 sc_count += 1
 
         return fcd_count, fc_count, sc_count
-    
-            
-
 
     def calculate_pass_percentage(self):
         """
         Calculate the pass percentage for the subject.
         """
-        return (self.pass_count / self.present_students * 100) if self.present_students > 0 else 0
+        return (
+            (self.pass_count / self.present_students * 100)
+            if self.present_students > 0
+            else 0
+        )
 
     def display_subject_results(self, output_widget=None):
         """
         Display the results for the subject, either to the console or to a widget.
         """
-        result_str = (
-            f"Results for Subject: {self.subject_code} in {self.semester}\n"
-            f"Total Students: {self.total_students}\n"
-            f"Present: {self.present_students}, Absent: {self.absent_students}\n"
-            f"Passed: {self.pass_count}, Failed: {self.fail_count}\n"
-            f"Pass Percentage: {self.pass_percentage:.2f}%\n"
-            f"FCD (>70%): {self.fcd_count}\n"
-            f"FC (60-70%): {self.fc_count}\n"
-            f"SC (50-60%): {self.sc_count}\n"
-            + "-" * 50 + "\n"
-            f"PDF Saved"
-        )
-        
 
     def get_subject_results_dict(self):
         return {
-            "subject_name":self.subject_name,
+            "subject_name": self.subject_name,
             "subject_code": self.subject_code,
             "semester": self.semester,
             "total_students": self.total_students,
@@ -155,7 +160,7 @@ class SubjectResult:
             "pass_percentage": round(self.pass_percentage, 2),
             "fcd_count": self.fcd_count,
             "fc_count": self.fc_count,
-            "sc_count": self.sc_count
+            "sc_count": self.sc_count,
         }
 
     def plot_performance_pie_chart(self):
@@ -163,34 +168,47 @@ class SubjectResult:
         Plot a pie chart for performance distribution across categories.
         """
         logger.debug("DEBUG: students_data =", self.students_data)
-        logger.debug("DEBUG: fcd, fc, sc =", self.fcd_count, self.fc_count, self.sc_count)
+        logger.debug(
+            "DEBUG: fcd, fc, sc =", self.fcd_count, self.fc_count, self.sc_count
+        )
         import matplotlib.pyplot as plt
-        categories = ['FCD (>70%)', 'FC (60-70%)', 'SC (50-60%)']
+
+        categories = ["FCD (>70%)", "FC (60-70%)", "SC (50-60%)"]
         values = [self.fcd_count, self.fc_count, self.sc_count]
 
-        fig=plt.figure(figsize=(4, 4))
-        plt.pie(values, labels=categories, autopct='%1.1f%%', startangle=140, 
-                colors=['#ff9999', '#66b3ff', '#99ff99'])
-        plt.title(f'Performance Distribution in {self.subject_code}')
-        graph_path=f"{img_dir}/performance_pie_chart.png"
+        fig = plt.figure(figsize=(4, 4))
+        plt.pie(
+            values,
+            labels=categories,
+            autopct="%1.1f%%",
+            startangle=140,
+            colors=["#ff9999", "#66b3ff", "#99ff99"],
+        )
+        plt.title(f"Performance Distribution in {self.subject_code}")
+        graph_path = f"{img_dir}/performance_pie_chart.png"
         plt.savefig(graph_path)
-        plt.close(fig) # Prevent memory leak
-        return fig,graph_path
+        plt.close(fig)  # Prevent memory leak
+        return fig, graph_path
 
     def plot_attendance_pie_chart(self):
         """
         Plot a pie chart for attendance distribution.
         """
         import matplotlib.pyplot as plt
-        labels = ['Present', 'Absent']
+
+        labels = ["Present", "Absent"]
         values = [self.present_students, self.absent_students]
 
-        fig=plt.figure(figsize=(4, 4))
-        plt.pie(values, labels=labels, autopct='%1.1f%%', startangle=140, 
-                colors=['#66b3ff', '#ffcc99'])
-        plt.title(f'Attendance Distribution in {self.subject_code}')
-        graph_path=f"{img_dir}/attendance_pie_chart.png"
+        fig = plt.figure(figsize=(4, 4))
+        plt.pie(
+            values,
+            labels=labels,
+            autopct="%1.1f%%",
+            startangle=140,
+            colors=["#66b3ff", "#ffcc99"],
+        )
+        plt.title(f"Attendance Distribution in {self.subject_code}")
+        graph_path = f"{img_dir}/attendance_pie_chart.png"
         plt.savefig(graph_path)
-        plt.close(fig) # Prevent memory leak
-        return fig,graph_path
-    
+        plt.close(fig)  # Prevent memory leak
+        return fig, graph_path

@@ -136,6 +136,12 @@ dependencies = [
     "yarl==1.22.0",
 ]
 
+[tool.pytest.ini_options]
+# Add the backend root to sys.path so top-level modules (app_init, routes,
+# extensions, …) are importable without a package install step.
+pythonpath = ["."]
+testpaths = ["tests"]
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",

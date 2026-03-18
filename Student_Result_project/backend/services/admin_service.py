@@ -4,11 +4,10 @@ import os
 import random
 import tempfile
 import pandas as pd
-from sqlalchemy.orm import joinedload
 from app_init import bcrypt
 from logger_config import get_logger
 from services.batch_manager import bm
-from models.schema import ExportCache, ParentAuth, StudentAuth, Teacher
+from models.schema import ExportCache, ParentAuth
 from repositories.student_repository import StudentRepository
 from repositories.mentor_repository import MentorRepository
 from repositories.admin_repository import AdminRepository
@@ -17,7 +16,19 @@ from settings import settings
 
 logger = get_logger(__name__)
 
-def process_mentor_upload_file(file, batch_year, db_session_maker, bcrypt, Mentor, Teacher, StudentAuth, _unique_teacher_username, _safe_seed, upload_excel_to_supabase):
+
+def process_mentor_upload_file(
+    file,
+    batch_year,
+    db_session_maker,
+    bcrypt,
+    Mentor,
+    Teacher,
+    StudentAuth,
+    _unique_teacher_username,
+    _safe_seed,
+    upload_excel_to_supabase,
+):
     """
     Handles the heavy Excel generation logic.
     """
@@ -118,7 +129,7 @@ def process_mentor_upload_file(file, batch_year, db_session_maker, bcrypt, Mento
     # Save CSV to the database cache instead of RAM
     out.seek(0)
     csv_str = out.getvalue()
-    
+
     with db_session_maker(batch_year) as db:
         admin_repo = AdminRepository(db.session)
         existing_cache = admin_repo.get_export_cache_by_batch(batch_year)
@@ -141,7 +152,17 @@ def process_mentor_upload_file(file, batch_year, db_session_maker, bcrypt, Mento
 
     return response, 200
 
-def process_email_upload_file(temp_upload_path, ext, batch_year, db_session_maker, bcrypt, StudentAuth, ParentAuth, joinedload):
+
+def process_email_upload_file(
+    temp_upload_path,
+    ext,
+    batch_year,
+    db_session_maker,
+    bcrypt,
+    StudentAuth,
+    ParentAuth,
+    joinedload,
+):
     # Load DataFrame
     try:
         df = (
@@ -155,9 +176,7 @@ def process_email_upload_file(temp_upload_path, ext, batch_year, db_session_make
     required_cols = ["student_usn", "student_name", "Parent_Email", "Student_Email"]
     missing = [c for c in required_cols if c not in df.columns]
     if missing:
-        return (
-            {"error": f"Missing required columns: {', '.join(missing)}"}
-        ), 400
+        return ({"error": f"Missing required columns: {', '.join(missing)}"}), 400
 
     count_inserted = 0
     count_updated = 0
@@ -237,18 +256,22 @@ def process_email_upload_file(temp_upload_path, ext, batch_year, db_session_make
         "status": "success",
         "inserted": count_inserted,
         "updated": count_updated,
-        "batch_year": batch_year
+        "batch_year": batch_year,
     }, 200
+
 
 def _safe_seed(text: str | None) -> str:
     base = (text or "user").strip()
     return base[:4] if len(base) >= 4 else base.ljust(4, "0")
 
+
 def _unique_teacher_username(db_session) -> str:
+    mentor_repo = MentorRepository(db_session)
     while True:
         candidate = str(random.randint(1000, 1010))
-        if not db_session.query(Teacher).filter_by(username=candidate).first():
+        if not mentor_repo.teacher_username_exists(candidate):
             return candidate
+
 
 def _fetch_source_rows(batch_year: int) -> list[tuple[str, str]]:
     students_set = set()
@@ -259,11 +282,13 @@ def _fetch_source_rows(batch_year: int) -> list[tuple[str, str]]:
             students_set.add((s.usn, s.name))
     return list(students_set)
 
+
 def generate_accounts_csv(mode: str, batch_year: int) -> tuple[io.BytesIO, str]:
     with bm.session_scope(batch_year) as db:
+        student_repo = StudentRepository(db.session)
         students = _fetch_source_rows(batch_year)
         # Pre-fetch all students in batch to avoid N+1 queries
-        all_students = db.session.query(StudentAuth).options(joinedload(StudentAuth.parent_account)).filter_by(batch_year=batch_year).all()
+        all_students = student_repo.get_auths_with_parents_by_batch(batch_year)
         student_usn_map = {s.usn: s for s in all_students}
 
         # --- Delete existing passwords for 'all' mode
@@ -361,5 +386,6 @@ def generate_accounts_csv(mode: str, batch_year: int) -> tuple[io.BytesIO, str]:
         db.session.commit()
 
         out.seek(0)
-        return io.BytesIO(out.getvalue().encode("utf-8")), f"generated_passwords_{batch_year}.csv"
-
+        return io.BytesIO(
+            out.getvalue().encode("utf-8")
+        ), f"generated_passwords_{batch_year}.csv"

@@ -46,6 +46,7 @@ def _get_admin_secret() -> str:
         or DEFAULT_ADMIN_SECRET
     )
 
+
 def _check_secret(req) -> bool:
     provided = req.headers.get("X-Admin-Secret", "")
     return provided and provided == _get_admin_secret()
@@ -87,6 +88,7 @@ def generate_accounts():
     batch_year = int(request.args.get("batch_year", 2022))
 
     from services.admin_service import generate_accounts_csv
+
     csv_bytes, filename = generate_accounts_csv(mode, batch_year)
 
     return send_file(
@@ -136,7 +138,14 @@ def upload_emails():
     #     emails_upload_url = None
 
     result, status_code = process_email_upload_file(
-        temp_upload_path, ext, batch_year, bm.session_scope, bcrypt, StudentAuth, ParentAuth, joinedload
+        temp_upload_path,
+        ext,
+        batch_year,
+        bm.session_scope,
+        bcrypt,
+        StudentAuth,
+        ParentAuth,
+        joinedload,
     )
 
     # Clean up temp file
@@ -169,11 +178,23 @@ def upload_mentors():
     if not filename.endswith(".xlsx"):
         return jsonify({"error": "Only .xlsx allowed"}), 400
 
-    from services.admin_service import process_mentor_upload_file, _unique_teacher_username, _safe_seed
+    from services.admin_service import (
+        process_mentor_upload_file,
+        _unique_teacher_username,
+        _safe_seed,
+    )
 
     response, status_code = process_mentor_upload_file(
-        file, batch_year, bm.session_scope, bcrypt, Mentor, Teacher, StudentAuth, 
-        _unique_teacher_username, _safe_seed, upload_excel_to_supabase
+        file,
+        batch_year,
+        bm.session_scope,
+        bcrypt,
+        Mentor,
+        Teacher,
+        StudentAuth,
+        _unique_teacher_username,
+        _safe_seed,
+        upload_excel_to_supabase,
     )
 
     return jsonify(response), status_code
@@ -185,12 +206,14 @@ def download_teachers_csv():
         return jsonify({"error": "Unauthorized"}), 401
 
     batch_year = int(request.args.get("batch_year", 0))
-    
+
     with bm.session_scope(batch_year) as db:
-        cache_entry = db.session.query(ExportCache).filter_by(batch_year=batch_year).first()
+        cache_entry = (
+            db.session.query(ExportCache).filter_by(batch_year=batch_year).first()
+        )
         if not cache_entry:
             return jsonify({"error": "No CSV available, please re-upload mentors"}), 404
-        
+
         csv_content = cache_entry.csv_content
 
     return send_file(

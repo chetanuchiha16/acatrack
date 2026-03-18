@@ -7,16 +7,16 @@ load_dotenv()
 # Ensure the backend directory is in the path so imports work
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from services.batch_manager import bm
-from models.schema import AcademicResult, StudentAuth, Subject
-from app_init import create_app
+from services.batch_manager import bm  # noqa: E402
+from models.schema import AcademicResult, StudentAuth, Subject  # noqa: E402
+from app_init import create_app  # noqa: E402
 
 TEST_BATCH_YEAR = 2022  # <-- Change this to an actual year you have an Excel sheet for
 
 
 def run_tests():
     app = create_app()
-    
+
     with app.app_context():
         print(f"\n🚀 --- Starting BatchManager Tests for Batch {TEST_BATCH_YEAR} ---")
 

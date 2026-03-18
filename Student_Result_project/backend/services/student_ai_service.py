@@ -16,6 +16,7 @@ from services.ai_algorithms import (
 
 logger = get_logger(__name__)
 
+
 def translate_text(text, target_lang):
     if not text or target_lang in ("en", None, ""):
         return text
@@ -29,6 +30,7 @@ def translate_text(text, target_lang):
     except Exception as e:
         logger.error(f"Translation failed: {e}")
         return text
+
 
 def get_student_history_usn(usn, semesters):
     batch_year = get_batch_year()
@@ -47,6 +49,7 @@ def get_student_history_usn(usn, semesters):
         except Exception:
             pass
     return sgpas
+
 
 def get_ai_summary_data(usn: str, lng: str, batch_year: int) -> tuple[dict, int]:
     if not usn:
@@ -159,6 +162,7 @@ def get_ai_summary_data(usn: str, lng: str, batch_year: int) -> tuple[dict, int]
         },
     }, 200
 
+
 def get_ai_trend_data(usn: str, batch_year: int) -> tuple[dict, int]:
     if not usn:
         return {"error": "USN is required"}, 400
@@ -200,6 +204,7 @@ def get_ai_trend_data(usn: str, batch_year: int) -> tuple[dict, int]:
         "avg_sgpa": round(float(np.mean(sgpas)), 2),
     }, 200
 
+
 def get_ai_cgpa_prediction(usn: str) -> tuple[dict, int]:
     if not usn:
         return {"error": "USN is required"}, 400
@@ -240,6 +245,7 @@ def get_ai_cgpa_prediction(usn: str) -> tuple[dict, int]:
         }
 
     return {"usn": usn, **cgpa_pred}, 200
+
 
 def get_ai_profile_data(usn: str, lng: str, batch_year: int) -> tuple[dict, int]:
     if not usn:

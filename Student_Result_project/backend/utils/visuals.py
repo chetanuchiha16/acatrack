@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 
+
 def plot_subject_marks(subject_names, subject_codes, ia_marks, see_marks, name):
     subjects = [
-        f"{s_name} ({code})"
-        for s_name, code in zip(subject_names, subject_codes)
+        f"{s_name} ({code})" for s_name, code in zip(subject_names, subject_codes)
     ]
     fig = plt.figure(figsize=(10, 6))
 

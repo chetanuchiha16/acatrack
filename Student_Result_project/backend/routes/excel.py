@@ -3,7 +3,9 @@ import tempfile
 import os
 from utils.cloud import upload_excel_to_supabase, download_excel_from_supabase
 from utils.helpers import get_batch_year
+
 excel_bp = Blueprint("excel", __name__)
+
 
 @excel_bp.route("/excel", methods=["POST"])
 def excel():
@@ -11,7 +13,6 @@ def excel():
     file = request.files.get("file")
     if not file:
         return jsonify({"error": "No file uploaded"}), 400
-    filename = file.filename or "uploaded.xlsx"
     batch_year = get_batch_year()
 
     with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
@@ -28,10 +29,13 @@ def excel():
             message = f"File uploaded but cloud upload failed: {e}"
 
     # Clean up temp file
-    try: os.remove(tmp.name)
-    except Exception: pass
+    try:
+        os.remove(tmp.name)
+    except Exception:
+        pass
 
     return jsonify({"message": message, "excel_cloud_url": cloud_url})
+
 
 @excel_bp.route("/excel/template.xlsx")
 def get_template():

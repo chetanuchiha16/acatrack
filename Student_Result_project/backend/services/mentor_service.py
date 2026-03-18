@@ -10,7 +10,10 @@ from visuals import create_student_report
 
 logger = get_logger(__name__)
 
-def get_mentor_students_data(mentor_id: str, semester: str, batch_year: int) -> tuple[list[dict], int, str]:
+
+def get_mentor_students_data(
+    mentor_id: str, semester: str, batch_year: int
+) -> tuple[list[dict], int, str]:
     if not mentor_id or not semester:
         return [], 400, "mentor_id and semester are required"
 
@@ -23,7 +26,9 @@ def get_mentor_students_data(mentor_id: str, semester: str, batch_year: int) -> 
             if not mentor:
                 return [], 404, "Mentor not found"
 
-            students = student_repo.get_mentees_by_mentor_and_batch(mentor_id, batch_year)
+            students = student_repo.get_mentees_by_mentor_and_batch(
+                mentor_id, batch_year
+            )
             usns = [s.usn for s in students]
             bulk_students = Student.bulk_fetch(usns, semester, batch_year)
             results = []
@@ -84,7 +89,9 @@ def get_mentor_students_data(mentor_id: str, semester: str, batch_year: int) -> 
         return [], 400, str(e)
 
 
-def generate_mentee_chart_base64(usn: str, semester: str, batch_year: int) -> tuple[str, int, str]:
+def generate_mentee_chart_base64(
+    usn: str, semester: str, batch_year: int
+) -> tuple[str, int, str]:
     if not usn or not semester:
         return "", 400, "usn and semester are required"
 

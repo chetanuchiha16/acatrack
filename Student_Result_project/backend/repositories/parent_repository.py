@@ -1,6 +1,7 @@
 # backend/repositories/parent_repository.py
 from models.schema import ParentAuth
 
+
 class ParentRepository:
     def __init__(self, db_session):
         self.db = db_session

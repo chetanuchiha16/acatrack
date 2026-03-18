@@ -2,7 +2,10 @@ from flask import Blueprint, jsonify, request, send_from_directory
 from logger_config import get_logger
 from utils.helpers import get_batch_year
 from models.paths import pdf_dir
-from services.mentor_service import get_mentor_students_data, generate_mentee_chart_base64
+from services.mentor_service import (
+    get_mentor_students_data,
+    generate_mentee_chart_base64,
+)
 
 logger = get_logger(__name__)
 
@@ -15,8 +18,10 @@ def get_mentor_students():
     semester = request.args.get("semester")
     batch_year = request.args.get("batch_year") or get_batch_year()
 
-    results, status_code, error_msg = get_mentor_students_data(mentor_id, semester, batch_year)
-    
+    results, status_code, error_msg = get_mentor_students_data(
+        mentor_id, semester, batch_year
+    )
+
     if error_msg:
         return jsonify({"error": error_msg}), status_code
 
@@ -36,8 +41,10 @@ def get_mentee_chart():
     semester = request.args.get("semester")
     batch_year = request.args.get("batch_year") or get_batch_year()
 
-    image_url, status_code, error_msg = generate_mentee_chart_base64(usn, semester, batch_year)
-    
+    image_url, status_code, error_msg = generate_mentee_chart_base64(
+        usn, semester, batch_year
+    )
+
     if error_msg:
         return jsonify({"error": error_msg}), status_code
 

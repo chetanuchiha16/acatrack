@@ -1,26 +1,32 @@
-from flask import Blueprint, request, jsonify, session
-from models import StudentAuth, Mentor
-from app_init import db
+from datetime import timezone
+from flask import Blueprint, jsonify
+from services.batch_manager import bm
 from .mentor_send_email import MentorMessage, StudentMessageStatus
 from repositories.student_repository import StudentRepository
 from repositories.mentor_repository import MentorRepository
-from datetime import datetime, timezone
 from utils.helpers import get_batch_year
+
 student_email_bp = Blueprint("student_email", __name__)
-from services.batch_manager import BatchManager, bm
+
 
 # ✅ Utility to serialize MentorMessage with required fields
 def serialize_message(db, msg, student, status_map=None, mentor_map=None):
     if status_map is not None:
         status = status_map.get(msg.id)
     else:
-        status = db.session.query(StudentMessageStatus).filter_by(student_id=student.id, msg_id=msg.id).first()
-        
+        status = (
+            db.session.query(StudentMessageStatus)
+            .filter_by(student_id=student.id, msg_id=msg.id)
+            .first()
+        )
+
     if mentor_map is not None:
         mentor = mentor_map.get(getattr(msg, "mentor_id", None))
     else:
         mentor_repo = MentorRepository(db.session)
-        mentor = mentor_repo.get_by_id(msg.mentor_id) if hasattr(msg, "mentor_id") else None
+        mentor = (
+            mentor_repo.get_by_id(msg.mentor_id) if hasattr(msg, "mentor_id") else None
+        )
 
     dt = msg.created_at
     if dt and dt.tzinfo is None:
@@ -36,11 +42,10 @@ def serialize_message(db, msg, student, status_map=None, mentor_map=None):
     }
 
 
-
 @student_email_bp.route("/student/<string:usn>/messages", methods=["GET"])
 def get_student_messages(usn):
     batch_year = get_batch_year()  # however you infer it
-    
+
     with bm.session_scope(batch_year) as db:
         student_repo = StudentRepository(db.session)
         mentor_repo = MentorRepository(db.session)
@@ -51,7 +56,10 @@ def get_student_messages(usn):
 
         msgs = (
             db.session.query(MentorMessage)
-            .filter((MentorMessage.student_id == student.id) | (MentorMessage.student_id == None))
+            .filter(
+                (MentorMessage.student_id == student.id)
+                | (MentorMessage.student_id is None)
+            )
             .order_by(MentorMessage.id.desc())
             .all()
         )
@@ -60,18 +68,32 @@ def get_student_messages(usn):
             return jsonify([])
 
         msg_ids = [m.id for m in msgs]
-        mentor_ids = list(set([m.mentor_id for m in msgs if hasattr(m, "mentor_id") and m.mentor_id is not None]))
+        mentor_ids = list(
+            set(
+                [
+                    m.mentor_id
+                    for m in msgs
+                    if hasattr(m, "mentor_id") and m.mentor_id is not None
+                ]
+            )
+        )
 
-        statuses = db.session.query(StudentMessageStatus).filter(
-            StudentMessageStatus.student_id == student.id,
-            StudentMessageStatus.msg_id.in_(msg_ids)
-        ).all()
+        statuses = (
+            db.session.query(StudentMessageStatus)
+            .filter(
+                StudentMessageStatus.student_id == student.id,
+                StudentMessageStatus.msg_id.in_(msg_ids),
+            )
+            .all()
+        )
         status_map = {s.msg_id: s for s in statuses}
 
         mentors = mentor_repo.get_mentors_by_ids(mentor_ids) if mentor_ids else []
         mentor_map = {m.id: m for m in mentors}
 
-        results = [serialize_message(db, m, student, status_map, mentor_map) for m in msgs]
+        results = [
+            serialize_message(db, m, student, status_map, mentor_map) for m in msgs
+        ]
         return jsonify(results)
 
 
@@ -85,7 +107,7 @@ def get_student_message_detail(usn, msg_id):
         student = student_repo.get_auth_by_usn(usn)
         if not student:
             return jsonify({"error": "Student not found"}), 404
-            
+
         msg = mentor_repo.get_message_by_id(msg_id)
         if not msg:
             return jsonify({"error": "Message not found"}), 404
@@ -96,7 +118,9 @@ def get_student_message_detail(usn, msg_id):
         return jsonify(serialize_message(db, msg, student))
 
 
-@student_email_bp.route("/student/<string:usn>/messages/<int:msg_id>/read", methods=["POST"])
+@student_email_bp.route(
+    "/student/<string:usn>/messages/<int:msg_id>/read", methods=["POST"]
+)
 def mark_message_read(usn, msg_id):
     batch_year = get_batch_year()
     with bm.session_scope(batch_year) as db:
@@ -106,7 +130,7 @@ def mark_message_read(usn, msg_id):
         student = student_repo.get_auth_by_usn(usn)
         if not student:
             return jsonify({"error": "Student not found"}), 404
-            
+
         msg = mentor_repo.get_message_by_id(msg_id)
         if not msg:
             return jsonify({"error": "Message not found"}), 404
@@ -114,9 +138,15 @@ def mark_message_read(usn, msg_id):
         if msg.student_id not in (None, student.id):
             return jsonify({"error": "Not authorized to update this message"}), 403
 
-        status = db.session.query(StudentMessageStatus).filter_by(student_id=student.id, msg_id=msg_id).first()
+        status = (
+            db.session.query(StudentMessageStatus)
+            .filter_by(student_id=student.id, msg_id=msg_id)
+            .first()
+        )
         if not status:
-            status = StudentMessageStatus(student_id=student.id, msg_id=msg_id, read=True)
+            status = StudentMessageStatus(
+                student_id=student.id, msg_id=msg_id, read=True
+            )
             db.session.add(status)
         else:
             status.read = True

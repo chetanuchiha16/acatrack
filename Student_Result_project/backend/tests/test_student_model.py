@@ -8,9 +8,8 @@ env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".env")
 load_dotenv(env_path)
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from services.batch_manager import bm
-from services.student_service import Student
-from app_init import create_app
+from services.student_service import Student  # noqa: E402
+from app_init import create_app  # noqa: E402
 
 # CONFIGURATION: Use a USN and Semester that exists in your 2022 batch data
 TEST_USN = "1JS22CS001"
@@ -40,7 +39,9 @@ def run_student_test():
         print(f"\n[Test] Semester Results ({TEST_SEM}):")
         if student.subject_codes:
             print(f"-> Subjects: {len(student.subject_codes)}")
-            print(f"-> Marks Sample: IA={student.ia_marks[:2]}, SEE={student.see_marks[:2]}")
+            print(
+                f"-> Marks Sample: IA={student.ia_marks[:2]}, SEE={student.see_marks[:2]}"
+            )
             print(f"-> Credits Sample: {student.credits[:2]}")
             print("✅ Semester data loaded correctly.")
         else:
@@ -57,11 +58,19 @@ def run_student_test():
 
         # 4. Test Backlogs
         print("\n[Test] Backlog Detection:")
-        bl = [c for c, status in zip(student.subject_codes, student.pass_fail) if status == "Fail"]
+        bl = [
+            c
+            for c, status in zip(student.subject_codes, student.pass_fail)
+            if status == "Fail"
+        ]
         print(f"-> Backlogs found: {bl}")
         # Verify if logic works (total < 40 is a fail)
         manual_check = [
-            c for c, ia, see in zip(student.subject_codes, student.ia_marks, student.see_marks) if (ia + see) < 40 or see < 18 or ia < 20
+            c
+            for c, ia, see in zip(
+                student.subject_codes, student.ia_marks, student.see_marks
+            )
+            if (ia + see) < 40 or see < 18 or ia < 20
         ]
         if set(bl) == set(manual_check):
             print("✅ Backlog logic matches manual check.")
