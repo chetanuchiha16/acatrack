@@ -12,6 +12,7 @@ name: Frontend CI
     paths:
       - "frontend/**"
       - ".github/workflows/frontend-ci.yml"
+  workflow_call:
 
 defaults:
   run:
