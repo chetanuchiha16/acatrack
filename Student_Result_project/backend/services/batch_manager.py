@@ -1,34 +1,32 @@
 # models/batch_manager.py
+from __future__ import annotations
+
 from contextlib import contextmanager
 from pathlib import Path
-
-from app_init import create_app, db
-from logger_config import get_logger
-from services.university_service import University
-from services.data_prep import prepare_data as prep_data
-from services.fetch_service import SEMESTERS
-from models.paths import postgres_db_url
-from models.schema import StudentAuth  # Added to query distinct batches
+from typing import Generator
 import os
 import sys
 
+from app_init import create_app, db
+from logger_config import get_logger
+from models.paths import postgres_db_url
+from models.schema import StudentAuth
+from services.data_prep import prepare_data as prep_data
+
 # Ensure the backend directory is in the path so imports work
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 logger = get_logger(__name__)
 
 
 class BatchManager:
-    current_batch_year = None
+    current_batch_year: int | None = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.base_dir = Path(__file__).resolve().parent.parent
         self.excel_dir = self.base_dir / "Outputs" / "ExcelData"
         self.excel_dir.mkdir(parents=True, exist_ok=True)
 
-    def get_postgres_url(self, batch_year: int):
-        return postgres_db_url
-
-    def create_batch(self, batch_year: int):
+    def create_batch(self, batch_year: int) -> None:
         """Prepare Excel data and create tables in Postgres."""
         from flask import current_app
         try:
@@ -43,12 +41,11 @@ class BatchManager:
             logger.debug(f"[BatchManager] ✅ Batch {batch_year} processed in Postgres")
         except Exception as e:
             import traceback
-
-            logger.debug(f"[BatchManager] ❌ Failed to create batch {batch_year}: {e}")
+            logger.error(f"[BatchManager] ❌ Failed to create batch {batch_year}: {e}")
             traceback.print_exc()
             raise
 
-    def refresh_batch_data(self, batch_year: int):
+    def refresh_batch_data(self, batch_year: int) -> None:
         """Re-import Excel sheets to update Postgres tables."""
         from flask import current_app
         try:
@@ -59,14 +56,10 @@ class BatchManager:
 
             logger.debug(f"[BatchManager] ✅ Batch {batch_year} refreshed")
         except Exception as e:
-            logger.debug(f"[BatchManager] ❌ Failed to refresh batch {batch_year}: {e}")
+            logger.error(f"[BatchManager] ❌ Failed to refresh batch {batch_year}: {e}")
             raise
 
-    def list_batches(self):
-        """
-        Return all batch years present in PostgreSQL.
-        CRITICAL FIX: Now queries the normalized StudentAuth table instead of looking for dynamic tables.
-        """
+    def list_batches(self) -> list[int]:
         from flask import current_app
         try:
             # We just need a generic app context to query the DB
@@ -76,8 +69,8 @@ class BatchManager:
                 batch_years = [row[0] for row in result if row[0] is not None]
                 return sorted(batch_years)
         except Exception as e:
-            logger.debug(
-                f"[BatchManager] Warning: Could not list batches, tables might not exist yet. Error: {e}"
+            logger.warning(
+                f"[BatchManager] Could not list batches (tables might not exist yet): {e}"
             )
             return []
 
@@ -86,13 +79,11 @@ class BatchManager:
         from flask import current_app
         return db, current_app
 
-    def set_current_batch(self, batch_year: int):
+    def set_current_batch(self, batch_year: int) -> None:
         self.current_batch_year = batch_year
 
-
-
     @contextmanager
-    def session_scope(self, batch_year: int):
+    def session_scope(self, batch_year: int) -> Generator:
         """Provide a transactional scope for Postgres via Flask app context."""
         from flask import current_app
         

@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from typing import Optional
+
+from extensions import db
 from logger_config import get_logger
 from models.schema import AcademicResult, StudentAuth, Subject
 from utils.grading import (
@@ -5,18 +10,21 @@ from utils.grading import (
     calculate_obtained_credits,
     calculate_sgpa_for_semester,
     calculate_cgpa,
-    categorize
+    categorize,
 )
 from utils.visuals import plot_subject_marks
-from extensions import db
-from logger_config import get_logger
-from models.schema import AcademicResult, StudentAuth, Subject
 
 logger = get_logger(__name__)
 
 
 class Student:
-    def __init__(self, usn, semester, batch_year, preloaded_data=None):
+    def __init__(
+        self,
+        usn: str,
+        semester: Optional[str],
+        batch_year: int,
+        preloaded_data: Optional[dict] = None,
+    ) -> None:
         """
         Load student information using SQLAlchemy from normalized tables.
         Keeps the exact logic and attributes for frontend compatibility.
@@ -71,53 +79,56 @@ class Student:
         self.total_marks = sum(self.ia_marks) + sum(self.see_marks)
         self.pass_fail = self.calculate_pass_fail()
         self.obtained_credits = self.calculate_obtained_credits()
-        self.sgpa = self.calculate_sgpa()
+        self.total_marks: int = sum(self.ia_marks) + sum(self.see_marks)
+        self.pass_fail: list[str] = self.calculate_pass_fail()
+        self.obtained_credits: float = self.calculate_obtained_credits()
+        self.sgpa: float = self.calculate_sgpa()
         
-        previous_data = self.fetch_previous_sgpas()
-        self.cgpa = self.calculate_cgpa(previous_data)
-        self.percentage = self.calculate_percentage()
+        previous_data: list[dict] = self.fetch_previous_sgpas()
+        self.cgpa: float = self.calculate_cgpa(previous_data)
+        self.percentage: float = self.calculate_percentage()
 
-    def calculate_pass_fail(self):
+    def calculate_pass_fail(self) -> list[str]:
         return calculate_pass_fail(self.ia_marks, self.see_marks, self.credits)
 
-    def calculate_obtained_credits(self):
+    def calculate_obtained_credits(self) -> float:
         return calculate_obtained_credits(self.ia_marks, self.see_marks, self.credits)
 
-    def calculate_sgpa(self):
+    def calculate_sgpa(self) -> float:
         total_credits = sum(self.credits)
         return self.obtained_credits / total_credits if total_credits > 0 else 0
 
-    def fetch_previous_sgpas(self):
+    def fetch_previous_sgpas(self) -> list[dict]:
         """
         Calculates SGPAs and total credits for all previous semesters using the normalized database.
         """
-        previous_data = []  # Stores dicts with 'sgpa' and 'credits'
+        previous_data: list[dict] = []  # Stores dicts with 'sgpa' and 'credits'
         try:
-            sem_no = int(self.semester[-1]) if self.semester else 1
+            sem_no: int = int(self.semester[-1]) if self.semester else 1
         except Exception:
             sem_no = 1
 
         if self._preloaded_data:
             for sem in range(1, sem_no):
-                sem_name = f"sem{sem}"
+                sem_name: str = f"sem{sem}"
                 if sem_name in self._preloaded_data["previous_semesters"]:
-                    sem_data = self._preloaded_data["previous_semesters"][sem_name]
-                    ia_marks = [(r.ia_marks or 0) for r in sem_data["res"]]
-                    see_marks = [(r.see_marks or 0) for r in sem_data["res"]]
-                    credits_list = [(s.credits or 0) for s in sem_data["sub"]]
+                    sem_data: dict = self._preloaded_data["previous_semesters"][sem_name]
+                    ia_marks: list[int] = [(r.ia_marks or 0) for r in sem_data["res"]]
+                    see_marks: list[int] = [(r.see_marks or 0) for r in sem_data["res"]]
+                    credits_list: list[int] = [(s.credits or 0) for s in sem_data["sub"]]
 
                     if credits_list:
-                        sgpa_i = calculate_sgpa_for_semester(ia_marks, see_marks, credits_list)
-                        total_credits_i = sum(credits_list)
+                        sgpa_i: float = calculate_sgpa_for_semester(ia_marks, see_marks, credits_list)
+                        total_credits_i: int = sum(credits_list)
                         previous_data.append({"sgpa": sgpa_i, "credits": total_credits_i})
             return previous_data
 
-        student_rec = StudentAuth.query.filter_by(usn=self.usn).first()
+        student_rec: Optional[StudentAuth] = StudentAuth.query.filter_by(usn=self.usn).first()
         if not student_rec:
             return previous_data
 
-        sem_names = [f"sem{sem}" for sem in range(1, sem_no)]
-        all_results = (
+        sem_names: list[str] = [f"sem{sem}" for sem in range(1, sem_no)]
+        all_results: list[tuple[AcademicResult, Subject]] = (
             db.session.query(AcademicResult, Subject)
             .join(Subject, AcademicResult.subject_code == Subject.subject_code)
             .filter(
@@ -127,7 +138,7 @@ class Student:
             .all()
         )
 
-        sem_data = {sem: [] for sem in sem_names}
+        sem_data: dict[str, list[tuple[AcademicResult, Subject]]] = {sem: [] for sem in sem_names}
         for r, s in all_results:
             sem_data[s.semester].append((r, s))
 
@@ -147,16 +158,14 @@ class Student:
 
         return previous_data
 
-
-
-    def calculate_cgpa(self, previous_data):
+    def calculate_cgpa(self, previous_data: list[dict]) -> float:
         return calculate_cgpa(previous_data, self.sgpa, sum(self.credits))
 
-    def calculate_percentage(self):
-        max_total = 100 * len(self.credits)
+    def calculate_percentage(self) -> float:
+        max_total: int = 100 * len(self.credits)
         return (self.total_marks / max_total * 100) if max_total > 0 else 0
 
-    def categorize(self):
+    def categorize(self) -> str:
         return categorize(self.percentage, self.pass_fail)
 
     def plot_subject_marks(self):
@@ -165,12 +174,10 @@ class Student:
             self.subject_codes,
             self.ia_marks,
             self.see_marks,
-            self.name
+            self.name,
         )
 
-        return fig
-
-    def to_dict(self):
+    def to_dict(self) -> dict:
         """Standard serialization for frontend."""
         subjects = []
         for code, name, ia, see, credit, status in zip(
@@ -211,7 +218,12 @@ class Student:
         }
 
     @classmethod
-    def bulk_fetch(cls, usns, semester, batch_year):
+    def bulk_fetch(
+        cls,
+        usns: list[str],
+        semester: Optional[str],
+        batch_year: int,
+    ) -> dict[str, "Student"]:
         """
         Efficiently fetches combined StudentAuth, AcademicResult, and Subject records for a list of USNs.
         Returns a dictionary mapping USN strings to fully instantiated Student objects.
@@ -272,7 +284,12 @@ class Student:
         return instantiated_students
 
     @classmethod
-    def get_all_semesters(cls, usn, batch_year, max_sem=6):
+    def get_all_semesters(
+        cls,
+        usn: str,
+        batch_year: int,
+        max_sem: int = 6,
+    ) -> dict[str, "Student"]:
         """
         Fetches all semesters for a given USN in 2 queries, returning a dict of 
         instantiated Student objects mapping semester name (e.g. 'sem1') to Student.
