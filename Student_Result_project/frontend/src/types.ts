@@ -23,7 +23,7 @@ export type Semester =
 export type UserRole = "Student" | "Parent" | "Staff" | "Admin";
 
 /** Result status for a subject or overall semester */
-export type PassFail = "Pass" | "Fail";
+export type PassFail = "Pass" | "Fail" | "No Credits";
 
 // ─── Auth & User ─────────────────────────────────────────────────────────────
 

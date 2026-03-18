@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { semesterOptions } from "./config";
 import jssLogo from "./assets/jssLogo.png";
@@ -6,17 +6,40 @@ import useStudentStore from "./useStudentStore";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
 import ResultGlossary from "./ResultGlossary";
+import type { StudentResult } from "./types";
+
+interface AiSummary {
+    backlog_status?: string;
+    percentage?: number;
+    cgpa?: number;
+    sgpa?: number;
+    total_marks?: number | string;
+    [key: string]: unknown;
+}
+
+interface AiProfile {
+    trend?: { trend: string };
+    cgpa_prediction?: { predicted_next_sgpa?: number | string };
+    placement_advice?: string[];
+    learning_plan?: string[];
+    [key: string]: unknown;
+}
+
+interface AiData {
+    summary: AiSummary;
+    profile: AiProfile;
+}
 
 export default function ParentResult() {
     const { t, i18n } = useTranslation();
     const { studentData, loading: storeLoading, fetchStudentData } = useStudentStore();
-    const [sem, setSem] = useState("");
-    const [semData, setSemData] = useState(null);
-    const [semLoading, setSemLoading] = useState(false);
+    const [sem, setSem] = useState<string>("");
+    const [semData, setSemData] = useState<StudentResult | null>(null);
+    const [semLoading, setSemLoading] = useState<boolean>(false);
 
-    const [aiData, setAiData] = useState(null);
-    const [aiLoading, setAiLoading] = useState(false);
-    const [aiError, setAiError] = useState("");
+    const [aiData, setAiData] = useState<AiData | null>(null);
+    const [aiLoading, setAiLoading] = useState<boolean>(false);
+    const [aiError, setAiError] = useState<string>("");
 
     // Fetch student data on mount
     useEffect(() => {
@@ -40,20 +63,20 @@ export default function ParentResult() {
         }
     }, [sem, i18n.language, studentData]);
 
-    const fetchSemesterData = async (usn, semester) => {
+    const fetchSemesterData = async (usn: string, semester: string) => {
         setSemLoading(true);
         try {
             const res = await fetchWithAuth(`${API_BASE}/auth/Student/result?usn=${usn}&semester=${semester}`);
-            const data = await res.json();
+            const data = await res.json() as StudentResult;
             setSemData(data);
-        } catch (err) {
+        } catch (err: unknown) {
             console.error(err);
         } finally {
             setSemLoading(false);
         }
     };
 
-    const fetchAIData = async (usn, semester, lang) => {
+    const fetchAIData = async (usn: string, semester: string, lang: string) => {
         setAiLoading(true);
         setAiError("");
         try {
@@ -62,14 +85,14 @@ export default function ParentResult() {
                 fetchWithAuth(`${API_BASE}/ai/profile?usn=${usn}&semester=${semester}&lng=${lang}`, {})
             ]);
 
-            const summaryJson = await summaryRes.json();
-            const profileJson = await profileRes.json();
+            const summaryJson = await summaryRes.json() as { ai_summary: AiSummary };
+            const profileJson = await profileRes.json() as AiProfile;
 
             setAiData({
                 summary: summaryJson.ai_summary,
                 profile: profileJson,
             });
-        } catch (err) {
+        } catch (err: unknown) {
             console.error(err);
             setAiError("Could not load AI Insights.");
         } finally {
@@ -77,7 +100,7 @@ export default function ParentResult() {
         }
     };
 
-    const changeLanguage = (lng) => i18n.changeLanguage(lng);
+    const changeLanguage = (lng: string) => i18n.changeLanguage(lng);
     const goBack = () => {
         const currentPath = window.location.pathname;
         const newPath = currentPath.replace(/\/ParentResult$/, "");
