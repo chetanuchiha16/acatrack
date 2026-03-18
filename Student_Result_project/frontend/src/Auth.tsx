@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import jssLogo from "./assets/jssLogo.png";
 import axiosInstance from "./axiosInstance";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import ForgotPassword from "./ForgotPassword";
 import API_BASE from "./config";
 import { requestForToken } from "./firebase";
 import LoadingSpinner from "./LoadingSpinner";
 import { parseJwt } from "./utils/auth";
+import { getToken, setToken, clearToken } from "./utils/storage";
 import axios, { AxiosError } from "axios";
 
 interface AuthResponse {
@@ -26,8 +27,6 @@ const Auth: React.FC = () => {
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [username, setUsername] = useState<string>("");
     const [password, setPassword] = useState<string>("");
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [user, setUser] = useState<any>(null);
     const [showForgot, setShowForgot] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(true);
 
@@ -43,7 +42,7 @@ const Auth: React.FC = () => {
 
     // check if already logged in
     useEffect(() => {
-        const token = sessionStorage.getItem("jwt_token");
+        const token = getToken();
         if (!token) return setLoading(false);
 
         const payload = parseJwt(token);
@@ -53,7 +52,7 @@ const Auth: React.FC = () => {
                 replace: true,
             });
         } else {
-            sessionStorage.removeItem("jwt_token");
+            clearToken();
         }
 
         setLoading(false);
@@ -75,11 +74,11 @@ const Auth: React.FC = () => {
                 return;
             }
 
-            sessionStorage.setItem("jwt_token", token);
+            setToken(token);
 
             const payload = parseJwt(token);
             if (!payload) {
-                sessionStorage.removeItem("jwt_token");
+                clearToken();
                 return;
             }
             
