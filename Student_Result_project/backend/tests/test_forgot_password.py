@@ -1,7 +1,5 @@
-import pytest
 from unittest.mock import patch
-from models import StudentAuth, PasswordResetToken
-from datetime import datetime, timezone
+from models import StudentAuth
 
 def test_request_reset_missing_username(client, mock_bm):
     res = client.post("/auth/forgot/request", json={})

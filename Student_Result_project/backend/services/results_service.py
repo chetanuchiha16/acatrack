@@ -1,5 +1,5 @@
 
-from models.paths import pdf_dir, img_dir
+from models.paths import img_dir
 from services.fetch_service import sem_subjects
 from logger_config import get_logger
 
@@ -138,7 +138,7 @@ class SubjectResult:
             f"FC (60-70%): {self.fc_count}\n"
             f"SC (50-60%): {self.sc_count}\n"
             + "-" * 50 + "\n"
-            f"PDF Saved"
+            "PDF Saved"
         )
         
 

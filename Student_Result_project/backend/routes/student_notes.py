@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, redirect
-from utils.cloud import SUPABASE_URL, SUPABASE_KEY, supabase, SUPABASE_BUCKET
+from utils.cloud import SUPABASE_URL, supabase, SUPABASE_BUCKET
 from utils.helpers import get_batch_year
 
 student_notes_bp = Blueprint('notes', __name__)

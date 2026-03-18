@@ -2,7 +2,6 @@ import logging
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
-from app import app
 from utils.cloud import supabase, SUPABASE_BUCKET
 
 if supabase:

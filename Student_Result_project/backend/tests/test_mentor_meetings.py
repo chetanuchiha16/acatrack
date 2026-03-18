@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 from models import Mentor, StudentAuth, Meeting
 from datetime import date

@@ -1,5 +1,4 @@
 import os
-import sys
 from services.pdf_parser import process_single_pdf
 import traceback
 

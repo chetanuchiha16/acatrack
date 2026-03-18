@@ -1,7 +1,14 @@
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from pathlib import Path
-import zipfile, rarfile, threading, tempfile, shutil, uuid, time, json, re
+import zipfile
+import rarfile
+import threading
+import tempfile
+import shutil
+import uuid
+import json
+import re
 from services import pdf_parser as pdftoexcel
 from utils.cloud import (
     upload_pdf_to_supabase, 
@@ -76,7 +83,7 @@ def process_archive_background(job_id, excel_filename, archive_path):
         # Get batch and sem from archive name
         batch_year, sem = parse_batch_sem(archive_path.stem)
         if not batch_year or not sem:
-            job_data.update({"status": "failed", "error": f"Could not parse batch/sem from archive name"})
+            job_data.update({"status": "failed", "error": "Could not parse batch/sem from archive name"})
             save_job(job_id, job_data)
             return
 

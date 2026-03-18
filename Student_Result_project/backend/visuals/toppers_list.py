@@ -7,8 +7,6 @@ from fpdf import FPDF
 # from reportlab.lib.pagesizes import letter, landscape
 # from reportlab.lib.pagesizes import A4
 # from reportlab.pdfgen import canvas
-import pathlib
-from models.paths import  pdf_dir, img_dir, get_logo_path
 # from services.results_service import SubjectResult
 # from models.config import 
 

@@ -1,4 +1,3 @@
-import pytest
 
 def calculate_pass_fail(ia_marks, see_marks, credits):
     status_list = []

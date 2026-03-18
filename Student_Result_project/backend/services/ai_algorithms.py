@@ -5,9 +5,7 @@ from io import BytesIO
 
 import numpy as np
 from logger_config import get_logger
-from services.batch_manager import bm
-from utils.helpers import get_batch_year
-from rapidfuzz import fuzz, process
+from rapidfuzz import fuzz
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet

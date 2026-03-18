@@ -1,6 +1,5 @@
-import pytest
 from unittest.mock import patch
-from models import Mentor, StudentAuth, MentorMessage
+from models import Mentor, StudentAuth
 
 def test_send_message_missing_data(client, mock_bm, app):
     from extensions import db as real_db

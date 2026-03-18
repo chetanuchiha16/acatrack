@@ -1,10 +1,8 @@
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-import pathlib
-from models.paths import  pdf_dir, img_dir, get_logo_path
+from models.paths import  get_logo_path
 from io import BytesIO
 from logger_config import get_logger
 

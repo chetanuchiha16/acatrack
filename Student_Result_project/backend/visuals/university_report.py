@@ -1,19 +1,16 @@
 # import textwrap
 # from reportlab.lib import colors
-from reportlab.platypus import Image
 # from reportlab.lib.styles import getSampleStyleSheet
 # from reportlab.lib.units import inch
-from fpdf import FPDF
 from reportlab.lib.pagesizes import letter
 # from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-import pathlib
 # from services.results_service import SubjectResult
 # from models.config import 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from models.paths import  pdf_dir, img_dir, get_logo_path
+from models.paths import  img_dir, get_logo_path
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -49,9 +46,6 @@ def create_university_report(university, selected_semester):
     gpath = university.plot_student_totals(selected_semester, mode='histogram', n=10, bins=10)[1]
 
     # Create PDF in-memory
-    from reportlab.pdfgen import canvas
-    from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import Image
 
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
 

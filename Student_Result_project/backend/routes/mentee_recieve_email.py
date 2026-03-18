@@ -1,13 +1,11 @@
-from flask import Blueprint, request, jsonify, session
-from models import StudentAuth, Mentor
-from app_init import db
+from flask import Blueprint, jsonify
 from .mentor_send_email import MentorMessage, StudentMessageStatus
 from repositories.student_repository import StudentRepository
 from repositories.mentor_repository import MentorRepository
-from datetime import datetime, timezone
+from datetime import timezone
 from utils.helpers import get_batch_year
 student_email_bp = Blueprint("student_email", __name__)
-from services.batch_manager import BatchManager, bm
+from services.batch_manager import bm
 
 # ✅ Utility to serialize MentorMessage with required fields
 def serialize_message(db, msg, student, status_map=None, mentor_map=None):

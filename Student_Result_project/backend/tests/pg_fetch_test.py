@@ -1,4 +1,3 @@
-import sqlalchemy
 from sqlalchemy import create_engine
 from services.fetch_service import fetch_student_data
 from models.paths import postgres_db_url

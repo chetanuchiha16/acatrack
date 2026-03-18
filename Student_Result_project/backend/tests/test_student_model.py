@@ -8,7 +8,6 @@ env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".env")
 load_dotenv(env_path)
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from services.batch_manager import bm
 from services.student_service import Student
 from app_init import create_app
 
