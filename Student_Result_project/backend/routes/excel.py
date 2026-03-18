@@ -1,8 +1,11 @@
 from flask import Blueprint, jsonify, request, send_file
 import tempfile
 import os
+from logger_config import get_logger
 from utils.cloud import upload_excel_to_supabase, download_excel_from_supabase
 from utils.helpers import get_batch_year
+
+logger = get_logger(__name__)
 
 excel_bp = Blueprint("excel", __name__)
 
