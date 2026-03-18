@@ -75,6 +75,7 @@ def get_student_chart():
 
     # Close figure to free memory
     import matplotlib.pyplot as plt
+
     plt.close(fig)
 
     return jsonify({"image": f"data:image/png;base64,{img_base64}"})

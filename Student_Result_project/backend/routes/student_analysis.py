@@ -4,6 +4,7 @@ from services.student_analysis_service import analyze_student_performance
 
 student_api_bp = Blueprint("student_api", __name__)
 
+
 @student_api_bp.route("/auth/Student/analysis", methods=["GET"])
 def get_student_analysis():
     usn = request.args.get("usn")

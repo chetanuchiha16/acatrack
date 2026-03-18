@@ -22,11 +22,12 @@ def register_error_handlers(app):
         """Pydantic validation errors → 422 with field-level detail."""
         errors = e.errors()
         messages = [
-            f"{'.'.join(str(p) for p in err['loc'])}: {err['msg']}"
-            for err in errors
+            f"{'.'.join(str(p) for p in err['loc'])}: {err['msg']}" for err in errors
         ]
         logger.warning(f"Request validation failed: {messages}")
-        return jsonify({"error": "Validation failed", "details": messages, "code": 422}), 422
+        return jsonify(
+            {"error": "Validation failed", "details": messages, "code": 422}
+        ), 422
 
     @app.errorhandler(HTTPException)
     def handle_http_exception(e):
@@ -38,4 +39,6 @@ def register_error_handlers(app):
     def handle_generic_exception(e):
         """Catch-all for unexpected exceptions — never leak tracebacks."""
         logger.error(f"Unhandled exception: {e}", exc_info=True)
-        return jsonify({"error": "An internal server error occurred.", "code": 500}), 500
+        return jsonify(
+            {"error": "An internal server error occurred.", "code": 500}
+        ), 500

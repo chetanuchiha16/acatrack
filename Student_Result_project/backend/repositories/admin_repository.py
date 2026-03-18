@@ -1,6 +1,7 @@
 # backend/repositories/admin_repository.py
 from models.schema import ExportCache
 
+
 class AdminRepository:
     def __init__(self, db_session):
         self.db = db_session

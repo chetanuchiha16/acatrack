@@ -16,7 +16,7 @@ TEST_BATCH_YEAR = 2022  # <-- Change this to an actual year you have an Excel sh
 
 def run_tests():
     app = create_app()
-    
+
     with app.app_context():
         print(f"\n🚀 --- Starting BatchManager Tests for Batch {TEST_BATCH_YEAR} ---")
 

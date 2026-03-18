@@ -18,8 +18,6 @@ logger = get_logger(__name__)
 # ---------------- UNIVERSITY INIT ----------------
 
 
-
-
 # ---------------- PDF GENERATION ----------------
 def generate_pdf_report(student_data, semester=None):
     buffer = BytesIO()
@@ -189,12 +187,16 @@ def _calculate_backlogs(student_data):
         ):
             if status == "Fail":
                 # Ensure credit is treated safely; sometimes it might accidentally hold a large number if arrays are dirty
-                safe_credit = float(credit) if credit is not None and str(credit).replace('.','',1).isdigit() else 0.0
-                
+                safe_credit = (
+                    float(credit)
+                    if credit is not None and str(credit).replace(".", "", 1).isdigit()
+                    else 0.0
+                )
+
                 # If credit is absurdly high (like a total score), default to standard 3
                 if safe_credit > 10:
-                     safe_credit = 3.0
-                     
+                    safe_credit = 3.0
+
                 sem_backlogs.append(
                     {
                         "subject": subject,
@@ -213,9 +215,6 @@ def _calculate_backlogs(student_data):
             }
 
     return backlogs, total_credits
-
-
-
 
 
 def get_latest_semester(student_data):

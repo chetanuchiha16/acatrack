@@ -28,6 +28,7 @@ class BatchManager:
     def create_batch(self, batch_year: int) -> None:
         """Prepare Excel data and create tables in Postgres."""
         from flask import current_app
+
         try:
             # CRITICAL FIX: Everything database-related must be inside the app context
             with current_app.app_context():
@@ -40,6 +41,7 @@ class BatchManager:
             logger.debug(f"[BatchManager] ✅ Batch {batch_year} processed in Postgres")
         except Exception as e:
             import traceback
+
             logger.error(f"[BatchManager] ❌ Failed to create batch {batch_year}: {e}")
             traceback.print_exc()
             raise
@@ -47,6 +49,7 @@ class BatchManager:
     def refresh_batch_data(self, batch_year: int) -> None:
         """Re-import Excel sheets to update Postgres tables."""
         from flask import current_app
+
         try:
             # CRITICAL FIX: Moved inside app context
             with current_app.app_context():
@@ -60,6 +63,7 @@ class BatchManager:
 
     def list_batches(self) -> list[int]:
         from flask import current_app
+
         try:
             # We just need a generic app context to query the DB
             with current_app.app_context():
@@ -76,6 +80,7 @@ class BatchManager:
     def get_db_for_batch(self, batch_year: int):
         """Return SQLAlchemy db and app context for transactions."""
         from flask import current_app
+
         return db, current_app
 
     def set_current_batch(self, batch_year: int) -> None:
@@ -85,7 +90,7 @@ class BatchManager:
     def session_scope(self, batch_year: int) -> Generator:
         """Provide a transactional scope for Postgres via Flask app context."""
         from flask import current_app
-        
+
         # If we are already in an app context (e.g. during a request), use it.
         # Otherwise, this will fail unless an app context is pushed manually.
         with current_app.app_context():

@@ -58,12 +58,14 @@ class University:
 
     def get_students_for_semester(self, selected_semester):
         """
-        Fetch all Student objects for a semester instantly using a bulk query, 
+        Fetch all Student objects for a semester instantly using a bulk query,
         avoiding N+1 queries. Returns a list representing the cohort.
         """
         all_usns = self.fetch_students(selected_semester)
         if not all_usns:
-            logger.debug(f"No students found for {selected_semester} in batch {self.batch_year}.")
+            logger.debug(
+                f"No students found for {selected_semester} in batch {self.batch_year}."
+            )
             return []
 
         bulk_students = Student.bulk_fetch(all_usns, selected_semester, self.batch_year)
@@ -118,7 +120,11 @@ class University:
 
                 except ValueError as e:
                     semester_results.append(
-                        {"semester": selected_semester, "usn": student.usn, "error": str(e)}
+                        {
+                            "semester": selected_semester,
+                            "usn": student.usn,
+                            "error": str(e),
+                        }
                     )
 
             return semester_results
@@ -211,9 +217,10 @@ class University:
 
         plt.tight_layout()
         import uuid
+
         graph_path = f"{img_dir}/plot_student_totals_{uuid.uuid4().hex}.png"
         plt.savefig(graph_path)
-        plt.close(fig) # Prevent memory leak!
+        plt.close(fig)  # Prevent memory leak!
 
         return None, graph_path
 

@@ -1,5 +1,5 @@
 # import sqlite3
-# from models.paths import 
+# from models.paths import
 
 # # Path to your database
 # db_path = db_path

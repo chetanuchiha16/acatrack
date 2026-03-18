@@ -1,5 +1,5 @@
 # import sqlite3
-# # from models.paths import 
+# # from models.paths import
 # from app_init import bcrypt
 # from models import db, StudentAuth, Teacher, StudentAuth
 # import pandas as pd
@@ -137,9 +137,7 @@
 
 #             db.session.commit()
 #             logger.debug(f"Inserted {count_mentors} new mentors, {count_mappings} mentor-student mappings.")
-            
+
 #         ### use python -m utils.genpass
 
-
-                
 

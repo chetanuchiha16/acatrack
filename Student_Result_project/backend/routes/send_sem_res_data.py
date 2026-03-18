@@ -89,7 +89,9 @@ def get_semester_results():
 
         results = []
         for subject_code in subjects:
-            subject_result = SubjectResult(subject_code, semester, university, students=students)
+            subject_result = SubjectResult(
+                subject_code, semester, university, students=students
+            )
 
             # Skip returning empty stats if no students took the subject
             if (
