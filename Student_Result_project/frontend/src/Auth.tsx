@@ -9,7 +9,7 @@ import { requestForToken } from "./firebase";
 import LoadingSpinner from "./LoadingSpinner";
 import { parseJwt } from "./utils/auth";
 import { getToken, setToken, clearToken } from "./utils/storage";
-import axios, { AxiosError } from "axios";
+import axios, { type AxiosError } from "axios";
 
 interface AuthResponse {
     token: string;
@@ -47,7 +47,7 @@ const Auth: React.FC = () => {
 
         const payload = parseJwt(token);
         if (payload) {
-            navigate(`/auth/${payload.who}/${payload.id}`, {
+            void navigate(`/auth/${payload.who}/${payload.id}`, {
                 state: payload,
                 replace: true,
             });
@@ -98,7 +98,7 @@ const Auth: React.FC = () => {
                 console.warn("Failed to save FCM token:", err);
             }
 
-            navigate(`/auth/${who}/${id}`, {
+            void navigate(`/auth/${who}/${id}`, {
                 state: { who, id, name, mentor_id },
             });
         } catch (err: unknown) {
