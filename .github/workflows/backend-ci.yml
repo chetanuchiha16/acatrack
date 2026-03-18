@@ -12,6 +12,7 @@ name: Backend CI
     paths:
       - "backend/**"
       - ".github/workflows/backend-ci.yml"
+  workflow_call:
 
 defaults:
   run:
