@@ -35,6 +35,7 @@ logger = get_logger(__name__)
 # ---------- Blueprint ----------
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
+
 def _get_admin_secret() -> str:
     secret = settings.admin_secret or current_app.config.get("ADMIN_SECRET")
     if not secret:

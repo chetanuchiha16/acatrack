@@ -79,21 +79,21 @@ def upload_to_supabase(
         "Content-Type": content_type,
         "X-Upsert": "true",
     }
-    
+
     # URL construction: prevent SSRF/injection by only using configured SUPABASE_URL
     upload_url = f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{file_path}"
-    
+
     res = requests.post(
         upload_url,
         headers=headers,
         data=file_bytes,
-        timeout=30  # Explicit timeout
+        timeout=30,  # Explicit timeout
     )
 
     if res.status_code not in [200, 201]:
         logger.error(f"Supabase upload failed: {res.status_code} {res.text}")
         raise Exception("Cloud upload failed.")
-    
+
     public_url = (
         f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{file_path}"
     )
@@ -124,10 +124,10 @@ def save_file(file, filename: str, folder: str = "files") -> str:
         else:
             # Prevent local directory traversal
             local_folder = PDF_DIR / sanitize_folder(folder)
-            
+
         local_folder.mkdir(parents=True, exist_ok=True)
         save_path = local_folder / filename
-        
+
         # Verify save_path is still inside Outputs dir
         if not str(save_path.resolve()).startswith(str(BASE_DIR.resolve())):
             raise ValueError("Invalid save location")
@@ -135,7 +135,7 @@ def save_file(file, filename: str, folder: str = "files") -> str:
         with open(save_path, "wb") as f:
             if hasattr(file, "read"):
                 # Warning: if file was already read once, this might fail or be empty
-                pass # already handled via file_bytes logic above
+                pass  # already handled via file_bytes logic above
             f.write(file_bytes)
         return str(save_path)
 
@@ -217,7 +217,10 @@ def upload_pdf_to_supabase(local_pdf_path: str, usn: str, folder: str):
     """Uploads a local PDF to Supabase Storage and returns the public URL."""
     with open(local_pdf_path, "rb") as f:
         return upload_to_supabase(
-            f.read(), f"{secure_filename(usn)}.pdf", folder, content_type="application/pdf"
+            f.read(),
+            f"{secure_filename(usn)}.pdf",
+            folder,
+            content_type="application/pdf",
         )
 
 
@@ -293,7 +296,7 @@ def download_image_from_url(url: str) -> str:
         return path
     except (RequestException, Timeout) as e:
         logger.warning(f"Could not download image from {url}: {str(e)}")
-        
+
         fallback_logo = os.path.join(
             os.path.dirname(__file__), "..", "Inputs", "Images", "logo.png"
         )

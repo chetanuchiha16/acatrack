@@ -45,7 +45,6 @@ def register_error_handlers(app):
         logger.error(f"Unhandled exception: {str(e)}", exc_info=True)
 
         # Return a generic message to the client
-        return jsonify({
-            "error": "An internal server error occurred.",
-            "code": 500
-        }), 500
+        return jsonify(
+            {"error": "An internal server error occurred.", "code": 500}
+        ), 500
