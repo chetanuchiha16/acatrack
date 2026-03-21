@@ -144,7 +144,7 @@ const Auth: React.FC = () => {
                 {/* Login Heading */}
                 <div className="flex flex-col items-center mb-6">
                     <h2 className="text-xl sm:text-2xl font-bold text-white drop-shadow-md">
-                        Login to JssTrack360
+                        Login to Acatrack
                     </h2>
                 </div>
 
