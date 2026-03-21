@@ -76,7 +76,7 @@ export default function TeacherNotesUploader() {
     const fileInputRef = useRef(null);
 
     useEffect(() => {
-        fetchWithAuth(`${API_BASE}/auth/Staff/upload_notes`)
+        void fetchWithAuth(`${API_BASE}/auth/Staff/upload_notes`)
             .then((res) => res.json())
             .then(setFileTree)
             .catch((err) => console.error("Failed to load notes:", err));
@@ -127,7 +127,7 @@ export default function TeacherNotesUploader() {
             if (xhr.status === 200) {
                 setUploadStatus("✅ Uploaded successfully");
                 setUploadProgress(0);
-                fetchWithAuth(`${API_BASE}/auth/Staff/upload_notes`)
+                void fetchWithAuth(`${API_BASE}/auth/Staff/upload_notes`)
                     .then((res) => res.json())
                     .then(setFileTree);
             } else {

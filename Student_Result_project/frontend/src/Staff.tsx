@@ -53,7 +53,7 @@ const Staff: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-5xl mx-auto">
                 <div
                     className="bg-red-300 dark:bg-red-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-red-400 dark:hover:bg-red-700 transition-all duration-200 "
-                    onClick={() => navigate(`/auth/Staff/${id}/StaffResults`)}
+                    onClick={() => void navigate(`/auth/Staff/${id}/StaffResults`)}
                 >
                     <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-2">
                         Result
@@ -66,7 +66,7 @@ const Staff: React.FC = () => {
                 <div
                     className="bg-blue-300 dark:bg-blue-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-blue-400 dark:hover:bg-blue-700 transition-all duration-200"
                     onClick={() => {
-                        navigate(`/auth/Staff/${id}/SendEmails`);
+                        void navigate(`/auth/Staff/${id}/SendEmails`);
                     }}
                 >
                     <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-2">
@@ -80,7 +80,7 @@ const Staff: React.FC = () => {
 
                 <div
                     className="bg-green-300 dark:bg-green-800 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-green-400 dark:hover:bg-green-700 transition-all duration-200"
-                    onClick={() => navigate(`/auth/Staff/${id}/UploadResults`)}
+                    onClick={() => void navigate(`/auth/Staff/${id}/UploadResults`)}
                 >
                     <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-2">
                         Upload results
@@ -93,7 +93,7 @@ const Staff: React.FC = () => {
 
                 <div
                     className="bg-yellow-200 dark:bg-yellow-700 text-black dark:text-white cursor-pointer rounded-xl shadow-lg p-6 sm:p-8 hover:bg-yellow-300 dark:hover:bg-yellow-600 transition-all duration-200"
-                    onClick={() => navigate(`/auth/Staff/${id}/StaffClassroom`)}
+                    onClick={() => void navigate(`/auth/Staff/${id}/StaffClassroom`)}
                 >
                     <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-2">
                         Classroom

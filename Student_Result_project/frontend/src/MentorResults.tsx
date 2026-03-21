@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
 
@@ -36,11 +36,7 @@ const MentorResults: React.FC<MentorResultsProps> = ({ mentor_id, batchYear }) =
     const [expandedMentees, setExpandedMentees] = useState<Record<string, boolean>>({});
     const [searchTerm, setSearchTerm] = useState<string>("");
 
-    useEffect(() => {
-        if (mentor_id && batchYear) fetchMentees();
-    }, [mentor_id, semester, batchYear]);
-
-    const fetchMentees = async () => {
+    const fetchMentees = useCallback(async () => {
         setLoading(true);
         try {
             const res = await fetchWithAuth(
@@ -55,7 +51,11 @@ const MentorResults: React.FC<MentorResultsProps> = ({ mentor_id, batchYear }) =
         } finally {
             setLoading(false);
         }
-    };
+    }, [mentor_id, semester, batchYear]);
+
+    useEffect(() => {
+        if (mentor_id && batchYear) void fetchMentees();
+    }, [mentor_id, batchYear, fetchMentees]);
 
     const fetchChart = async (usn: string) => {
         try {
@@ -162,7 +162,7 @@ const MentorResults: React.FC<MentorResultsProps> = ({ mentor_id, batchYear }) =
                                         Download PDF
                                     </a>
                                     <button
-                                        onClick={() => fetchChart(mentee.usn)}
+                                        onClick={() => void fetchChart(mentee.usn)}
                                         className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 transition text-center w-full md:w-auto"
                                     >
                                         View Chart

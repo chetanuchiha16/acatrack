@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
-import axios, { AxiosError } from "axios";
+import axios, { type AxiosError } from "axios";
 
 interface ResetResponse {
     message?: string;
@@ -36,7 +36,7 @@ const ResetPassword: React.FC = () => {
                 { password }
             );
             setStatus(res.data.message || "Success");
-            setTimeout(() => navigate("/auth"), 2000);
+            setTimeout(() => { void navigate("/auth"); }, 2000);
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
                 const axiosErr = err as AxiosError<ResetResponse>;

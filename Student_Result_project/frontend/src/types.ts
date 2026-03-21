@@ -151,3 +151,15 @@ export interface AsyncState<T> {
 // ─── Theme ────────────────────────────────────────────────────────────────────
 
 export type Theme = "light" | "dark";
+
+// ─── Sent Message ─────────────────────────────────────────────────────────────
+
+export interface SentMessage {
+  id: string | number;
+  subject: string;
+  message: string;
+  recipientType: string;
+  usn?: string;
+  created_at?: string;
+}
+

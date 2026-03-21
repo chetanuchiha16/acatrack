@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import type React from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const HiddenShortcut: React.FC = () => {
@@ -7,7 +8,7 @@ const HiddenShortcut: React.FC = () => {
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             if (e.shiftKey && e.altKey && e.key.toLowerCase() === "a") {
-                navigate("/admin");
+                void navigate("/admin");
             }
         };
 

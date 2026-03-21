@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axiosInstance from "./axiosInstance";
 import { CalendarDays } from "lucide-react";
 import API_BASE from "./config";
@@ -27,7 +27,7 @@ export default function MentorMeetings({ mentorId, batchYear }: MentorMeetingsPr
     const [message, setMessage] = useState(""); // Success/error message
 
     // Fetch meetings from backend
-    const fetchMeetings = async () => {
+    const fetchMeetings = useCallback(async () => {
         try {
             const res = await axiosInstance.get<MeetingRecord[]>(
                 `${API_BASE}/auth/Staff/Mentor/meeting/${mentorId}?batch_year=${batchYear}`
@@ -36,11 +36,11 @@ export default function MentorMeetings({ mentorId, batchYear }: MentorMeetingsPr
         } catch (err) {
             console.error(err);
         }
-    };
+    }, [mentorId, batchYear]);
 
     useEffect(() => {
         if (mentorId && batchYear) void fetchMeetings();
-    }, [mentorId, batchYear]);
+    }, [mentorId, batchYear, fetchMeetings]);
 
     // Add a new meeting
     const addMeeting = async () => {

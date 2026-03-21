@@ -40,7 +40,7 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
 
     useEffect(() => {
         if (semester && batchYear) {
-            fetchResults(semester);
+            void fetchResults(semester);
         } else {
             setData(null);
         }
@@ -101,7 +101,7 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
     };
 
     // Kept as requested pattern but strongly typed matching the UI design specs.
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const Stat: React.FC<StatProps> = ({ label, value }) => {
         return (
             <div className="flex flex-col items-center justify-center p-2">

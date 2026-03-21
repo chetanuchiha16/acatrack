@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import API_BASE from "./config";
 import { useNavigate } from "react-router-dom";
 
@@ -37,12 +37,12 @@ export default function AdminPanel() {
     // Redirect if no secret
     useEffect(() => {
         if (!secret) {
-            navigate("/admin");
+            void navigate("/admin");
         }
     }, [navigate, secret]);
 
     // Fetch available batches from backend
-    const fetchBatches = () => {
+    const fetchBatches = useCallback(() => {
         if (!secret) return;
         fetch(`${API_BASE}/admin/list-batches`, {
             headers: { "X-Admin-Secret": secret },
@@ -58,11 +58,11 @@ export default function AdminPanel() {
                 console.error("Failed to fetch batches:", err);
                 setStatus("❌ Failed to load batch list");
             });
-    };
+    }, [secret]);
 
     useEffect(() => {
         fetchBatches();
-    }, [secret]);
+    }, [secret, fetchBatches]);
 
     const handleSecretSubmit = () => {
         if (!secret) return alert("Enter admin secret");
@@ -268,7 +268,7 @@ export default function AdminPanel() {
             });
 
             const data = await res.json();
-            pollJobStatus(data.job_id);
+            void pollJobStatus(data.job_id);
             if (!res.ok) throw new Error(data.error || "Unknown error");
 
             setStatus(
@@ -289,7 +289,7 @@ export default function AdminPanel() {
                 setStatus(`✅ Done! Excel at ${data.excel_path}`);
             } else {
                 setStatus(`Processing... ${data.progress} PDFs done`);
-                setTimeout(() => pollJobStatus(jobId), 1000); // poll every second
+                setTimeout(() => { void pollJobStatus(jobId); }, 1000); // poll every second
             }
         } catch (err: unknown) {
             console.error(err);

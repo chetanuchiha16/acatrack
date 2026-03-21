@@ -11,7 +11,7 @@ const AdminLogin: React.FC = () => {
         return;
     }
     localStorage.setItem("admin_secret", "supersecretkey");
-    navigate("/admin/panel");
+    void navigate("/admin/panel");
   };
 
   return (
