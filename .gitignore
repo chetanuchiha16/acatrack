@@ -16,3 +16,7 @@ ProjectDBData/
 ExcelInputs/
 .env
 *.xlsx
+
+# Firebase configurations
+firebase-service-account.json
+student-6b67d-firebase-adminsdk-fbsvc-d709714bcb.json
