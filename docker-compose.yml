@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: acatrack-backend
+    container_name: acatrack_backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
+    # If file storage (Inputs/Outputs/DBs) needs persistence, add volumes here.
+    # volumes:
+    #   - ./backend/Outputs:/app/Outputs
+    #   - ./backend/Inputs:/app/Inputs
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: acatrack-frontend
+    container_name: acatrack_frontend
+    ports:
+      - "3000:80"   # Maps host port 3000 to Nginx port 80
+    depends_on:
+      - backend
+    restart: unless-stopped
