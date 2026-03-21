@@ -35,7 +35,7 @@ export default function ParentResult() {
     const { studentData, loading: storeLoading, fetchStudentData } = useStudentStore();
     const [sem, setSem] = useState<string>("");
     const [semData, setSemData] = useState<StudentResult | null>(null);
-    const [semLoading, setSemLoading] = useState<boolean>(false);
+    const [_semLoading, setSemLoading] = useState<boolean>(false);
 
     const [aiData, setAiData] = useState<AiData | null>(null);
     const [aiLoading, setAiLoading] = useState<boolean>(false);
@@ -43,7 +43,7 @@ export default function ParentResult() {
 
     // Fetch student data on mount
     useEffect(() => {
-        fetchStudentData();
+        void fetchStudentData();
     }, [fetchStudentData]);
 
     // Set default semester and fetch AI insights when data arrives
@@ -51,15 +51,15 @@ export default function ParentResult() {
         if (studentData?.student?.usn && semesterOptions.length > 0) {
             const defaultSem = semesterOptions[semesterOptions.length - 1];
             setSem(defaultSem);
-            fetchAIData(studentData.student.usn, defaultSem, i18n.language);
+            void fetchAIData(studentData.student.usn, defaultSem, i18n.language);
         }
     }, [studentData, i18n.language]);
 
     // Re-fetch AI and Semester Data if semester or language changes
     useEffect(() => {
         if (studentData?.student?.usn && sem) {
-            fetchSemesterData(studentData.student.usn, sem);
-            fetchAIData(studentData.student.usn, sem, i18n.language);
+            void fetchSemesterData(studentData.student.usn, sem);
+            void fetchAIData(studentData.student.usn, sem, i18n.language);
         }
     }, [sem, i18n.language, studentData]);
 
@@ -299,7 +299,7 @@ export default function ParentResult() {
                             </div>
 
                             {/* Placement Advice */}
-                            {aiData.profile.placement_advice?.length > 0 && (
+                            {aiData?.profile?.placement_advice && aiData.profile.placement_advice.length > 0 && (
                                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800 rounded-xl p-5 border border-blue-100 dark:border-blue-900/40 shadow-sm">
                                     <h4 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3">🎯 {t("careerReadiness", "Career Readiness")}</h4>
                                     <ul className="space-y-2">
@@ -315,7 +315,7 @@ export default function ParentResult() {
                         </div>
 
                         {/* Learning Plan */}
-                        {aiData.profile.learning_plan?.length > 0 && (
+                        {aiData?.profile?.learning_plan && aiData.profile.learning_plan.length > 0 && (
                             <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-amber-100 dark:border-amber-900/30 shadow-sm">
                                 <h4 className="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-3">📚 {t("recommendedActionPlan", "Recommended Action Plan")}</h4>
                                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">

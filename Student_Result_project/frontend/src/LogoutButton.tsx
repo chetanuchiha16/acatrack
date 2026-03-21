@@ -5,13 +5,13 @@ interface LogoutButtonProps {
     size?: string;
 }
 
-const LogoutButton: React.FC<LogoutButtonProps> = ({ size }) => {
+const LogoutButton: React.FC<LogoutButtonProps> = ({ size: _size }) => {
     const navigate = useNavigate();
 
     const handleLogout = async (): Promise<void> => {
         try {
             sessionStorage.removeItem("jwt_token"); // kill JWT locally
-            navigate("/auth", { replace: true });
+            void navigate("/auth", { replace: true });
         } catch (err: unknown) {
             console.error("Logout failed", err);
         }

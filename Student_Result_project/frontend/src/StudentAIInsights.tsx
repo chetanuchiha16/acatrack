@@ -144,7 +144,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                     improvement_advice: Array.isArray(data.improvement_advice) ? data.improvement_advice : [],
                     study_summary: data.study_summary || "Focus on overall improvement.",
                 });
-                fetchChart();
+                void fetchChart();
                 setOpenPerf(true);
             } else {
                 setErrorPerf(data?.error || "Failed to fetch student performance");
@@ -186,7 +186,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     <button
                         onClick={() => {
-                            if (!aiData) fetchAIInsights();
+                            if (!aiData) void fetchAIInsights();
                             setOpenAI(true);
                             setOpenPerf(false);
                         }}
@@ -205,7 +205,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
 
                     <button
                         onClick={() => {
-                            if (!performanceData) fetchPerformance();
+                            if (!performanceData) void fetchPerformance();
                             setOpenAI(false);
                             setOpenPerf(true);
                         }}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
 
@@ -48,14 +48,7 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
     const [broadcastSubject, setBroadcastSubject] = useState<string>("");
     const [broadcastMsg, setBroadcastMsg] = useState<string>("");
     const [studentInputs, setStudentInputs] = useState<Record<string, StudentInput>>({});
-    useEffect(() => {
-        if (mentorId && batchYear) {
-            fetchStudents();
-            fetchMessages();
-        }
-    }, [mentorId, batchYear]);
-
-    const fetchStudents = async () => {
+    const fetchStudents = useCallback(async () => {
         setLoading(true);
         try {
             const res = await axiosInstance.get(
@@ -67,9 +60,9 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
         } finally {
             setLoading(false);
         }
-    };
+    }, [mentorId, batchYear]);
 
-    const fetchMessages = async () => {
+    const fetchMessages = useCallback(async () => {
         try {
             const res = await axiosInstance.get<MessageEntry[]>(
                 `${API_BASE}/mentor/${mentorId}/messages?batch_year=${batchYear}`
@@ -86,7 +79,14 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
         } finally {
             setLoadingMessages(false);
         }
-    };
+    }, [mentorId, batchYear]);
+
+    useEffect(() => {
+        if (mentorId && batchYear) {
+            void fetchStudents();
+            void fetchMessages();
+        }
+    }, [mentorId, batchYear, fetchStudents, fetchMessages]);
 
     const toggleExpand = (usn: string) => {
         setExpanded((prev) => ({ ...prev, [usn]: !prev[usn] }));
@@ -246,7 +246,7 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
                     <div className="flex gap-3">
                         <button
                             onClick={() =>
-                                sendEmail(
+                                void sendEmail(
                                     "student",
                                     null,
                                     broadcastSubject,
@@ -259,7 +259,7 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
                         </button>
                         <button
                             onClick={() =>
-                                sendEmail(
+                                void sendEmail(
                                     "parent",
                                     null,
                                     broadcastSubject,
@@ -316,7 +316,7 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
                                             </div>
                                             <button
                                                 onClick={() =>
-                                                    deleteMessage(msg.id, null)
+                                                    void deleteMessage(msg.id, null)
                                                 }
                                                 className="text-red-600 hover:text-red-800 text-sm"
                                             >
@@ -427,7 +427,7 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
                                                 <div className="flex gap-3">
                                                     <button
                                                         onClick={() =>
-                                                            sendEmail(
+                                                            void sendEmail(
                                                                 "student",
                                                                 s.usn,
                                                                 studentInputs[
@@ -445,7 +445,7 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
                                                     </button>
                                                     <button
                                                         onClick={() =>
-                                                            sendEmail(
+                                                            void sendEmail(
                                                                 "parent",
                                                                 s.usn,
                                                                 studentInputs[
@@ -535,7 +535,7 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
                                                                     </div>
                                                                     <button
                                                                         onClick={() =>
-                                                                            deleteMessage(
+                                                                            void deleteMessage(
                                                                                 msg.id,
                                                                                 s.usn
                                                                             )

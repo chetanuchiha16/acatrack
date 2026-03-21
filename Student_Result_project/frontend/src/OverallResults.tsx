@@ -31,7 +31,7 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
 
     useEffect(() => {
         if (semester && batchYear) {
-            fetchData();
+            void fetchData();
         } else {
             setData([]);
         }

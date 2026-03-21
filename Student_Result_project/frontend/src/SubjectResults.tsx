@@ -36,7 +36,7 @@ const SubjectResults: React.FC<SubjectResultsProps> = ({ batchYear }) => {
 
     useEffect(() => {
         if (semester && subject && batchYear) {
-            fetchData();
+            void fetchData();
         } else {
             setData(null);
         }
@@ -84,8 +84,9 @@ const SubjectResults: React.FC<SubjectResultsProps> = ({ batchYear }) => {
     };
     
     // Safety check to handle potential unmapped semesters gracefully
-    const mappedSubjects = semester && subjectMapping[semester] 
-        ? Object.entries(subjectMapping[semester]) 
+    const currentMapping = semester ? subjectMapping[semester as keyof typeof subjectMapping] : undefined;
+    const mappedSubjects = currentMapping 
+        ? Object.entries(currentMapping) 
         : [];
 
     return (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import API_BASE from "./config";
 import { fetchWithAuth } from "./fetchWithAuth";
 
@@ -31,7 +31,7 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
     const [loadingMeetings, setLoadingMeetings] = useState(true);
 
     // Fetch inbox messages
-    const fetchMessages = async () => {
+    const fetchMessages = useCallback(async () => {
         setLoadingMessages(true);
         try {
             const res = await fetchWithAuth(
@@ -45,10 +45,10 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
         } finally {
             setLoadingMessages(false);
         }
-    };
+    }, [usn]);
 
     // Fetch meetings for mentee
-    const fetchMeetings = async () => {
+    const fetchMeetings = useCallback(async () => {
         setLoadingMeetings(true);
         try {
             const res = await fetchWithAuth(
@@ -62,7 +62,7 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
         } finally {
             setLoadingMeetings(false);
         }
-    };
+    }, [usn]);
 
     const fetchMessageDetail = async (msgId: number | string) => {
         try {
@@ -87,16 +87,16 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
                     method: "POST",
                 }
             );
-            fetchMessages();
+            void fetchMessages();
         } catch (err) {
             console.error("Error marking as read:", err);
         }
     };
 
     useEffect(() => {
-        fetchMessages();
-        fetchMeetings();
-    }, [usn]);
+        void fetchMessages();
+        void fetchMeetings();
+    }, [fetchMessages, fetchMeetings]);
 
     return (
         <div className="w-full max-w-7xl mx-auto p-4 sm:p-6">

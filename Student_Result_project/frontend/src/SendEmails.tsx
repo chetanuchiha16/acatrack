@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
+import type { SentMessage } from "./types";
 
 export default function SendEmails() {
     // Everyone email states
@@ -16,11 +16,11 @@ export default function SendEmails() {
     const [feedbackInd, setFeedbackInd] = useState({ text: "", type: "" });
 
     // Stored messages
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState<SentMessage[]>([]);
 
     // fetch messages initially
     useEffect(() => {
-        fetchMessages();
+        void fetchMessages();
     }, []);
 
     const fetchMessages = async () => {
@@ -34,18 +34,18 @@ export default function SendEmails() {
         }
     };
 
-    const saveMessage = async (data) => {
+    const saveMessage = async (data: Partial<SentMessage>) => {
         try {
             await axiosInstance.post(`${API_BASE}/messages`, data, {
                 withCredentials: true,
             });
-            fetchMessages(); // refresh after saving
+            await fetchMessages(); // refresh after saving
         } catch (err) {
             console.error("Failed to save message", err);
         }
     };
 
-    const deleteMessage = async (id) => {
+    const deleteMessage = async (id: string | number) => {
         try {
             await axiosInstance.delete(`${API_BASE}/messages/${id}`, {
                 withCredentials: true,

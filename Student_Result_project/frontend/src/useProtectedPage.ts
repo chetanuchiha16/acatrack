@@ -13,7 +13,7 @@ interface ProtectedPageResult {
 }
 
 // role param = "Student" | "Parent" | "Staff" | null
-export default function useProtectedPage(role: string | null = null): ProtectedPageResult {
+export default function useProtectedPage(_role: string | null = null): ProtectedPageResult {
   const navigate = useNavigate();
   const { user, fetchAuthStatus, loading: authLoading } = useAuthStore();
   const {
@@ -24,13 +24,13 @@ export default function useProtectedPage(role: string | null = null): ProtectedP
 
   // Always check auth on mount
   useEffect(() => {
-    if (!user) fetchAuthStatus();
+    if (!user) void fetchAuthStatus();
   }, [user, fetchAuthStatus]);
 
   // Redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate("/auth");
+      void navigate("/auth");
     }
   }, [authLoading, user, navigate]);
 
@@ -38,7 +38,7 @@ export default function useProtectedPage(role: string | null = null): ProtectedP
   useEffect(() => {
     if (!authLoading && user && !studentData) {
       if (user.who === "Parent") {
-        fetchStudentData();
+        void fetchStudentData();
       }
     }
   }, [authLoading, user, studentData, fetchStudentData]);

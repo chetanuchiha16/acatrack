@@ -117,7 +117,7 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
 
     // Load Excel file once
     useEffect(() => {
-        fetchWithAuth(`${excel_route}`, {})
+        void fetchWithAuth(`${excel_route}`, {})
             .then((res) => res.arrayBuffer())
             .then(async (buffer) => {
                 const workbook = await new ExcelJs.Workbook().xlsx.load(buffer);

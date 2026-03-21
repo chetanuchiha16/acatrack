@@ -9,7 +9,7 @@ import tsParser from '@typescript-eslint/parser'
 export default defineConfig([
   globalIgnores(['dist']),
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
       reactHooks.configs['recommended-latest'],

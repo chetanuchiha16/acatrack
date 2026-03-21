@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axiosInstance from "./axiosInstance";
 import API_BASE from "./config";
 import type { StudentResult, Semester } from "./types";
@@ -13,7 +13,7 @@ export default function ResultCardView({ usn, semester }: ResultCardViewProps) {
     const [data, setData] = useState<StudentResult | null>(null);
     const [error, setError] = useState<string>("");
 
-    const fetchStudent = async () => {
+    const fetchStudent = useCallback(async () => {
         try {
             const res = await axiosInstance.get<StudentResult>(
                 `${API_BASE}/auth/Student/result`,
@@ -25,13 +25,13 @@ export default function ResultCardView({ usn, semester }: ResultCardViewProps) {
         } catch (err: unknown) {
             setError(parseApiError(err));
         }
-    };
+    }, [usn, semester]);
 
     useEffect(() => {
         if (usn && semester) {
-            fetchStudent();
+            void fetchStudent();
         }
-    }, [usn, semester]);
+    }, [usn, semester, fetchStudent]);
 
     return (
         <div>

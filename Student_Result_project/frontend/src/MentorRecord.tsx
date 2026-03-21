@@ -31,13 +31,13 @@ export default function MentorRecords({ mentor_id, batchYear }: MentorRecordsPro
                     `${API_BASE}/mentee/mentor/${mentor_id}/pdfs?batch_year=${batchYear}`
                 );
                 setPdfs(res.data);
-            } catch (err) {
+            } catch {
                 setError("Failed to fetch PDFs.");
             } finally {
                 setLoading(false);
             }
         };
-        if (mentor_id && batchYear) fetchPdfs();
+        if (mentor_id && batchYear) void fetchPdfs();
     }, [mentor_id, batchYear]);
 
     // Fetch signed file URL before viewing/downloading
@@ -79,7 +79,7 @@ export default function MentorRecords({ mentor_id, batchYear }: MentorRecordsPro
                                     <button
                                         onClick={() => {
                                             setSelectedPdf(pdf);
-                                            fetchPdfUrl(pdf.usn);
+                                            void fetchPdfUrl(pdf.usn);
                                         }}
                                         className="px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20 rounded-lg text-sm font-medium transition-colors"
                                     >
