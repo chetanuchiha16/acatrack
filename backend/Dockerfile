@@ -16,9 +16,14 @@ RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install uv for fast dependency management
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install dependencies using uv (frozen = respect lockfile exactly)
+RUN uv sync --frozen --no-dev --no-editable
 
 # Copy application source code
 COPY . .
@@ -26,5 +31,5 @@ COPY . .
 # Expose backend port
 EXPOSE 5000
 
-# Run the backend service
-CMD ["python", "app.py"]
+# Run the backend service via the uv-managed venv
+CMD ["uv", "run", "python", "app.py"]
