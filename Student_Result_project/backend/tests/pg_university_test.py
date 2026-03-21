@@ -1,14 +1,13 @@
 # test_university_postgres.py
 
-from logger_config import get_logger
-from services.university_service import University
-from models.paths import postgres_db_url
+import pytest
 from app_init import create_app
+from logger_config import get_logger
+from models.paths import postgres_db_url
+from services.university_service import University
 
 logger = get_logger(__name__)
 
-
-import pytest
 
 def test_university_postgres():
     if not postgres_db_url:
