@@ -11,7 +11,7 @@ function getErrMsg(err: unknown): string {
 
 export default function AdminPanel() {
     const navigate = useNavigate();
-    const savedSecret = localStorage.getItem("admin_secret");
+    const savedSecret = sessionStorage.getItem("admin_secret");
 
     const [secret, setSecret] = useState<string>(savedSecret ?? "");
     const [mode, setMode] = useState<string>("missing");
@@ -66,7 +66,7 @@ export default function AdminPanel() {
 
     const handleSecretSubmit = () => {
         if (!secret) return alert("Enter admin secret");
-        localStorage.setItem("admin_secret", secret);
+        sessionStorage.setItem("admin_secret", secret);
         setStatus(
             "✅ Secret saved. You can now generate accounts or upload files."
         );
