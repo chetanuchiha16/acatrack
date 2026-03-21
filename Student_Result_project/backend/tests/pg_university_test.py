@@ -8,7 +8,12 @@ from app_init import create_app
 logger = get_logger(__name__)
 
 
+import pytest
+
 def test_university_postgres():
+    if not postgres_db_url:
+        pytest.skip("Postgres URL not configured. Skipping test.")
+
     app = create_app()
 
     with app.app_context():
