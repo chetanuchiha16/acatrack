@@ -2,10 +2,11 @@ import base64
 import io
 
 from flask import Blueprint, jsonify, request, send_from_directory
+from werkzeug.utils import secure_filename
 from logger_config import get_logger
-from models import Student
-from models.helpers import get_batch_year
-from models.paths import pdf_dir, postgres_db_url
+from services.student_service import Student
+from utils.helpers import get_batch_year
+from models.paths import pdf_dir
 from visuals import create_student_report
 
 logger = get_logger(__name__)
@@ -46,13 +47,14 @@ def get_student_info():
 
         return jsonify(response_data)
 
-    except Exception as e:
-        logger.debug(f"[ERROR] {e}")
-        return jsonify({"error": str(e)}), 400
+    except Exception:
+        logger.exception(f"Error fetching student result for USN: {usn}")
+        return jsonify({"error": "Failed to fetch student result."}), 500
 
 
 @student_bp.route("/auth/Student/report/<filename>", methods=["GET"])
 def download_report(filename):
+    filename = secure_filename(filename)
     return send_from_directory(pdf_dir, filename, as_attachment=True)
 
 
@@ -75,6 +77,7 @@ def get_student_chart():
 
     # Close figure to free memory
     import matplotlib.pyplot as plt
+
     plt.close(fig)
 
     return jsonify({"image": f"data:image/png;base64,{img_base64}"})

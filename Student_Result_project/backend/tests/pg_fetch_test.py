@@ -1,6 +1,5 @@
-import sqlalchemy
 from sqlalchemy import create_engine
-from models.fetch import fetch_student_data
+from services.fetch_service import fetch_student_data
 from models.paths import postgres_db_url
 from logger_config import get_logger
 

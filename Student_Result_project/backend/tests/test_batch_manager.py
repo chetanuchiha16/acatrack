@@ -7,49 +7,49 @@ load_dotenv()
 # Ensure the backend directory is in the path so imports work
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from models.batch_manager import bm
-from models.schema import AcademicResult, StudentAuth, Subject
+from services.batch_manager import bm  # noqa: E402
+from models.schema import AcademicResult, StudentAuth, Subject  # noqa: E402
+from app_init import create_app  # noqa: E402
 
 TEST_BATCH_YEAR = 2022  # <-- Change this to an actual year you have an Excel sheet for
 
 
 def run_tests():
-    print(f"\n🚀 --- Starting BatchManager Tests for Batch {TEST_BATCH_YEAR} ---")
+    app = create_app()
 
-    # TEST 1: Batch Creation and Data Prep
-    print("\n[Test 1] Testing bm.create_batch()...")
-    try:
-        bm.create_batch(TEST_BATCH_YEAR)
-        print(
-            "✅ create_batch() executed successfully. Tables created and data ingested."
-        )
-    except Exception as e:
-        print(f"❌ create_batch() failed: {e}")
-        return
-
-    # TEST 2: Listing Batches
-    print("\n[Test 2] Testing bm.list_batches()...")
-    try:
-        batches = bm.list_batches()
-        print(f"-> Batches found in DB: {batches}")
-        if TEST_BATCH_YEAR in batches:
-            print(
-                "✅ list_batches() successfully queried the normalized database and found the batch."
-            )
-        else:
-            print(
-                "❌ list_batches() did NOT find the batch. Query logic might be failing."
-            )
-    except Exception as e:
-        print(f"❌ list_batches() failed: {e}")
-
-    # TEST 3: Verifying Database Records directly
-    print("\n[Test 3] Verifying Normalized Database Records via SQLAlchemy...")
-    # The original `get_flask_app` call is replaced with a more direct approach
-    # for testing database interactions within the batch manager context.
-    # This assumes `bm.get_db_for_batch` provides the necessary context and database session.
-    db, app = bm.get_db_for_batch(TEST_BATCH_YEAR)
     with app.app_context():
+        print(f"\n🚀 --- Starting BatchManager Tests for Batch {TEST_BATCH_YEAR} ---")
+
+        # TEST 1: Batch Creation and Data Prep
+        print("\n[Test 1] Testing bm.create_batch()...")
+        try:
+            bm.create_batch(TEST_BATCH_YEAR)
+            print(
+                "✅ create_batch() executed successfully. Tables created and data ingested."
+            )
+        except Exception as e:
+            print(f"❌ create_batch() failed: {e}")
+            return
+
+        # TEST 2: Listing Batches
+        print("\n[Test 2] Testing bm.list_batches()...")
+        try:
+            batches = bm.list_batches()
+            print(f"-> Batches found in DB: {batches}")
+            if TEST_BATCH_YEAR in batches:
+                print(
+                    "✅ list_batches() successfully queried the normalized database and found the batch."
+                )
+            else:
+                print(
+                    "❌ list_batches() did NOT find the batch. Query logic might be failing."
+                )
+        except Exception as e:
+            print(f"❌ list_batches() failed: {e}")
+
+        # TEST 3: Verifying Database Records directly
+        print("\n[Test 3] Verifying Normalized Database Records via SQLAlchemy...")
+        # We are already in app.app_context() here
         student_count = StudentAuth.query.filter_by(batch_year=TEST_BATCH_YEAR).count()
         result_count = AcademicResult.query.filter_by(
             batch_year=TEST_BATCH_YEAR

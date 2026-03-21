@@ -28,17 +28,18 @@ def list_all_objects(prefix=""):
             sub_prefix = f"{prefix}/{name}" if prefix else name
             list_all_objects(sub_prefix)
 
+
 # ---- Run diagnostics ----
 list_all_objects("notes/2023/sem5")
 prefix = "notes/2023/sem5"
 entries = supabase.storage.from_(SUPABASE_BUCKET).list(prefix)
 tree = {}
 for entry in entries:
-    name = entry.get('name')
-    mimetype = (entry.get('metadata') or {}).get('mimetype', '')
+    name = entry.get("name")
+    mimetype = (entry.get("metadata") or {}).get("mimetype", "")
     print(f"name={name} | mimetype={mimetype}")
     if mimetype == "application/x-directory":
         continue
-    if name and name.lower().endswith('.pdf'):
+    if name and name.lower().endswith(".pdf"):
         tree[name] = None
 print(tree)

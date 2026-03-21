@@ -1,6 +1,6 @@
-# from models import University
-# from models import SubjectResult
-# from models.paths import 
+# from services.university_service import University
+# from services.results_service import SubjectResult
+# from models.paths import
 # #toppers list
 # # Create an instance of University and load students
 # university = University(db_path=db_path)

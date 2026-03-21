@@ -1,7 +1,26 @@
-
-from .student import Student
-from .university import University
-from .subject_results import SubjectResult
-from .schema import db, StudentAuth,Teacher,StudentAuth, Mentor, ParentAuth, Meeting, PasswordResetToken, StudentMessageStatus, MentorMessage
+from .schema import (
+    db,
+    Teacher,
+    StudentAuth,
+    Mentor,
+    ParentAuth,
+    Meeting,
+    PasswordResetToken,
+    StudentMessageStatus,
+    MentorMessage,
+)
 
 from .config import Config
+
+__all__ = [
+    "db",
+    "Teacher",
+    "StudentAuth",
+    "Mentor",
+    "ParentAuth",
+    "Meeting",
+    "PasswordResetToken",
+    "StudentMessageStatus",
+    "MentorMessage",
+    "Config",
+]

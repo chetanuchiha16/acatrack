@@ -1,5 +1,5 @@
 # import sqlite3
-# from models.paths import 
+# from models.paths import
 
 # conn = sqlite3.connect(db_path)   # path to your db
 # cursor = conn.cursor()

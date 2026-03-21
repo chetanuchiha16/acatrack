@@ -1,19 +1,19 @@
 # import textwrap
 # from reportlab.lib import colors
-from reportlab.platypus import Image
 # from reportlab.lib.styles import getSampleStyleSheet
 # from reportlab.lib.units import inch
-from fpdf import FPDF
 from reportlab.lib.pagesizes import letter
+
 # from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-import pathlib
-# from models import SubjectResult
-# from models.config import 
+
+# from services.results_service import SubjectResult
+# from models.config import
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from models.paths import  pdf_dir, img_dir, get_logo_path
+from models.paths import img_dir, get_logo_path
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -25,33 +25,34 @@ def create_university_report(university, selected_semester):
     Returns PDF bytes (in-memory).
     """
     import io
+
     pdf_buffer = io.BytesIO()
 
     # Fetch students for the selected semester
     students = university.get_students_for_semester(selected_semester)
     if not students:
         logger.debug(f"No students found for {selected_semester}")
-        return b"" # Or handle error appropriately
+        return b""  # Or handle error appropriately
 
     # Generate SGPA histogram
     sgpa_list = [student.sgpa for student in students]
     fig, ax = plt.subplots()
-    ax.hist(sgpa_list, bins=10, range=(0, 10), color='skyblue', edgecolor='black')
+    ax.hist(sgpa_list, bins=10, range=(0, 10), color="skyblue", edgecolor="black")
     ax.set_title("SGPA Distribution")
     ax.set_xlabel("SGPA")
     ax.set_ylabel("Number of Students")
     import uuid
+
     graph_path = f"{img_dir}/university_graph_{uuid.uuid4().hex}.png"
     plt.savefig(graph_path)
     plt.close()
 
     # Generate second graph
-    gpath = university.plot_student_totals(selected_semester, mode='histogram', n=10, bins=10)[1]
+    gpath = university.plot_student_totals(
+        selected_semester, mode="histogram", n=10, bins=10
+    )[1]
 
     # Create PDF in-memory
-    from reportlab.pdfgen import canvas
-    from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import Image
 
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
 
@@ -74,7 +75,9 @@ def create_university_report(university, selected_semester):
 
     # Add student details
     c.setFont("Helvetica", 12)
-    c.drawString(100, 270, f"=== Academic Performance for Semester: {selected_semester} ===")
+    c.drawString(
+        100, 270, f"=== Academic Performance for Semester: {selected_semester} ==="
+    )
 
     y = 250
     for student in students:
@@ -114,11 +117,12 @@ def create_university_report(university, selected_semester):
     pdf_buffer.seek(0)
     pdf_bytes = pdf_buffer.read()
     pdf_buffer.close()
-    
+
     import os
+
     if os.path.exists(graph_path):
         os.remove(graph_path)
     if gpath and os.path.exists(gpath):
         os.remove(gpath)
-        
+
     return pdf_bytes

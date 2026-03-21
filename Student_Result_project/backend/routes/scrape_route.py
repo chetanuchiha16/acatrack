@@ -2,16 +2,16 @@ from flask import Blueprint, request, jsonify
 from threading import Thread
 import os
 import time
-from models.webscrape import setup_selenium
+from services.scraper import setup_selenium
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from models import pdftoexcel
-from models.cloud_utils import (
+from services import pdf_parser as pdftoexcel
+from utils.cloud import (
     upload_pdf_to_supabase,
     upload_excel_to_supabase,
     download_excel_from_supabase,
-    excel_exists_in_supabase
+    excel_exists_in_supabase,
 )
 import tempfile
 from logger_config import get_logger
@@ -28,6 +28,7 @@ webscrape_bp = Blueprint("webscrape", __name__, url_prefix="/webscrape")
 # ---------- Helpers ----------
 def _fetch_single_result(usn, exam_url, batch_year, sem):
     from selenium.common.exceptions import TimeoutException
+
     pdf_folder = f"{batch_year}/{batch_year}_SEM{sem}"
     excel_folder = f"{batch_year}"
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -40,19 +41,19 @@ def _fetch_single_result(usn, exam_url, batch_year, sem):
                 EC.visibility_of_element_located((By.NAME, "lns"))
             )
             usn_input.send_keys(usn)
-            WebDriverWait(driver, 300).until(
-                EC.url_contains("resultpage.php")
-            )
+            WebDriverWait(driver, 300).until(EC.url_contains("resultpage.php"))
             logger.debug(f"CAPTCHA solved for {usn}")
             print_button = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//input[@value='ಮುದ್ರಣ / PRINT']"))
+                EC.element_to_be_clickable(
+                    (By.XPATH, "//input[@value='ಮುದ್ರಣ / PRINT']")
+                )
             )
             print_button.click()
             logger.debug(f"Download triggered for {usn}")
             time.sleep(5)
             logger.debug(f"Files in tmpdir after download: {os.listdir(tmpdir)}")
 
-            latest_pdf = pdftoexcel.wait_and_rename_pdf(tmpdir, usn)
+            _ = pdftoexcel.wait_and_rename_pdf(tmpdir, usn)
             local_pdf = os.path.join(tmpdir, f"{usn}.pdf")
             logger.debug(f"local_pdf: {local_pdf}")
 
@@ -75,6 +76,7 @@ def _fetch_single_result(usn, exam_url, batch_year, sem):
                 tmp_excel_path = os.path.join(tmpdir, excel_filename)
                 # Copy downloaded Excel to workspace, so as not to edit cloud copy in place
                 import shutil
+
                 shutil.copy(local_excel, tmp_excel_path)
                 local_excel = tmp_excel_path
             else:
@@ -84,7 +86,9 @@ def _fetch_single_result(usn, exam_url, batch_year, sem):
             pdftoexcel.process_single_pdf(local_pdf, local_excel)
 
             try:
-                excel_url = upload_excel_to_supabase(local_excel, excel_filename, excel_folder)
+                excel_url = upload_excel_to_supabase(
+                    local_excel, excel_filename, excel_folder
+                )
                 logger.debug(f"Excel uploaded to Supabase: {excel_url}")
             except Exception as e:
                 logger.error(f"Excel upload failed: {e}")
@@ -98,6 +102,7 @@ def _fetch_single_result(usn, exam_url, batch_year, sem):
         finally:
             driver.quit()
 
+
 def _fetch_usn_range(usn_prefix, start, end, exam_session, exam_year, sem):
     batch_year = batch_from_usn(usn_prefix)
     exam_url = f"https://results.vtu.ac.in/{exam_session}cbcs{exam_year}/index.php"
@@ -105,9 +110,11 @@ def _fetch_usn_range(usn_prefix, start, end, exam_session, exam_year, sem):
         usn = f"{usn_prefix}{str(i).zfill(3)}"
         _fetch_single_result(usn, exam_url, batch_year, sem)
 
+
 def batch_from_usn(usn_prefix: str) -> int:
     year_suffix = usn_prefix[3:5]
     return 2000 + int(year_suffix)
+
 
 def get_exam_session_and_year(usn_prefix: str, sem: int):
     batch_year = batch_from_usn(usn_prefix)
@@ -119,6 +126,7 @@ def get_exam_session_and_year(usn_prefix: str, sem: int):
         exam_year = batch_year + (sem // 2)
     exam_year_suffix = str(exam_year)[-2:]
     return exam_session, exam_year_suffix, batch_year
+
 
 # ---------- Routes ----------
 @webscrape_bp.route("/fetch-results", methods=["POST"])
@@ -141,18 +149,22 @@ def fetch_results_route():
     start = int(data["usn_start"])
     end = int(data["usn_end"])
     sem = int(data["sem"])
-    exam_session, exam_year_suffix, batch_year = get_exam_session_and_year(usn_prefix, sem)
+    exam_session, exam_year_suffix, batch_year = get_exam_session_and_year(
+        usn_prefix, sem
+    )
 
     thread = Thread(
         target=_fetch_usn_range,
-        args=(usn_prefix, start, end, exam_session, exam_year_suffix, sem)
+        args=(usn_prefix, start, end, exam_session, exam_year_suffix, sem),
     )
     thread.start()
-    return jsonify({
-        "status": "started",
-        "message": (
-            f"Fetching results for batch {batch_year}, sem {sem} → "
-            f"{exam_session}{exam_year_suffix}, "
-            f"USNs {usn_prefix}{start:03d} to {usn_prefix}{end:03d}"
-        )
-    })
+    return jsonify(
+        {
+            "status": "started",
+            "message": (
+                f"Fetching results for batch {batch_year}, sem {sem} → "
+                f"{exam_session}{exam_year_suffix}, "
+                f"USNs {usn_prefix}{start:03d} to {usn_prefix}{end:03d}"
+            ),
+        }
+    )

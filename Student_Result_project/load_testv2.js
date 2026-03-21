@@ -39,7 +39,7 @@ function getTrend(name) {
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:5000';
 const USN = __ENV.USN || '1JS23CS032'; 
 const SEMESTER = __ENV.SEMESTER || 'sem1';
-const MENTOR_ID = __ENV.MENTOR_ID || '1'; // Placeholder mentor ID 
+const MENTOR_ID = __ENV.MENTOR_ID || '3'; // First real mentor ID in normalized DB
 const ADMIN_SECRET = __ENV.ADMIN_SECRET || 'supersecretkey';
 const ROUTE_FILTER = __ENV.ROUTE_FILTER || ''; // If set, only this route will run
 
@@ -80,13 +80,14 @@ export default function () {
     
     // We get a token for the roles
     let studentToken, staffToken, parentToken;
-    
+    let effectiveMentorId = MENTOR_ID; // Dynamic mentor ID from staff login
+
     group('Login to get tokens', function() {
         // 1. Student Login
         const studentLogin = JSON.stringify({
            who: "Student",
            username: USN,
-           password: "CHET032" // Using previously known password
+           password: "CHET032"
         });
         const studentRes = http.post(`${BASE_URL}/auth`, studentLogin, {
            headers: { 'Content-Type': 'application/json' },
@@ -94,20 +95,27 @@ export default function () {
         });
         if (studentRes.status === 200) { studentToken = studentRes.json('token'); }
 
-        // 2. Staff/Mentor Login (Using dummy/placeholder credentials)
+        // 2. Staff/Mentor Login — teacher 1001 = Mrs. Snehalatha N, mentor_id=3
         const staffLogin = JSON.stringify({
            who: "Staff",
-           username: "1000", // Dummy teacher ID
-           password: "Sneh000",
+           username: "1001",
+           password: "Sneh001",
            batch_year: "2022"
         });
         const staffRes = http.post(`${BASE_URL}/auth`, staffLogin, {
            headers: { 'Content-Type': 'application/json' },
            tags: { name: 'Staff Login' }
         });
-        if (staffRes.status === 200) { staffToken = staffRes.json('token'); }
+        if (staffRes.status === 200) {
+            staffToken = staffRes.json('token');
+            // Decode mentor_id from JWT payload (middle part, base64url)
+            try {
+                const payload = JSON.parse(atob(staffToken.split('.')[1]));
+                if (payload.mentor_id) { effectiveMentorId = String(payload.mentor_id); }
+            } catch(e) {}
+        }
 
-        // 3. Parent Login (Using dummy/placeholder credentials)
+        // 3. Parent Login
         const parentLogin = JSON.stringify({
            who: "Parent",
            username: `${USN}_parent`,
@@ -117,10 +125,6 @@ export default function () {
            headers: { 'Content-Type': 'application/json' },
            tags: { name: 'Parent Login' }
         });
-        
-        // We check if status is 200 or 401. If it's 401, it's still "failed" in http_req_failed metric,
-        // but we can adjust our threshold or use a submetric.
-        // For a simple fix, let's just make the threshold more lenient or ignore this req in the failure rate.
         check(parentRes, { 'Parent Login status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
         if (parentRes.status === 200) { parentToken = parentRes.json('token'); }
     });
@@ -213,21 +217,21 @@ export default function () {
 
         if (shouldRun('Mentor Students List API')) {
             group('Mentor Students List API', function () {
-               const res = track(http.get(`${BASE_URL}/mentor/${MENTOR_ID}/students`, staffParams('Mentor Students List API')), 'Mentor Students List API');
+               const res = track(http.get(`${BASE_URL}/mentor/${effectiveMentorId}/students`, staffParams('Mentor Students List API')), 'Mentor Students List API');
                check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
             });
         }
 
         if (shouldRun('Mentor Meetings API')) {
             group('Mentor Meetings API', function () {
-               const res = track(http.get(`${BASE_URL}/auth/Staff/Mentor/meeting/${MENTOR_ID}`, staffParams('Mentor Meetings API')), 'Mentor Meetings API');
+               const res = track(http.get(`${BASE_URL}/auth/Staff/Mentor/meeting/${effectiveMentorId}`, staffParams('Mentor Meetings API')), 'Mentor Meetings API');
                check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
             });
         }
 
         if (shouldRun('Mentor PDFs File Tree API')) {
             group('Mentor PDFs File Tree API', function () {
-               const res = track(http.get(`${BASE_URL}/mentee/mentor/${MENTOR_ID}/pdfs`, staffParams('Mentor PDFs File Tree API')), 'Mentor PDFs File Tree API');
+               const res = track(http.get(`${BASE_URL}/mentee/mentor/${effectiveMentorId}/pdfs`, staffParams('Mentor PDFs File Tree API')), 'Mentor PDFs File Tree API');
                check(res, { 'status is 200 or 401': (r) => r.status === 200 || r.status === 401 });
             });
         }

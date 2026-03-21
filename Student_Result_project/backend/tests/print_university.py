@@ -1,5 +1,5 @@
-# from models import University
-# from models.paths import 
+# from services.university_service import University
+# from models.paths import
 
 # #temp function to print university class data
 # def test_university_class(selected_semester, db_path=db_path):
@@ -19,7 +19,7 @@
 #         # Display the results in the terminal (optional, for debugging)
 #         logger.debug(f"\n=== Calculating Academic Performance for Semester: {selected_semester} ===")
 #         logger.debug(result)
-        
+
 #         # Plot total marks for all students
 #         logger.debug("\n=== Plotting Total Marks for All Students ===")
 #         fig = university.plot_student_totals(selected_semester)
