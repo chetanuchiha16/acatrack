@@ -15,8 +15,9 @@ ai_bp = Blueprint("ai", __name__)
 @ai_bp.route("/ai/summary", methods=["GET"])
 @cache.cached(timeout=3600, query_string=True)
 def ai_summary():
-    usn = request.args.get("usn")
-    lng = request.args.get("lng", "en")
+    from markupsafe import escape
+    usn = escape(request.args.get("usn", ""))
+    lng = escape(request.args.get("lng", "en"))
     batch_year = get_batch_year()
 
     result, status_code = get_ai_summary_data(usn, lng, batch_year)
@@ -27,7 +28,8 @@ def ai_summary():
 @ai_bp.route("/ai/trend", methods=["GET"])
 @cache.cached(timeout=3600, query_string=True)
 def ai_trend():
-    usn = request.args.get("usn")
+    from markupsafe import escape
+    usn = escape(request.args.get("usn", ""))
     batch_year = get_batch_year()
 
     result, status_code = get_ai_trend_data(usn, batch_year)
@@ -38,7 +40,8 @@ def ai_trend():
 @ai_bp.route("/ai/predict_cgpa", methods=["GET"])
 @cache.cached(timeout=3600, query_string=True)
 def ai_predict_cgpa():
-    usn = request.args.get("usn")
+    from markupsafe import escape
+    usn = escape(request.args.get("usn", ""))
 
     result, status_code = get_ai_cgpa_prediction(usn)
     return jsonify(result), status_code
@@ -48,8 +51,9 @@ def ai_predict_cgpa():
 @ai_bp.route("/ai/profile", methods=["GET"])
 @cache.cached(timeout=3600, query_string=True)
 def ai_profile():
-    usn = request.args.get("usn")
-    lng = request.args.get("lng", "en")
+    from markupsafe import escape
+    usn = escape(request.args.get("usn", ""))
+    lng = escape(request.args.get("lng", "en"))
     batch_year = get_batch_year()
 
     result, status_code = get_ai_profile_data(usn, lng, batch_year)

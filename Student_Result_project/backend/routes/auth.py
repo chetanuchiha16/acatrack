@@ -25,8 +25,9 @@ def auth():
         who, username, password, provided_batch_year
     )
 
+    from markupsafe import escape
     if error_msg:
-        return jsonify({"error": error_msg}), status_code
+        return jsonify({"error": escape(error_msg)}), status_code
 
     # Set session data safely using the dict returned by service
     session_data = result.get("session_data", {})

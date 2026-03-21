@@ -31,12 +31,23 @@ JOB_STATUS_DIR.mkdir(exist_ok=True)
 
 
 def save_job(job_id, data):
-    with open(JOB_STATUS_DIR / f"job_{job_id}.json", "w") as f:
+    import os
+    from werkzeug.utils import secure_filename
+    s_job_id = secure_filename(str(job_id))
+    path = (JOB_STATUS_DIR / f"job_{s_job_id}.json").resolve()
+    if not str(path).startswith(str(JOB_STATUS_DIR.resolve())):
+        return
+    with open(path, "w") as f:
         json.dump(data, f)
 
 
 def load_job(job_id):
-    path = JOB_STATUS_DIR / f"job_{job_id}.json"
+    import os
+    from werkzeug.utils import secure_filename
+    s_job_id = secure_filename(str(job_id))
+    path = (JOB_STATUS_DIR / f"job_{s_job_id}.json").resolve()
+    if not str(path).startswith(str(JOB_STATUS_DIR.resolve())):
+        return None
     if not path.exists():
         return None
     with open(path, "r") as f:
