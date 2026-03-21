@@ -26,6 +26,7 @@ def auth():
     )
 
     from markupsafe import escape
+
     if error_msg:
         return jsonify({"error": escape(error_msg)}), status_code
 
