@@ -84,7 +84,12 @@ def process_archive_background(job_id, excel_filename, archive_path):
                     rar_ref.extractall(tmpdir_path)
         except Exception:
             logger.exception("Extraction failed")
-            job_data.update({"status": "failed", "error": "Extraction failed. Please check the archive format."})
+            job_data.update(
+                {
+                    "status": "failed",
+                    "error": "Extraction failed. Please check the archive format.",
+                }
+            )
             save_job(job_id, job_data)
             return
 
@@ -139,7 +144,10 @@ def process_archive_background(job_id, excel_filename, archive_path):
         except Exception:
             logger.exception("Excel upload to Supabase failed")
             job_data.update(
-                {"status": "failed", "error": "Failed to upload final Excel to cloud storage."}
+                {
+                    "status": "failed",
+                    "error": "Failed to upload final Excel to cloud storage.",
+                }
             )
         save_job(job_id, job_data)
     finally:

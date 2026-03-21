@@ -2,6 +2,7 @@
 Tests for basic DB connectivity and StudentAuth queries.
 Uses the in-memory SQLite fixture from conftest.py — no real credentials needed.
 """
+
 from models import StudentAuth
 
 

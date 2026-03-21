@@ -40,10 +40,10 @@ def create_app(batch_year=None, postgres_url=None):
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     cache.init_app(app)
-    
+
     # CORS: Restrict to specific origins if configured
     cors_origins = settings.cors_allowed_origins
-    
+
     CORS(
         app,
         supports_credentials=True,
