@@ -16,6 +16,7 @@ ai_bp = Blueprint("ai", __name__)
 @cache.cached(timeout=3600, query_string=True)
 def ai_summary():
     from markupsafe import escape
+
     usn = escape(request.args.get("usn", ""))
     lng = escape(request.args.get("lng", "en"))
     batch_year = get_batch_year()
@@ -29,6 +30,7 @@ def ai_summary():
 @cache.cached(timeout=3600, query_string=True)
 def ai_trend():
     from markupsafe import escape
+
     usn = escape(request.args.get("usn", ""))
     batch_year = get_batch_year()
 
@@ -41,6 +43,7 @@ def ai_trend():
 @cache.cached(timeout=3600, query_string=True)
 def ai_predict_cgpa():
     from markupsafe import escape
+
     usn = escape(request.args.get("usn", ""))
 
     result, status_code = get_ai_cgpa_prediction(usn)
@@ -52,6 +55,7 @@ def ai_predict_cgpa():
 @cache.cached(timeout=3600, query_string=True)
 def ai_profile():
     from markupsafe import escape
+
     usn = escape(request.args.get("usn", ""))
     lng = escape(request.args.get("lng", "en"))
     batch_year = get_batch_year()

@@ -33,6 +33,7 @@ JOB_STATUS_DIR.mkdir(exist_ok=True)
 def save_job(job_id, data):
     import os
     from werkzeug.utils import secure_filename
+
     s_job_id = secure_filename(str(job_id))
     path = (JOB_STATUS_DIR / f"job_{s_job_id}.json").resolve()
     if not str(path).startswith(str(JOB_STATUS_DIR.resolve())):
@@ -44,6 +45,7 @@ def save_job(job_id, data):
 def load_job(job_id):
     import os
     from werkzeug.utils import secure_filename
+
     s_job_id = secure_filename(str(job_id))
     path = (JOB_STATUS_DIR / f"job_{s_job_id}.json").resolve()
     if not str(path).startswith(str(JOB_STATUS_DIR.resolve())):
