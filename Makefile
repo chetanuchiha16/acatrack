@@ -1,18 +1,23 @@
 # Makefile for Student Result Project
 
-.PHONY: help install backend frontend run test benchmark load-test clean
+.PHONY: help install backend frontend run test benchmark load-test clean docker-build docker-up docker-down docker-logs docker-status
 
 # Default target
 help:
 	@echo "Available commands:"
-	@echo "  make install     - Install dependencies for both backend and frontend"
-	@echo "  make backend     - Run the Flask backend"
-	@echo "  make frontend    - Run the Vite frontend"
-	@echo "  make run         - Run both backend and frontend concurrently"
-	@echo "  make test        - Run backend tests"
-	@echo "  make benchmark   - Run the python benchmark script"
-	@echo "  make load-test   - Run the javascript load test"
-	@echo "  make clean       - Remove cache files"
+	@echo "  make install      - Install dependencies for both backend and frontend"
+	@echo "  make backend      - Run the Flask backend locally"
+	@echo "  make frontend     - Run the Vite frontend locally"
+	@echo "  make run          - Run both backend and frontend locally"
+	@echo "  make test         - Run backend tests"
+	@echo "  make benchmark    - Run the python benchmark script"
+	@echo "  make load-test    - Run the javascript load test"
+	@echo "  make docker-build - Build docker images"
+	@echo "  make docker-up    - Start docker containers"
+	@echo "  make docker-down  - Stop docker containers"
+	@echo "  make docker-logs  - View docker logs"
+	@echo "  make docker-status- Check docker container status"
+	@echo "  make clean        - Remove cache files"
 
 # Install dependencies
 install:
@@ -56,3 +61,24 @@ clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type d -name ".pytest_cache" -exec rm -rf {} +
 	rm -rf backend/.venv frontend/node_modules
+
+# Docker commands
+docker-build:
+	@echo "Building Docker images..."
+	docker compose build
+
+docker-up:
+	@echo "Starting Docker containers..."
+	docker compose up -d
+
+docker-down:
+	@echo "Stopping Docker containers..."
+	docker compose down
+
+docker-logs:
+	@echo "Viewing Docker logs..."
+	docker compose logs -f
+
+docker-status:
+	@echo "Checking container status..."
+	docker compose ps
