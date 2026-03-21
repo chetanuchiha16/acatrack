@@ -11,9 +11,7 @@ function getErrMsg(err: unknown): string {
 
 export default function AdminPanel() {
     const navigate = useNavigate();
-    const savedSecret = sessionStorage.getItem("admin_secret");
-
-    const [secret, setSecret] = useState<string>(savedSecret ?? "");
+    const [secret, setSecret] = useState<string>("");
     const [mode, setMode] = useState<string>("missing");
     const [status, setStatus] = useState<string>("");
 
@@ -66,7 +64,6 @@ export default function AdminPanel() {
 
     const handleSecretSubmit = () => {
         if (!secret) return alert("Enter admin secret");
-        sessionStorage.setItem("admin_secret", secret);
         setStatus(
             "✅ Secret saved. You can now generate accounts or upload files."
         );
@@ -405,7 +402,7 @@ export default function AdminPanel() {
             <div className="flex flex-col gap-6 lg:col-span-2 h-full">
                 {/* Admin Secret */}
                 <div className="shadow-lg rounded-2xl p-6 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700">
-                    {!savedSecret ? (
+                    {!secret ? (
                         <>
                             <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">
                                 🔑 Admin Access

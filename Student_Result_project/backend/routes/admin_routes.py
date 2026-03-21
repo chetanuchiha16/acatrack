@@ -140,22 +140,25 @@ def upload_emails():
     #     logger.error(f"Email file upload to Supabase failed: {e}")
     #     emails_upload_url = None
 
-    result, status_code = process_email_upload_file(
-        temp_upload_path,
-        ext,
-        batch_year,
-        bm.session_scope,
-        bcrypt,
-        StudentAuth,
-        ParentAuth,
-        joinedload,
-    )
-
-    # Clean up temp file
     try:
-        os.remove(temp_upload_path)
+        result, status_code = process_email_upload_file(
+            temp_upload_path,
+            ext,
+            batch_year,
+            bm.session_scope,
+            bcrypt,
+            StudentAuth,
+            ParentAuth,
+            joinedload,
+        )
     except Exception as e:
-        logger.debug(f"Temp file cleanup failed: {e}")
+        current_app.logger.error(e, exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+    finally:
+        try:
+            os.remove(temp_upload_path)
+        except Exception as e:
+            logger.debug(f"Temp file cleanup failed: {e}")
 
     return jsonify(result), status_code
 
@@ -187,18 +190,22 @@ def upload_mentors():
         _safe_seed,
     )
 
-    response, status_code = process_mentor_upload_file(
-        file,
-        batch_year,
-        bm.session_scope,
-        bcrypt,
-        Mentor,
-        Teacher,
-        StudentAuth,
-        _unique_teacher_username,
-        _safe_seed,
-        upload_excel_to_supabase,
-    )
+    try:
+        response, status_code = process_mentor_upload_file(
+            file,
+            batch_year,
+            bm.session_scope,
+            bcrypt,
+            Mentor,
+            Teacher,
+            StudentAuth,
+            _unique_teacher_username,
+            _safe_seed,
+            upload_excel_to_supabase,
+        )
+    except Exception as e:
+        current_app.logger.error(e, exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
 
     return jsonify(response), status_code
 
