@@ -16,6 +16,9 @@ from __future__ import annotations
 import io
 import os
 import tempfile
+import base64
+import hashlib
+from cryptography.fernet import Fernet
 
 from app_init import bcrypt
 from flask import Blueprint, current_app, jsonify, request, send_file
@@ -215,6 +218,17 @@ def download_teachers_csv():
             return jsonify({"error": "No CSV available, please re-upload mentors"}), 404
 
         csv_content = cache_entry.csv_content
+
+        def _get_encryption_cipher():
+            secret = current_app.config["SECRET_KEY"].encode("utf-8")
+            key = base64.urlsafe_b64encode(hashlib.sha256(secret).digest())
+            return Fernet(key)
+
+        cipher = _get_encryption_cipher()
+        try:
+            csv_content = cipher.decrypt(csv_content.encode("utf-8")).decode("utf-8")
+        except Exception:
+            pass  # Fallback if old plain-text CSV exists
 
     return send_file(
         io.BytesIO(csv_content.encode("utf-8")),

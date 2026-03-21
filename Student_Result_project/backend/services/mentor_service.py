@@ -85,8 +85,8 @@ def get_mentor_students_data(
             return results, 200, ""
 
     except Exception as e:
-        logger.debug(f"[ERROR] {e}")
-        return [], 400, str(e)
+        logger.error(f"[ERROR] get_mentor_students_data: {e}")
+        return [], 400, "Failed to retrieve student data"
 
 
 def generate_mentee_chart_base64(
@@ -115,5 +115,5 @@ def generate_mentee_chart_base64(
             return f"data:image/png;base64,{img_base64}", 200, ""
 
     except Exception as e:
-        logger.debug(f"[ERROR] {e}")
-        return "", 400, str(e)
+        logger.error(f"[ERROR] generate_mentee_chart_base64: {e}")
+        return "", 400, "Failed to generate chart"

@@ -4,6 +4,10 @@ import os
 import random
 import tempfile
 import pandas as pd
+import base64
+import hashlib
+from cryptography.fernet import Fernet
+from flask import current_app
 from app_init import bcrypt
 from logger_config import get_logger
 from services.batch_manager import bm
@@ -130,13 +134,21 @@ def process_mentor_upload_file(
     out.seek(0)
     csv_str = out.getvalue()
 
+    def _get_encryption_cipher():
+        secret = current_app.config["SECRET_KEY"].encode("utf-8")
+        key = base64.urlsafe_b64encode(hashlib.sha256(secret).digest())
+        return Fernet(key)
+
+    cipher = _get_encryption_cipher()
+    encrypted_csv = cipher.encrypt(csv_str.encode("utf-8")).decode("utf-8")
+
     with db_session_maker(batch_year) as db:
         admin_repo = AdminRepository(db.session)
         existing_cache = admin_repo.get_export_cache_by_batch(batch_year)
         if existing_cache:
-            existing_cache.csv_content = csv_str
+            existing_cache.csv_content = encrypted_csv
         else:
-            new_cache = ExportCache(batch_year=batch_year, csv_content=csv_str)
+            new_cache = ExportCache(batch_year=batch_year, csv_content=encrypted_csv)
             db.session.add(new_cache)
         db.session.commit()
 
