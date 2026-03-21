@@ -119,18 +119,20 @@ class University:
                     )
 
                 except ValueError as e:
+                    logger.debug(f"Processing error for {student.usn}: {str(e)}")
                     semester_results.append(
                         {
                             "semester": selected_semester,
                             "usn": student.usn,
-                            "error": str(e),
+                            "error": "Error processing student data.",
                         }
                     )
 
             return semester_results
 
         except Exception as e:
-            return [{"error": f"Error occurred: {str(e)}"}]
+            logger.error(f"Error calculating performance: {str(e)}")
+            return [{"error": "An internal error occurred."}]
 
     def find_failed_students(self, selected_semester):
         failed_students_list = []
