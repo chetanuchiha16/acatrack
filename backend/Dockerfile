@@ -1,35 +1,27 @@
-# Use official lightweight Python image
 FROM python:3.12-slim
 
-# Set working directory
 WORKDIR /app
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# System deps (for psycopg2, Tesseract, etc.)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc libpq-dev tesseract-ocr curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install system utilities and build dependencies
-# Need some build tools (gcc, libpq-dev) if we have C-extensions or Postgres
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Install uv for fast dependency management
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-
-# Copy dependency files
+# Install Python dependencies
 COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen
 
-# Install dependencies using uv (frozen = respect lockfile exactly)
-RUN uv sync --frozen --no-dev --no-editable
-
-# Copy application source code
+# Copy app code
 COPY . .
 
-# Expose backend port
-EXPOSE 5000
+# Create necessary directories
+RUN mkdir -p Outputs/PDFs Outputs/Images Outputs/NOTES Inputs/ExcelSheet
 
-# Run the backend service via the uv-managed venv
-CMD ["uv", "run", "python", "app.py"]
+EXPOSE 8000
+
+# Use uvicorn for production
+CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
