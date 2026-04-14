@@ -1,74 +1,82 @@
-from flask import jsonify, request, send_file, Blueprint
-from extensions import cache
+from io import BytesIO
+
+from fastapi import APIRouter, Request, Query
+from fastapi.responses import JSONResponse, StreamingResponse
+from cache_config import cache
 from services.university_service import University
 from visuals import create_toppers_list_pdf, create_university_report
 from models.paths import postgres_db_url
-from io import BytesIO
 from logger_config import get_logger
-from utils.helpers import get_batch_year
+from utils.helpers import get_batch_year_from_request
+import asyncio
 
 logger = get_logger(__name__)
 
-uni_bp = Blueprint("uni", __name__)
+router = APIRouter(tags=["university"])
 
 
-@uni_bp.route("/auth/Staff/overall_res", methods=["GET"])
-@cache.cached(timeout=3600, query_string=True)
-def get_academic_performance():
-    semester = request.args.get("semester")
-    show_toppers = request.args.get("show_toppers", "false").lower() == "true"
-    show_failed = request.args.get("show_failed", "false").lower() == "true"
-    format_type = request.args.get("format", "json").lower()  # default is JSON
-    batch_year = request.args.get("batch_year") or get_batch_year()
+@router.get("/auth/Staff/overall_res")
+@cache(expire=3600)
+async def get_academic_performance(
+    request: Request,
+    semester: str = Query(None),
+    show_toppers: bool = Query(False),
+    show_failed: bool = Query(False),
+    format: str = Query("json"),
+    batch_year: int | None = Query(None),
+):
+    by = batch_year or get_batch_year_from_request(request)
 
     try:
-        logger.debug(f"Batch year in session: {get_batch_year()}")
-        university = University(postgres_url=postgres_db_url, batch_year=batch_year)
-        result = university.calculate_academic_performance_by_semester(semester)
+        def _sync():
+            university = University(postgres_url=postgres_db_url, batch_year=by)
+            result = university.calculate_academic_performance_by_semester(semester)
+            return university, result
+
+        university, result = await asyncio.get_event_loop().run_in_executor(None, _sync)
 
         if show_toppers:
             toppers = sorted(result, key=lambda x: x["percentage"], reverse=True)[:10]
-            if format_type == "pdf":
-                # Create in-memory PDF for the top 10 students
-                # --- assume create_toppers_list_pdf returns bytes instead of saving ---
-                pdf_bytes = create_toppers_list_pdf(
-                    toppers, semester
-                )  # <--- SHOULD RETURN bytes, not save to disk
+            if format == "pdf":
+                pdf_bytes = await asyncio.get_event_loop().run_in_executor(
+                    None, create_toppers_list_pdf, toppers, semester
+                )
                 pdf_buffer = BytesIO(pdf_bytes)
                 pdf_buffer.seek(0)
-                return send_file(
+                return StreamingResponse(
                     pdf_buffer,
-                    as_attachment=True,
-                    download_name=f"{semester}_toppers_list.pdf",
-                    mimetype="application/pdf",
+                    media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{semester}_toppers_list.pdf"'},
                 )
-            return jsonify(toppers)
+            return toppers
 
         elif show_failed:
-            failed_students = university.find_failed_students(semester)
-            return jsonify(failed_students)
+            def _get_failed():
+                return university.find_failed_students(semester)
+            failed_students = await asyncio.get_event_loop().run_in_executor(None, _get_failed)
+            return failed_students
         else:
-            return jsonify(result)
+            return result
     except Exception:
         logger.exception("Error in fetching academic performance")
-        return jsonify({"error": "Failed to fetch academic performance data."}), 500
+        return JSONResponse(content={"error": "Failed to fetch academic performance data."}, status_code=500)
 
 
-@uni_bp.route("/auth/Staff/report/<semester>")
-@cache.cached(timeout=3600)
-def get_report(semester):
-    batch_year = request.args.get("batch_year") or get_batch_year()
-    university = University(postgres_url=postgres_db_url, batch_year=batch_year)
+@router.get("/auth/Staff/report/{semester}")
+@cache(expire=3600)
+async def get_report(semester: str, request: Request, batch_year: int | None = Query(None)):
+    by = batch_year or get_batch_year_from_request(request)
 
-    # ✅ Generate PDF in-memory
-    pdf_bytes = create_university_report(university, semester)
+    def _sync():
+        university = University(postgres_url=postgres_db_url, batch_year=by)
+        return create_university_report(university, semester)
 
+    pdf_bytes = await asyncio.get_event_loop().run_in_executor(None, _sync)
     pdf_buffer = BytesIO(pdf_bytes)
     pdf_buffer.seek(0)
 
-    return send_file(
+    return StreamingResponse(
         pdf_buffer,
-        as_attachment=True,
-        download_name=f"{semester}_report.pdf",
-        mimetype="application/pdf",
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{semester}_report.pdf"'},
     )

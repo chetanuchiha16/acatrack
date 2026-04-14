@@ -1,58 +1,64 @@
-from flask import request, jsonify, send_file, Blueprint
+from io import BytesIO
+
+from fastapi import APIRouter, Request, Query
+from fastapi.responses import JSONResponse, StreamingResponse
+from cache_config import cache
 from services.university_service import University
 from services.results_service import SubjectResult
 from models.paths import postgres_db_url
 from visuals import create_subject_report
-from utils.helpers import get_batch_year
+from utils.helpers import get_batch_year_from_request
 from logger_config import get_logger
-from extensions import cache
+import asyncio
 
 logger = get_logger(__name__)
 
-sub_bp = Blueprint("sub_res", __name__)
+router = APIRouter(tags=["subject_results"])
 
 
-@sub_bp.route("/auth/Staff/sub_res", methods=["GET"])
-@cache.cached(timeout=3600, query_string=True)
-def get_subject_results():
-    semester = request.args.get("semester")
-    subject_code = request.args.get("subject")
-    batch_year = request.args.get("batch_year") or get_batch_year()
-    if not semester or not subject_code:
-        return jsonify({"error": "semester and subject are required"}), 400
+@router.get("/auth/Staff/sub_res")
+@cache(expire=3600)
+async def get_subject_results(
+    request: Request,
+    semester: str = Query(None),
+    subject: str = Query(None),
+    batch_year: int | None = Query(None),
+):
+    by = batch_year or get_batch_year_from_request(request)
+    if not semester or not subject:
+        return JSONResponse(content={"error": "semester and subject are required"}, status_code=400)
 
-    university = University(postgres_url=postgres_db_url, batch_year=batch_year)
-    subject_result = SubjectResult(subject_code, semester, university)
+    def _sync():
+        university = University(postgres_url=postgres_db_url, batch_year=by)
+        subject_result = SubjectResult(subject, semester, university)
+        return subject_result.get_subject_results_dict()
 
-    result_data = subject_result.get_subject_results_dict()
+    result_data = await asyncio.get_event_loop().run_in_executor(None, _sync)
+    return result_data
 
-    return jsonify(result_data)
 
+@router.get("/auth/Staff/sub_res/report")
+async def get_subject_report_pdf(
+    request: Request,
+    semester: str = Query(None),
+    subject: str = Query(None),
+    batch_year: int | None = Query(None),
+):
+    by = batch_year or get_batch_year_from_request(request)
+    if not semester or not subject:
+        return JSONResponse(content={"error": "semester and subject are required"}, status_code=400)
 
-@sub_bp.route("/auth/Staff/sub_res/report", methods=["GET"])
-def get_subject_report_pdf():
-    token = request.headers.get("Authorization")
-    logger.debug("DEBUG: Authorization header =", token)
-    batch_year = request.args.get("batch_year") or get_batch_year()
-    semester = request.args.get("semester")
-    subject_code = request.args.get("subject")
+    def _sync():
+        university = University(postgres_url=postgres_db_url, batch_year=by)
+        subject_result = SubjectResult(subject, semester, university)
+        return create_subject_report(subject_result)
 
-    if not semester or not subject_code:
-        return jsonify({"error": "semester and subject are required"}), 400
-
-    university = University(postgres_url=postgres_db_url, batch_year=batch_year)
-    subject_result = SubjectResult(subject_code, semester, university)
-
-    # ✅ Generate PDF in-memory
-    pdf_bytes = create_subject_report(subject_result)
-    from io import BytesIO
-
+    pdf_bytes = await asyncio.get_event_loop().run_in_executor(None, _sync)
     pdf_buffer = BytesIO(pdf_bytes)
     pdf_buffer.seek(0)
 
-    return send_file(
+    return StreamingResponse(
         pdf_buffer,
-        as_attachment=True,
-        download_name=f"subject_report_{semester}_{subject_code}.pdf",
-        mimetype="application/pdf",
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="subject_report_{semester}_{subject}.pdf"'},
     )
