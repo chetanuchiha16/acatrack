@@ -23,7 +23,7 @@ def get_backend_processes():
     for p in psutil.process_iter(["pid", "name", "cmdline"]):
         try:
             cmdline = p.info["cmdline"]
-            if cmdline and "app.py" in " ".join(cmdline):
+            if cmdline and "uvicorn" in " ".join(cmdline) and "main:app" in " ".join(cmdline):
                 procs.append(p)
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             pass
@@ -44,7 +44,7 @@ def get_current_ram():
 def monitor_resources():
     processes = get_backend_processes()
     if not processes:
-        print("⚠️ Backend process 'app.py' not found! RAM will not be tracked.")
+        print("⚠️ Backend process 'uvicorn main:app' not found! RAM will not be tracked.")
     else:
         print(f"✅ Found {len(processes)} backend process(es) for RAM tracking.")
 
