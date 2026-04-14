@@ -109,7 +109,7 @@ def fetch_student_data(usn, semester, batch_year, engine):
     Returns a dictionary of relevant info, mapping the old JSON schema.
     """
     try:
-        from extensions import db
+        from utils.sync_db import db
         from models.schema import AcademicResult, StudentAuth, Subject
 
         # Fetch student base

@@ -2,7 +2,6 @@ import numpy as np
 from deep_translator import GoogleTranslator
 from logger_config import get_logger
 from services.student_service import Student
-from utils.helpers import get_batch_year
 from services.ai_algorithms import (
     _calculate_backlogs,
     aggregate_tag_scores,
@@ -32,8 +31,7 @@ def translate_text(text, target_lang):
         return text
 
 
-def get_student_history_usn(usn, semesters):
-    batch_year = get_batch_year()
+def get_student_history_usn(usn, semesters, batch_year: int):
     sgpas = []
     max_sem = int(max([s[-1] for s in semesters])) if semesters else 6
     students_dict = Student.get_all_semesters(
@@ -205,12 +203,12 @@ def get_ai_trend_data(usn: str, batch_year: int) -> tuple[dict, int]:
     }, 200
 
 
-def get_ai_cgpa_prediction(usn: str) -> tuple[dict, int]:
+def get_ai_cgpa_prediction(usn: str, batch_year: int) -> tuple[dict, int]:
     if not usn:
         return {"error": "USN is required"}, 400
 
     sems = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7"]
-    history = get_student_history_usn(usn, sems)
+    history = get_student_history_usn(usn, sems, batch_year)
 
     if not history:
         return {"error": "No data found"}, 404
