@@ -1,12 +1,13 @@
 import jwt
 import datetime
-from flask import current_app
-from app_init import bcrypt
+
+from security import check_password
 from models.schema import StudentAuth, Teacher, ParentAuth
 from services.batch_manager import bm
 from repositories.student_repository import StudentRepository
 from repositories.mentor_repository import MentorRepository
 from repositories.parent_repository import ParentRepository
+from settings import settings
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -23,7 +24,7 @@ def batch_from_usn(usn: str) -> int:
     return 2022  # fallback
 
 
-def authenticate_user(
+async def authenticate_user(
     who: str, username: str, password: str, provided_batch_year: int = None
 ):
     batch_year = None
@@ -40,32 +41,32 @@ def authenticate_user(
     if batch_year is None:
         batch_year = 2022
 
-    with bm.session_scope(batch_year) as db:
-        student_repo = StudentRepository(db.session)
-        mentor_repo = MentorRepository(db.session)
-        parent_repo = ParentRepository(db.session)
+    async with bm.session_scope(batch_year) as session:
+        student_repo = StudentRepository(session)
+        mentor_repo = MentorRepository(session)
+        parent_repo = ParentRepository(session)
 
         if who == "Student":
-            user = student_repo.get_auth_by_usn(username)
+            user = await student_repo.get_auth_by_usn(username)
         elif who == "Staff":
-            user = mentor_repo.get_teacher_by_username(username)
+            user = await mentor_repo.get_teacher_by_username(username)
         elif who == "Parent":
-            user = parent_repo.get_auth_by_username(username)
+            user = await parent_repo.get_auth_by_username(username)
             if user and user.student:
                 batch_year = batch_from_usn(user.student.usn)
         else:
             # fallback, try all
             user = (
-                student_repo.get_auth_by_usn(username)
-                or mentor_repo.get_teacher_by_username(username)
-                or parent_repo.get_auth_by_username(username)
+                await student_repo.get_auth_by_usn(username)
+                or await mentor_repo.get_teacher_by_username(username)
+                or await parent_repo.get_auth_by_username(username)
             )
 
         if not user:
             return None, "User not found", 404
 
         # Check password
-        if not bcrypt.check_password_hash(user.password, password):
+        if not check_password(password, user.password):
             return None, "Invalid credentials", 401
 
         # Determine role if missing
@@ -101,8 +102,7 @@ def authenticate_user(
     }
 
     try:
-        secret = current_app.config["SECRET_KEY"]
-        token = jwt.encode(payload, secret, algorithm="HS256")
+        token = jwt.encode(payload, settings.secret_key, algorithm="HS256")
     except Exception as e:
         logger.error(f"JWT Encode error: {e}")
         return None, "Token generation failed", 500
@@ -110,17 +110,17 @@ def authenticate_user(
     return {"token": token, "session_data": session_data}, None, 200
 
 
-def update_fcm_token(usn: str, token: str, batch_year: int):
+async def update_fcm_token(usn: str, token: str, batch_year: int):
     if not token:
         return False, "Missing token", 400
 
-    with bm.session_scope(batch_year) as db:
-        student_repo = StudentRepository(db.session)
-        student = student_repo.get_auth_by_usn(usn)
+    async with bm.session_scope(batch_year) as session:
+        student_repo = StudentRepository(session)
+        student = await student_repo.get_auth_by_usn(usn)
         if not student:
             return False, "Student not found", 404
 
         student.fcm_token = token
-        db.session.commit()
+        await session.commit()
 
     return True, None, 200
