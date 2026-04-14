@@ -1,45 +1,12 @@
-# app.py
-import firebase_admin
-from app_init import create_app, db
-from firebase_admin import credentials
-from flask import jsonify
-from logger_config import get_logger
-from services.batch_manager import BatchManager
-from routes import register_routes
-from settings import settings
-from sqlalchemy import text
-
-logger = get_logger(__name__)
-cred_path = settings.firebase_cred_path
-if not cred_path:
-    raise Exception("FIREBASE_CRED_PATH not set!")
-
-if not firebase_admin._apps:
-    cred = credentials.Certificate(cred_path)
-    firebase_admin.initialize_app(cred)
-
-bm = BatchManager()
-
-# Use the factory to create Flask app
-app = create_app()
-register_routes(app)
-
-
-with app.app_context():
-    try:
-        db.create_all()
-        db.session.execute(text("SELECT 1"))
-        logger.debug("Connection successful!")
-    except Exception as e:
-        logger.debug(f"Failed to connect: {e}")
-
-# logger.debug(f"Using database:{app.config['SQLALCHEMY_DATABASE_URI']}")
-
-
-@app.route("/health", methods=["GET"])
-def health():
-    return jsonify({"status": "ok"})
-
+# backend/app.py
+"""
+Backward-compatibility shim.
+Imports the FastAPI 'app' from main.py so that
+    `uvicorn app:app`
+still works alongside `uvicorn main:app`.
+"""
+from main import app  # noqa: F401
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
