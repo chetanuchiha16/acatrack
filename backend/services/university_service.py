@@ -1,4 +1,4 @@
-from extensions import db
+from utils.sync_db import db
 from logger_config import get_logger
 from models.paths import img_dir, postgres_db_url
 from models.schema import AcademicResult, StudentAuth, Subject

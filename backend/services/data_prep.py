@@ -1,5 +1,5 @@
 import pandas as pd
-from extensions import db  # Use the DB instance
+from utils.sync_db import db  # Use the DB instance
 from logger_config import get_logger
 from utils.cloud import download_excel_from_supabase
 from models.schema import AcademicResult, StudentAuth, Subject
