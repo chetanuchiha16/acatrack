@@ -6,7 +6,7 @@ services:
     image: acatrack-backend
     container_name: acatrack_backend
     ports:
-      - "5000:5000"
+      - "5000:8000"
     env_file:
       - ./backend/.env
     restart: unless-stopped

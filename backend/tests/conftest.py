@@ -1,81 +1,110 @@
+"""
+Test configuration for FastAPI test client.
+"""
 import os
-
 import pytest
+import pytest_asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
 
+# Force testing mode before any app imports
 os.environ["TESTING"] = "true"
-from unittest.mock import patch
+os.environ["DATABASE_URL"] = "sqlite:///test.db"
+os.environ.setdefault("FIREBASE_CRED_PATH", "dummy_path")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-jwt")
+os.environ.setdefault("ADMIN_SECRET", "test-admin-secret")
+os.environ.setdefault("A_EMAIL", "test@test.com")
+os.environ.setdefault("EMAIL_PASS", "testpass")
+os.environ.setdefault("C_EMAIL", "test@test.com")
+os.environ.setdefault("DEFAULT_NUMBER", "0000000000")
 
-from app_init import create_app
-from routes import register_routes
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from database import Base, get_db
+from main import app
+from httpx import AsyncClient, ASGITransport
+
+
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+
+# Sync engine for test setup (SQLite doesn't need async for tests)
+test_engine = create_engine("sqlite:///test.db", echo=False)
+TestSessionLocal = sessionmaker(bind=test_engine)
+
+# Async engine for FastAPI
+async_test_engine = create_async_engine("sqlite+aiosqlite:///test.db", echo=False)
+
+@pytest.fixture(scope="session", autouse=True)
+def mock_firebase():
+    with patch("firebase_admin.credentials.Certificate"):
+        with patch("firebase_admin.initialize_app"):
+            yield
+
+
+@pytest.fixture(scope="session", autouse=True)
+def create_test_tables():
+    """Create all tables once for the test session."""
+    Base.metadata.create_all(bind=test_engine)
+    yield
+    Base.metadata.drop_all(bind=test_engine)
+    try:
+        os.remove("test.db")
+    except OSError:
+        pass
+
+
+@pytest.fixture(autouse=True)
+def clean_db():
+    """Clean all tables before each test instead of transaction rollback."""
+    with test_engine.begin() as conn:
+        for table in reversed(Base.metadata.sorted_tables):
+            conn.execute(table.delete())
+    yield
 
 
 @pytest.fixture
-def app():
-    app = create_app(postgres_url="sqlite:///:memory:")
-    app.config.update({"TESTING": True, "SECRET_KEY": "test_secret"})
-    register_routes(app)
-
-    # Needs application context
-    with app.app_context():
-        from extensions import db
-
-        db.create_all()
-        # Override the postgres URL config here if needed
-        yield app
-        db.drop_all()
-
-
-@pytest.fixture
-def client(app):
-    return app.test_client()
+def db_session():
+    """Provide a sync DB session for tests to arrange data, with auto-commit."""
+    session = TestSessionLocal()
+    yield session
+    session.close()
 
 
 @pytest.fixture
 def mock_bm():
-    """Mocks the BatchManager instance across routes.
+    """Mock BatchManager's async session_scope to use an AsyncSession."""
+    from contextlib import asynccontextmanager
 
-    patch.object the source (services.batch_manager) plus all route modules
-    that do `from services.batch_manager import bm`. This is required because
-    Python's import system binds the name at import time; patching only the
-    source won't affect already-bound references in route modules.
-    """
-    # All route modules that imported `bm` from services.batch_manager
-    bm_locations = [
-        "services.batch_manager.bm",
-        "routes.admin_routes.bm",
-        "routes.auth.bm",
-        "routes.forgot_password.bm",
-        "routes.mentee_meetings.bm",
-        "routes.mentee_recieve_email.bm",
-        "routes.mentee_record.bm",
-        "routes.mentor_meetings.bm",
-        "routes.mentor_send_email.bm",
-        "routes.parent.bm",
-        "routes.send_email.bm",
-    ]
+    @asynccontextmanager
+    async def mock_session_scope(batch_year=None):
+        async with AsyncSession(async_test_engine, expire_on_commit=False) as session:
+            yield session
 
-    from extensions import db as real_db
+    # Override get_db for FastAPI
+    async def override_get_db():
+        async with AsyncSession(async_test_engine, expire_on_commit=False) as session:
+            yield session
 
-    class RealSessionMockCM:
-        def __enter__(self):
-            return real_db
+    app.dependency_overrides[get_db] = override_get_db
 
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            pass
+    with patch("services.batch_manager.bm.session_scope", side_effect=mock_session_scope):
+        with patch("services.batch_manager.bm.list_batches", new_callable=AsyncMock, return_value=[2021, 2022, 2023]):
+            yield
 
-    with patch(bm_locations[0]) as mock_bm_instance:
-        mock_bm_instance.list_batches.return_value = ["2022", "2023", "2024"]
-        mock_bm_instance.session_scope.return_value = RealSessionMockCM()
+    app.dependency_overrides.clear()
 
-        extra_patches = [patch(loc, mock_bm_instance) for loc in bm_locations[1:]]
-        for p in extra_patches:
-            p.start()
-        try:
-            yield {
-                "bm": mock_bm_instance,
-                "session_scope_cm": RealSessionMockCM,
-                "db": real_db,
-            }
-        finally:
-            for p in extra_patches:
-                p.stop()
+
+@pytest.fixture
+def client(mock_bm):
+    """Synchronous test client for FastAPI."""
+    from fastapi.testclient import TestClient
+    with TestClient(app) as c:
+        yield c
+
+
+@pytest_asyncio.fixture
+async def async_client(mock_bm):
+    """Async test client for FastAPI."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
