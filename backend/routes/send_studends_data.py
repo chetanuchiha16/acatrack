@@ -1,83 +1,78 @@
 import base64
 import io
 
-from flask import Blueprint, jsonify, request, send_from_directory
-from werkzeug.utils import secure_filename
+from fastapi import APIRouter, Request, Query
+from fastapi.responses import JSONResponse, FileResponse
 from logger_config import get_logger
 from services.student_service import Student
-from utils.helpers import get_batch_year
+from utils.helpers import get_batch_year_from_request
 from models.paths import pdf_dir
 from visuals import create_student_report
 
 logger = get_logger(__name__)
 
+router = APIRouter(tags=["student"])
 
-student_bp = Blueprint("student", __name__)
 
-
-# @student_bp.route("/api/student", methods=["GET"])
-@student_bp.route("/auth/Student/result", methods=["GET"])
-def get_student_info():
-    usn = request.args.get("usn")
-    semester = request.args.get("semester")
-    batch_year = get_batch_year()
+@router.get("/auth/Student/result")
+async def get_student_info(request: Request, usn: str = Query(None), semester: str = Query(None)):
+    batch_year = get_batch_year_from_request(request)
     logger.debug(f"batch year from student {batch_year}")
     logger.debug(f"Received USN: {usn}, Semester: {semester}, Batch: {batch_year}")
 
     try:
-        # Initialize student using the new normalized model
-        student = Student(
-            usn=usn,
-            semester=semester,
-            batch_year=batch_year,
+        import asyncio
+        student = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: Student(usn=usn, semester=semester, batch_year=batch_year)
         )
 
         if not student.found:
-            return jsonify({"error": "Student not found"}), 404
+            return JSONResponse(content={"error": "Student not found"}, status_code=404)
 
-        # RESTORE PDF GENERATION
-        # This calls your visual reporting logic using the new student object
-        pdf_bytes = create_student_report(student)
+        pdf_bytes = await asyncio.get_event_loop().run_in_executor(
+            None, create_student_report, student
+        )
         pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
         pdf_url = f"data:application/pdf;base64,{pdf_base64}"
 
-        # Get standard dictionary and inject the pdf_url
         response_data = student.to_dict()
         response_data["pdf_url"] = pdf_url
 
-        return jsonify(response_data)
+        return response_data
 
     except Exception:
         logger.exception(f"Error fetching student result for USN: {usn}")
-        return jsonify({"error": "Failed to fetch student result."}), 500
+        return JSONResponse(content={"error": "Failed to fetch student result."}, status_code=500)
 
 
-@student_bp.route("/auth/Student/report/<filename>", methods=["GET"])
-def download_report(filename):
-    filename = secure_filename(filename)
-    return send_from_directory(pdf_dir, filename, as_attachment=True)
+@router.get("/auth/Student/report/{filename}")
+async def download_report(filename: str):
+    import os
+    from pathlib import Path
+    safe_filename = Path(filename).name  # prevent path traversal
+    filepath = os.path.join(pdf_dir, safe_filename)
+    if not os.path.exists(filepath):
+        return JSONResponse(content={"error": "File not found"}, status_code=404)
+    return FileResponse(filepath, filename=safe_filename, media_type="application/pdf")
 
 
-@student_bp.route("/auth/Student/chart", methods=["GET"])
-def get_student_chart():
-    usn = request.args.get("usn")
-    semester = request.args.get("semester")
-    batch_year = get_batch_year()
+@router.get("/auth/Student/chart")
+async def get_student_chart(request: Request, usn: str = Query(None), semester: str = Query(None)):
+    batch_year = get_batch_year_from_request(request)
 
-    student = Student(usn=usn, semester=semester, batch_year=batch_year)
+    import asyncio
+    student = await asyncio.get_event_loop().run_in_executor(
+        None, lambda: Student(usn=usn, semester=semester, batch_year=batch_year)
+    )
 
-    # Get Figure from Student module
     fig = student.plot_subject_marks()
 
-    # Convert to base64 in-memory
     buf = io.BytesIO()
     fig.savefig(buf, format="png")
     buf.seek(0)
     img_base64 = base64.b64encode(buf.read()).decode("utf-8")
 
-    # Close figure to free memory
     import matplotlib.pyplot as plt
-
     plt.close(fig)
 
-    return jsonify({"image": f"data:image/png;base64,{img_base64}"})
+    return {"image": f"data:image/png;base64,{img_base64}"}
