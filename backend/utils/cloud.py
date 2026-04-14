@@ -10,7 +10,23 @@ from matplotlib.figure import Figure
 from requests.exceptions import RequestException, Timeout
 from settings import settings
 from supabase import create_client
-from werkzeug.utils import secure_filename
+import re
+import unicodedata
+
+
+def secure_filename(filename: str) -> str:
+    """Sanitise a filename — drop-in replacement for werkzeug.utils.secure_filename."""
+    # Normalise unicode, strip to ASCII, lowercase
+    filename = unicodedata.normalize("NFKD", filename).encode("ascii", "ignore").decode("ascii")
+    # Replace path separators with underscores
+    for sep in (os.sep, os.altsep):
+        if sep:
+            filename = filename.replace(sep, "_")
+    # Keep only alphanumeric, dots, hyphens, underscores
+    filename = re.sub(r"[^\w\s\-.]", "", filename).strip()
+    # Collapse whitespace
+    filename = re.sub(r"\s+", "_", filename)
+    return filename or "unnamed"
 
 logger = get_logger(__name__)
 

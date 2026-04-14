@@ -1,5 +1,6 @@
 import jwt
-from flask import request, current_app
+from fastapi import Request
+from settings import settings
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -24,14 +25,15 @@ def sanitize_jwt_header(auth_header: str) -> str:
     return token
 
 
-def get_jwt_payload():
+def get_jwt_payload_from_request(request: Request) -> dict | None:
+    """Extract and decode JWT from the Authorization header."""
     auth_header = request.headers.get("Authorization", "")
     token = auth_header.split(" ")[1] if " " in auth_header else None
     if not token:
         return None
     try:
         payload = jwt.decode(
-            token, current_app.config["SECRET_KEY"], algorithms=["HS256"]
+            token, settings.secret_key, algorithms=["HS256"]
         )
         return payload
     except jwt.ExpiredSignatureError:
@@ -42,21 +44,21 @@ def get_jwt_payload():
         return None
 
 
-def get_batch_year():
-    payload = get_jwt_payload()
+def get_batch_year_from_request(request: Request) -> int | None:
+    payload = get_jwt_payload_from_request(request)
     return payload.get("batch_year") if payload else None
 
 
-def get_user_id():
-    payload = get_jwt_payload()
+def get_user_id_from_request(request: Request) -> str | None:
+    payload = get_jwt_payload_from_request(request)
     return payload.get("id") if payload else None
 
 
-def get_mentor_id():
-    payload = get_jwt_payload()
+def get_mentor_id_from_request(request: Request) -> int | None:
+    payload = get_jwt_payload_from_request(request)
     return payload.get("mentor_id") if payload else None
 
 
-def get_who():
-    payload = get_jwt_payload()
+def get_who_from_request(request: Request) -> str | None:
+    payload = get_jwt_payload_from_request(request)
     return payload.get("who") if payload else None
