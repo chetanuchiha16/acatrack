@@ -1,5 +1,4 @@
 from .schema import (
-    db,
     Teacher,
     StudentAuth,
     Mentor,
@@ -10,10 +9,7 @@ from .schema import (
     MentorMessage,
 )
 
-from .config import Config
-
 __all__ = [
-    "db",
     "Teacher",
     "StudentAuth",
     "Mentor",
@@ -22,5 +18,4 @@ __all__ = [
     "PasswordResetToken",
     "StudentMessageStatus",
     "MentorMessage",
-    "Config",
 ]

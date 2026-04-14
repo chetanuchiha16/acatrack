@@ -1,8 +1,20 @@
 from datetime import datetime, timezone
 
-from extensions import db
+from database import Base
 from settings import settings
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.orm import relationship
 
 
 def default_email():
@@ -18,39 +30,37 @@ def default_number():
 # ==========================================
 
 
-class Subject(db.Model):
+class Subject(Base):
     __tablename__ = "subjects"
-    subject_code = db.Column(db.String(20), primary_key=True)
-    subject_name = db.Column(db.String(100), nullable=False)
-    semester = db.Column(db.String(10), nullable=False)  # e.g., 'sem1'
-    credits = db.Column(db.Integer, default=0)
+    subject_code = Column(String(20), primary_key=True)
+    subject_name = Column(String(100), nullable=False)
+    semester = Column(String(10), nullable=False)  # e.g., 'sem1'
+    credits = Column(Integer, default=0)
 
 
-class AcademicResult(db.Model):
+class AcademicResult(Base):
     __tablename__ = "academic_results"
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
 
-    # FIX: Changed to Integer and named student_id
-    student_id = db.Column(
-        db.Integer, db.ForeignKey("students.id", ondelete="CASCADE"), nullable=False
+    student_id = Column(
+        Integer, ForeignKey("students.id", ondelete="CASCADE"), nullable=False
     )
-    subject_code = db.Column(
-        db.String(20),
-        db.ForeignKey("subjects.subject_code", ondelete="CASCADE"),
+    subject_code = Column(
+        String(20),
+        ForeignKey("subjects.subject_code", ondelete="CASCADE"),
         nullable=False,
     )
-    batch_year = db.Column(db.Integer, nullable=False)
+    batch_year = Column(Integer, nullable=False)
 
-    ia_marks = db.Column(db.Integer, default=0)
-    see_marks = db.Column(db.Integer, default=0)
-    total_marks = db.Column(db.Integer, default=0)
+    ia_marks = Column(Integer, default=0)
+    see_marks = Column(Integer, default=0)
+    total_marks = Column(Integer, default=0)
 
-    # FIX: Update constraint to use student_id
     __table_args__ = (
-        db.UniqueConstraint("student_id", "subject_code", name="uq_student_subject"),
+        UniqueConstraint("student_id", "subject_code", name="uq_student_subject"),
     )
 
-    subject = db.relationship("Subject", backref=db.backref("results", lazy=True))
+    subject = relationship("Subject", backref="results")
 
 
 # ==========================================
@@ -58,130 +68,121 @@ class AcademicResult(db.Model):
 # ==========================================
 
 
-class Mentor(db.Model):
+class Mentor(Base):
     __tablename__ = "mentors"
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(100), unique=True, nullable=False)
-
-    # Optional: If Mentors are Teachers, you could link them here.
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), unique=True, nullable=False)
 
 
-class StudentAuth(db.Model):
+class StudentAuth(Base):
     __tablename__ = "students"
-    # Use a surrogate key for internal database relations
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
 
-    usn = db.Column(db.String(15), unique=True, nullable=False, index=True)
+    usn = Column(String(15), unique=True, nullable=False, index=True)
 
-    name = db.Column(db.String(100))
-    batch_year = db.Column(db.Integer, nullable=False)  # Moved batch year here!
-    password = db.Column(db.String(128), nullable=True)
-    student_email = db.Column(db.String(100), nullable=True)
-    student_phno = db.Column(db.String(20), nullable=True)
-    fcm_token = db.Column(db.String(256), nullable=True)
+    name = Column(String(100))
+    batch_year = Column(Integer, nullable=False)
+    password = Column(String(128), nullable=True)
+    student_email = Column(String(100), nullable=True)
+    student_phno = Column(String(20), nullable=True)
+    fcm_token = Column(String(256), nullable=True)
 
-    mentor_id = db.Column(
-        db.Integer, db.ForeignKey("mentors.id", ondelete="SET NULL"), nullable=True
+    mentor_id = Column(
+        Integer, ForeignKey("mentors.id", ondelete="SET NULL"), nullable=True
     )
 
     # Relationships
-    mentor = db.relationship("Mentor", backref=db.backref("students", lazy=True))
-    results = db.relationship(
-        "AcademicResult", backref="student", cascade="all, delete", lazy=True
+    mentor = relationship("Mentor", backref="students")
+    results = relationship(
+        "AcademicResult", backref="student", cascade="all, delete", lazy="selectin"
     )
 
 
-class ParentAuth(db.Model):
+class ParentAuth(Base):
     __tablename__ = "parents"
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(128), nullable=False)
-    email = db.Column(db.String(100), nullable=True)
-    phone = db.Column(db.String(20), nullable=True)
-    name = db.Column(db.String(100), nullable=True)
-    relation = db.Column(db.String(50), nullable=True, default="Guardian")
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(50), unique=True, nullable=False)
+    password = Column(String(128), nullable=False)
+    email = Column(String(100), nullable=True)
+    phone = Column(String(20), nullable=True)
+    name = Column(String(100), nullable=True)
+    relation = Column(String(50), nullable=True, default="Guardian")
 
-    # FIX: Changed to Integer and named student_id
-    student_id = db.Column(
-        db.Integer,
-        db.ForeignKey("students.id", ondelete="CASCADE"),
+    student_id = Column(
+        Integer,
+        ForeignKey("students.id", ondelete="CASCADE"),
         nullable=False,
         unique=True,
     )
 
-    student = db.relationship(
+    student = relationship(
         "StudentAuth",
-        backref=db.backref("parent_account", uselist=False, cascade="all, delete"),
+        backref="parent_account",
     )
-    fcm_token = db.Column(db.String(256), nullable=True)
+    fcm_token = Column(String(256), nullable=True)
 
 
-class Teacher(db.Model):
+class Teacher(Base):
     __tablename__ = "teachers"
-    username = db.Column(db.String(20), primary_key=True, unique=True)
-    mentor_id = db.Column(
-        db.Integer, db.ForeignKey("mentors.id", ondelete="SET NULL"), nullable=True
+    username = Column(String(20), primary_key=True, unique=True)
+    mentor_id = Column(
+        Integer, ForeignKey("mentors.id", ondelete="SET NULL"), nullable=True
     )
-    name = db.Column(db.String(100))
-    password = db.Column(db.String(128), nullable=True)
-    email = db.Column(db.String(100), nullable=True, default=default_email)
-    phone = db.Column(db.String(20), nullable=True, default=default_number)
+    name = Column(String(100))
+    password = Column(String(128), nullable=True)
+    email = Column(String(100), nullable=True, default=default_email)
+    phone = Column(String(20), nullable=True, default=default_number)
 
 
-class Meeting(db.Model):
+class Meeting(Base):
     __tablename__ = "meetings"
-    id = db.Column(db.Integer, primary_key=True)
-    mentor_id = db.Column(
-        db.Integer, db.ForeignKey("mentors.id", ondelete="CASCADE"), nullable=False
-    )  # Added proper FK
-    title = db.Column(db.String(200), nullable=False)
-    agenda = db.Column(db.Text, nullable=True)
-    date = db.Column(db.Date, nullable=False)
-    venue = db.Column(db.String(200), nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    id = Column(Integer, primary_key=True)
+    mentor_id = Column(
+        Integer, ForeignKey("mentors.id", ondelete="CASCADE"), nullable=False
+    )
+    title = Column(String(200), nullable=False)
+    agenda = Column(Text, nullable=True)
+    date = Column(Date, nullable=False)
+    venue = Column(String(200), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    mentor = db.relationship(
-        "Mentor", backref=db.backref("meetings", cascade="all, delete", lazy=True)
+    mentor = relationship(
+        "Mentor", backref="meetings"
     )
 
 
-# (Keep PasswordResetToken, MentorMessage, StudentMessageStatus, Job mostly the same, just ensure they point to `students.id` instead of `students.username`)
-
-
-class PasswordResetToken(db.Model):
+class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    token = db.Column(db.String(128), unique=True, nullable=False, index=True)
-    # Inside PasswordResetToken
-    usn = db.Column(db.String(15), nullable=False)
-    role = db.Column(db.String(20), nullable=False)  # student, parent, teacher
-    batch_year = db.Column(db.Integer, nullable=False)  # NEW FIELD
-    expires_at = db.Column(db.DateTime, nullable=False)  # naive UTC
-    used = db.Column(db.Boolean, default=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    token = Column(String(128), unique=True, nullable=False, index=True)
+    usn = Column(String(15), nullable=False)
+    role = Column(String(20), nullable=False)  # student, parent, teacher
+    batch_year = Column(Integer, nullable=False)
+    expires_at = Column(DateTime, nullable=False)  # naive UTC
+    used = Column(Boolean, default=False)
 
 
 # ---------------- Mentor Message Model ----------------
-class MentorMessage(db.Model):
+class MentorMessage(Base):
     __tablename__ = "mentor_messages"
-    id = db.Column(db.Integer, primary_key=True)
-    mentor_id = db.Column(db.Integer, db.ForeignKey("mentors.id", ondelete="CASCADE"))
+    id = Column(Integer, primary_key=True)
+    mentor_id = Column(Integer, ForeignKey("mentors.id", ondelete="CASCADE"))
 
-    # FIX: Changed to Integer and named student_id
-    student_id = db.Column(
-        db.Integer, db.ForeignKey("students.id", ondelete="CASCADE"), nullable=True
+    student_id = Column(
+        Integer, ForeignKey("students.id", ondelete="CASCADE"), nullable=True
     )
-    recipient_type = db.Column(db.String)
-    subject = db.Column(db.String)
-    message = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    email_failed = db.Column(db.Boolean, default=False)
+    recipient_type = Column(String)
+    subject = Column(String)
+    message = Column(Text)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    email_failed = Column(Boolean, default=False)
 
-    mentor = db.relationship(
-        "Mentor", backref=db.backref("messages", lazy=True, cascade="all, delete")
+    mentor = relationship(
+        "Mentor", backref="messages"
     )
-    student = db.relationship(
-        "StudentAuth", backref=db.backref("messages", lazy=True, cascade="all, delete")
+    student = relationship(
+        "StudentAuth", backref="messages"
     )
 
     def to_dict(self):
@@ -192,7 +193,7 @@ class MentorMessage(db.Model):
             "id": self.id,
             "mentor_id": self.mentor_id,
             "mentor_name": self.mentor.name if self.mentor else None,
-            "student_id": self.student_id,  # FIX
+            "student_id": self.student_id,
             "student_name": self.student.name if self.student else None,
             "recipient_type": self.recipient_type,
             "subject": self.subject,
@@ -202,53 +203,51 @@ class MentorMessage(db.Model):
         }
 
 
-class StudentMessageStatus(db.Model):
+class StudentMessageStatus(Base):
     __tablename__ = "student_message_status"
-    id = db.Column(db.Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
 
-    # FIX: Changed to Integer and named student_id
-    student_id = db.Column(db.Integer, db.ForeignKey("students.id", ondelete="CASCADE"))
-    msg_id = db.Column(
-        db.Integer, db.ForeignKey("mentor_messages.id", ondelete="CASCADE")
+    student_id = Column(Integer, ForeignKey("students.id", ondelete="CASCADE"))
+    msg_id = Column(
+        Integer, ForeignKey("mentor_messages.id", ondelete="CASCADE")
     )
-    read = db.Column(db.Boolean, default=False)
+    read = Column(Boolean, default=False)
 
-    # FIX: Update constraint
     __table_args__ = (
-        db.UniqueConstraint("student_id", "msg_id", name="uq_student_msg"),
+        UniqueConstraint("student_id", "msg_id", name="uq_student_msg"),
     )
 
 
-class Job(db.Model):
+class Job(Base):
     __tablename__ = "jobs"
-    id = db.Column(db.String, primary_key=True)
-    status = db.Column(db.String, nullable=False)
-    processed_files = db.Column(JSON, default=[])
-    excel_url = db.Column(db.String)
-    error = db.Column(db.String)
-    progress = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    id = Column(String, primary_key=True)
+    status = Column(String, nullable=False)
+    processed_files = Column(JSON, default=[])
+    excel_url = Column(String)
+    error = Column(String)
+    progress = Column(Integer)
+    created_at = Column(DateTime, default=datetime.now)
 
 
-class ExportCache(db.Model):
+class ExportCache(Base):
     __tablename__ = "export_cache"
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    batch_year = db.Column(db.Integer, nullable=False, unique=True)
-    csv_content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    batch_year = Column(Integer, nullable=False, unique=True)
+    csv_content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 # -----------------------------
 # Message Model (store messages)
 # -----------------------------
-class Message(db.Model):
+class Message(Base):
     __tablename__ = "messages"
-    id = db.Column(db.Integer, primary_key=True)
-    usn = db.Column(db.String(50), nullable=True)  # null = broadcast
-    recipient_type = db.Column(db.String(20), nullable=False)  # student/parent
-    subject = db.Column(db.String(255), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    id = Column(Integer, primary_key=True)
+    usn = Column(String(50), nullable=True)  # null = broadcast
+    recipient_type = Column(String(20), nullable=False)  # student/parent
+    subject = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
         return {
