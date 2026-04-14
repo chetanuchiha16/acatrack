@@ -6,7 +6,7 @@
 help:
 	@echo "Available commands:"
 	@echo "  make install      - Install dependencies for both backend and frontend"
-	@echo "  make backend      - Run the Flask backend locally"
+	@echo "  make backend      - Run the FastAPI backend locally"
 	@echo "  make frontend     - Run the Vite frontend locally"
 	@echo "  make run          - Run both backend and frontend locally"
 	@echo "  make test         - Run backend tests"
@@ -29,7 +29,7 @@ install:
 # Run backend
 backend:
 	@echo "Starting backend..."
-	cd backend && uv run python app.py
+	cd backend && uv run uvicorn main:app --reload --port 5000
 
 # Run frontend
 frontend:
@@ -39,7 +39,7 @@ frontend:
 # Run both backend and frontend
 run:
 	@echo "Starting both backend and frontend..."
-	(cd backend && uv run python app.py) & (cd frontend && npm run dev)
+	(cd backend && uv run uvicorn main:app --reload --port 5000) & (cd frontend && npm run dev)
 
 # Run tests
 test:
