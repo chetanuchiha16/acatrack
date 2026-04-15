@@ -13,6 +13,7 @@ Usage in routers:
     async def my_endpoint(...):
         ...
 """
+
 from __future__ import annotations
 
 import functools
@@ -81,6 +82,7 @@ def cache(expire: int = 3600) -> Callable:
     async def my_endpoint(...):
         return {"data": ...}
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -94,13 +96,18 @@ def cache(expire: int = 3600) -> Callable:
                 if cached is not None:
                     payload = json.loads(cached)
                     # If payload is a dictionary and contains specific Response keys, reconstruct it
-                    if isinstance(payload, dict) and "body" in payload and "media_type" in payload:
+                    if (
+                        isinstance(payload, dict)
+                        and "body" in payload
+                        and "media_type" in payload
+                    ):
                         from fastapi.responses import Response
+
                         return Response(
                             content=payload["body"].encode("latin1"),
                             status_code=payload.get("status_code", 200),
                             headers=payload.get("headers", {}),
-                            media_type=payload["media_type"]
+                            media_type=payload["media_type"],
                         )
                     return payload
             except Exception as e:
@@ -111,7 +118,9 @@ def cache(expire: int = 3600) -> Callable:
 
             try:
                 if isinstance(result, (dict, list)):
-                    await _redis_client.setex(key, expire, json.dumps(result, default=str))
+                    await _redis_client.setex(
+                        key, expire, json.dumps(result, default=str)
+                    )
                 elif hasattr(result, "body") and hasattr(result, "media_type"):
                     # Cache raw Response outputs like JSONResponse or custom PDF Responses
                     cache_payload = {
@@ -120,11 +129,15 @@ def cache(expire: int = 3600) -> Callable:
                         "headers": dict(result.headers),
                         "status_code": result.status_code,
                     }
-                    await _redis_client.setex(key, expire, json.dumps(cache_payload, default=str))
+                    await _redis_client.setex(
+                        key, expire, json.dumps(cache_payload, default=str)
+                    )
             except Exception as e:
                 logger.error(f"Failed to cache response: {e}")
                 pass  # Redis failure → don't break the endpoint
 
             return result
+
         return wrapper
+
     return decorator

@@ -17,7 +17,11 @@ import unicodedata
 def secure_filename(filename: str) -> str:
     """Sanitise a filename — drop-in replacement for werkzeug.utils.secure_filename."""
     # Normalise unicode, strip to ASCII, lowercase
-    filename = unicodedata.normalize("NFKD", filename).encode("ascii", "ignore").decode("ascii")
+    filename = (
+        unicodedata.normalize("NFKD", filename)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+    )
     # Replace path separators with underscores
     for sep in (os.sep, os.altsep):
         if sep:
@@ -27,6 +31,7 @@ def secure_filename(filename: str) -> str:
     # Collapse whitespace
     filename = re.sub(r"\s+", "_", filename)
     return filename or "unnamed"
+
 
 logger = get_logger(__name__)
 

@@ -1,10 +1,11 @@
 """
 Test configuration for FastAPI test client.
 """
+
 import os
 import pytest
 import pytest_asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 # Force testing mode before any app imports
 os.environ["TESTING"] = "true"
@@ -33,6 +34,7 @@ TestSessionLocal = sessionmaker(bind=test_engine)
 
 # Async engine for FastAPI
 async_test_engine = create_async_engine("sqlite+aiosqlite:///test.db", echo=False)
+
 
 @pytest.fixture(scope="session", autouse=True)
 def mock_firebase():
@@ -87,8 +89,14 @@ def mock_bm():
 
     app.dependency_overrides[get_db] = override_get_db
 
-    with patch("services.batch_manager.bm.session_scope", side_effect=mock_session_scope):
-        with patch("services.batch_manager.bm.list_batches", new_callable=AsyncMock, return_value=[2021, 2022, 2023]):
+    with patch(
+        "services.batch_manager.bm.session_scope", side_effect=mock_session_scope
+    ):
+        with patch(
+            "services.batch_manager.bm.list_batches",
+            new_callable=AsyncMock,
+            return_value=[2021, 2022, 2023],
+        ):
             yield
 
     app.dependency_overrides.clear()
@@ -98,6 +106,7 @@ def mock_bm():
 def client(mock_bm):
     """Synchronous test client for FastAPI."""
     from fastapi.testclient import TestClient
+
     with TestClient(app) as c:
         yield c
 

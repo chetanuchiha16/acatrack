@@ -1,7 +1,7 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from models import PasswordResetToken
 from services.batch_manager import bm
@@ -57,10 +57,14 @@ async def request_reset(body: ForgotPasswordRequest):
 
     user, role, email = await find_user(username, batch_year)
     if not user or not email:
-        return JSONResponse(content={"error": "User not found or no email"}, status_code=404)
+        return JSONResponse(
+            content={"error": "User not found or no email"}, status_code=404
+        )
 
     token = secrets.token_urlsafe(32)
-    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).replace(tzinfo=None)
+    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).replace(
+        tzinfo=None
+    )
 
     async with bm.session_scope(batch_year) as session:
         reset_token = PasswordResetToken(
@@ -122,7 +126,9 @@ async def reset_password(token: str, body: ResetPasswordRequest):
 
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         if reset_token.expires_at < now:
-            return JSONResponse(content={"error": "Invalid or expired token"}, status_code=400)
+            return JSONResponse(
+                content={"error": "Invalid or expired token"}, status_code=400
+            )
 
         usn, role = reset_token.usn, reset_token.role
 

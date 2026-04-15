@@ -15,7 +15,9 @@ from validators.email_validators import SaveMessageRequest, SendStudentEmailRequ
 router = APIRouter(tags=["mentor_email"])
 
 
-async def save_message(session, mentor_id, usn, recipient_type, subject, message, email_failed=False):
+async def save_message(
+    session, mentor_id, usn, recipient_type, subject, message, email_failed=False
+):
     mentor_repo = MentorRepository(session)
     student_repo = StudentRepository(session)
 
@@ -54,7 +56,7 @@ async def save_message(session, mentor_id, usn, recipient_type, subject, message
 async def serialize_message_with_read_status(session, msg, batch_year=None):
     students = []
     valid_students = []
-    if msg.mentor and hasattr(msg.mentor, 'students'):
+    if msg.mentor and hasattr(msg.mentor, "students"):
         for s in msg.mentor.students:
             if batch_year and str(s.batch_year) != str(batch_year):
                 continue
@@ -82,7 +84,9 @@ async def serialize_message_with_read_status(session, msg, batch_year=None):
 
 
 @router.delete("/mentor/{mentor_id}/messages/{msg_id}")
-async def delete_message(mentor_id: int, msg_id: int, request: Request, batch_year: int | None = Query(None)):
+async def delete_message(
+    mentor_id: int, msg_id: int, request: Request, batch_year: int | None = Query(None)
+):
     by = batch_year or get_batch_year_from_request(request)
     async with bm.session_scope(by) as session:
         mentor_repo = MentorRepository(session)
@@ -101,7 +105,9 @@ async def delete_message(mentor_id: int, msg_id: int, request: Request, batch_ye
 
 
 @router.get("/mentor/{mentor_id}/students")
-async def get_mentor_students(mentor_id: int, request: Request, batch_year: int | None = Query(None)):
+async def get_mentor_students(
+    mentor_id: int, request: Request, batch_year: int | None = Query(None)
+):
     by = batch_year or get_batch_year_from_request(request)
     async with bm.session_scope(by) as session:
         mentor_repo = MentorRepository(session)
@@ -116,18 +122,28 @@ async def get_mentor_students(mentor_id: int, request: Request, batch_year: int 
         for s in students_list:
             if str(s.batch_year) != str(by):
                 continue
-            students.append({
-                "usn": s.usn,
-                "name": s.name,
-                "parent_name": s.parent_account.name if hasattr(s, 'parent_account') and s.parent_account else None,
-                "parent_email": s.parent_account.email if hasattr(s, 'parent_account') and s.parent_account else None,
-                "parent_phone": s.parent_account.phone if hasattr(s, 'parent_account') and s.parent_account else None,
-            })
+            students.append(
+                {
+                    "usn": s.usn,
+                    "name": s.name,
+                    "parent_name": s.parent_account.name
+                    if hasattr(s, "parent_account") and s.parent_account
+                    else None,
+                    "parent_email": s.parent_account.email
+                    if hasattr(s, "parent_account") and s.parent_account
+                    else None,
+                    "parent_phone": s.parent_account.phone
+                    if hasattr(s, "parent_account") and s.parent_account
+                    else None,
+                }
+            )
     return {"students": students}
 
 
 @router.get("/mentor/{mentor_id}/messages")
-async def get_messages(mentor_id: int, request: Request, batch_year: int | None = Query(None)):
+async def get_messages(
+    mentor_id: int, request: Request, batch_year: int | None = Query(None)
+):
     by = batch_year or get_batch_year_from_request(request)
     async with bm.session_scope(by) as session:
         mentor_repo = MentorRepository(session)
@@ -136,16 +152,28 @@ async def get_messages(mentor_id: int, request: Request, batch_year: int | None 
 
 
 @router.post("/mentor/{mentor_id}/messages")
-async def send_mentor_message(mentor_id: int, body: SaveMessageRequest, request: Request, batch_year: int | None = Query(None)):
+async def send_mentor_message(
+    mentor_id: int,
+    body: SaveMessageRequest,
+    request: Request,
+    batch_year: int | None = Query(None),
+):
     by = batch_year or get_batch_year_from_request(request)
     async with bm.session_scope(by) as session:
-        msg = await save_message(session, mentor_id, body.usn, body.recipientType, body.subject, body.message)
+        msg = await save_message(
+            session, mentor_id, body.usn, body.recipientType, body.subject, body.message
+        )
         result = await serialize_message_with_read_status(session, msg, by)
     return result
 
 
 @router.post("/mentor/{mentor_id}/send-email/student")
-async def send_email_student(mentor_id: int, body: SendStudentEmailRequest, request: Request, batch_year: int | None = Query(None)):
+async def send_email_student(
+    mentor_id: int,
+    body: SendStudentEmailRequest,
+    request: Request,
+    batch_year: int | None = Query(None),
+):
     by = batch_year or get_batch_year_from_request(request)
     async with bm.session_scope(by) as session:
         student_repo = StudentRepository(session)
@@ -171,7 +199,9 @@ async def send_email_student(mentor_id: int, body: SendStudentEmailRequest, requ
 
         full_message = f"Hello {name},\n\n{body.message}{sender_info}"
 
-        msg_obj = await save_message(session, mentor_id, body.usn, body.recipientType, body.subject, body.message)
+        msg_obj = await save_message(
+            session, mentor_id, body.usn, body.recipientType, body.subject, body.message
+        )
 
         if to_email:
             send_email_async(to_email, body.subject, full_message)
@@ -194,7 +224,9 @@ async def send_email_student(mentor_id: int, body: SendStudentEmailRequest, requ
 
 
 @router.post("/mentor/{mentor_id}/send-email/all")
-async def send_email_all(mentor_id: int, request: Request, batch_year: int | None = Query(None)):
+async def send_email_all(
+    mentor_id: int, request: Request, batch_year: int | None = Query(None)
+):
     data = await request.json()
     recipient_type = data.get("recipientType", "student").lower()
     subject = data.get("subject")
@@ -216,8 +248,16 @@ async def send_email_all(mentor_id: int, request: Request, batch_year: int | Non
                 continue
 
             if recipient_type == "parent":
-                to_email = getattr(s.parent_account, "email", None) if s.parent_account else None
-                name = getattr(s.parent_account, "name", None) if s.parent_account else s.name
+                to_email = (
+                    getattr(s.parent_account, "email", None)
+                    if s.parent_account
+                    else None
+                )
+                name = (
+                    getattr(s.parent_account, "name", None)
+                    if s.parent_account
+                    else s.name
+                )
             else:
                 to_email = getattr(s, "student_email", None)
                 name = s.name
@@ -229,7 +269,9 @@ async def send_email_all(mentor_id: int, request: Request, batch_year: int | Non
                 sender_info += f"\nPhone: {mentor.phone}"
 
             if to_email:
-                send_email_async(to_email, subject, f"Hello {name},\n\n{message}{sender_info}")
+                send_email_async(
+                    to_email, subject, f"Hello {name},\n\n{message}{sender_info}"
+                )
                 success = True
             else:
                 success = False

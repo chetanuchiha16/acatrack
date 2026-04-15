@@ -18,7 +18,9 @@ async def get_student_analysis(
     batch_year = get_batch_year_from_request(request)
 
     if not usn or not semester:
-        return JSONResponse(content={"error": "USN and semester are required"}, status_code=400)
+        return JSONResponse(
+            content={"error": "USN and semester are required"}, status_code=400
+        )
 
     try:
         analysis = await asyncio.get_event_loop().run_in_executor(
@@ -32,4 +34,6 @@ async def get_student_analysis(
 
         return analysis
     except Exception:
-        return JSONResponse(content={"error": "Failed to perform student analysis."}, status_code=500)
+        return JSONResponse(
+            content={"error": "Failed to perform student analysis."}, status_code=500
+        )

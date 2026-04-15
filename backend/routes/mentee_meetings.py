@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from models import Meeting
 from services.batch_manager import bm
@@ -13,6 +13,7 @@ async def get_mentee_meetings(student_usn: str, request: Request):
     batch_year = get_batch_year_from_request(request)
     async with bm.session_scope(batch_year) as session:
         from models.schema import StudentAuth
+
         result = await session.execute(
             select(StudentAuth).where(StudentAuth.usn == student_usn)
         )
@@ -21,7 +22,9 @@ async def get_mentee_meetings(student_usn: str, request: Request):
             return JSONResponse(content={"error": "Student not found"}, status_code=404)
 
         if not student.mentor_id:
-            return JSONResponse(content={"error": "Student has no mentor assigned"}, status_code=400)
+            return JSONResponse(
+                content={"error": "Student has no mentor assigned"}, status_code=400
+            )
 
         result = await session.execute(
             select(Meeting)

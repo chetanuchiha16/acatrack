@@ -1,6 +1,6 @@
 from utils.sync_db import db
 from logger_config import get_logger
-from models.paths import img_dir, postgres_db_url
+from models.paths import img_dir
 from models.schema import AcademicResult, StudentAuth, Subject
 from services.student_service import Student
 
@@ -9,7 +9,7 @@ logger = get_logger(__name__)
 
 class University:
     def __init__(self, session=None, batch_year=None):
-        self.session = session # Can be Sync or Async session
+        self.session = session  # Can be Sync or Async session
         self.batch_year = batch_year
 
     def fetch_semester_tables(self):
@@ -18,6 +18,7 @@ class University:
         """
         try:
             from utils.sync_db import db
+
             results = (
                 db.session.query(Subject.semester)
                 .join(
@@ -35,10 +36,13 @@ class University:
 
     async def fetch_semester_tables_async(self, session):
         from sqlalchemy import select
+
         try:
             query = (
                 select(Subject.semester)
-                .join(AcademicResult, AcademicResult.subject_code == Subject.subject_code)
+                .join(
+                    AcademicResult, AcademicResult.subject_code == Subject.subject_code
+                )
                 .where(AcademicResult.batch_year == self.batch_year)
                 .distinct()
             )
@@ -94,45 +98,55 @@ class University:
         FAANG-level optimization: Use repository for O(1) stats retrieval.
         """
         from repositories.academic_repository import AcademicRepository
+
         repo = AcademicRepository(session)
-        
+
         semesters = await self.fetch_semester_tables_async(session)
         if not semesters:
             return [{"error": "No semester data available for this batch."}]
 
         if selected_semester not in semesters:
-            return [{"error": f"No data found for {selected_semester} in batch {self.batch_year}"}]
+            return [
+                {
+                    "error": f"No data found for {selected_semester} in batch {self.batch_year}"
+                }
+            ]
 
-        # This method is still expected to return a list of student-level results 
+        # This method is still expected to return a list of student-level results
         # for some routes. For those, we still need to fetch students.
         # But we avoid re-calculating everything if possible.
-        
-        students = await self.get_students_for_semester_async(session, selected_semester)
+
+        students = await self.get_students_for_semester_async(
+            session, selected_semester
+        )
         semester_results = []
         for student in students:
-            semester_results.append({
-                "semester": selected_semester,
-                "usn": student.usn,
-                "name": student.name,
-                "obtained_credits": student.obtained_credits,
-                "sgpa": student.sgpa,
-                "cgpa": student.cgpa,
-                "percentage": student.percentage,
-                "ia_marks": student.ia_marks,
-                "see_marks": student.see_marks,
-                "total_marks": student.total_marks,
-                "pass_fail": student.pass_fail,
-                "subject_names": student.subject_names,
-                "subject_codes": student.subject_codes,
-            })
+            semester_results.append(
+                {
+                    "semester": selected_semester,
+                    "usn": student.usn,
+                    "name": student.name,
+                    "obtained_credits": student.obtained_credits,
+                    "sgpa": student.sgpa,
+                    "cgpa": student.cgpa,
+                    "percentage": student.percentage,
+                    "ia_marks": student.ia_marks,
+                    "see_marks": student.see_marks,
+                    "total_marks": student.total_marks,
+                    "pass_fail": student.pass_fail,
+                    "subject_names": student.subject_names,
+                    "subject_codes": student.subject_codes,
+                }
+            )
         return semester_results
 
     async def get_students_for_semester_async(self, session, selected_semester):
         from sqlalchemy import select
+
         # Refactor Student.bulk_fetch to be used async if possible
         # For now, we can use a hybrid approach or fully async
         from services.student_service import Student
-        
+
         query = (
             select(StudentAuth.usn)
             .join(AcademicResult, AcademicResult.student_id == StudentAuth.id)
@@ -145,36 +159,43 @@ class University:
         )
         result = await session.execute(query)
         all_usns = [r[0] for r in result.all()]
-        
+
         if not all_usns:
             return []
 
-        # Assuming Student.bulk_fetch is still sync, we run it in executor 
+        # Assuming Student.bulk_fetch is still sync, we run it in executor
         # but we already have the USNs
         import asyncio
+
         return await asyncio.get_event_loop().run_in_executor(
             None, Student.bulk_fetch, all_usns, selected_semester, self.batch_year
         )
 
-    async def find_failed_students_async(self, session, selected_semester, students=None):
+    async def find_failed_students_async(
+        self, session, selected_semester, students=None
+    ):
         if students is None:
-            students = await self.get_students_for_semester_async(session, selected_semester)
-            
+            students = await self.get_students_for_semester_async(
+                session, selected_semester
+            )
+
         failed_students_list = []
         for student in students:
             if "Fail" in student.pass_fail:
-                failed_students_list.append({
-                    "name": student.name,
-                    "usn": student.usn,
-                    "cgpa": student.cgpa,
-                    "percentage": student.percentage,
-                    "obtained_credits": student.obtained_credits,
-                    "pass_fail": student.pass_fail,
-                    "ia_marks": student.ia_marks,
-                    "see_marks": student.see_marks,
-                    "subject_codes": student.subject_codes,
-                    "subject_names": student.subject_names,
-                })
+                failed_students_list.append(
+                    {
+                        "name": student.name,
+                        "usn": student.usn,
+                        "cgpa": student.cgpa,
+                        "percentage": student.percentage,
+                        "obtained_credits": student.obtained_credits,
+                        "pass_fail": student.pass_fail,
+                        "ia_marks": student.ia_marks,
+                        "see_marks": student.see_marks,
+                        "subject_codes": student.subject_codes,
+                        "subject_names": student.subject_names,
+                    }
+                )
         return failed_students_list
 
     def display_failed_students(self, selected_semester):
@@ -188,12 +209,16 @@ class University:
         for fail_item in failed_students:
             logger.debug(f"USN: {fail_item['usn']}, Details: {fail_item}")
 
-    async def plot_student_totals_async(self, session, selected_semester, mode="top_n", n=10, bins=10, students=None):
+    async def plot_student_totals_async(
+        self, session, selected_semester, mode="top_n", n=10, bins=10, students=None
+    ):
         import matplotlib.pyplot as plt
         import asyncio
-        
+
         if students is None:
-            students = await self.get_students_for_semester_async(session, selected_semester)
+            students = await self.get_students_for_semester_async(
+                session, selected_semester
+            )
 
         if not students:
             logger.debug(f"No student data available for {selected_semester}.")
@@ -204,6 +229,7 @@ class University:
 
         def _plot():
             import matplotlib
+
             matplotlib.use("Agg")
             fig = plt.figure(figsize=(12, 6))
 
@@ -228,6 +254,7 @@ class University:
 
             plt.tight_layout()
             import uuid
+
             graph_path = f"{img_dir}/plot_student_totals_{uuid.uuid4().hex}.png"
             plt.savefig(graph_path)
             plt.close(fig)

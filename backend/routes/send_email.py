@@ -1,6 +1,7 @@
 """
 Email-related routes — migrated to FastAPI.
 """
+
 import smtplib
 from concurrent.futures import ThreadPoolExecutor
 from email.mime.multipart import MIMEMultipart
@@ -78,7 +79,9 @@ async def send_email_to_all(body: SendAllEmailRequest, request: Request):
             to_email = getattr(person, email_attr, None)
             if not to_email:
                 continue
-            name = getattr(person, name_attr, None) or getattr(person, "name", "Student")
+            name = getattr(person, name_attr, None) or getattr(
+                person, "name", "Student"
+            )
             payloads.append((to_email, name))
 
     for to_email, name in payloads:

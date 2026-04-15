@@ -36,6 +36,7 @@ async def auth(body: AuthRequest):
 
     if error_msg:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(content={"error": error_msg}, status_code=status_code)
 
     return {"token": result["token"]}
@@ -55,6 +56,7 @@ async def auth_status(request: Request):
         }
     else:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(
             content={"logged_in": False, "message": "Not logged in"},
             status_code=401,
@@ -70,9 +72,12 @@ async def logout():
 async def save_fcm_token(usn: str, body: FcmTokenRequest, request: Request):
     batch_year = get_batch_year_from_request(request)
 
-    success, error_msg, status_code = await update_fcm_token(usn, body.fcm_token, batch_year)
+    success, error_msg, status_code = await update_fcm_token(
+        usn, body.fcm_token, batch_year
+    )
     if not success:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(content={"error": error_msg}, status_code=status_code)
 
     return {"success": True}

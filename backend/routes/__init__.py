@@ -1,6 +1,7 @@
 """
 Route registration — includes all FastAPI routers into the app.
 """
+
 from fastapi import FastAPI
 
 

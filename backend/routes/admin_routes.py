@@ -1,6 +1,7 @@
 """
 Admin routes for generating accounts, uploading email lists, and uploading mentor mappings.
 """
+
 from __future__ import annotations
 
 import io
@@ -16,7 +17,6 @@ from logger_config import get_logger
 from models import Mentor, ParentAuth, StudentAuth, Teacher
 from models.schema import ExportCache
 from services.admin_service import process_email_upload_file
-from security import hash_password, check_password
 from services.batch_manager import bm
 from utils.cloud import upload_excel_to_supabase
 from settings import settings
@@ -55,7 +55,9 @@ async def list_batches(x_admin_secret: str | None = Header(None)):
         batches = await bm.list_batches()
     except Exception:
         logger.exception("Failed to get batches")
-        return JSONResponse(content={"error": "Failed to retrieve batch list."}, status_code=500)
+        return JSONResponse(
+            content={"error": "Failed to retrieve batch list."}, status_code=500
+        )
     return {"batches": batches}
 
 
@@ -69,10 +71,13 @@ async def generate_accounts(
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
 
     if mode.lower() not in {"missing", "all"}:
-        return JSONResponse(content={"error": "Invalid mode. Use 'missing' or 'all'."}, status_code=400)
+        return JSONResponse(
+            content={"error": "Invalid mode. Use 'missing' or 'all'."}, status_code=400
+        )
 
     from services.admin_service import generate_accounts_csv
     import asyncio
+
     csv_bytes, filename = await asyncio.get_event_loop().run_in_executor(
         None, generate_accounts_csv, mode, batch_year
     )
@@ -99,7 +104,9 @@ async def upload_emails(
 
     ext = os.path.splitext(filename)[1].lower()
     if ext not in {".xlsx", ".csv"}:
-        return JSONResponse(content={"error": "Only .xlsx or .csv allowed"}, status_code=400)
+        return JSONResponse(
+            content={"error": "Only .xlsx or .csv allowed"}, status_code=400
+        )
 
     # Save uploaded file to a temp file
     with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmpfile:
@@ -147,7 +154,9 @@ async def upload_mentors(
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
 
     if not batch_year:
-        return JSONResponse(content={"error": "batch_year query param required"}, status_code=400)
+        return JSONResponse(
+            content={"error": "batch_year query param required"}, status_code=400
+        )
 
     filename = file.filename or ""
     if not filename.endswith(".xlsx"):
@@ -256,7 +265,9 @@ async def create_batch(request: Request, x_admin_secret: str | None = Header(Non
         return {"status": "success", "batch_year": batch_year}
     except Exception:
         logger.exception("Failed to create batch")
-        return JSONResponse(content={"error": "Failed to create batch."}, status_code=500)
+        return JSONResponse(
+            content={"error": "Failed to create batch."}, status_code=500
+        )
 
 
 @router.post("/refresh-batch")
@@ -275,4 +286,6 @@ async def refresh_batch(request: Request, x_admin_secret: str | None = Header(No
         return {"status": "success", "batch_year": batch_year}
     except Exception:
         logger.exception("Failed to refresh batch")
-        return JSONResponse(content={"error": "Failed to refresh batch data."}, status_code=500)
+        return JSONResponse(
+            content={"error": "Failed to refresh batch data."}, status_code=500
+        )

@@ -32,9 +32,7 @@ def get_jwt_payload_from_request(request: Request) -> dict | None:
     if not token:
         return None
     try:
-        payload = jwt.decode(
-            token, settings.secret_key, algorithms=["HS256"]
-        )
+        payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
         return payload
     except jwt.ExpiredSignatureError:
         logger.debug("JWT expired")
