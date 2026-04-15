@@ -2,18 +2,15 @@
 import io
 import os
 import random
-import tempfile
 import pandas as pd
 import base64
 import hashlib
 from cryptography.fernet import Fernet
 from security import hash_password
 from logger_config import get_logger
-from services.batch_manager import bm
 from models.schema import ExportCache, ParentAuth
 from repositories.student_repository import StudentRepository
 from repositories.mentor_repository import MentorRepository
-from repositories.admin_repository import AdminRepository
 from utils.cloud import download_excel_from_supabase
 from settings import settings
 
@@ -67,10 +64,8 @@ def process_mentor_upload_file(
     out.write("username,name,plain_password,password_hash,role,linked_student\n")
 
     # Use sync SQLAlchemy for this sync function
-    from database import engine as async_engine
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
-    from sqlalchemy.orm import Session
 
     # Create a sync engine from the URL
     _raw_url = settings.database_url
@@ -95,20 +90,26 @@ def process_mentor_upload_file(
         from models.schema import StudentAuth as SA, Mentor as M, Teacher as T
 
         usns_in_df = [str(usn).strip() for usn in df["student_usn"] if str(usn).strip()]
-        existing_students = session.execute(
-            sa_select(SA).where(SA.usn.in_(usns_in_df))
-        ).scalars().all()
+        existing_students = (
+            session.execute(sa_select(SA).where(SA.usn.in_(usns_in_df))).scalars().all()
+        )
         student_map = {s.usn: s for s in existing_students}
 
-        mentor_names_in_df = list(set([str(name).strip() for name in df["Mentor_Name"] if str(name).strip()]))
-        existing_mentors = session.execute(
-            sa_select(M).where(M.name.in_(mentor_names_in_df))
-        ).scalars().all()
+        mentor_names_in_df = list(
+            set([str(name).strip() for name in df["Mentor_Name"] if str(name).strip()])
+        )
+        existing_mentors = (
+            session.execute(sa_select(M).where(M.name.in_(mentor_names_in_df)))
+            .scalars()
+            .all()
+        )
         mentor_cache = {m.name: m for m in existing_mentors}
 
-        existing_teachers = session.execute(
-            sa_select(T).where(T.name.in_(mentor_names_in_df))
-        ).scalars().all()
+        existing_teachers = (
+            session.execute(sa_select(T).where(T.name.in_(mentor_names_in_df)))
+            .scalars()
+            .all()
+        )
         teacher_cache = {t.name: t for t in existing_teachers}
 
         for _, row in df.iterrows():
@@ -127,7 +128,9 @@ def process_mentor_upload_file(
                 teacher = teacher_cache.get(mentor_name)
                 if not teacher:
                     username = _unique_teacher_username_fn(session)
-                    plain_pw = f"{_safe_seed_fn(mentor_name.split(' ', 1)[-1])}{username[-3:]}"
+                    plain_pw = (
+                        f"{_safe_seed_fn(mentor_name.split(' ', 1)[-1])}{username[-3:]}"
+                    )
                     pw_hash = hash_pw_fn(plain_pw)
                     teacher = Teacher(
                         username=username,
@@ -137,7 +140,9 @@ def process_mentor_upload_file(
                     )
                     session.add(teacher)
                     teacher_cache[mentor_name] = teacher
-                    out.write(f"{username},{mentor_name},{plain_pw},{pw_hash},teacher,\n")
+                    out.write(
+                        f"{username},{mentor_name},{plain_pw},{pw_hash},teacher,\n"
+                    )
                 mentor_cache[mentor_name] = mentor
 
             student = student_map.get(student_usn)
@@ -159,9 +164,13 @@ def process_mentor_upload_file(
     encrypted_csv = cipher.encrypt(csv_str.encode("utf-8")).decode("utf-8")
 
     with SyncSession() as session:
-        existing_cache = session.execute(
-            sa_select(ExportCache).where(ExportCache.batch_year == batch_year)
-        ).scalars().first()
+        existing_cache = (
+            session.execute(
+                sa_select(ExportCache).where(ExportCache.batch_year == batch_year)
+            )
+            .scalars()
+            .first()
+        )
         if existing_cache:
             existing_cache.csv_content = encrypted_csv
         else:
@@ -196,7 +205,11 @@ def process_email_upload_file(
 ):
     # Load DataFrame
     try:
-        df = pd.read_excel(temp_upload_path) if ext == ".xlsx" else pd.read_csv(temp_upload_path)
+        df = (
+            pd.read_excel(temp_upload_path)
+            if ext == ".xlsx"
+            else pd.read_csv(temp_upload_path)
+        )
     except Exception as e:
         return {"error": f"Failed to read file: {e}"}, 400
 
@@ -225,9 +238,13 @@ def process_email_upload_file(
 
     with SyncSession() as session:
         usns_in_df = [str(usn).strip() for usn in df["student_usn"] if str(usn).strip()]
-        existing_students = session.execute(
-            sa_select(StudentAuth).where(StudentAuth.usn.in_(usns_in_df))
-        ).scalars().all()
+        existing_students = (
+            session.execute(
+                sa_select(StudentAuth).where(StudentAuth.usn.in_(usns_in_df))
+            )
+            .scalars()
+            .all()
+        )
         student_map = {s.usn: s for s in existing_students}
 
         for _, row in df.iterrows():
@@ -242,7 +259,9 @@ def process_email_upload_file(
 
                 if student.parent_account:
                     student.parent_account.email = str(row["Parent_Email"]).strip()
-                    student.parent_account.phone = str(row.get("Parent_PHNO", "")).strip()
+                    student.parent_account.phone = str(
+                        row.get("Parent_PHNO", "")
+                    ).strip()
                 else:
                     parent_username = f"{student.usn}_parent"
                     plain_parent_pw = "default123"
@@ -275,7 +294,9 @@ def process_email_upload_file(
                     email=str(row["Parent_Email"]).strip(),
                     phone=str(row.get("Parent_PHNO", "")).strip(),
                     student=new_student,
-                    name=str(row.get("Parent_Name", f"Parent of {row['student_name']}")).strip(),
+                    name=str(
+                        row.get("Parent_Name", f"Parent of {row['student_name']}")
+                    ).strip(),
                     relation=str(row.get("Parent_Relation", "Guardian")).strip(),
                 )
                 session.add(new_parent)
@@ -301,6 +322,7 @@ def _safe_seed(text: str | None) -> str:
 def _unique_teacher_username(db_session) -> str:
     from sqlalchemy import select as sa_select
     from models.schema import Teacher
+
     while True:
         candidate = str(random.randint(1000, 1010))
         result = db_session.execute(
@@ -329,9 +351,11 @@ def _fetch_source_rows(batch_year: int) -> list[tuple[str, str]]:
 
     students_set = set()
     with SyncSession() as session:
-        students = session.execute(
-            sa_select(SA).where(SA.batch_year == batch_year)
-        ).scalars().all()
+        students = (
+            session.execute(sa_select(SA).where(SA.batch_year == batch_year))
+            .scalars()
+            .all()
+        )
         for s in students:
             students_set.add((s.usn, s.name))
 
@@ -358,9 +382,15 @@ def generate_accounts_csv(mode: str, batch_year: int) -> tuple[io.BytesIO, str]:
 
     with SyncSession() as session:
         students = _fetch_source_rows(batch_year)
-        all_students = session.execute(
-            sa_select(SA).options(selectinload(SA.parent_account)).where(SA.batch_year == batch_year)
-        ).scalars().all()
+        all_students = (
+            session.execute(
+                sa_select(SA)
+                .options(selectinload(SA.parent_account))
+                .where(SA.batch_year == batch_year)
+            )
+            .scalars()
+            .all()
+        )
         student_usn_map = {s.usn: s for s in all_students}
 
         if mode == "all":
@@ -423,12 +453,17 @@ def generate_accounts_csv(mode: str, batch_year: int) -> tuple[io.BytesIO, str]:
         excel_filename = f"mentors_{batch_year}.xlsx"
         mentor_excel_path = None
         try:
-            mentor_excel_path = download_excel_from_supabase(excel_filename, excel_folder)
+            mentor_excel_path = download_excel_from_supabase(
+                excel_filename, excel_folder
+            )
         except Exception as e:
-            logger.debug(f"No mentor excel found in Supabase for batch {batch_year}: {e}")
+            logger.debug(
+                f"No mentor excel found in Supabase for batch {batch_year}: {e}"
+            )
 
         if mentor_excel_path and os.path.exists(mentor_excel_path):
             from models.schema import Mentor as M
+
             df = pd.read_excel(mentor_excel_path)
             all_mentors = session.execute(sa_select(M)).scalars().all()
             mentor_name_map = {m.name: m for m in all_mentors}
@@ -446,7 +481,10 @@ def generate_accounts_csv(mode: str, batch_year: int) -> tuple[io.BytesIO, str]:
         session.commit()
 
         out.seek(0)
-        result = io.BytesIO(out.getvalue().encode("utf-8")), f"generated_passwords_{batch_year}.csv"
+        result = (
+            io.BytesIO(out.getvalue().encode("utf-8")),
+            f"generated_passwords_{batch_year}.csv",
+        )
 
     sync_engine.dispose()
     return result

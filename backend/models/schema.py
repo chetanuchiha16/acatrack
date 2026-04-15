@@ -60,7 +60,9 @@ class AcademicResult(Base):
     __table_args__ = (
         UniqueConstraint("student_id", "subject_code", name="uq_student_subject"),
         # Composite index for batch + subject queries
-        UniqueConstraint("batch_year", "subject_code", "student_id", name="uq_batch_subject_student"),
+        UniqueConstraint(
+            "batch_year", "subject_code", "student_id", name="uq_batch_subject_student"
+        ),
     )
 
     subject = relationship("Subject", backref="results")
@@ -149,9 +151,7 @@ class Meeting(Base):
     venue = Column(String(200), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    mentor = relationship(
-        "Mentor", backref="meetings"
-    )
+    mentor = relationship("Mentor", backref="meetings")
 
 
 class PasswordResetToken(Base):
@@ -181,12 +181,8 @@ class MentorMessage(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     email_failed = Column(Boolean, default=False)
 
-    mentor = relationship(
-        "Mentor", backref="messages"
-    )
-    student = relationship(
-        "StudentAuth", backref="messages"
-    )
+    mentor = relationship("Mentor", backref="messages")
+    student = relationship("StudentAuth", backref="messages")
 
     def to_dict(self):
         dt = self.created_at
@@ -211,14 +207,10 @@ class StudentMessageStatus(Base):
     id = Column(Integer, primary_key=True)
 
     student_id = Column(Integer, ForeignKey("students.id", ondelete="CASCADE"))
-    msg_id = Column(
-        Integer, ForeignKey("mentor_messages.id", ondelete="CASCADE")
-    )
+    msg_id = Column(Integer, ForeignKey("mentor_messages.id", ondelete="CASCADE"))
     read = Column(Boolean, default=False)
 
-    __table_args__ = (
-        UniqueConstraint("student_id", "msg_id", name="uq_student_msg"),
-    )
+    __table_args__ = (UniqueConstraint("student_id", "msg_id", name="uq_student_msg"),)
 
 
 class Job(Base):

@@ -2,6 +2,7 @@
 """
 Password hashing utilities — replaces Flask-Bcrypt.
 """
+
 import bcrypt
 
 

@@ -26,7 +26,9 @@ async def get_subject_results(
 ):
     by = batch_year or get_batch_year_from_request(request)
     if not semester or not subject:
-        return JSONResponse(content={"error": "semester and subject are required"}, status_code=400)
+        return JSONResponse(
+            content={"error": "semester and subject are required"}, status_code=400
+        )
 
     def _sync():
         university = University(postgres_url=postgres_db_url, batch_year=by)
@@ -46,7 +48,9 @@ async def get_subject_report_pdf(
 ):
     by = batch_year or get_batch_year_from_request(request)
     if not semester or not subject:
-        return JSONResponse(content={"error": "semester and subject are required"}, status_code=400)
+        return JSONResponse(
+            content={"error": "semester and subject are required"}, status_code=400
+        )
 
     def _sync():
         university = University(postgres_url=postgres_db_url, batch_year=by)
@@ -60,5 +64,7 @@ async def get_subject_report_pdf(
     return StreamingResponse(
         pdf_buffer,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="subject_report_{semester}_{subject}.pdf"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="subject_report_{semester}_{subject}.pdf"'
+        },
     )

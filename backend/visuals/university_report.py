@@ -31,18 +31,21 @@ async def create_university_report_async(university, selected_semester, session)
     pdf_buffer = io.BytesIO()
 
     # Fetch students once
-    students = await university.get_students_for_semester_async(session, selected_semester)
+    students = await university.get_students_for_semester_async(
+        session, selected_semester
+    )
     if not students:
         logger.debug(f"No students found for {selected_semester}")
         return b""
 
     # Generate SGPA histogram - still CPU bound, but we run in executor
     sgpa_list = [student.sgpa for student in students]
-    
+
     def _plot_sgpa():
         import matplotlib
+
         matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
+
         fig, ax = plt.subplots()
         ax.hist(sgpa_list, bins=10, range=(0, 10), color="skyblue", edgecolor="black")
         ax.set_title("SGPA Distribution")
@@ -54,6 +57,7 @@ async def create_university_report_async(university, selected_semester, session)
         return path
 
     import asyncio
+
     graph_path = await asyncio.get_event_loop().run_in_executor(None, _plot_sgpa)
 
     # Generate second graph using the async method and passing students list
@@ -78,7 +82,9 @@ async def create_university_report_async(university, selected_semester, session)
         c.drawImage(gpath, 100, 300, width=400, height=200)
 
     c.setFont("Helvetica", 12)
-    c.drawString(100, 270, f"=== Academic Performance for Semester: {selected_semester} ===")
+    c.drawString(
+        100, 270, f"=== Academic Performance for Semester: {selected_semester} ==="
+    )
 
     y = 250
     for student in students:

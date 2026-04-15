@@ -57,17 +57,13 @@ class MentorRepository:
         return result.scalars().first()
 
     async def get_teachers_by_names(self, names: list) -> list[Teacher]:
-        result = await self.db.execute(
-            select(Teacher).where(Teacher.name.in_(names))
-        )
+        result = await self.db.execute(select(Teacher).where(Teacher.name.in_(names)))
         return list(result.scalars().all())
 
     # --- Meetings ---
     async def get_meetings_by_mentor(self, mentor_id: int) -> list[Meeting]:
         result = await self.db.execute(
-            select(Meeting)
-            .where(Meeting.mentor_id == mentor_id)
-            .order_by(Meeting.date)
+            select(Meeting).where(Meeting.mentor_id == mentor_id).order_by(Meeting.date)
         )
         return list(result.scalars().all())
 

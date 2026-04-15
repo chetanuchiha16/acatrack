@@ -3,7 +3,11 @@ from fastapi.responses import JSONResponse
 from repositories.parent_repository import ParentRepository
 from repositories.mentor_repository import MentorRepository
 from services.batch_manager import bm
-from utils.helpers import get_batch_year_from_request, get_jwt_payload_from_request, get_user_id_from_request
+from utils.helpers import (
+    get_batch_year_from_request,
+    get_jwt_payload_from_request,
+    get_user_id_from_request,
+)
 
 router = APIRouter(tags=["parent"])
 
@@ -17,9 +21,13 @@ async def get_student_details(request: Request):
             return JSONResponse(content={"error": "Unauthorized"}, status_code=403)
 
         parent_repo = ParentRepository(session)
-        parent = await parent_repo.get_auth_by_username(get_user_id_from_request(request))
+        parent = await parent_repo.get_auth_by_username(
+            get_user_id_from_request(request)
+        )
         if not parent or not parent.student:
-            return JSONResponse(content={"error": "Student not linked"}, status_code=404)
+            return JSONResponse(
+                content={"error": "Student not linked"}, status_code=404
+            )
 
         student = parent.student
         mentor = student.mentor

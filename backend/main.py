@@ -4,14 +4,14 @@ FastAPI application entry-point.
 
 Replaces the old Flask app.py + app_init.py
 """
+
 from __future__ import annotations
 
 import firebase_admin
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from cache_config import init_cache
 from database import create_tables, engine
@@ -31,6 +31,7 @@ async def lifespan(app: FastAPI):
         raise RuntimeError("FIREBASE_CRED_PATH not set!")
     if not firebase_admin._apps:
         from firebase_admin import credentials
+
         cred = credentials.Certificate(cred_path)
         firebase_admin.initialize_app(cred)
     logger.info("Firebase initialised")
@@ -69,10 +70,12 @@ app.add_middleware(
 
 # ----- Error handlers -----
 from errors import register_exception_handlers  # noqa: E402
+
 register_exception_handlers(app)
 
 # ----- Routers -----
 from routes import include_routers  # noqa: E402
+
 include_routers(app)
 
 

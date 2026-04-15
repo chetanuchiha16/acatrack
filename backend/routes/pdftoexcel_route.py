@@ -7,7 +7,6 @@ from utils.helpers import get_batch_year_from_request
 from logger_config import get_logger
 from sqlalchemy import select
 import tempfile
-import asyncio
 
 logger = get_logger(__name__)
 
@@ -24,7 +23,9 @@ async def upload_archive(
 
     filename = file.filename or ""
     if not filename.endswith((".zip", ".rar", ".tar.gz")):
-        return JSONResponse(content={"error": "Only .zip, .rar, .tar.gz allowed"}, status_code=400)
+        return JSONResponse(
+            content={"error": "Only .zip, .rar, .tar.gz allowed"}, status_code=400
+        )
 
     with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
         content = await file.read()
@@ -40,6 +41,7 @@ async def upload_archive(
         await session.commit()
 
     from services.pdf_service import process_archive
+
     background_tasks.add_task(process_archive, job_id, temp_path, batch_year)
 
     return {"job_id": job_id, "status": "queued"}
