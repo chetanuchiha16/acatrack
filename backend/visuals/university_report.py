@@ -12,7 +12,6 @@ from reportlab.pdfgen import canvas
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 from models.paths import img_dir, get_logo_path
 from logger_config import get_logger
 
@@ -42,18 +41,16 @@ async def create_university_report_async(university, selected_semester, session)
     sgpa_list = [student.sgpa for student in students]
 
     def _plot_sgpa():
-        import matplotlib
+        from matplotlib.figure import Figure
 
-        matplotlib.use("Agg")
-
-        fig, ax = plt.subplots()
+        fig = Figure()
+        ax = fig.add_subplot(111)
         ax.hist(sgpa_list, bins=10, range=(0, 10), color="skyblue", edgecolor="black")
         ax.set_title("SGPA Distribution")
         ax.set_xlabel("SGPA")
         ax.set_ylabel("Number of Students")
         path = f"{img_dir}/university_graph_{uuid.uuid4().hex}.png"
-        plt.savefig(path)
-        plt.close(fig)
+        fig.savefig(path)
         return path
 
     import asyncio

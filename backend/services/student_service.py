@@ -16,6 +16,9 @@ from utils.visuals import plot_subject_marks
 logger = get_logger(__name__)
 
 
+_sync_engine_cache = {}
+
+
 def _get_sync_session():
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
@@ -24,11 +27,16 @@ def _get_sync_session():
     _raw_url = settings.database_url
     if _raw_url.startswith("postgresql+asyncpg://"):
         sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
-    elif _raw_url.startswith("postgres://"):
-        sync_url = _raw_url
     else:
         sync_url = _raw_url
-    sync_engine = create_engine(sync_url)
+
+    if sync_url not in _sync_engine_cache:
+        # FAANG-level: Use a pooled engine instead of disposing it every time
+        _sync_engine_cache[sync_url] = create_engine(
+            sync_url, pool_size=5, max_overflow=10
+        )
+
+    sync_engine = _sync_engine_cache[sync_url]
     return sessionmaker(bind=sync_engine), sync_engine
 
 
@@ -103,7 +111,6 @@ class Student:
                             self.ia_marks.append(res.ia_marks or 0)
                             self.see_marks.append(res.see_marks or 0)
                             self.credits.append(sub.credits or 0)
-            sync_engine.dispose()
 
         if not self.found:
             raise ValueError(f"No student data found for USN {usn}")
@@ -171,7 +178,6 @@ class Student:
             ).scalar_one_or_none()
 
             if not student_rec:
-                sync_engine.dispose()
                 return previous_data
 
             sem_names: list[str] = [f"sem{sem}" for sem in range(1, sem_no)]
@@ -183,8 +189,6 @@ class Student:
                     Subject.semester.in_(sem_names),
                 )
             ).all()
-
-        sync_engine.dispose()
 
         sem_data: dict[str, list[tuple[AcademicResult, Subject]]] = {
             sem: [] for sem in sem_names
@@ -305,7 +309,6 @@ class Student:
             student_id_to_usn = {s.id: s.usn for s in student_records}
 
             if not student_map:
-                sync_engine.dispose()
                 return {}
 
             results = session.execute(
@@ -316,8 +319,6 @@ class Student:
                     Subject.semester.in_(required_semesters),
                 )
             ).all()
-
-        sync_engine.dispose()
 
         preloaded_data = {
             usn: {
@@ -377,7 +378,6 @@ class Student:
             ).scalar_one_or_none()
 
             if not student_rec:
-                sync_engine.dispose()
                 return {}
 
             results = session.execute(
@@ -388,8 +388,6 @@ class Student:
                     Subject.semester.in_(required_semesters),
                 )
             ).all()
-
-        sync_engine.dispose()
 
         sem_data = {sem: {"res": [], "sub": []} for sem in required_semesters}
         for res, sub in results:
