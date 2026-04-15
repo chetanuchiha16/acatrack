@@ -3,6 +3,7 @@ import io
 
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import JSONResponse, FileResponse
+from cache_config import cache
 from logger_config import get_logger
 from services.student_service import Student
 from utils.helpers import get_batch_year_from_request
@@ -57,6 +58,7 @@ async def download_report(filename: str):
 
 
 @router.get("/auth/Student/chart")
+@cache(expire=3600)
 async def get_student_chart(request: Request, usn: str = Query(None), semester: str = Query(None)):
     batch_year = get_batch_year_from_request(request)
 

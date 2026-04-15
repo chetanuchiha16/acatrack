@@ -2,12 +2,14 @@ from fastapi import APIRouter, Request, Query
 from fastapi.responses import JSONResponse
 from utils.helpers import get_batch_year_from_request
 from services.student_analysis_service import analyze_student_performance
+from cache_config import cache
 import asyncio
 
 router = APIRouter(tags=["student_analysis"])
 
 
 @router.get("/auth/Student/analysis")
+@cache(expire=3600)
 async def get_student_analysis(
     request: Request,
     usn: str = Query(None),
