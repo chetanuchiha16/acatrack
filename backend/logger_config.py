@@ -7,4 +7,7 @@ logging.basicConfig(
 
 
 def get_logger(name):
+    # Silence noisy external libraries if root level is DEBUG
+    logging.getLogger("matplotlib").setLevel(logging.WARNING)
+    logging.getLogger("PIL").setLevel(logging.WARNING)
     return logging.getLogger(name)
