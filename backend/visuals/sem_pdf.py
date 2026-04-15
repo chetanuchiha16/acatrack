@@ -89,9 +89,17 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping):
 
         data = [headers]
 
-        # Process each subject
+        # Fetch all students for the selected semester once
+        students = university.get_students_for_semester(selected_semester)
+        if not students:
+            logger.debug(f"No students found for {selected_semester}")
+            return b""
+
+        # Process each subject, passing the pre-fetched students list
         for subject_code in subjects:
-            subject_result = SubjectResult(subject_code, selected_semester, university)
+            subject_result = SubjectResult(
+                subject_code, selected_semester, university, students=students
+            )
             subject_name = sem_subjects[selected_semester].get(
                 subject_code, "unknown subject"
             )
@@ -135,33 +143,26 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping):
         elements.append(Spacer(1, 12))
 
         totals_headers = ["Total Students", "FCD", "FC", "SC", "Fail", "Pass %"]
-        total_students = len(
-            [
-                student
-                for student in university.students
-                if student.semester == selected_semester
-            ]
-        )
-        total_fcd = sum(
-            student.categorize() == "First Class with Distinction (FCD)"
-            for student in university.students
-            if student.semester == selected_semester
-        )
-        total_fc = sum(
-            student.categorize() == "First Class (FC)"
-            for student in university.students
-            if student.semester == selected_semester
-        )
-        total_sc = sum(
-            student.categorize() == "Second Class (SC)"
-            for student in university.students
-            if student.semester == selected_semester
-        )
-        total_fail = sum(
-            "Fail" in student.pass_fail
-            for student in university.students
-            if student.semester == selected_semester
-        )
+        
+        # Calculate summary statistics in a single pass over the students list
+        total_students = len(students)
+        total_fcd = 0
+        total_fc = 0
+        total_sc = 0
+        total_fail = 0
+
+        for student in students:
+            category = student.categorize()
+            if category == "First Class with Distinction (FCD)":
+                total_fcd += 1
+            elif category == "First Class (FC)":
+                total_fc += 1
+            elif category == "Second Class (SC)":
+                total_sc += 1
+            
+            if "Fail" in student.pass_fail:
+                total_fail += 1
+
         total_present = total_students - total_fail
         pass_percentage = (
             (total_present / total_students) * 100 if total_students > 0 else 0.0
@@ -250,8 +251,7 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping):
         elements.append(topper_table)
 
         # Display failed students
-
-        failed_students = university.find_failed_students_old(selected_semester)
+        failed_students = university.find_failed_students(selected_semester)
         fail_title = Paragraph(
             f"<b> Slow Learners  {selected_semester}</b>", styles["Heading2"]
         )
@@ -263,7 +263,10 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping):
 
         fail_data = [fail_headers]
 
-        for usn, failed_sub_codes in failed_students.items():
+        for fail_item in failed_students:
+            usn = fail_item["usn"]
+            # Extract failed subject codes
+            failed_sub_codes = fail_item["subject_codes"]
             subjects_str = ", ".join(failed_sub_codes)  # neat comma-separated string
             row2 = [
                 usn,
