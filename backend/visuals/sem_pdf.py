@@ -33,13 +33,13 @@ async def generate_sem_pdf_async(selected_semester, university, session):
         if not subject_stats:
              return b""
 
-        # 2. Fetch full results for toppers using optimized async call
-        full_results = await university.calculate_academic_performance_async(session, selected_semester)
-        toppers = sorted(full_results, key=lambda x: x["percentage"], reverse=True)[:10]
+        # 2. Fetch toppers using optimized SQL-level sort
+        toppers = await repo.get_toppers_by_percentage(selected_semester, university.batch_year)
 
-        # 3. Fetch failed students list
-        # Note: calculate_academic_performance_async already fetched students, so we can reuse if we had the list.
-        # But for simplicity, we use the async finder.
+        # 3. Fetch cohort aggregate stats using SQL
+        cohort_stats = await repo.get_semester_cohort_stats(selected_semester, university.batch_year)
+
+        # 4. Fetch failed students list
         failed_students = await university.find_failed_students_async(session, selected_semester)
 
         pdf_buffer = io.BytesIO()
@@ -103,29 +103,18 @@ async def generate_sem_pdf_async(selected_semester, university, session):
         elements.append(table)
         elements.append(Spacer(1, 12))
 
-        # Cohort summary (from top-10 or full results)
-        # For true FAANG level, we'd have a separate SQL query for cohort-wide stats 
-        # (FCD across all subjects). For now, we use the full_results we already fetched.
-        
-        total_students_cohort = len(full_results)
-        for res in full_results:
-            pct = res["percentage"]
-            if "Fail" in res["pass_fail"]:
-                total_fail_cohort += 1
-            elif pct >= 70:
-                total_fcd_cohort += 1
-            elif pct >= 60:
-                total_fc_cohort += 1
-            elif pct >= 50:
-                total_sc_cohort += 1
-        
-        total_pass_cohort = total_students_cohort - total_fail_cohort
-        pass_pct_cohort = (total_pass_cohort / total_students_cohort * 100) if total_students_cohort > 0 else 0
-
+        # Cohort summary from SQL stats
         totals_headers = ["Total Students", "FCD", "FC", "SC", "Fail", "Pass %"]
         totals_data = [
             totals_headers,
-            [total_students_cohort, total_fcd_cohort, total_fc_cohort, total_sc_cohort, total_fail_cohort, f"{pass_pct_cohort:.2f}%"]
+            [
+                cohort_stats["total_students"], 
+                cohort_stats["total_fcd"], 
+                cohort_stats["total_fc"], 
+                cohort_stats["total_sc"], 
+                cohort_stats["total_fail"], 
+                f"{cohort_stats['pass_percentage']:.2f}%"
+            ]
         ]
         totals_table = Table(totals_data, colWidths=[90, 50, 50, 50, 50, 70])
         totals_table.setStyle(TableStyle([
