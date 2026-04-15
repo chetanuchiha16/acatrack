@@ -61,7 +61,16 @@ async def upload_form(request: Request):
         page.insert_text((425, 595), Contact_Mother or "")
         page.insert_text((495, 595), Occupation_Mother or "")
 
-        coords = [(60, 760), (135, 760), (190, 760), (250, 760), (330, 760), (390, 760), (450, 760), (520, 760)]
+        coords = [
+            (60, 760),
+            (135, 760),
+            (190, 760),
+            (250, 760),
+            (330, 760),
+            (390, 760),
+            (450, 760),
+            (520, 760),
+        ]
         for i, sgpa in enumerate(sgpas):
             if i < len(coords):
                 page.insert_text(coords[i], str(sgpa or ""))
@@ -121,7 +130,8 @@ async def files():
         return [
             f["name"]
             for f in getattr(response, "data", [])
-            if f["name"] != ".emptyFolderPlaceholder" and f["name"].lower().endswith(".pdf")
+            if f["name"] != ".emptyFolderPlaceholder"
+            and f["name"].lower().endswith(".pdf")
         ]
 
     pdf_names = await asyncio.get_event_loop().run_in_executor(None, _list)
@@ -137,8 +147,14 @@ async def download(filename: str):
         return FileResponse(filepath, filename=filename)
 
     def _sign():
-        response = supabase.storage.from_(SUPABASE_BUCKET).create_signed_url(f"pdfs/{filename}", 3600)
-        signed_url = getattr(response, "data", {}).get("signedURL") if hasattr(response, "data") else None
+        response = supabase.storage.from_(SUPABASE_BUCKET).create_signed_url(
+            f"pdfs/{filename}", 3600
+        )
+        signed_url = (
+            getattr(response, "data", {}).get("signedURL")
+            if hasattr(response, "data")
+            else None
+        )
         return signed_url
 
     signed_url = await asyncio.get_event_loop().run_in_executor(None, _sign)
@@ -148,13 +164,17 @@ async def download(filename: str):
 
 
 @router.get("/mentor/{mentor_id}/pdfs")
-async def list_mentor_pdfs(mentor_id: int, request: Request, batch_year: int | None = Query(None)):
+async def list_mentor_pdfs(
+    mentor_id: int, request: Request, batch_year: int | None = Query(None)
+):
     try:
         by = batch_year or get_batch_year_from_request(request)
         async with bm.session_scope(by) as session:
             student_repo = StudentRepository(session)
             if by:
-                mentees = await student_repo.get_mentees_by_mentor_and_batch(mentor_id, by)
+                mentees = await student_repo.get_mentees_by_mentor_and_batch(
+                    mentor_id, by
+                )
             else:
                 mentees = await student_repo.get_mentees_by_mentor(mentor_id)
 
@@ -166,13 +186,23 @@ async def list_mentor_pdfs(mentor_id: int, request: Request, batch_year: int | N
                 try:
                     resp = http_requests.head(url, timeout=5)
                     if resp.status_code == 200:
-                        files_list.append({"usn": mentee.usn, "name": mentee.name, "file_url": url})
+                        files_list.append(
+                            {"usn": mentee.usn, "name": mentee.name, "file_url": url}
+                        )
                 except http_requests.RequestException:
                     pass
             else:
-                local_pdfs = [f for f in os.listdir(UPLOAD_FOLDER) if f.lower().endswith(".pdf")]
+                local_pdfs = [
+                    f for f in os.listdir(UPLOAD_FOLDER) if f.lower().endswith(".pdf")
+                ]
                 if filename in local_pdfs:
-                    files_list.append({"usn": mentee.usn, "name": mentee.name, "file_url": f"/mentee/download/{filename}"})
+                    files_list.append(
+                        {
+                            "usn": mentee.usn,
+                            "name": mentee.name,
+                            "file_url": f"/mentee/download/{filename}",
+                        }
+                    )
         return files_list
     except Exception:
         logger.exception("List mentor PDFs failed")
@@ -180,7 +210,9 @@ async def list_mentor_pdfs(mentor_id: int, request: Request, batch_year: int | N
 
 
 @router.get("/mentor/{mentor_id}/download/{usn}")
-async def download_mentee_pdf(mentor_id: int, usn: str, request: Request, batch_year: int | None = Query(None)):
+async def download_mentee_pdf(
+    mentor_id: int, usn: str, request: Request, batch_year: int | None = Query(None)
+):
     by = batch_year or get_batch_year_from_request(request)
     async with bm.session_scope(by) as session:
         student_repo = StudentRepository(session)
@@ -192,7 +224,9 @@ async def download_mentee_pdf(mentor_id: int, usn: str, request: Request, batch_
         filename = get_mentee_pdf_filename(student)
 
     if supabase:
-        url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/pdfs/{filename}"
+        url = (
+            f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/pdfs/{filename}"
+        )
         try:
             resp = http_requests.head(url, timeout=3)
             if resp.status_code == 200:
@@ -200,7 +234,9 @@ async def download_mentee_pdf(mentor_id: int, usn: str, request: Request, batch_
             else:
                 return JSONResponse(content={"error": "PDF not found"}, status_code=404)
         except http_requests.RequestException:
-            return JSONResponse(content={"error": "Failed to check file"}, status_code=500)
+            return JSONResponse(
+                content={"error": "Failed to check file"}, status_code=500
+            )
     else:
         pdf_names = [f for f in os.listdir(UPLOAD_FOLDER) if f.lower().endswith(".pdf")]
         if filename not in pdf_names:

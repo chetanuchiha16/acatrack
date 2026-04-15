@@ -2,6 +2,7 @@
 """
 Async SQLAlchemy engine, session factory, and FastAPI dependency.
 """
+
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
@@ -25,10 +26,11 @@ if _async_url.startswith("sqlite"):
     _async_url = _async_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
 else:
     from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
+
     parsed = urlparse(_async_url)
     query_params = dict(parse_qsl(parsed.query))
-    if 'sslmode' in query_params:
-        query_params.pop('sslmode')
+    if "sslmode" in query_params:
+        query_params.pop("sslmode")
         _async_url = urlunparse(parsed._replace(query=urlencode(query_params)))
 
 _engine_kwargs: dict = {}

@@ -90,7 +90,10 @@ async def get_student_message_detail(usn: str, msg_id: int, request: Request):
             return JSONResponse(content={"error": "Message not found"}, status_code=404)
 
         if msg.student_id not in (None, student.id):
-            return JSONResponse(content={"error": "Not authorized to view this message"}, status_code=403)
+            return JSONResponse(
+                content={"error": "Not authorized to view this message"},
+                status_code=403,
+            )
 
         mentor = await mentor_repo.get_by_id(msg.mentor_id) if msg.mentor_id else None
         status_result = await session.execute(
@@ -120,7 +123,10 @@ async def mark_message_read(usn: str, msg_id: int, request: Request):
             return JSONResponse(content={"error": "Message not found"}, status_code=404)
 
         if msg.student_id not in (None, student.id):
-            return JSONResponse(content={"error": "Not authorized to update this message"}, status_code=403)
+            return JSONResponse(
+                content={"error": "Not authorized to update this message"},
+                status_code=403,
+            )
 
         status_result = await session.execute(
             select(StudentMessageStatus).where(
@@ -131,7 +137,9 @@ async def mark_message_read(usn: str, msg_id: int, request: Request):
         status = status_result.scalars().first()
 
         if not status:
-            status = StudentMessageStatus(student_id=student.id, msg_id=msg_id, read=True)
+            status = StudentMessageStatus(
+                student_id=student.id, msg_id=msg_id, read=True
+            )
             session.add(status)
         else:
             status.read = True

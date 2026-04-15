@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, UploadFile, File
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse
 import tempfile
 import os
 from logger_config import get_logger
@@ -23,6 +23,7 @@ async def excel(request: Request, file: UploadFile = File(...)):
             folder = f"{batch_year}"
             excel_name = f"result_list_{batch_year}.xlsx"
             import asyncio
+
             cloud_url = await asyncio.get_event_loop().run_in_executor(
                 None, upload_excel_to_supabase, tmp.name, excel_name, folder
             )
@@ -47,10 +48,12 @@ async def get_template(request: Request):
     folder = f"{batch_year}"
     try:
         import asyncio
+
         local_path = await asyncio.get_event_loop().run_in_executor(
             None, download_excel_from_supabase, excel_name, folder
         )
         from fastapi.responses import FileResponse
+
         return FileResponse(
             local_path,
             filename=excel_name,
@@ -58,4 +61,6 @@ async def get_template(request: Request):
         )
     except Exception:
         logger.exception(f"Failed to download template: {excel_name}")
-        return JSONResponse(content={"error": "Template not found or unavailable."}, status_code=404)
+        return JSONResponse(
+            content={"error": "Template not found or unavailable."}, status_code=404
+        )

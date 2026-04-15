@@ -3,6 +3,7 @@ import io
 
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import JSONResponse, FileResponse
+from cache_config import cache
 from logger_config import get_logger
 from services.student_service import Student
 from utils.helpers import get_batch_year_from_request
@@ -15,13 +16,16 @@ router = APIRouter(tags=["student"])
 
 
 @router.get("/auth/Student/result")
-async def get_student_info(request: Request, usn: str = Query(None), semester: str = Query(None)):
+async def get_student_info(
+    request: Request, usn: str = Query(None), semester: str = Query(None)
+):
     batch_year = get_batch_year_from_request(request)
     logger.debug(f"batch year from student {batch_year}")
     logger.debug(f"Received USN: {usn}, Semester: {semester}, Batch: {batch_year}")
 
     try:
         import asyncio
+
         student = await asyncio.get_event_loop().run_in_executor(
             None, lambda: Student(usn=usn, semester=semester, batch_year=batch_year)
         )
@@ -42,13 +46,16 @@ async def get_student_info(request: Request, usn: str = Query(None), semester: s
 
     except Exception:
         logger.exception(f"Error fetching student result for USN: {usn}")
-        return JSONResponse(content={"error": "Failed to fetch student result."}, status_code=500)
+        return JSONResponse(
+            content={"error": "Failed to fetch student result."}, status_code=500
+        )
 
 
 @router.get("/auth/Student/report/{filename}")
 async def download_report(filename: str):
     import os
     from pathlib import Path
+
     safe_filename = Path(filename).name  # prevent path traversal
     filepath = os.path.join(pdf_dir, safe_filename)
     if not os.path.exists(filepath):
@@ -57,10 +64,14 @@ async def download_report(filename: str):
 
 
 @router.get("/auth/Student/chart")
-async def get_student_chart(request: Request, usn: str = Query(None), semester: str = Query(None)):
+@cache(expire=3600)
+async def get_student_chart(
+    request: Request, usn: str = Query(None), semester: str = Query(None)
+):
     batch_year = get_batch_year_from_request(request)
 
     import asyncio
+
     student = await asyncio.get_event_loop().run_in_executor(
         None, lambda: Student(usn=usn, semester=semester, batch_year=batch_year)
     )
@@ -73,6 +84,7 @@ async def get_student_chart(request: Request, usn: str = Query(None), semester: 
     img_base64 = base64.b64encode(buf.read()).decode("utf-8")
 
     import matplotlib.pyplot as plt
+
     plt.close(fig)
 
     return {"image": f"data:image/png;base64,{img_base64}"}

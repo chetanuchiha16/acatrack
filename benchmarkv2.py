@@ -18,16 +18,27 @@ keep_running = True
 
 
 def get_backend_processes():
-    # Because uvicorn/flask might spawn workers, we collect all python processes running app.py
-    procs = []
+    # Identify the master processes
+    masters = []
     for p in psutil.process_iter(["pid", "name", "cmdline"]):
         try:
             cmdline = p.info["cmdline"]
             if cmdline and "uvicorn" in " ".join(cmdline) and "main:app" in " ".join(cmdline):
-                procs.append(p)
+                masters.append(p)
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             pass
-    return procs
+    
+    # Collect all masters and their children (the actual workers)
+    all_procs = set()
+    for m in masters:
+        all_procs.add(m)
+        try:
+            for child in m.children(recursive=True):
+                all_procs.add(child)
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+            
+    return list(all_procs)
 
 
 def get_current_ram():

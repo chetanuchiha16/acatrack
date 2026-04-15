@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from models import Mentor, StudentAuth, Meeting
+from models import Mentor, StudentAuth
 from datetime import date
 
 

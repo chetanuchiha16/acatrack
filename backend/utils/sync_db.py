@@ -19,9 +19,11 @@ sync_engine = create_engine(
 SyncSessionLocal = sessionmaker(bind=sync_engine)
 Session = scoped_session(SyncSessionLocal)
 
+
 class DummyDB:
     @property
     def session(self):
         return Session()
+
 
 db = DummyDB()

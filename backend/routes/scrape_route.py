@@ -44,7 +44,9 @@ async def fetch_results_route(request: Request, background_tasks: BackgroundTask
     required_fields = ["usn_prefix", "usn_start", "usn_end", "sem"]
     missing = [f for f in required_fields if f not in data]
     if missing:
-        return JSONResponse({"error": f"Missing fields: {', '.join(missing)}"}, status_code=400)
+        return JSONResponse(
+            {"error": f"Missing fields: {', '.join(missing)}"}, status_code=400
+        )
 
     try:
         usn_prefix = str(data["usn_prefix"]).upper()
@@ -67,7 +69,7 @@ async def fetch_results_route(request: Request, background_tasks: BackgroundTask
         end=end,
         exam_session=exam_session,
         exam_year=exam_year_suffix,
-        download_dir=f"Outputs/PDFs/{pdf_folder}"
+        download_dir=f"Outputs/PDFs/{pdf_folder}",
     )
 
     return {

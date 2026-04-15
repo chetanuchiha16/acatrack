@@ -34,14 +34,17 @@ class BatchManager:
             logger.debug(f"[BatchManager] Creating tables for batch {batch_year}")
 
             from services.data_prep import prepare_data as prep_data
+
             # data_prep is synchronous — run it in the default executor
             import asyncio
+
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(None, prep_data, batch_year)
 
             logger.debug(f"[BatchManager] ✅ Batch {batch_year} processed in Postgres")
         except Exception as e:
             import traceback
+
             logger.error(f"[BatchManager] ❌ Failed to create batch {batch_year}: {e}")
             traceback.print_exc()
             raise
@@ -51,6 +54,7 @@ class BatchManager:
         try:
             from services.data_prep import prepare_data as prep_data
             import asyncio
+
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(None, prep_data, batch_year)
             logger.debug(f"[BatchManager] ✅ Batch {batch_year} refreshed")
@@ -61,9 +65,7 @@ class BatchManager:
     async def list_batches(self) -> list[int]:
         try:
             async with AsyncSessionLocal() as session:
-                result = await session.execute(
-                    select(distinct(StudentAuth.batch_year))
-                )
+                result = await session.execute(select(distinct(StudentAuth.batch_year)))
                 batch_years = [row[0] for row in result.all() if row[0] is not None]
                 return sorted(batch_years)
         except Exception as e:

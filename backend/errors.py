@@ -5,6 +5,7 @@ Registers a uniform JSON error response for all unhandled exceptions.
 Every error uses the same envelope:
   {"error": "<message>", "code": <http_status>}
 """
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -20,7 +21,9 @@ def register_exception_handlers(app: FastAPI) -> None:
     """Register all exception handlers on the FastAPI app."""
 
     @app.exception_handler(RequestValidationError)
-    async def handle_request_validation_error(request: Request, exc: RequestValidationError):
+    async def handle_request_validation_error(
+        request: Request, exc: RequestValidationError
+    ):
         """FastAPI request validation errors → 422 with field-level detail."""
         errors = exc.errors()
         messages = [

@@ -1,7 +1,8 @@
 # backend/repositories/parent_repository.py
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from models.schema import ParentAuth
+from sqlalchemy.orm import selectinload
+from models.schema import ParentAuth, StudentAuth
 
 
 class ParentRepository:
@@ -10,6 +11,8 @@ class ParentRepository:
 
     async def get_auth_by_username(self, username: str) -> ParentAuth | None:
         result = await self.db.execute(
-            select(ParentAuth).where(ParentAuth.username == username)
+            select(ParentAuth)
+            .options(selectinload(ParentAuth.student).selectinload(StudentAuth.mentor))
+            .where(ParentAuth.username == username)
         )
         return result.scalars().first()

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import JSONResponse
@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field, field_validator
 from repositories.mentor_repository import MentorRepository
 from routes.send_email import send_email_async
 from repositories.student_repository import StudentRepository
-from sqlalchemy import select
 
 router = APIRouter(prefix="/auth/Staff/Mentor/meeting", tags=["mentor_meetings"])
 
@@ -31,7 +30,9 @@ class AddMeetingRequest(BaseModel):
 
 
 @router.get("/{mentor_id}")
-async def get_meetings(mentor_id: int, request: Request, batch_year: int | None = Query(None)):
+async def get_meetings(
+    mentor_id: int, request: Request, batch_year: int | None = Query(None)
+):
     by = batch_year or get_batch_year_from_request(request)
     async with bm.session_scope(by) as session:
         mentor_repo = MentorRepository(session)
@@ -99,11 +100,16 @@ async def add_meeting(
 
         await session.commit()
 
-    return {"message": "Meeting added and emails sent to all students", "id": meeting_id}
+    return {
+        "message": "Meeting added and emails sent to all students",
+        "id": meeting_id,
+    }
 
 
 @router.delete("/delete/{meeting_id}")
-async def delete_meeting(meeting_id: int, request: Request, batch_year: int | None = Query(None)):
+async def delete_meeting(
+    meeting_id: int, request: Request, batch_year: int | None = Query(None)
+):
     by = batch_year or get_batch_year_from_request(request)
     async with bm.session_scope(by) as session:
         mentor_repo = MentorRepository(session)

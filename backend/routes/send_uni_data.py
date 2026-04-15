@@ -4,10 +4,12 @@ from fastapi import APIRouter, Request, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 from cache_config import cache
 from services.university_service import University
-from visuals import create_toppers_list_pdf, create_university_report
-from models.paths import postgres_db_url
+from visuals import create_toppers_list_pdf, create_university_report_async
 from logger_config import get_logger
 from utils.helpers import get_batch_year_from_request
+from database import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
 import asyncio
 
 logger = get_logger(__name__)
@@ -24,16 +26,13 @@ async def get_academic_performance(
     show_failed: bool = Query(False),
     format: str = Query("json"),
     batch_year: int | None = Query(None),
+    db: AsyncSession = Depends(get_db),
 ):
     by = batch_year or get_batch_year_from_request(request)
 
     try:
-        def _sync():
-            university = University(postgres_url=postgres_db_url, batch_year=by)
-            result = university.calculate_academic_performance_by_semester(semester)
-            return university, result
-
-        university, result = await asyncio.get_event_loop().run_in_executor(None, _sync)
+        university = University(session=db, batch_year=by)
+        result = await university.calculate_academic_performance_async(db, semester)
 
         if show_toppers:
             toppers = sorted(result, key=lambda x: x["percentage"], reverse=True)[:10]
@@ -46,37 +45,45 @@ async def get_academic_performance(
                 return StreamingResponse(
                     pdf_buffer,
                     media_type="application/pdf",
-                    headers={"Content-Disposition": f'attachment; filename="{semester}_toppers_list.pdf"'},
+                    headers={
+                        "Content-Disposition": f'attachment; filename="{semester}_toppers_list.pdf"'
+                    },
                 )
             return toppers
 
         elif show_failed:
-            def _get_failed():
-                return university.find_failed_students(semester)
-            failed_students = await asyncio.get_event_loop().run_in_executor(None, _get_failed)
+            failed_students = await university.find_failed_students_async(db, semester)
             return failed_students
         else:
             return result
     except Exception:
         logger.exception("Error in fetching academic performance")
-        return JSONResponse(content={"error": "Failed to fetch academic performance data."}, status_code=500)
+        return JSONResponse(
+            content={"error": "Failed to fetch academic performance data."},
+            status_code=500,
+        )
 
 
 @router.get("/auth/Staff/report/{semester}")
 @cache(expire=3600)
-async def get_report(semester: str, request: Request, batch_year: int | None = Query(None)):
+async def get_report(
+    semester: str,
+    request: Request,
+    batch_year: int | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+):
     by = batch_year or get_batch_year_from_request(request)
 
-    def _sync():
-        university = University(postgres_url=postgres_db_url, batch_year=by)
-        return create_university_report(university, semester)
+    university = University(session=db, batch_year=by)
+    pdf_bytes = await create_university_report_async(university, semester, db)
 
-    pdf_bytes = await asyncio.get_event_loop().run_in_executor(None, _sync)
     pdf_buffer = BytesIO(pdf_bytes)
     pdf_buffer.seek(0)
 
     return StreamingResponse(
         pdf_buffer,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{semester}_report.pdf"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{semester}_report.pdf"'
+        },
     )

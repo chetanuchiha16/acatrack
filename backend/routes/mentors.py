@@ -25,6 +25,7 @@ async def get_mentor_students(
     by = batch_year or get_batch_year_from_request(request)
 
     import asyncio
+
     results, status_code, error_msg = await asyncio.get_event_loop().run_in_executor(
         None, get_mentor_students_data, mentor_id, semester, by
     )
@@ -54,6 +55,7 @@ async def get_mentee_chart(
     by = batch_year or get_batch_year_from_request(request)
 
     import asyncio
+
     image_url, status_code, error_msg = await asyncio.get_event_loop().run_in_executor(
         None, generate_mentee_chart_base64, usn, semester, by
     )

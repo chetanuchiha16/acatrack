@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import selectinload
 from models.schema import AcademicResult, ParentAuth, StudentAuth, Subject
 
 
@@ -22,7 +22,9 @@ class StudentRepository:
         )
         return list(result.scalars().all())
 
-    async def get_auths_with_parents_by_usns(self, usns: list[str]) -> list[StudentAuth]:
+    async def get_auths_with_parents_by_usns(
+        self, usns: list[str]
+    ) -> list[StudentAuth]:
         result = await self.db.execute(
             select(StudentAuth)
             .options(selectinload(StudentAuth.parent_account))
@@ -49,10 +51,11 @@ class StudentRepository:
 
     async def count_by_batch(self, batch_year: int) -> int:
         from sqlalchemy import func
+
         result = await self.db.execute(
-            select(func.count()).select_from(StudentAuth).where(
-                StudentAuth.batch_year == batch_year
-            )
+            select(func.count())
+            .select_from(StudentAuth)
+            .where(StudentAuth.batch_year == batch_year)
         )
         return result.scalar() or 0
 
@@ -71,9 +74,8 @@ class StudentRepository:
 
     async def get_distinct_batch_years(self) -> list[int]:
         from sqlalchemy import distinct
-        result = await self.db.execute(
-            select(distinct(StudentAuth.batch_year))
-        )
+
+        result = await self.db.execute(select(distinct(StudentAuth.batch_year)))
         return [row[0] for row in result.all()]
 
     async def get_auths_by_batch(self, batch_year: int) -> list[StudentAuth]:
@@ -82,7 +84,9 @@ class StudentRepository:
         )
         return list(result.scalars().all())
 
-    async def get_auths_with_parents_by_batch(self, batch_year: int) -> list[StudentAuth]:
+    async def get_auths_with_parents_by_batch(
+        self, batch_year: int
+    ) -> list[StudentAuth]:
         """Bulk-fetch all students for a batch with their parent accounts eagerly loaded."""
         result = await self.db.execute(
             select(StudentAuth)
@@ -96,7 +100,9 @@ class StudentRepository:
         return await self.get_auths_by_batch(batch_year)
 
     # --- Academic Results & Subjects ---
-    async def get_results_by_usn(self, usn: str) -> list[tuple[AcademicResult, Subject]]:
+    async def get_results_by_usn(
+        self, usn: str
+    ) -> list[tuple[AcademicResult, Subject]]:
         result = await self.db.execute(
             select(AcademicResult, Subject)
             .join(Subject)
@@ -140,10 +146,11 @@ class StudentRepository:
 
     async def count_results_by_batch(self, batch_year: int) -> int:
         from sqlalchemy import func
+
         result = await self.db.execute(
-            select(func.count()).select_from(AcademicResult).where(
-                AcademicResult.batch_year == batch_year
-            )
+            select(func.count())
+            .select_from(AcademicResult)
+            .where(AcademicResult.batch_year == batch_year)
         )
         return result.scalar() or 0
 
@@ -155,13 +162,13 @@ class StudentRepository:
 
     async def count_subjects(self) -> int:
         from sqlalchemy import func
-        result = await self.db.execute(
-            select(func.count()).select_from(Subject)
-        )
+
+        result = await self.db.execute(select(func.count()).select_from(Subject))
         return result.scalar() or 0
 
     async def get_distinct_semesters_by_branch(self, branch: str) -> list:
         from sqlalchemy import distinct
+
         result = await self.db.execute(
             select(distinct(Subject.semester)).where(Subject.branch == branch)
         )
