@@ -212,7 +212,6 @@ class University:
     async def plot_student_totals_async(
         self, session, selected_semester, mode="top_n", n=10, bins=10, students=None
     ):
-        import matplotlib.pyplot as plt
         import asyncio
 
         if students is None:
@@ -228,36 +227,38 @@ class University:
         total_marks = [student.total_marks for student in students]
 
         def _plot():
-            import matplotlib
+            from matplotlib.figure import Figure
 
-            matplotlib.use("Agg")
-            fig = plt.figure(figsize=(12, 6))
+            fig = Figure(figsize=(12, 6))
+            ax = fig.add_subplot(111)
 
             if mode == "top_n":
                 sorted_data = sorted(
                     zip(student_names, total_marks), key=lambda x: x[1], reverse=True
                 )[:n]
                 top_names, top_marks = zip(*sorted_data)
-                plt.bar(top_names, top_marks, color="orange", alpha=0.7)
-                plt.xlabel("Students")
-                plt.ylabel("Total Marks")
-                plt.title(f"Top {n} Students in {selected_semester}")
-                plt.xticks(rotation=45, ha="right")
+                ax.bar(top_names, top_marks, color="orange", alpha=0.7)
+                ax.set_xlabel("Students")
+                ax.set_ylabel("Total Marks")
+                ax.set_title(f"Top {n} Students in {selected_semester}")
+                # Rotate labels
+                for label in ax.get_xticklabels():
+                    label.set_rotation(45)
+                    label.set_horizontalalignment("right")
 
             elif mode == "histogram":
-                plt.hist(
+                ax.hist(
                     total_marks, bins=bins, color="orange", alpha=0.7, edgecolor="black"
                 )
-                plt.xlabel("Marks Range")
-                plt.ylabel("Number of Students")
-                plt.title(f"Total Marks Distribution in {selected_semester}")
+                ax.set_xlabel("Marks Range")
+                ax.set_ylabel("Number of Students")
+                ax.set_title(f"Total Marks Distribution in {selected_semester}")
 
-            plt.tight_layout()
+            fig.tight_layout()
             import uuid
 
             graph_path = f"{img_dir}/plot_student_totals_{uuid.uuid4().hex}.png"
-            plt.savefig(graph_path)
-            plt.close(fig)
+            fig.savefig(graph_path)
             return graph_path
 
         graph_path = await asyncio.get_event_loop().run_in_executor(None, _plot)

@@ -47,9 +47,9 @@ async def generate_sem_pdf_async(selected_semester, university, session):
             selected_semester, university.batch_year
         )
 
-        # 4. Fetch failed students list
-        failed_students = await university.find_failed_students_async(
-            session, selected_semester
+        # 4. Fetch failed students list using optimized SQL query
+        failed_students = await repo.get_semester_failed_students(
+            selected_semester, university.batch_year
         )
 
         pdf_buffer = io.BytesIO()

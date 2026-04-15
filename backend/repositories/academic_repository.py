@@ -236,3 +236,44 @@ class AcademicRepository:
             "total_sc": row.total_sc or 0,
             "pass_percentage": round(pass_pct, 2),
         }
+
+    async def get_semester_failed_students(
+        self, semester: str, batch_year: int
+    ) -> List[Dict[str, Any]]:
+        """
+        Fetches a list of students who failed at least one subject in the semester.
+        FAANG-level optimization: Use SQL grouping to collect failed subjects directly.
+        """
+        # Define pass criteria (IA pass mark 20, SEE pass mark 18)
+        is_fail = case(
+            (
+                (Subject.credits > 0)
+                & ((AcademicResult.see_marks < 18) | (AcademicResult.ia_marks < 20)),
+                True,
+            ),
+            ((Subject.credits == 0) & (AcademicResult.ia_marks < 20), True),
+            else_=False,
+        )
+
+        query = (
+            select(
+                StudentAuth.usn,
+                func.string_agg(AcademicResult.subject_code, ", ").label(
+                    "failed_subject_codes"
+                ),
+            )
+            .join(AcademicResult, StudentAuth.id == AcademicResult.student_id)
+            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
+            .where(
+                Subject.semester == semester,
+                AcademicResult.batch_year == batch_year,
+                is_fail,
+            )
+            .group_by(StudentAuth.usn)
+        )
+
+        result = await self.db.execute(query)
+        return [
+            {"usn": row.usn, "subject_codes": row.failed_subject_codes.split(", ")}
+            for row in result.all()
+        ]
