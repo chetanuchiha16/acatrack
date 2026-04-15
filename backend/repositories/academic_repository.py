@@ -14,16 +14,22 @@ class AcademicRepository:
         FAANG-level optimization: Compute at the source (SQL) instead of Python loops.
         """
         # Define pass criteria once
-        # Pass = (SEE >= 18 and IA >= 18) OR (Credits == 0 and SEE == 0 and IA >= 18)
-        # Note: This logic follows results_service.py
+        # Pass = (SEE >= 18 and IA >= 20) OR (SEE == 0 and IA >= 20)
+        # Note: This logic follows utils/grading.py
         
         is_pass = case(
             (
-                (AcademicResult.see_marks >= 18) & (AcademicResult.ia_marks >= 18), 
+                (Subject.credits > 0) & (AcademicResult.see_marks >= 18) & (AcademicResult.ia_marks >= 20), 
                 True
             ),
             (
-                (AcademicResult.see_marks == 0) & (AcademicResult.ia_marks >= 18),
+                (Subject.credits == 0) & (AcademicResult.ia_marks >= 20),
+                True
+            ),
+            # Special case for subjects where SEE might be 0 but credits > 0 (e.g. labs?)
+            # Legacy code used see == 0 as a proxy. Let's combine.
+            (
+                (Subject.credits > 0) & (AcademicResult.see_marks == 0) & (AcademicResult.ia_marks >= 20),
                 True
             ),
             else_=False
@@ -43,9 +49,9 @@ class AcademicRepository:
                 func.count(AcademicResult.student_id).label("present_students"),
                 func.sum(case((is_pass, 1), else_=0)).label("pass_count"),
                 func.sum(case((~is_pass, 1), else_=0)).label("fail_count"),
-                func.sum(case((marks >= 70, 1), else_=0)).label("fcd_count"),
-                func.sum(case(((marks >= 60) & (marks < 70), 1), else_=0)).label("fc_count"),
-                func.sum(case(((marks >= 50) & (marks < 60), 1), else_=0)).label("sc_count")
+                func.sum(case(((is_pass) & (marks >= 70), 1), else_=0)).label("fcd_count"),
+                func.sum(case(((is_pass) & (marks >= 60) & (marks < 70), 1), else_=0)).label("fc_count"),
+                func.sum(case(((is_pass) & (marks >= 35) & (marks < 60), 1), else_=0)).label("sc_count")
             )
             .join(Subject, AcademicResult.subject_code == Subject.subject_code)
             .where(
@@ -82,7 +88,11 @@ class AcademicRepository:
         # Define pass/fail flag per subject record
         is_fail = case(
             (
-                (AcademicResult.see_marks < 18) | (AcademicResult.ia_marks < 18),
+                (Subject.credits > 0) & ((AcademicResult.see_marks < 18) | (AcademicResult.ia_marks < 20)),
+                1
+            ),
+            (
+                (Subject.credits == 0) & (AcademicResult.ia_marks < 20),
                 1
             ),
             else_=0
@@ -137,7 +147,7 @@ class AcademicRepository:
                 StudentAuth.id,
                 func.sum(AcademicResult.ia_marks + AcademicResult.see_marks).label("total_marks"),
                 func.count(AcademicResult.subject_code).label("num_subjects"),
-                func.sum(case(((AcademicResult.see_marks < 18) | (AcademicResult.ia_marks < 18), 1), else_=0)).label("fail_count")
+                func.sum(case(((AcademicResult.see_marks < 18) | (AcademicResult.ia_marks < 20), 1), else_=0)).label("fail_count")
             )
             .join(AcademicResult, StudentAuth.id == AcademicResult.student_id)
             .join(Subject, AcademicResult.subject_code == Subject.subject_code)
@@ -152,7 +162,7 @@ class AcademicRepository:
             func.sum(case((subq.c.fail_count > 0, 1), else_=0)).label("total_fail"),
             func.sum(case(((subq.c.fail_count == 0) & (avg_marks >= 70), 1), else_=0)).label("total_fcd"),
             func.sum(case(((subq.c.fail_count == 0) & (avg_marks >= 60) & (avg_marks < 70), 1), else_=0)).label("total_fc"),
-            func.sum(case(((subq.c.fail_count == 0) & (avg_marks >= 50) & (avg_marks < 60), 1), else_=0)).label("total_sc")
+            func.sum(case(((subq.c.fail_count == 0) & (avg_marks >= 35) & (avg_marks < 60), 1), else_=0)).label("total_sc")
         )
 
         result = await self.db.execute(query)
