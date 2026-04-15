@@ -23,7 +23,7 @@ def create_student_report(student):
     c.setFont("Helvetica-Bold", 16)
     c.drawString(150, 780, "JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU")
     try:
-        c.drawImage(get_logo_path, 50, 750, width=50, height=50)
+        c.drawImage(get_logo_path(), 50, 750, width=50, height=50)
     except Exception as e:
         logger.debug(f"Warning: Logo not loaded: {e}")
 

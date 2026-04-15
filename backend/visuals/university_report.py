@@ -60,7 +60,7 @@ def create_university_report(university, selected_semester):
     c.setFont("Helvetica-Bold", 16)
     c.drawString(100, 730, "JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU")
     try:
-        c.drawImage(get_logo_path, 50, 710, width=50, height=50)
+        c.drawImage(get_logo_path(), 50, 710, width=50, height=50)
     except Exception as e:
         logger.debug(f"Warning: Could not load logo image. {e}")
 
