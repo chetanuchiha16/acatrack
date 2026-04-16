@@ -8,23 +8,14 @@ import matplotlib.pyplot as plt
 import asyncio
 from sklearn.linear_model import LinearRegression
 from services.student_service import Student
-from visuals import create_student_report
 
 
 async def get_student_result(session, usn: str, semester: str, batch_year: int):
-    # Create DB engine and Student object
-
+    """Build student result dict — NO PDF generation (that's a separate cached endpoint)."""
     student = await Student.create_async(
         session, usn=usn, semester=semester, batch_year=batch_year
     )
 
-    # Generate PDF entirely in memory on a background thread
-    pdf_bytes = await asyncio.get_event_loop().run_in_executor(
-        None, create_student_report, student
-    )  # returns bytes
-    pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
-
-    # Build result dictionary
     result = {
         "name": student.name,
         "usn": student.usn,
@@ -52,7 +43,6 @@ async def get_student_result(session, usn: str, semester: str, batch_year: int):
                 student.pass_fail,
             )
         ],
-        "pdf_url": f"data:application/pdf;base64,{pdf_base64}",  # inline PDF
     }
     return result
 
