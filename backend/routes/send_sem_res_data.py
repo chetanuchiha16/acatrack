@@ -1,7 +1,7 @@
 from io import BytesIO
 
 from fastapi import APIRouter, Request, Query
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, Response
 from cache_config import cache
 from services.university_service import University
 from utils.helpers import get_batch_year_from_request
@@ -72,11 +72,8 @@ async def download_semester_report(
     university = University(session=db, batch_year=by)
     pdf_bytes = await generate_sem_pdf_async(semester, university, db)
 
-    pdf_buffer = BytesIO(pdf_bytes)
-    pdf_buffer.seek(0)
-
-    return StreamingResponse(
-        pdf_buffer,
+    return Response(
+        content=pdf_bytes,
         media_type="application/pdf",
         headers={
             "Content-Disposition": f'attachment; filename="{semester}_results.pdf"'
