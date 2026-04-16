@@ -35,22 +35,9 @@ class University:
             return []
 
     async def fetch_semester_tables_async(self, session):
-        from sqlalchemy import select
-
-        try:
-            query = (
-                select(Subject.semester)
-                .join(
-                    AcademicResult, AcademicResult.subject_code == Subject.subject_code
-                )
-                .where(AcademicResult.batch_year == self.batch_year)
-                .distinct()
-            )
-            result = await session.execute(query)
-            return [r[0] for r in result.all() if r[0]]
-        except Exception as e:
-            logger.debug(f"Error fetching semesters async: {e}")
-            return []
+        from repositories.university_repository import UniversityRepository
+        repo = UniversityRepository(session)
+        return await repo.get_semesters_by_batch(self.batch_year)
 
     def fetch_students(self, semester):
         """
@@ -141,36 +128,20 @@ class University:
         return semester_results
 
     async def get_students_for_semester_async(self, session, selected_semester):
-        from sqlalchemy import select
+        from repositories.university_repository import UniversityRepository
+        repo = UniversityRepository(session)
 
-        # Refactor Student.bulk_fetch to be used async if possible
-        # For now, we can use a hybrid approach or fully async
-        from services.student_service import Student
-
-        query = (
-            select(StudentAuth.usn)
-            .join(AcademicResult, AcademicResult.student_id == StudentAuth.id)
-            .join(Subject, Subject.subject_code == AcademicResult.subject_code)
-            .where(
-                AcademicResult.batch_year == self.batch_year,
-                Subject.semester == selected_semester,
-            )
-            .distinct()
+        all_usns = await repo.get_student_usns_by_semester(
+            selected_semester, self.batch_year
         )
-        result = await session.execute(query)
-        all_usns = [r[0] for r in result.all()]
 
         if not all_usns:
             return []
 
-        # Assuming Student.bulk_fetch is still sync, we run it in executor
-        # but we already have the USNs
-        import asyncio
-
-        students_dict = await asyncio.get_event_loop().run_in_executor(
-            None, Student.bulk_fetch, all_usns, selected_semester, self.batch_year
+        # Fully async — uses the same asyncpg pool, no thread handoff
+        return await Student.bulk_fetch_async(
+            session, all_usns, selected_semester, self.batch_year
         )
-        return list(students_dict.values())
 
     async def find_failed_students_async(
         self, session, selected_semester, students=None
