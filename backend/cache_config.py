@@ -48,7 +48,7 @@ def _make_key(prefix: str, args: tuple, kwargs: dict) -> str:
 
     raw = ":".join(key_parts)
     hashed = hashlib.md5(raw.encode()).hexdigest()
-    return f"acat:v3:{prefix}:{hashed}"
+    return f"acat:v4:{prefix}:{hashed}"
 
 
 def _parse_cached(cached: bytes):
