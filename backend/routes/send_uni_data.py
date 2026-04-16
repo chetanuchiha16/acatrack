@@ -1,7 +1,7 @@
 from io import BytesIO
 
 from fastapi import APIRouter, Request, Query
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, Response
 from cache_config import cache
 from services.university_service import University
 from visuals import create_toppers_list_pdf, create_university_report_async
@@ -40,10 +40,9 @@ async def get_academic_performance(
                 pdf_bytes = await asyncio.get_event_loop().run_in_executor(
                     None, create_toppers_list_pdf, toppers, semester
                 )
-                pdf_buffer = BytesIO(pdf_bytes)
-                pdf_buffer.seek(0)
-                return StreamingResponse(
-                    pdf_buffer,
+                
+                return Response(
+                    content=pdf_bytes,
                     media_type="application/pdf",
                     headers={
                         "Content-Disposition": f'attachment; filename="{semester}_toppers_list.pdf"'
@@ -77,11 +76,8 @@ async def get_report(
     university = University(session=db, batch_year=by)
     pdf_bytes = await create_university_report_async(university, semester, db)
 
-    pdf_buffer = BytesIO(pdf_bytes)
-    pdf_buffer.seek(0)
-
-    return StreamingResponse(
-        pdf_buffer,
+    return Response(
+        content=pdf_bytes,
         media_type="application/pdf",
         headers={
             "Content-Disposition": f'attachment; filename="{semester}_report.pdf"'
