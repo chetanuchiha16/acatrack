@@ -54,16 +54,31 @@ async def init_cache() -> None:
         _cache_enabled = False
 
 
+def _is_injectable(obj: Any) -> bool:
+    """Return True for DI objects that must NOT appear in cache keys."""
+    # SQLAlchemy sessions (async or sync)
+    if hasattr(obj, "execute") and hasattr(obj, "commit"):
+        return True
+    return False
+
+
 def _make_key(prefix: str, args: tuple, kwargs: dict) -> str:
-    """Generate a deterministic cache key from function args."""
-    # Serialize args (skip 'request' objects)
-    key_parts = []
+    """Generate a deterministic cache key from function args.
+
+    Skips non-serializable dependency-injected objects (AsyncSession, etc.)
+    so the same logical request always maps to the same cache key.
+    """
+    key_parts: list[str] = []
     for a in args:
-        if hasattr(a, "url"):  # FastAPI Request object
+        if _is_injectable(a):
+            continue
+        if hasattr(a, "url"):  # FastAPI Request – use URL only
             key_parts.append(str(a.url))
         else:
             key_parts.append(str(a))
     for k, v in sorted(kwargs.items()):
+        if k == "db" or _is_injectable(v):
+            continue
         if hasattr(v, "url"):
             key_parts.append(f"{k}={v.url}")
         else:
