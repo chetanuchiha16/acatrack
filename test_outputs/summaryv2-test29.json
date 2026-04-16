@@ -1,0 +1,508 @@
+{
+    "root_group": {
+        "groups": {
+            "Backend Performance Tests": {
+                "id": "ecd6a2889642774fd89ab31745254b27",
+                "groups": {
+                    "Login to get tokens": {
+                        "name": "Login to get tokens",
+                        "path": "::Backend Performance Tests::Login to get tokens",
+                        "id": "b900a7153010053a16fc90255602327a",
+                        "groups": {},
+                        "checks": {
+                                "Parent Login status is 200 or 401": {
+                                    "name": "Parent Login status is 200 or 401",
+                                    "path": "::Backend Performance Tests::Login to get tokens::Parent Login status is 200 or 401",
+                                    "id": "24c5c70992175019439c640f5feb52ab",
+                                    "passes": 75,
+                                    "fails": 0
+                                }
+                            }
+                    },
+                    "Student Endpoints": {
+                        "path": "::Backend Performance Tests::Student Endpoints",
+                        "id": "0c3bf8d4ef01d20d569d1081cbfcd9ec",
+                        "groups": {
+                            "Student Analysis API": {
+                                "name": "Student Analysis API",
+                                "path": "::Backend Performance Tests::Student Endpoints::Student Analysis API",
+                                "id": "5b71827bcd5000712123dd5a8b2b36ea",
+                                "groups": {},
+                                "checks": {
+                                        "status is 200": {
+                                            "passes": 75,
+                                            "fails": 0,
+                                            "name": "status is 200",
+                                            "path": "::Backend Performance Tests::Student Endpoints::Student Analysis API::status is 200",
+                                            "id": "0c623990a00a99cbcf1a058161b35f6f"
+                                        }
+                                    }
+                            },
+                            "Chart Generation API": {
+                                "groups": {},
+                                "checks": {
+                                        "status is 200": {
+                                            "name": "status is 200",
+                                            "path": "::Backend Performance Tests::Student Endpoints::Chart Generation API::status is 200",
+                                            "id": "affb5822faa3674aa1821edbe77da943",
+                                            "passes": 75,
+                                            "fails": 0
+                                        }
+                                    },
+                                "name": "Chart Generation API",
+                                "path": "::Backend Performance Tests::Student Endpoints::Chart Generation API",
+                                "id": "866ec9c19b57acc340b5517d85a58ef3"
+                            },
+                            "PDF Report API": {
+                                "name": "PDF Report API",
+                                "path": "::Backend Performance Tests::Student Endpoints::PDF Report API",
+                                "id": "0754f6759062faced071fdbdde7604ff",
+                                "groups": {},
+                                "checks": {
+                                        "status is 200": {
+                                            "id": "19815bd29eb878e779108efa99615365",
+                                            "passes": 75,
+                                            "fails": 0,
+                                            "name": "status is 200",
+                                            "path": "::Backend Performance Tests::Student Endpoints::PDF Report API::status is 200"
+                                        }
+                                    }
+                            }
+                        },
+                        "checks": {},
+                        "name": "Student Endpoints"
+                    },
+                    "Staff and Mentor Endpoints": {
+                        "name": "Staff and Mentor Endpoints",
+                        "path": "::Backend Performance Tests::Staff and Mentor Endpoints",
+                        "id": "bb7d143809780e89d47a02c2196dbab8",
+                        "groups": {
+                            "Overall Res API": {
+                                "name": "Overall Res API",
+                                "path": "::Backend Performance Tests::Staff and Mentor Endpoints::Overall Res API",
+                                "id": "a76cb87bcc30b9d1c27527f6b0bf7969",
+                                "groups": {},
+                                "checks": {
+                                        "status is 200 or 401": {
+                                            "name": "status is 200 or 401",
+                                            "path": "::Backend Performance Tests::Staff and Mentor Endpoints::Overall Res API::status is 200 or 401",
+                                            "id": "f5589b41bade5de564e76434f8755bad",
+                                            "passes": 75,
+                                            "fails": 0
+                                        }
+                                    }
+                            },
+                            "Staff PDF Report API": {
+                                "path": "::Backend Performance Tests::Staff and Mentor Endpoints::Staff PDF Report API",
+                                "id": "bfb070f4ba782dc11bb92cdc6439e2c1",
+                                "groups": {},
+                                "checks": {
+                                        "status is 200 or 401": {
+                                            "id": "7edf0d80473b1343691ecfb071b8b586",
+                                            "passes": 75,
+                                            "fails": 0,
+                                            "name": "status is 200 or 401",
+                                            "path": "::Backend Performance Tests::Staff and Mentor Endpoints::Staff PDF Report API::status is 200 or 401"
+                                        }
+                                    },
+                                "name": "Staff PDF Report API"
+                            },
+                            "Staff Semester Result API": {
+                                "id": "5b24ea93d19a4ded52917da800fabdd7",
+                                "groups": {},
+                                "checks": {
+                                        "status is 200 or 401": {
+                                            "passes": 75,
+                                            "fails": 0,
+                                            "name": "status is 200 or 401",
+                                            "path": "::Backend Performance Tests::Staff and Mentor Endpoints::Staff Semester Result API::status is 200 or 401",
+                                            "id": "f28654aba0ddab4147e55dc5ff363990"
+                                        }
+                                    },
+                                "name": "Staff Semester Result API",
+                                "path": "::Backend Performance Tests::Staff and Mentor Endpoints::Staff Semester Result API"
+                            },
+                            "Mentor Students List API": {
+                                "name": "Mentor Students List API",
+                                "path": "::Backend Performance Tests::Staff and Mentor Endpoints::Mentor Students List API",
+                                "id": "9bfec2e2e8506a779f49d3ebf03b3d91",
+                                "groups": {},
+                                "checks": {
+                                        "status is 200 or 401": {
+                                            "name": "status is 200 or 401",
+                                            "path": "::Backend Performance Tests::Staff and Mentor Endpoints::Mentor Students List API::status is 200 or 401",
+                                            "id": "e951b8ecffa5019f6f5fd7a16600ea0a",
+                                            "passes": 75,
+                                            "fails": 0
+                                        }
+                                    }
+                            },
+                            "Mentor Meetings API": {
+                                "groups": {},
+                                "checks": {
+                                        "status is 200 or 401": {
+                                            "id": "ce2383288e583388ea96b7fa5cb7c09c",
+                                            "passes": 75,
+                                            "fails": 0,
+                                            "name": "status is 200 or 401",
+                                            "path": "::Backend Performance Tests::Staff and Mentor Endpoints::Mentor Meetings API::status is 200 or 401"
+                                        }
+                                    },
+                                "name": "Mentor Meetings API",
+                                "path": "::Backend Performance Tests::Staff and Mentor Endpoints::Mentor Meetings API",
+                                "id": "b7b98e8652e9fa54006de590ef543b11"
+                            },
+                            "Mentor PDFs File Tree API": {
+                                "checks": {
+                                    "status is 200 or 401": {
+                                        "name": "status is 200 or 401",
+                                        "path": "::Backend Performance Tests::Staff and Mentor Endpoints::Mentor PDFs File Tree API::status is 200 or 401",
+                                        "id": "b60e2ecc26fa633a3f9d37382e70b343",
+                                        "passes": 75,
+                                        "fails": 0
+                                    }
+                                },
+                                "name": "Mentor PDFs File Tree API",
+                                "path": "::Backend Performance Tests::Staff and Mentor Endpoints::Mentor PDFs File Tree API",
+                                "id": "5ba94c3e809dd924f29faf564408f9c1",
+                                "groups": {}
+                            }
+                        },
+                        "checks": {}
+                    },
+                    "Parent Endpoints": {
+                        "checks": {},
+                        "name": "Parent Endpoints",
+                        "path": "::Backend Performance Tests::Parent Endpoints",
+                        "id": "4ebd546a41bd662f18bc4391916219c4",
+                        "groups": {
+                                "Parent Student Details API": {
+                                    "path": "::Backend Performance Tests::Parent Endpoints::Parent Student Details API",
+                                    "id": "c36cb11ea429a1ca4f1ccc78cbdfeb31",
+                                    "groups": {},
+                                    "checks": {
+                                            "status is 200": {
+                                                "name": "status is 200",
+                                                "path": "::Backend Performance Tests::Parent Endpoints::Parent Student Details API::status is 200",
+                                                "id": "19ca0ce859b613ce0497f580222a5fa0",
+                                                "passes": 75,
+                                                "fails": 0
+                                            }
+                                        },
+                                    "name": "Parent Student Details API"
+                                }
+                            }
+                    },
+                    "Admin Endpoints": {
+                        "name": "Admin Endpoints",
+                        "path": "::Backend Performance Tests::Admin Endpoints",
+                        "id": "d9e415e0baef8ead4802201b46bad2f7",
+                        "groups": {
+                            "Health Check": {
+                                "groups": {},
+                                "checks": {
+                                        "status is 200": {
+                                            "name": "status is 200",
+                                            "path": "::Backend Performance Tests::Admin Endpoints::Health Check::status is 200",
+                                            "id": "c17dd69ec6e83675b14428cbd34ba02c",
+                                            "passes": 75,
+                                            "fails": 0
+                                        },
+                                        "is ok": {
+                                            "name": "is ok",
+                                            "path": "::Backend Performance Tests::Admin Endpoints::Health Check::is ok",
+                                            "id": "6dbfe88e029dd6058e12953560bd7a6b",
+                                            "passes": 75,
+                                            "fails": 0
+                                        }
+                                    },
+                                "name": "Health Check",
+                                "path": "::Backend Performance Tests::Admin Endpoints::Health Check",
+                                "id": "52d245d741ab1b3ada84ccf5d5f2c6dc"
+                            },
+                            "List Batches API": {
+                                "name": "List Batches API",
+                                "path": "::Backend Performance Tests::Admin Endpoints::List Batches API",
+                                "id": "3937c737fb84f7dd9d2529fa6b510c07",
+                                "groups": {},
+                                "checks": {
+                                        "status is 200": {
+                                            "id": "27963631ad6761bec4d608f140ed1864",
+                                            "passes": 75,
+                                            "fails": 0,
+                                            "name": "status is 200",
+                                            "path": "::Backend Performance Tests::Admin Endpoints::List Batches API::status is 200"
+                                        }
+                                    }
+                            }
+                        },
+                        "checks": {}
+                    }
+                },
+                "checks": {},
+                "name": "Backend Performance Tests",
+                "path": "::Backend Performance Tests"
+            }
+        },
+        "checks": {},
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    "metrics": {
+        "route_staff_semester_result_api": {
+            "min": 2.447748,
+            "med": 6.416163,
+            "max": 828.332363,
+            "p(90)": 272.954671,
+            "p(95)": 356.5800324999992,
+            "avg": 60.76636877333333,
+            "thresholds": {
+                "p(95)<10000": false
+            }
+        },
+        "route_mentor_students_list_api": {
+            "avg": 17.417557719999994,
+            "min": 2.736125,
+            "med": 6.243933,
+            "max": 544.262931,
+            "p(90)": 9.392236400000009,
+            "p(95)": 15.3209731,
+            "thresholds": {
+                "p(95)<10000": false
+            }
+        },
+        "route_mentor_pdfs_file_tree_api": {
+            "avg": 21.04561552,
+            "min": 8.25482,
+            "med": 17.029822,
+            "max": 63.030259,
+            "p(90)": 39.433290600000035,
+            "p(95)": 52.23902759999999,
+            "thresholds": {
+                "p(95)<10000": false
+            }
+        },
+        "http_req_tls_handshaking": {
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0
+        },
+        "iteration_duration": {
+            "p(90)": 11898.885133000003,
+            "p(95)": 12774.5797586,
+            "avg": 10250.980956573336,
+            "min": 6962.390359,
+            "med": 10129.963394,
+            "max": 14649.040178
+        },
+        "http_req_duration": {
+            "max": 6507.287066,
+            "p(90)": 2449.4787124,
+            "p(95)": 2726.6256129999997,
+            "avg": 549.7718912213338,
+            "min": 0.750381,
+            "med": 14.215055,
+            "thresholds": {
+                "p(95)<3000": false
+            }
+        },
+        "route_overall_res_api": {
+            "p(95)": 539.9195355999999,
+            "avg": 85.21799704000003,
+            "min": 3.485947,
+            "med": 7.307555,
+            "max": 1074.519984,
+            "p(90)": 276.3990758,
+            "thresholds": {
+                "p(95)<10000": false
+            }
+        },
+        "http_req_connecting": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.006092505777777778,
+            "min": 0,
+            "med": 0,
+            "max": 0.47688
+        },
+        "checks": {
+            "passes": 1050,
+            "fails": 0,
+            "value": 1
+        },
+        "route_chart_generation_api": {
+            "avg": 160.2190712666667,
+            "min": 3.681086,
+            "med": 6.976993,
+            "max": 1617.530371,
+            "p(90)": 540.7619396,
+            "p(95)": 808.2300713000001,
+            "thresholds": {
+                "p(95)<10000": false
+            }
+        },
+        "vus_max": {
+            "value": 20,
+            "min": 20,
+            "max": 20
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 1125,
+            "thresholds": {
+                "rate<0.10": false
+            },
+            "value": 0
+        },
+        "http_reqs": {
+            "count": 1125,
+            "rate": 25.67350903736358
+        },
+        "group_duration": {
+            "max": 12647.788812,
+            "p(90)": 5167.964437300037,
+            "p(95)": 7878.391368099999,
+            "avg": 964.7364534000008,
+            "min": 0.924915,
+            "med": 17.8077555
+        },
+        "route_parent_student_details_api": {
+            "med": 40.88522,
+            "max": 78.267171,
+            "p(90)": 67.30543380000006,
+            "p(95)": 75.38330889999999,
+            "avg": 44.34435373333334,
+            "min": 19.557818,
+            "thresholds": {
+                "p(95)<10000": false
+            }
+        },
+        "http_req_waiting": {
+            "avg": 549.6532606080009,
+            "min": 0.659517,
+            "med": 14.132362,
+            "max": 6507.167706,
+            "p(90)": 2449.3853894,
+            "p(95)": 2726.454179
+        },
+        "http_req_receiving": {
+            "p(90)": 0.15095640000000002,
+            "p(95)": 0.208534,
+            "avg": 0.09390844711111111,
+            "min": 0.024374,
+            "med": 0.067816,
+            "max": 2.943137
+        },
+        "http_req_blocked": {
+            "med": 0.00852,
+            "max": 0.679352,
+            "p(90)": 0.013828,
+            "p(95)": 0.016817999999999996,
+            "avg": 0.0181691333333333,
+            "min": 0.004679
+        },
+        "data_received": {
+            "count": 31150575,
+            "rate": 710884.0611391751
+        },
+        "data_sent": {
+            "count": 354675,
+            "rate": 8094.0016158461585
+        },
+        "vus": {
+            "max": 20,
+            "value": 6,
+            "min": 4
+        },
+        "iterations": {
+            "count": 75,
+            "rate": 1.711567269157572
+        },
+        "route_staff_pdf_report_api": {
+            "avg": 31.58800228000001,
+            "min": 2.778379,
+            "med": 6.032941,
+            "max": 820.707865,
+            "p(90)": 10.279926600000012,
+            "p(95)": 91.38071489999928,
+            "thresholds": {
+                "p(95)<10000": false
+            }
+        },
+        "http_req_sending": {
+            "p(90)": 0.0367366,
+            "p(95)": 0.044656999999999995,
+            "avg": 0.024722166222222224,
+            "min": 0.008591,
+            "med": 0.019555,
+            "max": 0.577033
+        },
+        "route_health_check": {
+            "med": 2.599515,
+            "max": 15.053925,
+            "p(90)": 4.550198000000001,
+            "p(95)": 5.1551966,
+            "avg": 3.045769320000001,
+            "min": 0.750381,
+            "thresholds": {
+                "p(95)<10000": false
+            }
+        },
+        "http_req_duration{expected_response:true}": {
+            "avg": 549.7718912213338,
+            "min": 0.750381,
+            "med": 14.215055,
+            "max": 6507.287066,
+            "p(90)": 2449.4787124,
+            "p(95)": 2726.6256129999997
+        },
+        "route_student_analysis_api": {
+            "p(95)": 806.1714961,
+            "avg": 210.3347472400001,
+            "min": 2.982527,
+            "med": 8.623096,
+            "max": 1604.892276,
+            "p(90)": 544.4481380000001,
+            "thresholds": {
+                "p(95)<10000": false
+            }
+        },
+        "route_list_batches_api": {
+            "avg": 15.621974479999995,
+            "min": 3.486157,
+            "med": 13.280571,
+            "max": 50.621734,
+            "p(90)": 27.765243000000005,
+            "p(95)": 33.748219099999986,
+            "thresholds": {
+                "p(95)<10000": false
+            }
+        },
+        "route_pdf_report_api": {
+            "avg": 163.42860785333332,
+            "min": 1.807159,
+            "med": 7.133019,
+            "max": 1604.307211,
+            "p(90)": 541.6710436000001,
+            "p(95)": 808.6427534000001,
+            "thresholds": {
+                "p(95)<10000": false
+            }
+        },
+        "route_mentor_meetings_api": {
+            "avg": 51.104144146666656,
+            "min": 7.127921,
+            "med": 17.724818,
+            "max": 840.843625,
+            "p(90)": 51.38401620000001,
+            "p(95)": 132.00503949999933,
+            "thresholds": {
+                "p(95)<10000": false
+            }
+        }
+    }
+}
