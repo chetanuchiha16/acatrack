@@ -1,7 +1,5 @@
-from io import BytesIO
-
 from fastapi import APIRouter, Request, Query
-from fastapi.responses import JSONResponse, StreamingResponse, Response
+from fastapi.responses import JSONResponse, Response
 from cache_config import cache
 from services.university_service import University
 from services.results_service import SubjectResult

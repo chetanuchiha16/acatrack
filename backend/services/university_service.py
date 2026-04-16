@@ -1,7 +1,5 @@
-from utils.sync_db import db
 from logger_config import get_logger
 from models.paths import img_dir
-from models.schema import AcademicResult, StudentAuth, Subject
 from services.student_service import Student
 
 logger = get_logger(__name__)
@@ -17,18 +15,20 @@ class University:
         Sync version for backward compatibility if needed, but we prefer async.
         """
         try:
-            from utils.sync_db import db
+            from settings import settings
+            from sqlalchemy import create_engine
+            from sqlalchemy.orm import sessionmaker
+            from repositories.university_repository import UniversityRepository
 
-            results = (
-                db.session.query(Subject.semester)
-                .join(
-                    AcademicResult, AcademicResult.subject_code == Subject.subject_code
-                )
-                .filter(AcademicResult.batch_year == self.batch_year)
-                .distinct()
-                .all()
-            )
-            semesters = [r[0] for r in results if r[0]]
+            raw_url = settings.database_url
+            sync_url = raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+            engine = create_engine(sync_url)
+            SyncSession = sessionmaker(bind=engine)
+
+            with SyncSession() as session:
+                repo = UniversityRepository(session)
+                semesters = repo.get_semesters_by_batch_sync(self.batch_year)
+            engine.dispose()
             return semesters
         except Exception as e:
             logger.debug(f"Error fetching semesters: {e}")
@@ -36,6 +36,7 @@ class University:
 
     async def fetch_semester_tables_async(self, session):
         from repositories.university_repository import UniversityRepository
+
         repo = UniversityRepository(session)
         return await repo.get_semesters_by_batch(self.batch_year)
 
@@ -44,18 +45,21 @@ class University:
         Fetch all unique USNs for a given semester based on AcademicResult and Subject.
         """
         try:
-            results = (
-                db.session.query(StudentAuth.usn)
-                .join(AcademicResult, AcademicResult.student_id == StudentAuth.id)
-                .join(Subject, Subject.subject_code == AcademicResult.subject_code)
-                .filter(
-                    AcademicResult.batch_year == self.batch_year,
-                    Subject.semester == semester,
-                )
-                .distinct()
-                .all()
-            )
-            return [r[0] for r in results]
+            from settings import settings
+            from sqlalchemy import create_engine
+            from sqlalchemy.orm import sessionmaker
+            from repositories.university_repository import UniversityRepository
+
+            raw_url = settings.database_url
+            sync_url = raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+            engine = create_engine(sync_url)
+            SyncSession = sessionmaker(bind=engine)
+
+            with SyncSession() as session:
+                repo = UniversityRepository(session)
+                usns = repo.get_student_usns_by_semester_sync(semester, self.batch_year)
+            engine.dispose()
+            return usns
         except Exception as e:
             logger.debug(f"Error fetching students for {semester}: {e}")
             return []
@@ -129,6 +133,7 @@ class University:
 
     async def get_students_for_semester_async(self, session, selected_semester):
         from repositories.university_repository import UniversityRepository
+
         repo = UniversityRepository(session)
 
         all_usns = await repo.get_student_usns_by_semester(

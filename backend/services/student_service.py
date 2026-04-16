@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from logger_config import get_logger
-from models.schema import AcademicResult, StudentAuth, Subject
+from models.schema import AcademicResult, Subject
 from utils.grading import (
     calculate_pass_fail,
     calculate_obtained_credits,
@@ -78,30 +78,21 @@ class Student:
                 self.see_marks.append(res.see_marks or 0)
                 self.credits.append(sub.credits or 0)
         else:
-            from sqlalchemy import select
+            from repositories.student_repository import StudentRepository
 
             SyncSessionMaker, sync_engine = _get_sync_session()
             with SyncSessionMaker() as session:
-                student_rec = session.execute(
-                    select(StudentAuth).where(StudentAuth.usn == self.usn)
-                ).scalar_one_or_none()
+                repo = StudentRepository(session)
+                student_rec = repo.get_auth_by_usn_sync(self.usn)
 
                 if student_rec:
                     self.name = student_rec.name
                     self.found = True
 
                     if self.semester:
-                        results = session.execute(
-                            select(AcademicResult, Subject)
-                            .join(
-                                Subject,
-                                AcademicResult.subject_code == Subject.subject_code,
-                            )
-                            .where(
-                                AcademicResult.student_id == student_rec.id,
-                                Subject.semester == self.semester,
-                            )
-                        ).all()
+                        results = repo.get_results_by_student_and_sem_sync(
+                            student_rec.id, self.semester
+                        )
 
                         for res, sub in results:
                             self.subject_codes.append(sub.subject_code)
@@ -168,27 +159,21 @@ class Student:
                         )
             return previous_data
 
-        from sqlalchemy import select
+        from repositories.student_repository import StudentRepository
 
         SyncSessionMaker, sync_engine = _get_sync_session()
 
         with SyncSessionMaker() as session:
-            student_rec = session.execute(
-                select(StudentAuth).where(StudentAuth.usn == self.usn)
-            ).scalar_one_or_none()
+            repo = StudentRepository(session)
+            student_rec = repo.get_auth_by_usn_sync(self.usn)
 
             if not student_rec:
                 return previous_data
 
             sem_names: list[str] = [f"sem{sem}" for sem in range(1, sem_no)]
-            all_results: list[tuple[AcademicResult, Subject]] = session.execute(
-                select(AcademicResult, Subject)
-                .join(Subject, AcademicResult.subject_code == Subject.subject_code)
-                .where(
-                    AcademicResult.student_id == student_rec.id,
-                    Subject.semester.in_(sem_names),
-                )
-            ).all()
+            all_results = repo.get_results_by_student_id_and_sems_sync(
+                student_rec.id, sem_names
+            )
 
         sem_data: dict[str, list[tuple[AcademicResult, Subject]]] = {
             sem: [] for sem in sem_names
@@ -294,16 +279,13 @@ class Student:
 
         required_semesters = [f"sem{i}" for i in range(1, sem_no + 1)]
 
-        from sqlalchemy import select
+        from repositories.student_repository import StudentRepository
 
         SyncSessionMaker, sync_engine = _get_sync_session()
 
         with SyncSessionMaker() as session:
-            student_records = (
-                session.execute(select(StudentAuth).where(StudentAuth.usn.in_(usns)))
-                .scalars()
-                .all()
-            )
+            repo = StudentRepository(session)
+            student_records = repo.get_auths_by_usns_sync(usns)
 
             student_map = {s.usn: s for s in student_records}
             student_id_to_usn = {s.id: s.usn for s in student_records}
@@ -311,14 +293,9 @@ class Student:
             if not student_map:
                 return {}
 
-            results = session.execute(
-                select(AcademicResult, Subject)
-                .join(Subject, AcademicResult.subject_code == Subject.subject_code)
-                .where(
-                    AcademicResult.student_id.in_([s.id for s in student_records]),
-                    Subject.semester.in_(required_semesters),
-                )
-            ).all()
+            results = repo.get_results_by_student_ids_and_sems_sync(
+                [s.id for s in student_records], required_semesters
+            )
 
         preloaded_data = {
             usn: {
@@ -375,8 +352,6 @@ class Student:
         if not usns:
             return []
 
-        from sqlalchemy import select
-
         semester = semester.lower().strip() if semester else None
 
         try:
@@ -387,6 +362,7 @@ class Student:
         required_semesters = [f"sem{i}" for i in range(1, sem_no + 1)]
 
         from repositories.student_repository import StudentRepository
+
         repo = StudentRepository(session)
 
         # Query 1: fetch student records
@@ -434,13 +410,28 @@ class Student:
         students = []
         for usn, data in preloaded_data.items():
             try:
-                students.append(
-                    cls(usn, semester, batch_year, preloaded_data=data)
-                )
+                students.append(cls(usn, semester, batch_year, preloaded_data=data))
             except ValueError:
                 pass
 
         return students
+
+    @classmethod
+    async def create_async(
+        cls,
+        session,
+        usn: str,
+        semester: Optional[str],
+        batch_year: int,
+    ) -> Optional["Student"]:
+        """
+        Creates a single Student object asynchronously using the bulk_fetch_async pipeline.
+        """
+        students = await cls.bulk_fetch_async(session, [usn], semester, batch_year)
+        if not students:
+            # Emulate the __init__ behavior which raises ValueError if not found
+            raise ValueError(f"No student data found for USN {usn}")
+        return students[0]
 
     @classmethod
     def get_all_semesters(
@@ -451,26 +442,20 @@ class Student:
     ) -> dict[str, "Student"]:
         required_semesters = [f"sem{i}" for i in range(1, max_sem + 1)]
 
-        from sqlalchemy import select
+        from repositories.student_repository import StudentRepository
 
         SyncSessionMaker, sync_engine = _get_sync_session()
 
         with SyncSessionMaker() as session:
-            student_rec = session.execute(
-                select(StudentAuth).where(StudentAuth.usn == usn)
-            ).scalar_one_or_none()
+            repo = StudentRepository(session)
+            student_rec = repo.get_auth_by_usn_sync(usn)
 
             if not student_rec:
                 return {}
 
-            results = session.execute(
-                select(AcademicResult, Subject)
-                .join(Subject, AcademicResult.subject_code == Subject.subject_code)
-                .where(
-                    AcademicResult.student_id == student_rec.id,
-                    Subject.semester.in_(required_semesters),
-                )
-            ).all()
+            results = repo.get_results_by_student_id_and_sems_sync(
+                student_rec.id, required_semesters
+            )
 
         sem_data = {sem: {"res": [], "sub": []} for sem in required_semesters}
         for res, sub in results:

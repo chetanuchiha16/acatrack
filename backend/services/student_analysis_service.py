@@ -5,17 +5,23 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import asyncio
 from sklearn.linear_model import LinearRegression
 from services.student_service import Student
 from visuals import create_student_report
 
 
-def get_student_result(usn: str, semester: str, batch_year: int):
+async def get_student_result(session, usn: str, semester: str, batch_year: int):
     # Create DB engine and Student object
-    student = Student(usn=usn, semester=semester, batch_year=batch_year)
 
-    # Generate PDF entirely in memory
-    pdf_bytes = create_student_report(student)  # returns bytes
+    student = await Student.create_async(
+        session, usn=usn, semester=semester, batch_year=batch_year
+    )
+
+    # Generate PDF entirely in memory on a background thread
+    pdf_bytes = await asyncio.get_event_loop().run_in_executor(
+        None, create_student_report, student
+    )  # returns bytes
     pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
 
     # Build result dictionary
@@ -65,8 +71,10 @@ def predict_future_sgpa(previous_sgpas, num_semesters_completed, total_semesters
     return float(model.predict(next_sem)[0])
 
 
-def analyze_student_performance(usn, semester, batch_year):
-    student = get_student_result(usn, semester, batch_year=batch_year) or {}
+async def analyze_student_performance(session, usn, semester, batch_year):
+    student = (
+        await get_student_result(session, usn, semester, batch_year=batch_year) or {}
+    )
     subjects = student.get("subjects") or []
 
     analysis = {
