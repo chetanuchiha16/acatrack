@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import JSONResponse, FileResponse
+from cache_config import cache
 from logger_config import get_logger
 from utils.helpers import get_batch_year_from_request
 from models.paths import pdf_dir
@@ -7,6 +8,7 @@ from services.mentor_service import (
     get_mentor_students_data,
     generate_mentee_chart_base64,
 )
+from services.batch_manager import bm
 from pathlib import Path
 import os
 
@@ -16,6 +18,7 @@ router = APIRouter(tags=["mentors"])
 
 
 @router.get("/auth/Staff/Mentor/result")
+@cache(expire=3600)
 async def get_mentor_students(
     request: Request,
     mentor_id: int = Query(None),
@@ -24,11 +27,10 @@ async def get_mentor_students(
 ):
     by = batch_year or get_batch_year_from_request(request)
 
-    import asyncio
-
-    results, status_code, error_msg = await asyncio.get_event_loop().run_in_executor(
-        None, get_mentor_students_data, mentor_id, semester, by
-    )
+    async with bm.session_scope(by) as session:
+        results, status_code, error_msg = await get_mentor_students_data(
+            session, mentor_id, semester, by
+        )
 
     if error_msg:
         return JSONResponse(content={"error": error_msg}, status_code=status_code)
@@ -46,6 +48,7 @@ async def download_mentee_report(filename: str):
 
 
 @router.get("/auth/Staff/Mentor/chart")
+@cache(expire=3600)
 async def get_mentee_chart(
     request: Request,
     usn: str = Query(None),
@@ -54,11 +57,10 @@ async def get_mentee_chart(
 ):
     by = batch_year or get_batch_year_from_request(request)
 
-    import asyncio
-
-    image_url, status_code, error_msg = await asyncio.get_event_loop().run_in_executor(
-        None, generate_mentee_chart_base64, usn, semester, by
-    )
+    async with bm.session_scope(by) as session:
+        image_url, status_code, error_msg = await generate_mentee_chart_base64(
+            session, usn, semester, by
+        )
 
     if error_msg:
         return JSONResponse(content={"error": error_msg}, status_code=status_code)

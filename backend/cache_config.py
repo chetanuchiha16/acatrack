@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import functools
 import hashlib
-import json
+import pickle
 from typing import Any, Callable
 
 from redis import asyncio as aioredis
@@ -43,8 +43,6 @@ async def init_cache() -> None:
     try:
         _redis_client = aioredis.from_url(
             settings.redis_url,
-            encoding="utf-8",
-            decode_responses=True,
         )
         await _redis_client.ping()
         logger.info("Redis cache connected")
@@ -86,7 +84,7 @@ def _make_key(prefix: str, args: tuple, kwargs: dict) -> str:
 
     raw = ":".join(key_parts)
     hashed = hashlib.md5(raw.encode()).hexdigest()
-    return f"acatrack:{prefix}:{hashed}"
+    return f"acat:v2:{prefix}:{hashed}"
 
 
 def cache(expire: int = 3600) -> Callable:
@@ -109,17 +107,12 @@ def cache(expire: int = 3600) -> Callable:
             try:
                 cached = await _redis_client.get(key)
                 if cached is not None:
-                    payload = json.loads(cached)
-                    # If payload is a dictionary and contains specific Response keys, reconstruct it
-                    if (
-                        isinstance(payload, dict)
-                        and "body" in payload
-                        and "media_type" in payload
-                    ):
+                    payload = pickle.loads(cached)
+                    if isinstance(payload, dict) and payload.get("is_response"):
                         from fastapi.responses import Response
 
                         return Response(
-                            content=payload["body"].encode("latin1"),
+                            content=payload["body"],
                             status_code=payload.get("status_code", 200),
                             headers=payload.get("headers", {}),
                             media_type=payload["media_type"],
@@ -133,20 +126,16 @@ def cache(expire: int = 3600) -> Callable:
 
             try:
                 if isinstance(result, (dict, list)):
-                    await _redis_client.setex(
-                        key, expire, json.dumps(result, default=str)
-                    )
+                    await _redis_client.setex(key, expire, pickle.dumps(result))
                 elif hasattr(result, "body") and hasattr(result, "media_type"):
-                    # Cache raw Response outputs like JSONResponse or custom PDF Responses
                     cache_payload = {
-                        "body": result.body.decode("latin1"),
+                        "is_response": True,
+                        "body": result.body,
                         "media_type": result.media_type,
                         "headers": dict(result.headers),
                         "status_code": result.status_code,
                     }
-                    await _redis_client.setex(
-                        key, expire, json.dumps(cache_payload, default=str)
-                    )
+                    await _redis_client.setex(key, expire, pickle.dumps(cache_payload))
             except Exception as e:
                 logger.error(f"Failed to cache response: {e}")
                 pass  # Redis failure → don't break the endpoint

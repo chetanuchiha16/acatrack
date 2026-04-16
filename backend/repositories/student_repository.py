@@ -6,8 +6,12 @@ from sqlalchemy.orm import selectinload
 from models.schema import AcademicResult, ParentAuth, StudentAuth, Subject
 
 
+from typing import Union
+from sqlalchemy.orm import Session
+
+
 class StudentRepository:
-    def __init__(self, db_session: AsyncSession) -> None:
+    def __init__(self, db_session: Union[AsyncSession, Session]) -> None:
         self.db = db_session
 
     async def get_auth_by_usn(self, usn: str) -> StudentAuth | None:
@@ -16,10 +20,18 @@ class StudentRepository:
         )
         return result.scalars().first()
 
+    def get_auth_by_usn_sync(self, usn: str) -> StudentAuth | None:
+        result = self.db.execute(select(StudentAuth).where(StudentAuth.usn == usn))
+        return result.scalars().first()
+
     async def get_auths_by_usns(self, usns: list[str]) -> list[StudentAuth]:
         result = await self.db.execute(
             select(StudentAuth).where(StudentAuth.usn.in_(usns))
         )
+        return list(result.scalars().all())
+
+    def get_auths_by_usns_sync(self, usns: list[str]) -> list[StudentAuth]:
+        result = self.db.execute(select(StudentAuth).where(StudentAuth.usn.in_(usns)))
         return list(result.scalars().all())
 
     async def get_auths_with_parents_by_usns(
@@ -144,6 +156,45 @@ class StudentRepository:
         )
         return list(result.all())
 
+    def get_results_by_student_and_sem_sync(
+        self, student_id: int, semester: str
+    ) -> list[tuple[AcademicResult, Subject]]:
+        result = self.db.execute(
+            select(AcademicResult, Subject)
+            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
+            .where(
+                AcademicResult.student_id == student_id,
+                Subject.semester == semester,
+            )
+        )
+        return list(result.all())
+
+    def get_results_by_student_id_and_sems_sync(
+        self, student_id: int, semesters: list[str]
+    ) -> list[tuple[AcademicResult, Subject]]:
+        result = self.db.execute(
+            select(AcademicResult, Subject)
+            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
+            .where(
+                AcademicResult.student_id == student_id,
+                Subject.semester.in_(semesters),
+            )
+        )
+        return list(result.all())
+
+    def get_results_by_student_ids_and_sems_sync(
+        self, student_ids: list[int], semesters: list[str]
+    ) -> list[tuple[AcademicResult, Subject]]:
+        result = self.db.execute(
+            select(AcademicResult, Subject)
+            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
+            .where(
+                AcademicResult.student_id.in_(student_ids),
+                Subject.semester.in_(semesters),
+            )
+        )
+        return list(result.all())
+
     async def count_results_by_batch(self, batch_year: int) -> int:
         from sqlalchemy import func
 
@@ -173,3 +224,17 @@ class StudentRepository:
             select(distinct(Subject.semester)).where(Subject.branch == branch)
         )
         return [row[0] for row in result.all()]
+
+    def get_results_by_student_ids_and_subjects_sync(
+        self, student_ids: list[int], subject_codes: list[str]
+    ) -> list:
+        """Fetch existing AcademicResult rows for upsert logic (sync version)."""
+        from models.schema import AcademicResult as AR
+
+        result = self.db.execute(
+            select(AR).where(
+                AR.student_id.in_(student_ids),
+                AR.subject_code.in_(subject_codes),
+            )
+        )
+        return list(result.scalars().all())

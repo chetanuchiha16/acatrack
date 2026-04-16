@@ -103,12 +103,9 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
         student_ids = [s.id for s in existing_students]
         if student_ids and subject_codes:
             existing_results = (
-                db.session.query(AcademicResult)
-                .filter(
-                    AcademicResult.student_id.in_(student_ids),
-                    AcademicResult.subject_code.in_(subject_codes),
+                student_repo.get_results_by_student_ids_and_subjects_sync(
+                    student_ids, subject_codes
                 )
-                .all()
             )
         else:
             existing_results = []
