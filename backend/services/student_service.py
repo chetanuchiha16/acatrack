@@ -33,7 +33,7 @@ def _get_sync_session():
     if sync_url not in _sync_engine_cache:
         # FAANG-level: Use a pooled engine instead of disposing it every time
         _sync_engine_cache[sync_url] = create_engine(
-            sync_url, pool_size=5, max_overflow=10
+            sync_url, pool_size=10, max_overflow=10
         )
 
     sync_engine = _sync_engine_cache[sync_url]
@@ -358,6 +358,89 @@ class Student:
                 pass
 
         return instantiated_students
+
+    @classmethod
+    async def bulk_fetch_async(
+        cls,
+        session,
+        usns: list[str],
+        semester: Optional[str],
+        batch_year: int,
+    ) -> list["Student"]:
+        """
+        Truly async version of bulk_fetch.
+        Uses the async session directly — no thread pool, no sync engine.
+        Returns a list of Student objects (not a dict).
+        """
+        if not usns:
+            return []
+
+        from sqlalchemy import select
+
+        semester = semester.lower().strip() if semester else None
+
+        try:
+            sem_no = int(semester[-1]) if semester else 1
+        except Exception:
+            sem_no = 1
+
+        required_semesters = [f"sem{i}" for i in range(1, sem_no + 1)]
+
+        from repositories.student_repository import StudentRepository
+        repo = StudentRepository(session)
+
+        # Query 1: fetch student records
+        student_records = await repo.get_auths_by_usns(usns)
+
+        student_map = {s.usn: s for s in student_records}
+        student_id_to_usn = {s.id: s.usn for s in student_records}
+
+        if not student_map:
+            return []
+
+        # Query 2: fetch all results + subjects for current + previous semesters
+        # The repo method `get_results_by_usns_and_sem` uses `usns` instead of `student_ids` internally
+        results = await repo.get_results_by_usns_and_sem(usns, required_semesters)
+
+        # Pure Python: build preloaded_data and instantiate Students (no I/O)
+        preloaded_data = {
+            usn: {
+                "student": student_map[usn],
+                "current_semester": {"res": [], "sub": []},
+                "previous_semesters": {},
+            }
+            for usn in usns
+            if usn in student_map
+        }
+
+        for res, sub in results:
+            usn = student_id_to_usn[res.student_id]
+            if sub.semester == semester:
+                preloaded_data[usn]["current_semester"]["res"].append(res)
+                preloaded_data[usn]["current_semester"]["sub"].append(sub)
+            else:
+                if sub.semester not in preloaded_data[usn]["previous_semesters"]:
+                    preloaded_data[usn]["previous_semesters"][sub.semester] = {
+                        "res": [],
+                        "sub": [],
+                    }
+                preloaded_data[usn]["previous_semesters"][sub.semester]["res"].append(
+                    res
+                )
+                preloaded_data[usn]["previous_semesters"][sub.semester]["sub"].append(
+                    sub
+                )
+
+        students = []
+        for usn, data in preloaded_data.items():
+            try:
+                students.append(
+                    cls(usn, semester, batch_year, preloaded_data=data)
+                )
+            except ValueError:
+                pass
+
+        return students
 
     @classmethod
     def get_all_semesters(

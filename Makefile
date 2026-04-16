@@ -26,10 +26,15 @@ install:
 	@echo "Installing frontend dependencies..."
 	cd frontend && npm install
 
-# Run backend
+# Run backend (development)
 backend:
 	@echo "Starting backend..."
 	cd backend && uv run uvicorn main:app --reload --port 5000
+
+# Run backend (production-tuned)
+backend-prod:
+	@echo "Starting production backend..."
+	cd backend && uv run uvicorn main:app --host 0.0.0.0 --port 5000 --workers 4 --loop uvloop --http httptools
 
 # Run frontend
 frontend:

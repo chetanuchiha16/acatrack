@@ -16,6 +16,7 @@ router = APIRouter(tags=["student"])
 
 
 @router.get("/auth/Student/result")
+@cache(expire=3600)
 async def get_student_info(
     request: Request, usn: str = Query(None), semester: str = Query(None)
 ):
