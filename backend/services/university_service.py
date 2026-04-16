@@ -167,9 +167,10 @@ class University:
         # but we already have the USNs
         import asyncio
 
-        return await asyncio.get_event_loop().run_in_executor(
+        students_dict = await asyncio.get_event_loop().run_in_executor(
             None, Student.bulk_fetch, all_usns, selected_semester, self.batch_year
         )
+        return list(students_dict.values())
 
     async def find_failed_students_async(
         self, session, selected_semester, students=None
