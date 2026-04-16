@@ -1,4 +1,3 @@
-import base64
 import io
 import matplotlib.pyplot as plt
 import asyncio
@@ -6,8 +5,7 @@ from logger_config import get_logger
 from services.student_service import Student
 from repositories.student_repository import StudentRepository
 from repositories.mentor_repository import MentorRepository
-from visuals import create_student_report
-
+import base64
 logger = get_logger(__name__)
 
 
@@ -43,13 +41,6 @@ async def get_mentor_students_data(
                 if not student:
                     raise ValueError(f"No student data found for USN {s.usn}")
 
-                # Generate PDF in memory seamlessly using thread pool
-                pdf_bytes = await asyncio.get_event_loop().run_in_executor(
-                    None, create_student_report, student
-                )
-                pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
-                pdf_url = f"data:application/pdf;base64,{pdf_base64}"
-
                 return {
                     "name": student.name,
                     "usn": student.usn,
@@ -77,7 +68,6 @@ async def get_mentor_students_data(
                             student.pass_fail,
                         )
                     ],
-                    "pdf_url": pdf_url,  # inline Base64 PDF
                 }
 
             except Exception as e:

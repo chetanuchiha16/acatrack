@@ -9,7 +9,7 @@ from repositories.student_repository import StudentRepository
 from routes.send_email import send_email_async
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-
+from cache_config import cache
 from validators.email_validators import SaveMessageRequest, SendStudentEmailRequest
 
 router = APIRouter(tags=["mentor_email"])
@@ -105,6 +105,7 @@ async def delete_message(
 
 
 @router.get("/mentor/{mentor_id}/students")
+@cache(expire=3600)
 async def get_mentor_students(
     mentor_id: int, request: Request, batch_year: int | None = Query(None)
 ):
