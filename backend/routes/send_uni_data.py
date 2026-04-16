@@ -1,7 +1,5 @@
-from io import BytesIO
-
 from fastapi import APIRouter, Request, Query
-from fastapi.responses import JSONResponse, StreamingResponse, Response
+from fastapi.responses import JSONResponse, Response
 from cache_config import cache
 from services.university_service import University
 from visuals import create_toppers_list_pdf, create_university_report_async
@@ -40,7 +38,7 @@ async def get_academic_performance(
                 pdf_bytes = await asyncio.get_event_loop().run_in_executor(
                     None, create_toppers_list_pdf, toppers, semester
                 )
-                
+
                 return Response(
                     content=pdf_bytes,
                     media_type="application/pdf",

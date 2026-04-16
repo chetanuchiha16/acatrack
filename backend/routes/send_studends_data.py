@@ -7,6 +7,7 @@ from cache_config import cache
 from logger_config import get_logger
 from services.student_service import Student
 from utils.helpers import get_batch_year_from_request
+from services.batch_manager import bm
 from models.paths import pdf_dir
 from visuals import create_student_report
 
@@ -27,11 +28,12 @@ async def get_student_info(
     try:
         import asyncio
 
-        student = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: Student(usn=usn, semester=semester, batch_year=batch_year)
-        )
+        async with bm.session_scope(batch_year) as session:
+            student = await Student.create_async(
+                session, usn=usn, semester=semester, batch_year=batch_year
+            )
 
-        if not student.found:
+        if not getattr(student, "found", True):
             return JSONResponse(content={"error": "Student not found"}, status_code=404)
 
         pdf_bytes = await asyncio.get_event_loop().run_in_executor(
@@ -73,11 +75,14 @@ async def get_student_chart(
 
     import asyncio
 
-    student = await asyncio.get_event_loop().run_in_executor(
-        None, lambda: Student(usn=usn, semester=semester, batch_year=batch_year)
-    )
+    async with bm.session_scope(batch_year) as session:
+        student = await Student.create_async(
+            session, usn=usn, semester=semester, batch_year=batch_year
+        )
 
-    fig = student.plot_subject_marks()
+    fig = await asyncio.get_event_loop().run_in_executor(
+        None, student.plot_subject_marks
+    )
 
     buf = io.BytesIO()
     fig.savefig(buf, format="png")
