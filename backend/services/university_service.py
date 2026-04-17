@@ -86,12 +86,8 @@ class University:
     async def calculate_academic_performance_async(self, session, selected_semester):
         """
         Calculates academic performance using SQL aggregations.
-        FAANG-level optimization: Use repository for O(1) stats retrieval.
+        # FAANG-level optimization: Use repository for O(1) stats retrieval.
         """
-        from repositories.academic_repository import AcademicRepository
-
-        repo = AcademicRepository(session)
-
         semesters = await self.fetch_semester_tables_async(session)
         if not semesters:
             return [{"error": "No semester data available for this batch."}]
