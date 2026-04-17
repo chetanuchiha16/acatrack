@@ -34,7 +34,7 @@ backend:
 # Run backend (production-tuned)
 backend-prod:
 	@echo "Starting production backend..."
-	cd backend && uv run uvicorn main:app --host 0.0.0.0 --port 5000 --workers 1 --loop uvloop --http httptools
+	cd backend && uv run uvicorn main:app --host 0.0.0.0 --port 5000 --workers 4 --loop uvloop --http httptools
 
 # Run frontend
 frontend:
