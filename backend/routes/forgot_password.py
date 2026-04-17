@@ -106,7 +106,7 @@ async def reset_password(token: str, body: ResetPasswordRequest):
             result = await session.execute(
                 select(PasswordResetToken).where(
                     PasswordResetToken.token == token,
-                    PasswordResetToken.used == False,
+                    PasswordResetToken.used.is_(False),
                 )
             )
             reset_token = result.scalars().first()

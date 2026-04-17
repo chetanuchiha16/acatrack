@@ -76,7 +76,6 @@ def cache(expire: int = 3600) -> Callable:
                 return await func(*args, **kwargs)
 
             key = _make_key(func.__name__, args, kwargs)
-            lock_key = f"{key}:lock"
 
             # 1. Fast Path: cache hit
             try:
