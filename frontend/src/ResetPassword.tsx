@@ -1,14 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
-import axiosInstance from "./axiosInstance";
-import API_BASE from "./config";
-import axios, { type AxiosError } from "axios";
-
-interface ResetResponse {
-    message?: string;
-    error?: string;
-}
+import { resetPasswordAuthForgotResetTokenPost } from "./client/sdk.gen";
+import { parseApiError } from "./utils/errorHandler";
 
 const ResetPassword: React.FC = () => {
     const { token } = useParams<{ token: string }>();
@@ -23,27 +17,26 @@ const ResetPassword: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         
-        // This is a common bug catch! The original author used err.response inside catch block, but setStatus in the try too.
-        // Also original code had a bug where the try setting status overrode the error caught in the UI if we don't return early.
         if (password !== confirm) {
             setStatus("Passwords do not match");
             return;
         }
+
+        if (!token) {
+            setStatus("Invalid token");
+            return;
+        }
         
         try {
-            const res = await axiosInstance.post<ResetResponse>(
-                `${API_BASE}/auth/forgot/reset/${token}`,
-                { password }
-            );
-            setStatus(res.data.message || "Success");
+            const { data } = await resetPasswordAuthForgotResetTokenPost({
+                path: { token },
+                body: { password }
+            });
+            
+            setStatus((data as any)?.message || "Success");
             setTimeout(() => { void navigate("/auth"); }, 2000);
         } catch (err: unknown) {
-            if (axios.isAxiosError(err)) {
-                const axiosErr = err as AxiosError<ResetResponse>;
-                setStatus(axiosErr.response?.data?.error || "Something went wrong");
-            } else {
-                setStatus("Something went wrong");
-            }
+            setStatus(parseApiError(err) || "Something went wrong");
         }
     };
 

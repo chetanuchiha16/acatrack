@@ -5,8 +5,7 @@ import MentorSendEmails from "./MentorSendEmails";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import MentorMeetings from "./MentorMeetings";
 import MentorRecords from "./MentorRecord"; // adjust the path if needed
-import API_BASE from "./config";
-import axios from "axios";
+import { listBatchesBatchesGet } from "./client/sdk.gen";
 
 interface LocationState {
     mentor_id?: string;
@@ -14,26 +13,26 @@ interface LocationState {
 
 const MentorDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<string>("results");
-    const [batches, setBatches] = useState<string[]>([]);
+    const [batches, setBatches] = useState<number[]>([]);
     const [batchYear, setBatchYear] = useState<string>("");
     
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [_, setDate] = useState<string>("");
     
     const locationState = useLocation().state as LocationState | null;
-    const mentor_id = locationState?.mentor_id;
+    const mentor_id = locationState?.mentor_id || "";
     
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { finalId } = useParams<{ finalId: string }>();
     const navigate = useNavigate();
 
     useEffect(() => {
-        axios.get(`${API_BASE}/batches`)
+        listBatchesBatchesGet()
             .then((res) => {
-                const fetchedBatches: string[] = res.data.batches || [];
+                const fetchedBatches = res.data?.batches || [];
                 setBatches(fetchedBatches);
                 if (fetchedBatches.length > 0) {
-                    setBatchYear(fetchedBatches[fetchedBatches.length - 1]);
+                    setBatchYear(String(fetchedBatches[fetchedBatches.length - 1]));
                 }
             })
             .catch(() => setBatches([]));
