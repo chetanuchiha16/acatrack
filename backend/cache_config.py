@@ -71,7 +71,6 @@ def cache(expire: int = 3600) -> Callable:
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
-            import asyncio
 
             if not _cache_enabled or not _redis_client:
                 return await func(*args, **kwargs)
@@ -87,29 +86,11 @@ def cache(expire: int = 3600) -> Callable:
             except Exception as e:
                 logger.error(f"Cache hit error: {e}")
 
-            # 2. Slow Path: Lock & Compute
-            try:
-                acquired = await _redis_client.set(lock_key, "1", nx=True, ex=30)
-            except Exception:
-                acquired = True
-
-            if not acquired:
-                for _ in range(200):  # 4 seconds
-                    await asyncio.sleep(0.02)
-                    try:
-                        cached = await _redis_client.get(key)
-                        if cached:
-                            return _parse_cached(cached)
-                    except Exception:
-                        pass
-
+            # 2. Slow Path: Compute directly (Locking was serializing load tests)
             try:
                 result = await func(*args, **kwargs)
-            finally:
-                try:
-                    await _redis_client.delete(lock_key)
-                except Exception:
-                    pass
+            except Exception:
+                raise
 
             # 3. Store in Redis
             try:
