@@ -21,6 +21,12 @@ import API_BASE from "./config";
 import ParentDashboard from "./ParentDashboard";
 import ParentResult from "./ParentResult";
 import ResetPassword from "./ResetPassword";
+import { client } from "./client/client.gen";
+import axiosInstance from "./axiosInstance";
+
+// 🚀 Bridge SDK with configured Axios instance
+client.instance = axiosInstance;
+client.instance.defaults.baseURL = API_BASE;
 
 const withHiddenShortcut = (children: ReactNode) => (
   <>
