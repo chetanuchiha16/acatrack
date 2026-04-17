@@ -49,6 +49,42 @@ export type AuthRequest = {
 };
 
 /**
+ * AuthStatusResponse
+ */
+export type AuthStatusResponse = {
+    /**
+     * Logged In
+     */
+    logged_in: boolean;
+    /**
+     * Who
+     */
+    who: string;
+    /**
+     * Id
+     */
+    id?: string | null;
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Mentor Id
+     */
+    mentor_id?: string | null;
+};
+
+/**
+ * BatchesResponse
+ */
+export type BatchesResponse = {
+    /**
+     * Batches
+     */
+    batches: Array<number>;
+};
+
+/**
  * Body_excel_excel_post
  */
 export type BodyExcelExcelPost = {
@@ -103,6 +139,16 @@ export type BodyUploadNoteAuthStaffUploadNotesPost = {
 };
 
 /**
+ * ChartResponse
+ */
+export type ChartResponse = {
+    /**
+     * Image
+     */
+    image: string;
+};
+
+/**
  * FcmTokenRequest
  */
 export type FcmTokenRequest = {
@@ -130,6 +176,16 @@ export type HttpValidationError = {
      * Detail
      */
     detail?: Array<ValidationError>;
+};
+
+/**
+ * LoginResponse
+ */
+export type LoginResponse = {
+    /**
+     * Token
+     */
+    token: string;
 };
 
 /**
@@ -205,6 +261,90 @@ export type SendStudentEmailRequest = {
 };
 
 /**
+ * StudentResultResponse
+ */
+export type StudentResultResponse = {
+    /**
+     * Usn
+     */
+    usn: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Sgpa
+     */
+    sgpa: number;
+    /**
+     * Cgpa
+     */
+    cgpa: number;
+    /**
+     * Percentage
+     */
+    percentage: number;
+    /**
+     * Total Marks
+     */
+    total_marks: number | string;
+    /**
+     * Credits
+     */
+    credits: number | string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Subjects
+     */
+    subjects: Array<SubjectResult>;
+    /**
+     * Pdf Url
+     */
+    pdf_url?: string | null;
+    /**
+     * Semester
+     */
+    semester?: string | null;
+};
+
+/**
+ * SubjectResult
+ */
+export type SubjectResult = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Subject Name
+     */
+    subject_name: string;
+    /**
+     * Ia
+     */
+    ia: number | string;
+    /**
+     * See
+     */
+    see: number | string;
+    /**
+     * Total
+     */
+    total: number | string;
+    /**
+     * Credit
+     */
+    credit: number;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
  * ValidationError
  */
 export type ValidationError = {
@@ -243,8 +383,10 @@ export type ListBatchesBatchesGetResponses = {
     /**
      * Successful Response
      */
-    200: unknown;
+    200: BatchesResponse;
 };
+
+export type ListBatchesBatchesGetResponse = ListBatchesBatchesGetResponses[keyof ListBatchesBatchesGetResponses];
 
 export type AuthAuthPostData = {
     body: AuthRequest;
@@ -266,8 +408,10 @@ export type AuthAuthPostResponses = {
     /**
      * Successful Response
      */
-    200: unknown;
+    200: LoginResponse;
 };
+
+export type AuthAuthPostResponse = AuthAuthPostResponses[keyof AuthAuthPostResponses];
 
 export type AuthStatusAuthStatusGetData = {
     body?: never;
@@ -280,8 +424,10 @@ export type AuthStatusAuthStatusGetResponses = {
     /**
      * Successful Response
      */
-    200: unknown;
+    200: AuthStatusResponse;
 };
+
+export type AuthStatusAuthStatusGetResponse = AuthStatusAuthStatusGetResponses[keyof AuthStatusAuthStatusGetResponses];
 
 export type LogoutLogoutPostData = {
     body?: never;
@@ -1600,8 +1746,10 @@ export type GetStudentInfoAuthStudentResultGetResponses = {
     /**
      * Successful Response
      */
-    200: unknown;
+    200: StudentResultResponse;
 };
+
+export type GetStudentInfoAuthStudentResultGetResponse = GetStudentInfoAuthStudentResultGetResponses[keyof GetStudentInfoAuthStudentResultGetResponses];
 
 export type DownloadReportAuthStudentReportFilenameGetData = {
     body?: never;
@@ -1660,8 +1808,10 @@ export type GetStudentChartAuthStudentChartGetResponses = {
     /**
      * Successful Response
      */
-    200: unknown;
+    200: ChartResponse;
 };
+
+export type GetStudentChartAuthStudentChartGetResponse = GetStudentChartAuthStudentChartGetResponses[keyof GetStudentChartAuthStudentChartGetResponses];
 
 export type GetSubjectResultsAuthStaffSubResGetData = {
     body?: never;
