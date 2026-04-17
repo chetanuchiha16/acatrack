@@ -1,17 +1,8 @@
-// useAuthStore.ts
 import { create } from "zustand";
-import axiosInstance from "./axiosInstance";
-import API_BASE from "./config";
-import type { AuthStatusResponse } from "./types";
+import { authStatusAuthStatusGet } from "./client/sdk.gen";
+import type { AuthStatusResponse } from "./client/types.gen";
 
-export interface AuthUser {
-    id?: string;
-    name?: string;
-    mentor_id?: string;
-    logged_in: boolean;
-    who: string;
-    [key: string]: unknown;
-}
+export type AuthUser = AuthStatusResponse;
 
 interface AuthState {
     user: AuthUser | null;
@@ -29,11 +20,9 @@ const useAuthStore = create<AuthState>((set) => ({
     fetchAuthStatus: async () => {
         set({ loading: true, error: null });
         try {
-            const res = await axiosInstance.get<AuthStatusResponse>(`${API_BASE}/auth/status`, {
-                withCredentials: true,
-            });
-            if (res.data.logged_in) {
-                set({ user: res.data, loading: false });
+            const { data } = await authStatusAuthStatusGet();
+            if (data?.logged_in) {
+                set({ user: data, loading: false });
             } else {
                 set({ user: null, loading: false });
             }

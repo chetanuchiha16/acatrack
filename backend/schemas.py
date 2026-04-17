@@ -38,3 +38,31 @@ class LoginResponse(BaseModel):
 
 class BatchesResponse(BaseModel):
     batches: List[int]
+
+class MentorMenteeEntry(BaseModel):
+    usn: str
+    name: str
+    parent_name: Optional[str] = None
+    parent_email: Optional[str] = None
+    parent_phone: Optional[str] = None
+
+class MentorMenteeListResponse(BaseModel):
+    students: List[MentorMenteeEntry]
+
+class MessageReadStatus(BaseModel):
+    usn: str
+    name: str
+    read: bool
+
+class MentorMessageResponse(BaseModel):
+    id: int
+    subject: str
+    message: str
+    created_at: str
+    email_failed: bool = False
+    student_usn: Optional[str] = None
+    read_status: List[MessageReadStatus] = []
+
+class EmailAllStatus(BaseModel):
+    usn: str
+    success: bool

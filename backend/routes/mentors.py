@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import JSONResponse, FileResponse
+from typing import List
+from schemas import StudentResultResponse, ChartResponse
 from cache_config import cache
 from logger_config import get_logger
 from utils.helpers import get_batch_year_from_request
@@ -17,8 +19,7 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["mentors"])
 
 
-@router.get("/auth/Staff/Mentor/result")
-@cache(expire=3600)
+,ReplacementChunks:[{AllowMultiple:false,EndLine:21,ReplacementContent:@cache(expire=3600)
 async def get_mentor_students(
     request: Request,
     mentor_id: int = Query(None),
@@ -47,8 +48,7 @@ async def download_mentee_report(filename: str):
     return FileResponse(filepath, filename=safe_filename, media_type="application/pdf")
 
 
-@router.get("/auth/Staff/Mentor/chart")
-@cache(expire=3600)
+,ReplacementChunks:[{AllowMultiple:false,EndLine:50,ReplacementContent:@cache(expire=3600)
 async def get_mentee_chart(
     request: Request,
     usn: str = Query(None),
