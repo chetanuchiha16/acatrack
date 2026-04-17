@@ -95,12 +95,6 @@ async def generate_sem_pdf_async(selected_semester, university, session):
         column_widths = [110, 50, 50, 50, 60, 40, 40, 40, 40]
         data = [headers]
 
-        total_students_cohort = 0
-        total_fcd_cohort = 0
-        total_fc_cohort = 0
-        total_sc_cohort = 0
-        total_fail_cohort = 0
-
         for stat in subject_stats:
             row = [
                 Paragraph(stat["subject_name"], normal_style),
