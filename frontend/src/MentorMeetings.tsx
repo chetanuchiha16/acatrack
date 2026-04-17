@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import axiosInstance from "./axiosInstance";
 import { CalendarDays } from "lucide-react";
-import API_BASE from "./config";
+import { 
+    getMeetingsAuthStaffMentorMeetingMentorIdGet, 
+    addMeetingAuthStaffMentorMeetingMentorIdPost, 
+    deleteMeetingAuthStaffMentorMeetingDeleteMeetingIdDelete 
+} from "./client/sdk.gen";
+import { parseApiError } from "./utils/errorHandler";
 
 interface MentorMeetingsProps {
     mentorId: string;
@@ -26,21 +30,25 @@ export default function MentorMeetings({ mentorId, batchYear }: MentorMeetingsPr
     const [loading, setLoading] = useState(false); // Loading state
     const [message, setMessage] = useState(""); // Success/error message
 
+    const batch_year_num = parseInt(batchYear);
+
     // Fetch meetings from backend
     const fetchMeetings = useCallback(async () => {
+        if (!mentorId) return;
         try {
-            const res = await axiosInstance.get<MeetingRecord[]>(
-                `${API_BASE}/auth/Staff/Mentor/meeting/${mentorId}?batch_year=${batchYear}`
-            );
-            setMeetings(res.data);
+            const { data } = await getMeetingsAuthStaffMentorMeetingMentorIdGet({
+                path: { mentor_id: Number(mentorId) },
+                query: { batch_year: Number(batch_year_num) }
+            });
+            if (data) setMeetings(data as unknown as MeetingRecord[]);
         } catch (err) {
             console.error(err);
         }
-    }, [mentorId, batchYear]);
+    }, [mentorId, batch_year_num]);
 
     useEffect(() => {
         if (mentorId && batchYear) void fetchMeetings();
-    }, [mentorId, batchYear, fetchMeetings]);
+    }, [mentorId, batch_year_num, fetchMeetings]);
 
     // Add a new meeting
     const addMeeting = async () => {
@@ -53,15 +61,16 @@ export default function MentorMeetings({ mentorId, batchYear }: MentorMeetingsPr
         setMessage(""); // Clear previous message
 
         try {
-            await axiosInstance.post<MeetingRecord>(
-                `${API_BASE}/auth/Staff/Mentor/meeting/${mentorId}?batch_year=${batchYear}`,
-                {
+            await addMeetingAuthStaffMentorMeetingMentorIdPost({
+                path: { mentor_id: Number(mentorId) },
+                query: { batch_year: batch_year_num },
+                body: {
                     title,
                     date,
                     venue,
                     agenda,
                 }
-            );
+            });
 
             // Reset form
             setTitle("");
@@ -72,8 +81,7 @@ export default function MentorMeetings({ mentorId, batchYear }: MentorMeetingsPr
             void fetchMeetings(); // Refresh list
             setMessage("Meeting added successfully and emails sent!"); // Success message
         } catch (err) {
-            console.error(err);
-            setMessage("Error adding meeting. Please try again.");
+            setMessage(parseApiError(err) || "Error adding meeting. Please try again.");
         } finally {
             setLoading(false); // Stop loading
         }
@@ -84,14 +92,14 @@ export default function MentorMeetings({ mentorId, batchYear }: MentorMeetingsPr
         setLoading(true);
         setMessage("");
         try {
-            await axiosInstance.delete(
-                `${API_BASE}/auth/Staff/Mentor/meeting/delete/${id}?batch_year=${batchYear}`
-            );
+            await deleteMeetingAuthStaffMentorMeetingDeleteMeetingIdDelete({
+                path: { meeting_id: Number(id) },
+                query: { batch_year: batch_year_num }
+            });
             void fetchMeetings();
             setMessage("Meeting deleted successfully.");
         } catch (err) {
-            console.error(err);
-            setMessage("Error deleting meeting.");
+            setMessage(parseApiError(err) || "Error deleting meeting.");
         } finally {
             setLoading(false);
         }

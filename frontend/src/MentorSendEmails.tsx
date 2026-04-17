@@ -1,6 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
-import axiosInstance from "./axiosInstance";
-import API_BASE from "./config";
+import { 
+    getMentorStudentsMentorMentorIdStudentsGet, 
+    getMessagesMentorMentorIdMessagesGet, 
+    sendMentorMessageMentorMentorIdMessagesPost, 
+    sendEmailStudentMentorMentorIdSendEmailStudentPost, 
+    sendEmailAllMentorMentorIdSendEmailAllPost, 
+    deleteMessageMentorMentorIdMessagesMsgIdDelete 
+} from "./client/sdk.gen";
+import { parseApiError } from "./utils/errorHandler";
 
 interface MentorSendEmailsProps {
     mentorId: string;
@@ -48,45 +55,54 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
     const [broadcastSubject, setBroadcastSubject] = useState<string>("");
     const [broadcastMsg, setBroadcastMsg] = useState<string>("");
     const [studentInputs, setStudentInputs] = useState<Record<string, StudentInput>>({});
+
+    const batch_year_num = Number(batchYear);
+
     const fetchStudents = useCallback(async () => {
+        if (!mentorId) return;
         setLoading(true);
         try {
-            const res = await axiosInstance.get(
-                `${API_BASE}/mentor/${mentorId}/students?batch_year=${batchYear}`
-            );
-            setStudents(res.data.students || []);
+            const { data } = await getMentorStudentsMentorMentorIdStudentsGet({
+                path: { mentor_id: Number(mentorId) },
+                query: { batch_year: batch_year_num }
+            });
+            if (data?.students) setStudents(data.students as unknown as StudentEntry[]);
         } catch (err) {
             console.error("Failed to fetch students", err);
         } finally {
             setLoading(false);
         }
-    }, [mentorId, batchYear]);
+    }, [mentorId, batch_year_num]);
 
     const fetchMessages = useCallback(async () => {
+        if (!mentorId) return;
         try {
-            const res = await axiosInstance.get<MessageEntry[]>(
-                `${API_BASE}/mentor/${mentorId}/messages?batch_year=${batchYear}`
-            );
-            const grouped: Record<string, MessageEntry[]> = {};
-            res.data.forEach((msg: MessageEntry) => {
-                const usn = (msg.student_usn as string | undefined) || "all";
-                if (!grouped[usn]) grouped[usn] = [];
-                grouped[usn].push(msg);
+            const { data } = await getMessagesMentorMentorIdMessagesGet({
+                path: { mentor_id: Number(mentorId) },
+                query: { batch_year: batch_year_num }
             });
+            const grouped: Record<string, MessageEntry[]> = {};
+            if (data) {
+                (data as unknown as MessageEntry[]).forEach((msg: MessageEntry) => {
+                    const usn = (msg.student_usn as string | undefined) || "all";
+                    if (!grouped[usn]) grouped[usn] = [];
+                    grouped[usn].push(msg);
+                });
+            }
             setStudentMessages(grouped);
         } catch (err) {
             console.error("Failed to fetch messages", err);
         } finally {
             setLoadingMessages(false);
         }
-    }, [mentorId, batchYear]);
+    }, [mentorId, batch_year_num]);
 
     useEffect(() => {
         if (mentorId && batchYear) {
             void fetchStudents();
             void fetchMessages();
         }
-    }, [mentorId, batchYear, fetchStudents, fetchMessages]);
+    }, [mentorId, batch_year_num, fetchStudents, fetchMessages]);
 
     const toggleExpand = (usn: string) => {
         setExpanded((prev) => ({ ...prev, [usn]: !prev[usn] }));
@@ -107,41 +123,46 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
         }
 
         try {
-            const stored = await axiosInstance.post<MessageEntry>(
-                `${API_BASE}/mentor/${mentorId}/messages?batch_year=${batchYear}`,
-                { usn, recipientType, subject, message }
-            );
-            
-            setStudentMessages((prev) => {
-                const key = usn || "all";
-                const newMsg: MessageEntry = {
-                    ...stored.data,
-                    read_status:
-                        stored.data.read_status?.map((s: ReadStatus) => ({
-                            ...s,
-                            read: false,
-                        })) || [],
-                };
-                return {
-                    ...prev,
-                    [key]: [newMsg, ...(prev[key] || [])],
-                };
+            const { data: stored } = await sendMentorMessageMentorMentorIdMessagesPost({
+                path: { mentor_id: Number(mentorId) },
+                query: { batch_year: batch_year_num },
+                body: { usn, recipientType: recipientType as "student" | "parent", subject, message }
             });
-
-            let emailRes;
-            if (usn) {
-                emailRes = await axiosInstance.post<void>(
-                    `${API_BASE}/mentor/${mentorId}/send-email/student?batch_year=${batchYear}`,
-                    { usn, recipientType, subject, message }
-                );
-            } else {
-                emailRes = await axiosInstance.post<void>(
-                    `${API_BASE}/mentor/${mentorId}/send-email/all?batch_year=${batchYear}`,
-                    { recipientType, subject, message }
-                );
+            
+            if (stored) {
+                setStudentMessages((prev) => {
+                    const key = usn || "all";
+                    const newMsg: MessageEntry = {
+                        ...(stored as unknown as MessageEntry),
+                        read_status:
+                            (stored as any).read_status?.map((s: any) => ({
+                                ...s,
+                                read: false,
+                            })) || [],
+                    };
+                    return {
+                        ...prev,
+                        [key]: [newMsg, ...(prev[key] || [])],
+                    };
+                });
             }
 
-            if (emailRes.status >= 200 && emailRes.status < 300) {
+            let response;
+            if (usn) {
+                response = await sendEmailStudentMentorMentorIdSendEmailStudentPost({
+                    path: { mentor_id: Number(mentorId) },
+                    query: { batch_year: batch_year_num },
+                    body: { usn, recipientType: recipientType as "student" | "parent", subject, message }
+                });
+            } else {
+                response = await sendEmailAllMentorMentorIdSendEmailAllPost({
+                    path: { mentor_id: Number(mentorId) },
+                    query: { batch_year: batch_year_num },
+                    body: { recipientType: recipientType as "student" | "parent", subject, message }
+                } as any);
+            }
+
+            if (response) {
                 setFeedback({
                     text: `Email sent to ${
                         usn || "all"
@@ -184,9 +205,13 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
 
     const deleteMessage = async (msgId: number | string, usn: string | null) => {
         try {
-            await axiosInstance.delete(
-                `${API_BASE}/mentor/${mentorId}/messages/${msgId}?batch_year=${batchYear}`
-            );
+            await deleteMessageMentorMentorIdMessagesMsgIdDelete({
+                path: { 
+                    mentor_id: Number(mentorId),
+                    msg_id: Number(msgId) 
+                },
+                query: { batch_year: batch_year_num }
+            });
             setStudentMessages((prev) => {
                 const key = usn || "all";
                 return {
@@ -529,35 +554,35 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
                                                                                 {
                                                                                     timeZone:
                                                                                         "Asia/Kolkata",
-                                                                                }
-                                                                            )}
-                                                                        </time>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            void deleteMessage(
-                                                                                msg.id,
-                                                                                s.usn
-                                                                            )
-                                                                        }
-                                                                        className="text-red-600 hover:text-red-800 text-sm"
-                                                                    >
-                                                                        Delete
-                                                                    </button>
-                                                                </li>
-                                                            );
-                                                        })}
-                                                    </ul>
-                                                )}
+                                                                                    }
+                                                                                )}
+                                                                            </time>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                void deleteMessage(
+                                                                                    msg.id,
+                                                                                    s.usn
+                                                                                )
+                                                                            }
+                                                                            className="text-red-600 hover:text-red-800 text-sm"
+                                                                        >
+                                                                            Delete
+                                                                        </button>
+                                                                    </li>
+                                                                );
+                                                            })}
+                                                        </ul>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
     );
 }

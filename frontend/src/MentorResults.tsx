@@ -1,26 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
-import API_BASE from "./config";
-import { fetchWithAuth } from "./fetchWithAuth";
-
-interface Subject {
-    code: string;
-    subject_name: string;
-    ia: number;
-    see: number;
-    total: number;
-    credit: number;
-    status: string;
-}
-
-interface MenteeResult {
-    name: string;
-    usn: string;
-    total_marks: number;
-    sgpa: number;
-    cgpa: number;
-    pdf_url: string;
-    subjects: Subject[];
-}
+import { 
+    getMentorStudentsAuthStaffMentorResultGet, 
+    getMenteeChartAuthStaffMentorChartGet 
+} from "./client/sdk.gen";
+import type { StudentResultResponse as MenteeResult } from "./client/types.gen";
+import { parseApiError } from "./utils/errorHandler";
 
 interface MentorResultsProps {
     mentor_id?: string;
@@ -37,17 +21,20 @@ const MentorResults: React.FC<MentorResultsProps> = ({ mentor_id, batchYear }) =
     const [searchTerm, setSearchTerm] = useState<string>("");
 
     const fetchMentees = useCallback(async () => {
+        if (!mentor_id) return;
         setLoading(true);
         try {
-            const res = await fetchWithAuth(
-                `${API_BASE}/auth/Staff/Mentor/result?mentor_id=${mentor_id}&semester=${semester}&batch_year=${batchYear}`,
-                {}
-            );
-            const data: MenteeResult[] = await res.json();
-            setMentees(data);
+            const { data } = await getMentorStudentsAuthStaffMentorResultGet({
+                query: {
+                    mentor_id: Number(mentor_id),
+                    semester,
+                    batch_year: Number(batchYear)
+                }
+            });
+            if (data) setMentees(data as unknown as MenteeResult[]);
         } catch (err) {
             console.error(err);
-            alert("Failed to fetch mentees.");
+            alert(parseApiError(err) || "Failed to fetch mentees.");
         } finally {
             setLoading(false);
         }
@@ -59,16 +46,21 @@ const MentorResults: React.FC<MentorResultsProps> = ({ mentor_id, batchYear }) =
 
     const fetchChart = async (usn: string) => {
         try {
-            const res = await fetchWithAuth(
-                `${API_BASE}/auth/Staff/Mentor/chart?usn=${usn}&semester=${semester}&batch_year=${batchYear}`,
-                {}
-            );
-            const data = await res.json();
-            setChartData(data.image);
-            setSelectedMentee(usn);
+            const { data } = await getMenteeChartAuthStaffMentorChartGet({
+                query: {
+                    usn,
+                    semester,
+                    batch_year: Number(batchYear)
+                }
+            });
+            const chartImage = (data as any)?.image;
+            if (chartImage) {
+                setChartData(chartImage);
+                setSelectedMentee(usn);
+            }
         } catch (err) {
             console.error(err);
-            alert("Failed to fetch chart.");
+            alert(parseApiError(err) || "Failed to fetch chart.");
         }
     };
 
