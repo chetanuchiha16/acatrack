@@ -19,7 +19,8 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["mentors"])
 
 
-,ReplacementChunks:[{AllowMultiple:false,EndLine:21,ReplacementContent:@cache(expire=3600)
+@router.get("/auth/Staff/Mentor/result", response_model=List[StudentResultResponse])
+@cache(expire=3600)
 async def get_mentor_students(
     request: Request,
     mentor_id: int = Query(None),
@@ -48,7 +49,8 @@ async def download_mentee_report(filename: str):
     return FileResponse(filepath, filename=safe_filename, media_type="application/pdf")
 
 
-,ReplacementChunks:[{AllowMultiple:false,EndLine:50,ReplacementContent:@cache(expire=3600)
+@router.get("/auth/Staff/Mentor/chart", response_model=ChartResponse)
+@cache(expire=3600)
 async def get_mentee_chart(
     request: Request,
     usn: str = Query(None),

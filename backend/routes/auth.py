@@ -4,7 +4,7 @@ from utils.helpers import get_batch_year_from_request, get_jwt_payload_from_requ
 from logger_config import get_logger
 from services.auth_service import authenticate_user, update_fcm_token
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 from schemas import AuthStatusResponse, LoginResponse, BatchesResponse
 
 logger = get_logger(__name__)
