@@ -27,9 +27,10 @@ async def lifespan(app: FastAPI):
     # ---- Startup ----
     # Firebase
     cred_path = settings.firebase_cred_path
-    if not cred_path:
+    if not cred_path and not settings.testing:
         raise RuntimeError("FIREBASE_CRED_PATH not set!")
-    if not firebase_admin._apps:
+
+    if cred_path:
         from firebase_admin import credentials
 
         cred = credentials.Certificate(cred_path)
