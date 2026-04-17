@@ -1,54 +1,66 @@
-from flask import Blueprint, jsonify, request, send_file
+from fastapi import APIRouter, Request, UploadFile, File
+from fastapi.responses import JSONResponse
 import tempfile
 import os
 from logger_config import get_logger
 from utils.cloud import upload_excel_to_supabase, download_excel_from_supabase
-from utils.helpers import get_batch_year
+from utils.helpers import get_batch_year_from_request
 
 logger = get_logger(__name__)
 
-excel_bp = Blueprint("excel", __name__)
+router = APIRouter(tags=["excel"])
 
 
-@excel_bp.route("/excel", methods=["POST"])
-def excel():
-    # Save file to temp directory
-    file = request.files.get("file")
-    if not file:
-        return jsonify({"error": "No file uploaded"}), 400
-    batch_year = get_batch_year()
+@router.post("/excel")
+async def excel(request: Request, file: UploadFile = File(...)):
+    batch_year = get_batch_year_from_request(request)
 
     with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
-        file.save(tmp.name)
+        content = await file.read()
+        tmp.write(content)
         tmp.flush()
-        # Upload to Supabase
         try:
             folder = f"{batch_year}"
             excel_name = f"result_list_{batch_year}.xlsx"
-            cloud_url = upload_excel_to_supabase(tmp.name, excel_name, folder)
+            import asyncio
+
+            cloud_url = await asyncio.get_event_loop().run_in_executor(
+                None, upload_excel_to_supabase, tmp.name, excel_name, folder
+            )
             message = "File uploaded successfully"
         except Exception:
             cloud_url = None
             message = "File uploaded but cloud storage is currently unavailable."
             logger.exception("Cloud upload failed during manual excel upload")
 
-    # Clean up temp file
     try:
         os.remove(tmp.name)
     except Exception:
         pass
 
-    return jsonify({"message": message, "excel_cloud_url": cloud_url})
+    return {"message": message, "excel_cloud_url": cloud_url}
 
 
-@excel_bp.route("/excel/template.xlsx")
-def get_template():
-    batch_year = get_batch_year()
+@router.get("/excel/template.xlsx")
+async def get_template(request: Request):
+    batch_year = get_batch_year_from_request(request)
     excel_name = f"result_list_{batch_year}.xlsx"
     folder = f"{batch_year}"
     try:
-        local_path = download_excel_from_supabase(excel_name, folder)
-        return send_file(local_path, download_name=excel_name, as_attachment=True)
+        import asyncio
+
+        local_path = await asyncio.get_event_loop().run_in_executor(
+            None, download_excel_from_supabase, excel_name, folder
+        )
+        from fastapi.responses import FileResponse
+
+        return FileResponse(
+            local_path,
+            filename=excel_name,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
     except Exception:
         logger.exception(f"Failed to download template: {excel_name}")
-        return jsonify({"error": "Template not found or unavailable."}), 404
+        return JSONResponse(
+            content={"error": "Template not found or unavailable."}, status_code=404
+        )

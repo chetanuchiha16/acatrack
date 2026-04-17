@@ -1,8 +1,9 @@
-from flask import Blueprint, jsonify, request, redirect
+from fastapi import APIRouter, Request, Query
+from fastapi.responses import JSONResponse, RedirectResponse
 from utils.cloud import SUPABASE_URL, supabase, SUPABASE_BUCKET, sanitize_folder
-from utils.helpers import get_batch_year
+from utils.helpers import get_batch_year_from_request
 
-student_notes_bp = Blueprint("notes", __name__)
+router = APIRouter(tags=["student_notes"])
 
 
 def allowed_file(filename):
@@ -10,9 +11,6 @@ def allowed_file(filename):
 
 
 def build_supabase_file_tree(folder: str = "") -> dict:
-    """
-    Returns a nested dict: folders as {name: {...}}, PDFs as {name: url string}
-    """
     tree = {}
     try:
         entries = supabase.storage.from_(SUPABASE_BUCKET).list(folder)
@@ -29,7 +27,6 @@ def build_supabase_file_tree(folder: str = "") -> dict:
         mimetype = metadata.get("mimetype", "")
         if not name:
             continue
-        # If folder
         if mimetype == "application/x-directory" or (
             not mimetype and not name.lower().endswith(".pdf")
         ):
@@ -37,7 +34,6 @@ def build_supabase_file_tree(folder: str = "") -> dict:
             subtree = build_supabase_file_tree(subfolder)
             if subtree:
                 tree[name] = subtree
-        # If PDF file
         elif allowed_file(name):
             file_path = f"{folder}/{name}" if folder else name
             url = (
@@ -47,41 +43,38 @@ def build_supabase_file_tree(folder: str = "") -> dict:
     return tree
 
 
-@student_notes_bp.route("/auth/Student/notes", methods=["GET"])
-def list_notes():
-    """
-    List all available notes in a tree structure.
-    Uses batch year for correct folder, optionally support "path" param.
-    """
+@router.get("/auth/Student/notes")
+async def list_notes(
+    request: Request, batch: str | None = Query(None), path: str = Query("")
+):
     try:
-        batch_year = request.args.get("batch", get_batch_year())
-        relative_path = sanitize_folder(request.args.get("path", "").strip("/"))
+        batch_year = batch or get_batch_year_from_request(request)
+        relative_path = sanitize_folder(path.strip("/"))
         prefix = (
             f"notes/{batch_year}/{relative_path}"
             if relative_path
             else f"notes/{batch_year}"
         )
-        structure = build_supabase_file_tree(prefix)
-        return jsonify(structure)
+
+        import asyncio
+
+        structure = await asyncio.get_event_loop().run_in_executor(
+            None, build_supabase_file_tree, prefix
+        )
+        return structure
     except Exception:
-        return jsonify({"error": "Failed to list notes."}), 500
+        return JSONResponse(content={"error": "Failed to list notes."}, status_code=500)
 
 
-@student_notes_bp.route("/auth/Student/notes/<path:file_path>", methods=["GET"])
-def get_note(file_path):
-    """
-    Redirects to the public URL of the PDF file stored in Supabase.
-    """
+@router.get("/auth/Student/notes/{file_path:path}")
+async def get_note(file_path: str):
     try:
-        # Optional: secure path -- do not allow '..'
         if ".." in file_path or file_path.startswith("/"):
-            return jsonify({"error": "Invalid path"}), 403
+            return JSONResponse(content={"error": "Invalid path"}, status_code=403)
 
-        # Compose Supabase public file URL
         url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/notes/{file_path}"
-        # Optionally, you could generate a signed URL instead if files need to be private.
-
-        # Redirect to public URL
-        return redirect(url)
+        return RedirectResponse(url)
     except Exception:
-        return jsonify({"error": "Failed to retrieve note."}), 500
+        return JSONResponse(
+            content={"error": "Failed to retrieve note."}, status_code=500
+        )

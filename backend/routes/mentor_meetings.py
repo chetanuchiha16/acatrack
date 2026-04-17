@@ -1,17 +1,16 @@
-# mentor_meetings.py
 from datetime import datetime
 
-from flask import Blueprint, jsonify, request
+from fastapi import APIRouter, Request, Query
+from fastapi.responses import JSONResponse
 from models import Meeting
 from services.batch_manager import bm
-from utils.helpers import get_batch_year
+from utils.helpers import get_batch_year_from_request
 from pydantic import BaseModel, Field, field_validator
 from repositories.mentor_repository import MentorRepository
 from routes.send_email import send_email_async
+from repositories.student_repository import StudentRepository
 
-mentor_meetings_bp = Blueprint(
-    "mentor_meetings", __name__, url_prefix="/auth/Staff/Mentor/meeting/"
-)
+router = APIRouter(prefix="/auth/Staff/Mentor/meeting", tags=["mentor_meetings"])
 
 
 class AddMeetingRequest(BaseModel):
@@ -30,14 +29,15 @@ class AddMeetingRequest(BaseModel):
         return v
 
 
-# Get all meetings for a mentor
-@mentor_meetings_bp.route("<int:mentor_id>", methods=["GET"])
-def get_meetings(mentor_id):
-    batch_year = request.args.get("batch_year") or get_batch_year()
-    with bm.session_scope(batch_year) as db:
-        mentor_repo = MentorRepository(db.session)
-        meetings = mentor_repo.get_meetings_by_mentor(mentor_id)
-        result = [
+@router.get("/{mentor_id}")
+async def get_meetings(
+    mentor_id: int, request: Request, batch_year: int | None = Query(None)
+):
+    by = batch_year or get_batch_year_from_request(request)
+    async with bm.session_scope(by) as session:
+        mentor_repo = MentorRepository(session)
+        meetings = await mentor_repo.get_meetings_by_mentor(mentor_id)
+        return [
             {
                 "id": m.id,
                 "title": m.title,
@@ -47,47 +47,43 @@ def get_meetings(mentor_id):
             }
             for m in meetings
         ]
-        return jsonify(result)
 
 
-# Add a new meeting
-@mentor_meetings_bp.route("<int:mentor_id>", methods=["POST"])
-def add_meeting(mentor_id):
-    validated_data = AddMeetingRequest.model_validate(request.get_json() or {})
-    title = validated_data.title
-    venue = validated_data.venue
-    agenda = validated_data.agenda
-    meeting_date = datetime.strptime(validated_data.date, "%Y-%m-%d").date()
+@router.post("/{mentor_id}", status_code=201)
+async def add_meeting(
+    mentor_id: int,
+    body: AddMeetingRequest,
+    request: Request,
+    batch_year: int | None = Query(None),
+):
+    meeting_date = datetime.strptime(body.date, "%Y-%m-%d").date()
+    by = batch_year or get_batch_year_from_request(request)
 
-    batch_year = request.args.get("batch_year") or get_batch_year()
-    with bm.session_scope(batch_year) as db:
+    async with bm.session_scope(by) as session:
         meeting = Meeting(
             mentor_id=mentor_id,
-            title=title,
-            venue=venue,
-            agenda=agenda,
+            title=body.title,
+            venue=body.venue,
+            agenda=body.agenda,
             date=meeting_date,
         )
-        db.session.add(meeting)
-        db.session.commit()
-
+        session.add(meeting)
+        await session.flush()
         meeting_id = meeting.id
 
-        # ---------------- Send email to all students ----------------
-        from models import StudentAuth  # ensure these are imported
-
-        mentor_repo = MentorRepository(db.session)
-        mentor = mentor_repo.get_by_id(mentor_id)
+        # Send email to all students
+        mentor_repo = MentorRepository(session)
+        mentor = await mentor_repo.get_by_id(mentor_id)
         if mentor:
-            subject = f"New Meeting Scheduled: {title}"
-            body = f"""Hello,
+            subject = f"New Meeting Scheduled: {body.title}"
+            email_body = f"""Hello,
 
             A new meeting has been scheduled by {mentor.name}.
 
-            Title: {title}
+            Title: {body.title}
             Date: {meeting_date}
-            Venue: {venue}
-            Agenda: {agenda}
+            Venue: {body.venue}
+            Agenda: {body.agenda}
 
             Please be present on time.
 
@@ -95,30 +91,32 @@ def add_meeting(mentor_id):
             Message sent by {mentor.name} (Mentor)
             """
 
-            # Using list comprehension with session scope directly
-            students = (
-                db.session.query(StudentAuth).filter_by(mentor_id=mentor_id).all()
-            )
+            student_repo = StudentRepository(session)
+            students = await student_repo.get_mentees_by_mentor(mentor_id)
             for student in students:
                 to_email = getattr(student, "student_email", None)
                 if to_email:
-                    send_email_async(to_email, subject, body)
+                    send_email_async(to_email, subject, email_body)
 
-    return jsonify(
-        {"message": "Meeting added and emails sent to all students", "id": meeting_id}
-    ), 201
+        await session.commit()
+
+    return {
+        "message": "Meeting added and emails sent to all students",
+        "id": meeting_id,
+    }
 
 
-# Delete a meeting
-@mentor_meetings_bp.route("delete/<int:meeting_id>", methods=["DELETE"])
-def delete_meeting(meeting_id):
-    batch_year = request.args.get("batch_year") or get_batch_year()
-    with bm.session_scope(batch_year) as db:
-        mentor_repo = MentorRepository(db.session)
-        meeting = mentor_repo.get_meeting_by_id(meeting_id)
+@router.delete("/delete/{meeting_id}")
+async def delete_meeting(
+    meeting_id: int, request: Request, batch_year: int | None = Query(None)
+):
+    by = batch_year or get_batch_year_from_request(request)
+    async with bm.session_scope(by) as session:
+        mentor_repo = MentorRepository(session)
+        meeting = await mentor_repo.get_meeting_by_id(meeting_id)
         if not meeting:
-            return jsonify({"error": "Meeting not found"}), 404
+            return JSONResponse(content={"error": "Meeting not found"}, status_code=404)
 
-        db.session.delete(meeting)
-        db.session.commit()
-        return jsonify({"message": "Meeting deleted successfully"})
+        await session.delete(meeting)
+        await session.commit()
+        return {"message": "Meeting deleted successfully"}

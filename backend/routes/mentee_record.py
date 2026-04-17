@@ -1,4 +1,5 @@
-from flask import Blueprint, request, jsonify, send_from_directory
+from fastapi import APIRouter, Request, Query
+from fastapi.responses import JSONResponse, FileResponse
 import fitz
 import os
 from models.paths import pdf_dir, base_dir
@@ -6,21 +7,22 @@ from utils.cloud import save_file, supabase, SUPABASE_BUCKET, SUPABASE_URL
 from services.batch_manager import bm
 from repositories.student_repository import StudentRepository
 from logger_config import get_logger
-from utils.helpers import get_batch_year
-import requests
+from utils.helpers import get_batch_year_from_request
+import requests as http_requests
+import asyncio
 
 logger = get_logger(__name__)
 UPLOAD_FOLDER = pdf_dir
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-mentee_record_bp = Blueprint("mentee", __name__, url_prefix="/mentee")
+
+router = APIRouter(prefix="/mentee", tags=["mentee_record"])
 
 TEMPLATE_PATH = str(base_dir / "Inputs" / "New_mentor_Record[final].pdf")
 
 
-# --- Upload and fill PDF ---
-@mentee_record_bp.route("/upload_form", methods=["POST"])
-def upload_form():
-    data = request.get_json()
+@router.post("/upload_form")
+async def upload_form(request: Request):
+    data = await request.json()
     name = data.get("name")
     usn = data.get("usn")
     mentor_name = data.get("mentor_name")
@@ -35,213 +37,208 @@ def upload_form():
     mother_name = data.get("mother_name")
     Contact_Mother = data.get("Contact_Mother")
     Occupation_Mother = data.get("Occupation_Mother")
-    sgpas = data.get("sgpa", [])  # Array of 8 SGPA values
-    projects = data.get("projects", [])  # List of dicts
-    internships = data.get("internships", [])  # List of dicts
-    activities = data.get("activities", [])  # List of dicts
-    summary = data.get(
-        "summary", {}
-    )  # dict of cultural, co_curricular, hackathon, coding, others
+    sgpas = data.get("sgpa", [])
+    projects = data.get("projects", [])
+    internships = data.get("internships", [])
+    activities = data.get("activities", [])
+    summary = data.get("summary", {})
 
-    pdf = fitz.open(TEMPLATE_PATH)
-    # --- Page 1: Personal Info ---
-    page = pdf[0]
-    page.insert_text((160, 205), name or "")
-    page.insert_text((135, 230), usn or "")
-    page.insert_text((160, 260), mentor_name or "")
-    page.insert_text((160, 285), mentor_phone or "")
-    page.insert_text((50, 400), temporary_address or "")
-    page.insert_text((175, 400), permanent_address or "")
-    page.insert_text((330, 425), phone_number or "")
-    page.insert_text((425, 425), email or "")
-    page.insert_text((70, 595), father_name or "")
-    page.insert_text((180, 595), Contact or "")
-    page.insert_text((290, 560), Occupation or "")
-    page.insert_text((360, 595), mother_name or "")
-    page.insert_text((425, 595), Contact_Mother or "")
-    page.insert_text((495, 595), Occupation_Mother or "")
-    logger.debug(f"mother: {Contact_Mother} and {Occupation_Mother}")
+    def _generate_pdf():
+        pdf = fitz.open(TEMPLATE_PATH)
+        page = pdf[0]
+        page.insert_text((160, 205), name or "")
+        page.insert_text((135, 230), usn or "")
+        page.insert_text((160, 260), mentor_name or "")
+        page.insert_text((160, 285), mentor_phone or "")
+        page.insert_text((50, 400), temporary_address or "")
+        page.insert_text((175, 400), permanent_address or "")
+        page.insert_text((330, 425), phone_number or "")
+        page.insert_text((425, 425), email or "")
+        page.insert_text((70, 595), father_name or "")
+        page.insert_text((180, 595), Contact or "")
+        page.insert_text((290, 560), Occupation or "")
+        page.insert_text((360, 595), mother_name or "")
+        page.insert_text((425, 595), Contact_Mother or "")
+        page.insert_text((495, 595), Occupation_Mother or "")
 
-    # SGPA
-    coords = [
-        (60, 760),
-        (135, 760),
-        (190, 760),
-        (250, 760),
-        (330, 760),
-        (390, 760),
-        (450, 760),
-        (520, 760),
-    ]
-    for i, sgpa in enumerate(sgpas):
-        if i < len(coords):
-            page.insert_text(coords[i], str(sgpa or ""))
+        coords = [
+            (60, 760),
+            (135, 760),
+            (190, 760),
+            (250, 760),
+            (330, 760),
+            (390, 760),
+            (450, 760),
+            (520, 760),
+        ]
+        for i, sgpa in enumerate(sgpas):
+            if i < len(coords):
+                page.insert_text(coords[i], str(sgpa or ""))
 
-    # --- Page 2: Projects & Internships ---
-    page = pdf[1]
-    for i, proj in enumerate(projects):
-        y = 135 + i * 45
-        page.insert_text((105, y), proj.get("company", ""))
-        page.insert_text((225, y), proj.get("address", ""))
-        page.insert_text((340, y), proj.get("duration", ""))
-        page.insert_text((450, y), proj.get("stipend", ""))
+        page = pdf[1]
+        for i, proj in enumerate(projects):
+            y = 135 + i * 45
+            page.insert_text((105, y), proj.get("company", ""))
+            page.insert_text((225, y), proj.get("address", ""))
+            page.insert_text((340, y), proj.get("duration", ""))
+            page.insert_text((450, y), proj.get("stipend", ""))
 
-    for i, intern in enumerate(internships):
-        y = 490 + i * 40
-        page.insert_text((105, y), intern.get("company", ""))
-        page.insert_text((225, y), intern.get("address", ""))
-        page.insert_text((340, y), intern.get("duration", ""))
-        page.insert_text((450, y), intern.get("stipend", ""))
+        for i, intern in enumerate(internships):
+            y = 490 + i * 40
+            page.insert_text((105, y), intern.get("company", ""))
+            page.insert_text((225, y), intern.get("address", ""))
+            page.insert_text((340, y), intern.get("duration", ""))
+            page.insert_text((450, y), intern.get("stipend", ""))
 
-    # --- Page 3: Activities ---
-    page = pdf[2]
-    for i, act in enumerate(activities):
-        y = 180 + i * 75
-        page.insert_text((105, y), act.get("Sports", ""))
-        page.insert_text((215, y), act.get("conference_details", ""))
-        page.insert_text((335, y), act.get("papers_published", ""))
-        page.insert_text((455, y), act.get("certifications_from_MOOC", ""))
+        page = pdf[2]
+        for i, act in enumerate(activities):
+            y = 180 + i * 75
+            page.insert_text((105, y), act.get("Sports", ""))
+            page.insert_text((215, y), act.get("conference_details", ""))
+            page.insert_text((335, y), act.get("papers_published", ""))
+            page.insert_text((455, y), act.get("certifications_from_MOOC", ""))
 
-    # Summary row
-    page.insert_text((90, 645), summary.get("cultural_activities", ""))
-    page.insert_text((185, 645), summary.get("co_curricular_activities", ""))
-    page.insert_text((280, 645), summary.get("hackathon", ""))
-    page.insert_text((370, 645), summary.get("coding_competitions", ""))
-    page.insert_text((460, 645), summary.get("other_achievements", ""))
+        page.insert_text((90, 645), summary.get("cultural_activities", ""))
+        page.insert_text((185, 645), summary.get("co_curricular_activities", ""))
+        page.insert_text((280, 645), summary.get("hackathon", ""))
+        page.insert_text((370, 645), summary.get("coding_competitions", ""))
+        page.insert_text((460, 645), summary.get("other_achievements", ""))
 
-    # Save file to Supabase or local
-    filename = f"{usn}_{name}_record.pdf"
-    pdf_bytes = pdf.write()  # get PDF as bytes
-    pdf.close()
-    file_url = save_file(
-        pdf_bytes, filename, folder="pdfs"
-    )  # handles local vs Supabase
+        filename = f"{usn}_{name}_record.pdf"
+        pdf_bytes = pdf.write()
+        pdf.close()
+        file_url = save_file(pdf_bytes, filename, folder="pdfs")
+        return file_url
 
-    return jsonify({"status": "success", "file": file_url})
+    file_url = await asyncio.get_event_loop().run_in_executor(None, _generate_pdf)
+    return {"status": "success", "file": file_url}
 
 
 def get_mentee_pdf_filename(mentee):
-    safe_name = mentee.name.replace(" ", "_")  # Convert spaces to underscores
+    safe_name = mentee.name.replace(" ", "_")
     return f"{mentee.usn}_{safe_name}_record.pdf"
 
 
-# ------ List all uploaded files ------
-@mentee_record_bp.route("/files", methods=["GET"])
-def files():
+@router.get("/files")
+async def files():
     if not supabase:
         pdf_names = [f for f in os.listdir(UPLOAD_FOLDER) if f.lower().endswith(".pdf")]
-        return jsonify(pdf_names)
+        return pdf_names
 
-    # List all files in "pdfs" folder inside "uploads" bucket
-    response = supabase.storage.from_(SUPABASE_BUCKET).list("pdfs", {"limit": 1000})
+    def _list():
+        response = supabase.storage.from_(SUPABASE_BUCKET).list("pdfs", {"limit": 1000})
+        return [
+            f["name"]
+            for f in getattr(response, "data", [])
+            if f["name"] != ".emptyFolderPlaceholder"
+            and f["name"].lower().endswith(".pdf")
+        ]
 
-    # Debug print (optional)
-    print("List Response:", getattr(response, "data", []))
-
-    # Only include actual PDF files (exclude placeholders and hidden files)
-    pdf_names = [
-        f["name"]
-        for f in getattr(response, "data", [])
-        if f["name"] != ".emptyFolderPlaceholder" and f["name"].lower().endswith(".pdf")
-    ]
-    logger.debug(f"pdf names {pdf_names}")
-    return jsonify(pdf_names)
+    pdf_names = await asyncio.get_event_loop().run_in_executor(None, _list)
+    return pdf_names
 
 
-# ------ Download a PDF ------
-@mentee_record_bp.route("/download/<filename>", methods=["GET"])
-def download(filename):
+@router.get("/download/{filename}")
+async def download(filename: str):
     if not supabase:
-        return send_from_directory(UPLOAD_FOLDER, filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        if not os.path.exists(filepath):
+            return JSONResponse(content={"error": "File not found"}, status_code=404)
+        return FileResponse(filepath, filename=filename)
 
-    response = supabase.storage.from_(SUPABASE_BUCKET).create_signed_url(
-        f"pdfs/{filename}", 3600
-    )
-    signed_url = (
-        getattr(response, "data", {}).get("signedURL")
-        if hasattr(response, "data")
-        else None
-    )
+    def _sign():
+        response = supabase.storage.from_(SUPABASE_BUCKET).create_signed_url(
+            f"pdfs/{filename}", 3600
+        )
+        signed_url = (
+            getattr(response, "data", {}).get("signedURL")
+            if hasattr(response, "data")
+            else None
+        )
+        return signed_url
+
+    signed_url = await asyncio.get_event_loop().run_in_executor(None, _sign)
     if not signed_url:
-        return jsonify({"error": "File not found"}), 404
-    return jsonify({"file_url": signed_url})
+        return JSONResponse(content={"error": "File not found"}, status_code=404)
+    return {"file_url": signed_url}
 
 
-@mentee_record_bp.route("/mentor/<int:mentor_id>/pdfs", methods=["GET"])
-def list_mentor_pdfs(mentor_id):
+@router.get("/mentor/{mentor_id}/pdfs")
+async def list_mentor_pdfs(
+    mentor_id: int, request: Request, batch_year: int | None = Query(None)
+):
     try:
-        batch_year = request.args.get("batch_year") or get_batch_year()
-        with bm.session_scope(batch_year) as db:
-            student_repo = StudentRepository(db.session)
-            if batch_year:
-                mentees = student_repo.get_mentees_by_mentor_and_batch(
-                    mentor_id, batch_year
+        by = batch_year or get_batch_year_from_request(request)
+        async with bm.session_scope(by) as session:
+            student_repo = StudentRepository(session)
+            if by:
+                mentees = await student_repo.get_mentees_by_mentor_and_batch(
+                    mentor_id, by
                 )
             else:
-                mentees = student_repo.get_mentees_by_mentor(mentor_id)
+                mentees = await student_repo.get_mentees_by_mentor(mentor_id)
 
-        # List all PDFs in "pdfs" folder. Response is a plain list.
-        files = []
+        files_list = []
         for mentee in mentees:
-            filename = get_mentee_pdf_filename(
-                mentee
-            )  # e.g. "1JS23CS032_CHETAN_KISHOR_C_G_record.pdf"
+            filename = get_mentee_pdf_filename(mentee)
             if supabase:
                 url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/pdfs/{filename}"
                 try:
-                    resp = requests.head(url, timeout=5)
+                    resp = http_requests.head(url, timeout=5)
                     if resp.status_code == 200:
-                        files.append(
+                        files_list.append(
                             {"usn": mentee.usn, "name": mentee.name, "file_url": url}
                         )
-                except requests.RequestException:
-                    logger.debug(f"File not found or unreachable: {url}")
+                except http_requests.RequestException:
                     pass
             else:
                 local_pdfs = [
                     f for f in os.listdir(UPLOAD_FOLDER) if f.lower().endswith(".pdf")
                 ]
                 if filename in local_pdfs:
-                    files.append(
+                    files_list.append(
                         {
                             "usn": mentee.usn,
                             "name": mentee.name,
                             "file_url": f"/mentee/download/{filename}",
                         }
                     )
-        logger.debug(f"files: {files}")
-        return jsonify(files)
+        return files_list
     except Exception:
         logger.exception("List mentor PDFs failed")
-        return jsonify({"error": "Internal server error"}), 500
+        return JSONResponse(content={"error": "Internal server error"}, status_code=500)
 
 
-@mentee_record_bp.route("/mentor/<int:mentor_id>/download/<usn>", methods=["GET"])
-def download_mentee_pdf(mentor_id, usn):
-    batch_year = request.args.get("batch_year") or get_batch_year()
-    with bm.session_scope(batch_year) as db:
-        student_repo = StudentRepository(db.session)
-        student = student_repo.get_auth_by_usn(usn)
+@router.get("/mentor/{mentor_id}/download/{usn}")
+async def download_mentee_pdf(
+    mentor_id: int, usn: str, request: Request, batch_year: int | None = Query(None)
+):
+    by = batch_year or get_batch_year_from_request(request)
+    async with bm.session_scope(by) as session:
+        student_repo = StudentRepository(session)
+        student = await student_repo.get_auth_by_usn(usn)
         if not student:
-            return jsonify({"error": "Student not found"}), 404
+            return JSONResponse(content={"error": "Student not found"}, status_code=404)
         if student.mentor_id != mentor_id:
-            return jsonify({"error": "Access denied"}), 403
-        filename = get_mentee_pdf_filename(student)  # extract while session is open
+            return JSONResponse(content={"error": "Access denied"}, status_code=403)
+        filename = get_mentee_pdf_filename(student)
 
     if supabase:
         url = (
             f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/pdfs/{filename}"
         )
         try:
-            resp = requests.head(url, timeout=3)
+            resp = http_requests.head(url, timeout=3)
             if resp.status_code == 200:
-                return jsonify({"file_url": url})
+                return {"file_url": url}
             else:
-                return jsonify({"error": "PDF not found"}), 404
-        except requests.RequestException:
-            return jsonify({"error": "Failed to check file"}), 500
+                return JSONResponse(content={"error": "PDF not found"}, status_code=404)
+        except http_requests.RequestException:
+            return JSONResponse(
+                content={"error": "Failed to check file"}, status_code=500
+            )
     else:
         pdf_names = [f for f in os.listdir(UPLOAD_FOLDER) if f.lower().endswith(".pdf")]
         if filename not in pdf_names:
-            return jsonify({"error": "PDF not found"}), 404
-        return jsonify({"file_url": f"/mentee/download/{filename}"})
+            return JSONResponse(content={"error": "PDF not found"}, status_code=404)
+        return {"file_url": f"/mentee/download/{filename}"}

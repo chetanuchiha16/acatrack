@@ -1,5 +1,5 @@
-from flask import Blueprint, jsonify, request
-from werkzeug.utils import secure_filename
+from fastapi import APIRouter, Request, UploadFile, File, Form, Query
+from fastapi.responses import JSONResponse
 import tempfile
 from utils.cloud import (
     upload_pdf_to_supabase,
@@ -9,12 +9,12 @@ from utils.cloud import (
     SUPABASE_BUCKET,
     sanitize_folder,
 )
-from utils.helpers import get_batch_year
+from utils.helpers import get_batch_year_from_request
 from logger_config import get_logger
-
+import asyncio
 
 logger = get_logger(__name__)
-teacher_notes_bp = Blueprint("teacher_notes", __name__)
+router = APIRouter(tags=["teacher_notes"])
 
 
 def allowed_file(filename):
@@ -22,10 +22,6 @@ def allowed_file(filename):
 
 
 def build_supabase_file_tree(folder: str = "") -> dict:
-    """
-    Returns a nested dict: folders as {name: {...}}, PDFs as {name: url string}
-    This is what your React expects -- folder = dict, file = pdf url string
-    """
     if not (SUPABASE_URL and SUPABASE_KEY and supabase):
         raise RuntimeError("Supabase credentials not loaded.")
 
@@ -45,7 +41,6 @@ def build_supabase_file_tree(folder: str = "") -> dict:
         mimetype = metadata.get("mimetype", "")
         if not name:
             continue
-        # If it's a folder
         if mimetype == "application/x-directory" or (
             not mimetype and not name.lower().endswith(".pdf")
         ):
@@ -53,7 +48,6 @@ def build_supabase_file_tree(folder: str = "") -> dict:
             subtree = build_supabase_file_tree(subfolder)
             if subtree:
                 tree[name] = subtree
-        # If it's a PDF
         elif name.lower().endswith(".pdf"):
             file_path = f"{folder}/{name}" if folder else name
             url = (
@@ -63,42 +57,45 @@ def build_supabase_file_tree(folder: str = "") -> dict:
     return tree
 
 
-@teacher_notes_bp.route("/auth/Staff/upload_notes", methods=["GET"])
-def list_notes():
+@router.get("/auth/Staff/upload_notes")
+async def list_notes(request: Request, path: str = Query("")):
     try:
-        batch_year = get_batch_year()
-        relative_path = sanitize_folder(request.args.get("path", "").strip("/"))
+        batch_year = get_batch_year_from_request(request)
+        relative_path = sanitize_folder(path.strip("/"))
         prefix = (
             f"notes/{batch_year}/{relative_path}"
             if relative_path
             else f"notes/{batch_year}"
         )
         logger.debug(f"Building file tree for: {prefix}")
-        tree = build_supabase_file_tree(prefix)
+        tree = await asyncio.get_event_loop().run_in_executor(
+            None, build_supabase_file_tree, prefix
+        )
         logger.debug(f"tree: {tree}")
-        return jsonify(tree), 200
+        return tree
     except Exception:
         logger.exception("Error in upload_notes (tree)")
-        return jsonify({"error": "Failed to list notes."}), 500
+        return JSONResponse(content={"error": "Failed to list notes."}, status_code=500)
 
 
-@teacher_notes_bp.route("/auth/Staff/upload_notes", methods=["POST"])
-def upload_note():
+@router.post("/auth/Staff/upload_notes")
+async def upload_note(
+    request: Request, file: UploadFile = File(...), path: str = Form("")
+):
     try:
-        if "file" not in request.files:
-            logger.error("No file part in upload")
-            return jsonify({"error": "No file part"}), 400
-        file = request.files["file"]
-        if file.filename == "":
-            logger.error("No selected file in upload")
-            return jsonify({"error": "No selected file"}), 400
+        if not file.filename:
+            return JSONResponse(content={"error": "No selected file"}, status_code=400)
         if not allowed_file(file.filename):
-            logger.error(f"Invalid file type: {file.filename}")
-            return jsonify({"error": "Only PDF files are allowed"}), 400
+            return JSONResponse(
+                content={"error": "Only PDF files are allowed"}, status_code=400
+            )
 
-        filename = secure_filename(file.filename)
-        batch_year = get_batch_year()
-        relative_path = sanitize_folder(request.form.get("path", "").strip("/"))
+        from pathlib import Path as P
+
+        filename = P(file.filename).name  # secure filename
+
+        batch_year = get_batch_year_from_request(request)
+        relative_path = sanitize_folder(path.strip("/"))
         folder = (
             f"notes/{batch_year}/{relative_path}"
             if relative_path
@@ -107,25 +104,30 @@ def upload_note():
         logger.debug(f"Uploading to: {folder}/{filename}")
 
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-            file.save(tmp.name)
+            content = await file.read()
+            tmp.write(content)
             tmp.flush()
             try:
-                cloud_url = upload_pdf_to_supabase(tmp.name, filename, folder)
+                cloud_url = await asyncio.get_event_loop().run_in_executor(
+                    None, upload_pdf_to_supabase, tmp.name, filename, folder
+                )
                 logger.info(f"File uploaded: {cloud_url}")
             except Exception:
                 logger.exception("Upload failed")
-                return jsonify({"error": "Cloud upload failed."}), 500
+                return JSONResponse(
+                    content={"error": "Cloud upload failed."}, status_code=500
+                )
 
-        return jsonify(
-            {
-                "message": "File uploaded successfully",
-                "filename": filename,
-                "path": f"{batch_year}/{relative_path}"
-                if relative_path
-                else str(batch_year),
-                "cloud_url": cloud_url,
-            }
-        ), 200
+        return {
+            "message": "File uploaded successfully",
+            "filename": filename,
+            "path": f"{batch_year}/{relative_path}"
+            if relative_path
+            else str(batch_year),
+            "cloud_url": cloud_url,
+        }
     except Exception:
         logger.exception("Error in upload_note")
-        return jsonify({"error": "Failed to upload note."}), 500
+        return JSONResponse(
+            content={"error": "Failed to upload note."}, status_code=500
+        )

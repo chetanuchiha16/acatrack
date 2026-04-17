@@ -4,14 +4,14 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
-    firebase_cred_path: str
-    email_pass: str
-    a_email: str
-    default_number: str
-    c_email: str
-    secret_key: str
-    admin_secret: str
-    database_url: str
+    firebase_cred_path: str = ""
+    email_pass: str = ""
+    a_email: str = ""
+    default_number: str = ""
+    c_email: str = ""
+    secret_key: str = "dev-secret-key"
+    admin_secret: str = "dev-admin-secret"
+    database_url: str = "sqlite+aiosqlite:///dev.db"
     redis_url: str = "redis://localhost:6379/0"
     render: str = "false"
     supabase_url: Optional[str] = None

@@ -1,127 +1,240 @@
 from __future__ import annotations
 
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from models.schema import AcademicResult, ParentAuth, StudentAuth, Subject
 
 
+from typing import Union
+from sqlalchemy.orm import Session
+
+
 class StudentRepository:
-    def __init__(self, db_session: Session) -> None:
+    def __init__(self, db_session: Union[AsyncSession, Session]) -> None:
         self.db = db_session
 
-    def get_auth_by_usn(self, usn: str) -> StudentAuth | None:
-        return self.db.query(StudentAuth).filter_by(usn=usn).first()
-
-    def get_auths_by_usns(self, usns: list[str]) -> list[StudentAuth]:
-        return self.db.query(StudentAuth).filter(StudentAuth.usn.in_(usns)).all()
-
-    def get_auths_with_parents_by_usns(self, usns: list[str]) -> list[StudentAuth]:
-        return (
-            self.db.query(StudentAuth)
-            .options(joinedload(StudentAuth.parent_account))
-            .filter(StudentAuth.usn.in_(usns))
-            .all()
+    async def get_auth_by_usn(self, usn: str) -> StudentAuth | None:
+        result = await self.db.execute(
+            select(StudentAuth).where(StudentAuth.usn == usn)
         )
+        return result.scalars().first()
 
-    def get_mentees_by_mentor_and_batch(
+    def get_auth_by_usn_sync(self, usn: str) -> StudentAuth | None:
+        result = self.db.execute(select(StudentAuth).where(StudentAuth.usn == usn))
+        return result.scalars().first()
+
+    async def get_auths_by_usns(self, usns: list[str]) -> list[StudentAuth]:
+        result = await self.db.execute(
+            select(StudentAuth).where(StudentAuth.usn.in_(usns))
+        )
+        return list(result.scalars().all())
+
+    def get_auths_by_usns_sync(self, usns: list[str]) -> list[StudentAuth]:
+        result = self.db.execute(select(StudentAuth).where(StudentAuth.usn.in_(usns)))
+        return list(result.scalars().all())
+
+    async def get_auths_with_parents_by_usns(
+        self, usns: list[str]
+    ) -> list[StudentAuth]:
+        result = await self.db.execute(
+            select(StudentAuth)
+            .options(selectinload(StudentAuth.parent_account))
+            .where(StudentAuth.usn.in_(usns))
+        )
+        return list(result.scalars().all())
+
+    async def get_mentees_by_mentor_and_batch(
         self, mentor_id: int, batch_year: int
     ) -> list[StudentAuth]:
-        return (
-            self.db.query(StudentAuth)
-            .filter_by(mentor_id=mentor_id, batch_year=batch_year)
-            .all()
+        result = await self.db.execute(
+            select(StudentAuth).where(
+                StudentAuth.mentor_id == mentor_id,
+                StudentAuth.batch_year == batch_year,
+            )
         )
+        return list(result.scalars().all())
 
-    def get_mentees_by_mentor(self, mentor_id: int) -> list[StudentAuth]:
-        return self.db.query(StudentAuth).filter_by(mentor_id=mentor_id).all()
+    async def get_mentees_by_mentor(self, mentor_id: int) -> list[StudentAuth]:
+        result = await self.db.execute(
+            select(StudentAuth).where(StudentAuth.mentor_id == mentor_id)
+        )
+        return list(result.scalars().all())
 
-    def count_by_batch(self, batch_year: int) -> int:
-        return self.db.query(StudentAuth).filter_by(batch_year=batch_year).count()
+    async def count_by_batch(self, batch_year: int) -> int:
+        from sqlalchemy import func
 
-    def get_all(self) -> list[StudentAuth]:
-        return self.db.query(StudentAuth).all()
+        result = await self.db.execute(
+            select(func.count())
+            .select_from(StudentAuth)
+            .where(StudentAuth.batch_year == batch_year)
+        )
+        return result.scalar() or 0
 
-    def get_all_with_parent_email(self) -> list[StudentAuth]:
+    async def get_all(self) -> list[StudentAuth]:
+        result = await self.db.execute(select(StudentAuth))
+        return list(result.scalars().all())
+
+    async def get_all_with_parent_email(self) -> list[StudentAuth]:
         """Returns all students that have a linked parent account with an email."""
-        return (
-            self.db.query(StudentAuth)
+        result = await self.db.execute(
+            select(StudentAuth)
             .join(ParentAuth, ParentAuth.student_id == StudentAuth.id)
-            .filter(ParentAuth.email.isnot(None))
-            .all()
+            .where(ParentAuth.email.isnot(None))
         )
+        return list(result.scalars().all())
 
-    def get_distinct_batch_years(self) -> list[int]:
-        return self.db.query(StudentAuth.batch_year).distinct().all()
+    async def get_distinct_batch_years(self) -> list[int]:
+        from sqlalchemy import distinct
 
-    # --- Student Auth by Batch ---
-    def get_auths_by_batch(self, batch_year: int) -> list[StudentAuth]:
-        return self.db.query(StudentAuth).filter_by(batch_year=batch_year).all()
+        result = await self.db.execute(select(distinct(StudentAuth.batch_year)))
+        return [row[0] for row in result.all()]
 
-    def get_auths_with_parents_by_batch(self, batch_year: int) -> list[StudentAuth]:
+    async def get_auths_by_batch(self, batch_year: int) -> list[StudentAuth]:
+        result = await self.db.execute(
+            select(StudentAuth).where(StudentAuth.batch_year == batch_year)
+        )
+        return list(result.scalars().all())
+
+    async def get_auths_with_parents_by_batch(
+        self, batch_year: int
+    ) -> list[StudentAuth]:
         """Bulk-fetch all students for a batch with their parent accounts eagerly loaded."""
-        return (
-            self.db.query(StudentAuth)
-            .options(joinedload(StudentAuth.parent_account))
-            .filter_by(batch_year=batch_year)
-            .all()
+        result = await self.db.execute(
+            select(StudentAuth)
+            .options(selectinload(StudentAuth.parent_account))
+            .where(StudentAuth.batch_year == batch_year)
         )
+        return list(result.scalars().all())
 
-    def get_auth_by_batch(self, batch_year: int) -> list[StudentAuth]:
+    async def get_auth_by_batch(self, batch_year: int) -> list[StudentAuth]:
         """Alias for get_auths_by_batch."""
-        return self.get_auths_by_batch(batch_year)
+        return await self.get_auths_by_batch(batch_year)
 
     # --- Academic Results & Subjects ---
-    def get_results_by_usn(self, usn: str) -> list[tuple[AcademicResult, Subject]]:
-        return (
-            self.db.query(AcademicResult, Subject)
+    async def get_results_by_usn(
+        self, usn: str
+    ) -> list[tuple[AcademicResult, Subject]]:
+        result = await self.db.execute(
+            select(AcademicResult, Subject)
             .join(Subject)
             .join(StudentAuth)
-            .filter(StudentAuth.usn == usn)
-            .all()
+            .where(StudentAuth.usn == usn)
         )
+        return list(result.all())
 
-    def get_results_in_usns(
+    async def get_results_in_usns(
         self, usns: list[str]
     ) -> list[tuple[AcademicResult, Subject]]:
-        return (
-            self.db.query(AcademicResult, Subject)
+        result = await self.db.execute(
+            select(AcademicResult, Subject)
             .join(Subject)
             .join(StudentAuth)
-            .filter(StudentAuth.usn.in_(usns))
-            .all()
+            .where(StudentAuth.usn.in_(usns))
         )
+        return list(result.all())
 
-    def get_results_by_usns_and_sem(
+    async def get_results_by_usns_and_sem(
         self, usns: list[str], semesters: list[str]
     ) -> list[tuple[AcademicResult, Subject]]:
-        return (
-            self.db.query(AcademicResult, Subject)
+        result = await self.db.execute(
+            select(AcademicResult, Subject)
             .join(Subject)
             .join(StudentAuth)
-            .filter(StudentAuth.usn.in_(usns), Subject.semester.in_(semesters))
-            .all()
+            .where(StudentAuth.usn.in_(usns), Subject.semester.in_(semesters))
         )
+        return list(result.all())
 
-    def get_results_by_usn_and_sem(
+    async def get_results_by_usn_and_sem(
         self, usn: str, semester: str
     ) -> list[tuple[AcademicResult, Subject]]:
-        return (
-            self.db.query(AcademicResult, Subject)
+        result = await self.db.execute(
+            select(AcademicResult, Subject)
             .join(Subject)
             .join(StudentAuth)
-            .filter(StudentAuth.usn == usn, Subject.semester == semester)
-            .all()
+            .where(StudentAuth.usn == usn, Subject.semester == semester)
         )
+        return list(result.all())
 
-    def count_results_by_batch(self, batch_year: int) -> int:
-        return self.db.query(AcademicResult).filter_by(batch_year=batch_year).count()
-
-    def get_subjects_by_codes(self, subject_codes: list[str]) -> list[Subject]:
-        return (
-            self.db.query(Subject).filter(Subject.subject_code.in_(subject_codes)).all()
+    def get_results_by_student_and_sem_sync(
+        self, student_id: int, semester: str
+    ) -> list[tuple[AcademicResult, Subject]]:
+        result = self.db.execute(
+            select(AcademicResult, Subject)
+            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
+            .where(
+                AcademicResult.student_id == student_id,
+                Subject.semester == semester,
+            )
         )
+        return list(result.all())
 
-    def count_subjects(self) -> int:
-        return self.db.query(Subject).count()
+    def get_results_by_student_id_and_sems_sync(
+        self, student_id: int, semesters: list[str]
+    ) -> list[tuple[AcademicResult, Subject]]:
+        result = self.db.execute(
+            select(AcademicResult, Subject)
+            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
+            .where(
+                AcademicResult.student_id == student_id,
+                Subject.semester.in_(semesters),
+            )
+        )
+        return list(result.all())
 
-    def get_distinct_semesters_by_branch(self, branch: str) -> list:
-        return self.db.query(Subject.semester).filter_by(branch=branch).distinct().all()
+    def get_results_by_student_ids_and_sems_sync(
+        self, student_ids: list[int], semesters: list[str]
+    ) -> list[tuple[AcademicResult, Subject]]:
+        result = self.db.execute(
+            select(AcademicResult, Subject)
+            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
+            .where(
+                AcademicResult.student_id.in_(student_ids),
+                Subject.semester.in_(semesters),
+            )
+        )
+        return list(result.all())
+
+    async def count_results_by_batch(self, batch_year: int) -> int:
+        from sqlalchemy import func
+
+        result = await self.db.execute(
+            select(func.count())
+            .select_from(AcademicResult)
+            .where(AcademicResult.batch_year == batch_year)
+        )
+        return result.scalar() or 0
+
+    async def get_subjects_by_codes(self, subject_codes: list[str]) -> list[Subject]:
+        result = await self.db.execute(
+            select(Subject).where(Subject.subject_code.in_(subject_codes))
+        )
+        return list(result.scalars().all())
+
+    async def count_subjects(self) -> int:
+        from sqlalchemy import func
+
+        result = await self.db.execute(select(func.count()).select_from(Subject))
+        return result.scalar() or 0
+
+    async def get_distinct_semesters_by_branch(self, branch: str) -> list:
+        from sqlalchemy import distinct
+
+        result = await self.db.execute(
+            select(distinct(Subject.semester)).where(Subject.branch == branch)
+        )
+        return [row[0] for row in result.all()]
+
+    def get_results_by_student_ids_and_subjects_sync(
+        self, student_ids: list[int], subject_codes: list[str]
+    ) -> list:
+        """Fetch existing AcademicResult rows for upsert logic (sync version)."""
+        from models.schema import AcademicResult as AR
+
+        result = self.db.execute(
+            select(AR).where(
+                AR.student_id.in_(student_ids),
+                AR.subject_code.in_(subject_codes),
+            )
+        )
+        return list(result.scalars().all())

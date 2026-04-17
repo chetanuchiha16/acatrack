@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import Optional
 
-from extensions import db
 from logger_config import get_logger
-from models.schema import AcademicResult, StudentAuth, Subject
+from models.schema import AcademicResult, Subject
 from utils.grading import (
     calculate_pass_fail,
     calculate_obtained_credits,
@@ -15,6 +14,30 @@ from utils.grading import (
 from utils.visuals import plot_subject_marks
 
 logger = get_logger(__name__)
+
+
+_sync_engine_cache = {}
+
+
+def _get_sync_session():
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from settings import settings
+
+    _raw_url = settings.database_url
+    if _raw_url.startswith("postgresql+asyncpg://"):
+        sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+    else:
+        sync_url = _raw_url
+
+    if sync_url not in _sync_engine_cache:
+        # FAANG-level: Use a pooled engine instead of disposing it every time
+        _sync_engine_cache[sync_url] = create_engine(
+            sync_url, pool_size=10, max_overflow=10
+        )
+
+    sync_engine = _sync_engine_cache[sync_url]
+    return sessionmaker(bind=sync_engine), sync_engine
 
 
 class Student:
@@ -57,31 +80,33 @@ class Student:
         else:
             from repositories.student_repository import StudentRepository
 
-            student_repo = StudentRepository(db.session)
+            SyncSessionMaker, sync_engine = _get_sync_session()
+            with SyncSessionMaker() as session:
+                repo = StudentRepository(session)
+                student_rec = repo.get_auth_by_usn_sync(self.usn)
 
-            # 1. Fetch core student details
-            student_rec = student_repo.get_auth_by_usn(self.usn)
-            if student_rec:
-                self.name = student_rec.name
-                self.found = True
+                if student_rec:
+                    self.name = student_rec.name
+                    self.found = True
 
-                # 2. Fetch marks for the specific semester
-                if self.semester:
-                    results = student_repo.get_results_by_usn_and_sem(
-                        self.usn, self.semester
-                    )
+                    if self.semester:
+                        results = repo.get_results_by_student_and_sem_sync(
+                            student_rec.id, self.semester
+                        )
 
-                    for res, sub in results:
-                        self.subject_codes.append(sub.subject_code)
-                        self.subject_names.append(sub.subject_name or sub.subject_code)
-                        self.ia_marks.append(res.ia_marks or 0)
-                        self.see_marks.append(res.see_marks or 0)
-                        self.credits.append(sub.credits or 0)
+                        for res, sub in results:
+                            self.subject_codes.append(sub.subject_code)
+                            self.subject_names.append(
+                                sub.subject_name or sub.subject_code
+                            )
+                            self.ia_marks.append(res.ia_marks or 0)
+                            self.see_marks.append(res.see_marks or 0)
+                            self.credits.append(sub.credits or 0)
 
         if not self.found:
             raise ValueError(f"No student data found for USN {usn}")
 
-        # 3. Calculate derived attributes (Matching your old methods exactly)
+        # Calculate derived attributes
         self.total_marks: int = sum(self.ia_marks) + sum(self.see_marks)
         self.pass_fail: list[str] = self.calculate_pass_fail()
         self.obtained_credits: float = self.calculate_obtained_credits()
@@ -134,22 +159,21 @@ class Student:
                         )
             return previous_data
 
-        student_rec: Optional[StudentAuth] = StudentAuth.query.filter_by(
-            usn=self.usn
-        ).first()
-        if not student_rec:
-            return previous_data
+        from repositories.student_repository import StudentRepository
 
-        sem_names: list[str] = [f"sem{sem}" for sem in range(1, sem_no)]
-        all_results: list[tuple[AcademicResult, Subject]] = (
-            db.session.query(AcademicResult, Subject)
-            .join(Subject, AcademicResult.subject_code == Subject.subject_code)
-            .filter(
-                AcademicResult.student_id == student_rec.id,
-                Subject.semester.in_(sem_names),
+        SyncSessionMaker, sync_engine = _get_sync_session()
+
+        with SyncSessionMaker() as session:
+            repo = StudentRepository(session)
+            student_rec = repo.get_auth_by_usn_sync(self.usn)
+
+            if not student_rec:
+                return previous_data
+
+            sem_names: list[str] = [f"sem{sem}" for sem in range(1, sem_no)]
+            all_results = repo.get_results_by_student_id_and_sems_sync(
+                student_rec.id, sem_names
             )
-            .all()
-        )
 
         sem_data: dict[str, list[tuple[AcademicResult, Subject]]] = {
             sem: [] for sem in sem_names
@@ -255,19 +279,23 @@ class Student:
 
         required_semesters = [f"sem{i}" for i in range(1, sem_no + 1)]
 
-        # Fetch all StudentAuth records
         from repositories.student_repository import StudentRepository
 
-        student_repo = StudentRepository(db.session)
-        student_records = student_repo.get_auths_by_usns(usns)
-        student_map = {s.usn: s for s in student_records}
-        student_id_to_usn = {s.id: s.usn for s in student_records}
+        SyncSessionMaker, sync_engine = _get_sync_session()
 
-        if not student_map:
-            return {}
+        with SyncSessionMaker() as session:
+            repo = StudentRepository(session)
+            student_records = repo.get_auths_by_usns_sync(usns)
 
-        # Fetch AcademicResult and Subject joined over required semesters
-        results = student_repo.get_results_by_usns_and_sem(usns, required_semesters)
+            student_map = {s.usn: s for s in student_records}
+            student_id_to_usn = {s.id: s.usn for s in student_records}
+
+            if not student_map:
+                return {}
+
+            results = repo.get_results_by_student_ids_and_sems_sync(
+                [s.id for s in student_records], required_semesters
+            )
 
         preloaded_data = {
             usn: {
@@ -297,7 +325,6 @@ class Student:
                     sub
                 )
 
-        # Instantiate memory-fed objects
         instantiated_students = {}
         for usn, data in preloaded_data.items():
             try:
@@ -310,26 +337,125 @@ class Student:
         return instantiated_students
 
     @classmethod
+    async def bulk_fetch_async(
+        cls,
+        session,
+        usns: list[str],
+        semester: Optional[str],
+        batch_year: int,
+    ) -> list["Student"]:
+        """
+        Truly async version of bulk_fetch.
+        Uses the async session directly — no thread pool, no sync engine.
+        Returns a list of Student objects (not a dict).
+        """
+        if not usns:
+            return []
+
+        semester = semester.lower().strip() if semester else None
+
+        try:
+            sem_no = int(semester[-1]) if semester else 1
+        except Exception:
+            sem_no = 1
+
+        required_semesters = [f"sem{i}" for i in range(1, sem_no + 1)]
+
+        from repositories.student_repository import StudentRepository
+
+        repo = StudentRepository(session)
+
+        # Query 1: fetch student records
+        student_records = await repo.get_auths_by_usns(usns)
+
+        student_map = {s.usn: s for s in student_records}
+        student_id_to_usn = {s.id: s.usn for s in student_records}
+
+        if not student_map:
+            return []
+
+        # Query 2: fetch all results + subjects for current + previous semesters
+        # The repo method `get_results_by_usns_and_sem` uses `usns` instead of `student_ids` internally
+        results = await repo.get_results_by_usns_and_sem(usns, required_semesters)
+
+        # Pure Python: build preloaded_data and instantiate Students (no I/O)
+        preloaded_data = {
+            usn: {
+                "student": student_map[usn],
+                "current_semester": {"res": [], "sub": []},
+                "previous_semesters": {},
+            }
+            for usn in usns
+            if usn in student_map
+        }
+
+        for res, sub in results:
+            usn = student_id_to_usn[res.student_id]
+            if sub.semester == semester:
+                preloaded_data[usn]["current_semester"]["res"].append(res)
+                preloaded_data[usn]["current_semester"]["sub"].append(sub)
+            else:
+                if sub.semester not in preloaded_data[usn]["previous_semesters"]:
+                    preloaded_data[usn]["previous_semesters"][sub.semester] = {
+                        "res": [],
+                        "sub": [],
+                    }
+                preloaded_data[usn]["previous_semesters"][sub.semester]["res"].append(
+                    res
+                )
+                preloaded_data[usn]["previous_semesters"][sub.semester]["sub"].append(
+                    sub
+                )
+
+        students = []
+        for usn, data in preloaded_data.items():
+            try:
+                students.append(cls(usn, semester, batch_year, preloaded_data=data))
+            except ValueError:
+                pass
+
+        return students
+
+    @classmethod
+    async def create_async(
+        cls,
+        session,
+        usn: str,
+        semester: Optional[str],
+        batch_year: int,
+    ) -> Optional["Student"]:
+        """
+        Creates a single Student object asynchronously using the bulk_fetch_async pipeline.
+        """
+        students = await cls.bulk_fetch_async(session, [usn], semester, batch_year)
+        if not students:
+            # Emulate the __init__ behavior which raises ValueError if not found
+            raise ValueError(f"No student data found for USN {usn}")
+        return students[0]
+
+    @classmethod
     def get_all_semesters(
         cls,
         usn: str,
         batch_year: int,
         max_sem: int = 6,
     ) -> dict[str, "Student"]:
-        """
-        Fetches all semesters for a given USN in 2 queries, returning a dict of
-        instantiated Student objects mapping semester name (e.g. 'sem1') to Student.
-        """
         required_semesters = [f"sem{i}" for i in range(1, max_sem + 1)]
 
         from repositories.student_repository import StudentRepository
 
-        student_repo = StudentRepository(db.session)
-        student_rec = student_repo.get_auth_by_usn(usn)
-        if not student_rec:
-            return {}
+        SyncSessionMaker, sync_engine = _get_sync_session()
 
-        results = student_repo.get_results_by_usns_and_sem([usn], required_semesters)
+        with SyncSessionMaker() as session:
+            repo = StudentRepository(session)
+            student_rec = repo.get_auth_by_usn_sync(usn)
+
+            if not student_rec:
+                return {}
+
+            results = repo.get_results_by_student_id_and_sems_sync(
+                student_rec.id, required_semesters
+            )
 
         sem_data = {sem: {"res": [], "sub": []} for sem in required_semesters}
         for res, sub in results:
@@ -348,9 +474,6 @@ class Student:
                 },
             }
             try:
-                # If current semester has no results but student exists, Student__init__
-                # might still initialize if it doesn't strictly throw error for empty current_semester array
-                # But it's safer to check if there are results
                 if sem_data[sem]["res"]:
                     instantiated[sem] = cls(
                         usn, sem, batch_year, preloaded_data=preloaded

@@ -1,52 +1,68 @@
-from flask import Blueprint, jsonify, request, send_from_directory
-from werkzeug.utils import secure_filename
+from fastapi import APIRouter, Request, Query
+from fastapi.responses import JSONResponse, FileResponse
+from cache_config import cache
 from logger_config import get_logger
-from utils.helpers import get_batch_year
+from utils.helpers import get_batch_year_from_request
 from models.paths import pdf_dir
 from services.mentor_service import (
     get_mentor_students_data,
     generate_mentee_chart_base64,
 )
+from services.batch_manager import bm
+from pathlib import Path
+import os
 
 logger = get_logger(__name__)
 
-mentor_bp = Blueprint("mentor", __name__)
+router = APIRouter(tags=["mentors"])
 
 
-@mentor_bp.route("/auth/Staff/Mentor/result", methods=["GET"])
-def get_mentor_students():
-    mentor_id = request.args.get("mentor_id")
-    semester = request.args.get("semester")
-    batch_year = request.args.get("batch_year") or get_batch_year()
+@router.get("/auth/Staff/Mentor/result")
+@cache(expire=3600)
+async def get_mentor_students(
+    request: Request,
+    mentor_id: int = Query(None),
+    semester: str = Query(None),
+    batch_year: int | None = Query(None),
+):
+    by = batch_year or get_batch_year_from_request(request)
 
-    results, status_code, error_msg = get_mentor_students_data(
-        mentor_id, semester, batch_year
-    )
-
-    if error_msg:
-        return jsonify({"error": error_msg}), status_code
-
-    return jsonify(results)
-
-
-@mentor_bp.route("/auth/Staff/Mentor/report/<filename>", methods=["GET"])
-def download_mentee_report(filename):
-    filename = secure_filename(filename)
-    return send_from_directory(pdf_dir, filename, as_attachment=True)
-
-
-# Route to get chart of a specific mentee
-@mentor_bp.route("/auth/Staff/Mentor/chart", methods=["GET"])
-def get_mentee_chart():
-    usn = request.args.get("usn")
-    semester = request.args.get("semester")
-    batch_year = request.args.get("batch_year") or get_batch_year()
-
-    image_url, status_code, error_msg = generate_mentee_chart_base64(
-        usn, semester, batch_year
-    )
+    async with bm.session_scope(by) as session:
+        results, status_code, error_msg = await get_mentor_students_data(
+            session, mentor_id, semester, by
+        )
 
     if error_msg:
-        return jsonify({"error": error_msg}), status_code
+        return JSONResponse(content={"error": error_msg}, status_code=status_code)
 
-    return jsonify({"image": image_url})
+    return results
+
+
+@router.get("/auth/Staff/Mentor/report/{filename}")
+async def download_mentee_report(filename: str):
+    safe_filename = Path(filename).name
+    filepath = os.path.join(pdf_dir, safe_filename)
+    if not os.path.exists(filepath):
+        return JSONResponse(content={"error": "File not found"}, status_code=404)
+    return FileResponse(filepath, filename=safe_filename, media_type="application/pdf")
+
+
+@router.get("/auth/Staff/Mentor/chart")
+@cache(expire=3600)
+async def get_mentee_chart(
+    request: Request,
+    usn: str = Query(None),
+    semester: str = Query(None),
+    batch_year: int | None = Query(None),
+):
+    by = batch_year or get_batch_year_from_request(request)
+
+    async with bm.session_scope(by) as session:
+        image_url, status_code, error_msg = await generate_mentee_chart_base64(
+            session, usn, semester, by
+        )
+
+    if error_msg:
+        return JSONResponse(content={"error": error_msg}, status_code=status_code)
+
+    return {"image": image_url}

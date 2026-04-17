@@ -1,5 +1,5 @@
 import pandas as pd
-from extensions import db  # Use the DB instance
+from utils.sync_db import db  # Use the DB instance
 from logger_config import get_logger
 from utils.cloud import download_excel_from_supabase
 from models.schema import AcademicResult, StudentAuth, Subject
@@ -103,12 +103,9 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
         student_ids = [s.id for s in existing_students]
         if student_ids and subject_codes:
             existing_results = (
-                db.session.query(AcademicResult)
-                .filter(
-                    AcademicResult.student_id.in_(student_ids),
-                    AcademicResult.subject_code.in_(subject_codes),
+                student_repo.get_results_by_student_ids_and_subjects_sync(
+                    student_ids, subject_codes
                 )
-                .all()
             )
         else:
             existing_results = []
@@ -172,7 +169,7 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
                         # Update subject credits if not set or if we found a non-zero value
                         if credit_val > 0:
                             subject.credits = credit_val
-                    except ValueError, TypeError:
+                    except (ValueError, TypeError):
                         pass
 
                 # Extract Marks
@@ -193,7 +190,7 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
                         if ia_col and pd.notna(row[ia_col])
                         else 0
                     )
-                except ValueError, TypeError:
+                except (ValueError, TypeError):
                     ia_marks = 0
 
                 try:
@@ -202,7 +199,7 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
                         if see_col and pd.notna(row[see_col])
                         else 0
                     )
-                except ValueError, TypeError:
+                except (ValueError, TypeError):
                     see_marks = 0
 
                 try:
@@ -211,7 +208,7 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
                         if total_col and pd.notna(row[total_col])
                         else (ia_marks + see_marks)
                     )
-                except ValueError, TypeError:
+                except (ValueError, TypeError):
                     total_marks = ia_marks + see_marks
 
                 # Skip if no data for this subject for this student AND it's not a credit-only update

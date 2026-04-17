@@ -1,29 +1,40 @@
-from flask import Blueprint, jsonify, request
-from utils.helpers import get_batch_year
+from fastapi import APIRouter, Request, Query
+from fastapi.responses import JSONResponse
+from utils.helpers import get_batch_year_from_request
 from services.student_analysis_service import analyze_student_performance
+from services.batch_manager import bm
+from cache_config import cache
 
-student_api_bp = Blueprint("student_api", __name__)
+router = APIRouter(tags=["student_analysis"])
 
 
-@student_api_bp.route("/auth/Student/analysis", methods=["GET"])
-def get_student_analysis():
-    usn = request.args.get("usn")
-    semester = request.args.get("semester")
-    batch_year = get_batch_year()
+@router.get("/auth/Student/analysis")
+@cache(expire=3600)
+async def get_student_analysis(
+    request: Request,
+    usn: str = Query(None),
+    semester: str = Query(None),
+):
+    batch_year = get_batch_year_from_request(request)
 
     if not usn or not semester:
-        return jsonify({"error": "USN and semester are required"}), 400
+        return JSONResponse(
+            content={"error": "USN and semester are required"}, status_code=400
+        )
 
     try:
-        analysis = analyze_student_performance(usn, semester, batch_year=batch_year)
+        async with bm.session_scope(batch_year) as session:
+            analysis = await analyze_student_performance(
+                session, usn, semester, batch_year
+            )
 
-        # Optionally remove 'study_tips' to avoid confusion
         analysis.pop("study_tips", None)
 
-        # Ensure frontend has 'study_summary'
         if "study_summary" not in analysis:
             analysis["study_summary"] = "Focus on overall improvement."
 
-        return jsonify(analysis)
+        return analysis
     except Exception:
-        return jsonify({"error": "Failed to perform student analysis."}), 500
+        return JSONResponse(
+            content={"error": "Failed to perform student analysis."}, status_code=500
+        )

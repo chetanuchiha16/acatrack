@@ -99,7 +99,7 @@ SEMESTERS = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6"]
 def safe_int(val):
     try:
         return int(val)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return 0  # or None if you want to indicate missing marks
 
 
@@ -109,7 +109,7 @@ def fetch_student_data(usn, semester, batch_year, engine):
     Returns a dictionary of relevant info, mapping the old JSON schema.
     """
     try:
-        from extensions import db
+        from utils.sync_db import db
         from models.schema import AcademicResult, StudentAuth, Subject
 
         # Fetch student base

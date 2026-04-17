@@ -1,72 +1,83 @@
-from flask import Blueprint, request, jsonify, session
+from fastapi import APIRouter, Request
 from services.batch_manager import bm
-from utils.helpers import get_batch_year, get_jwt_payload
+from utils.helpers import get_batch_year_from_request, get_jwt_payload_from_request
 from logger_config import get_logger
 from services.auth_service import authenticate_user, update_fcm_token
+from pydantic import BaseModel
+from typing import Optional
 
 logger = get_logger(__name__)
-auth_bp = Blueprint("auth", __name__)
+
+router = APIRouter(tags=["auth"])
 
 
-@auth_bp.route("/batches", methods=["GET"])
-def list_batches():
-    batches = bm.list_batches()
-    return jsonify({"batches": batches})
+class AuthRequest(BaseModel):
+    who: Optional[str] = None
+    username: str
+    password: str
+    batch_year: Optional[int] = None
 
 
-@auth_bp.route("/auth", methods=["POST"])
-def auth():
-    who = request.json.get("who")
-    username = request.json.get("username")
-    password = request.json.get("password")
-    provided_batch_year = request.json.get("batch_year")
+class FcmTokenRequest(BaseModel):
+    fcm_token: str
 
-    result, error_msg, status_code = authenticate_user(
-        who, username, password, provided_batch_year
+
+@router.get("/batches")
+async def list_batches():
+    batches = await bm.list_batches()
+    return {"batches": batches}
+
+
+@router.post("/auth")
+async def auth(body: AuthRequest):
+    result, error_msg, status_code = await authenticate_user(
+        body.who, body.username, body.password, body.batch_year
     )
 
     if error_msg:
-        return jsonify({"error": error_msg}), status_code
+        from fastapi.responses import JSONResponse
 
-    # Set session data safely using the dict returned by service
-    session_data = result.get("session_data", {})
-    for k, v in session_data.items():
-        session[k] = v
+        return JSONResponse(content={"error": error_msg}, status_code=status_code)
 
-    return jsonify({"token": result["token"]}), 200
+    return {"token": result["token"]}
 
 
-@auth_bp.route("/auth/status", methods=["GET"])
-def auth_status():
-    payload = get_jwt_payload()
+@router.get("/auth/status")
+async def auth_status(request: Request):
+    payload = get_jwt_payload_from_request(request)
     if payload:
-        return jsonify(
-            {
-                "logged_in": True,
-                "id": payload.get("id"),
-                "name": payload.get("name"),
-                "who": payload.get("who"),
-                "batch_year": payload.get("batch_year"),
-                "mentor_id": payload.get("mentor_id"),
-            }
-        )
+        return {
+            "logged_in": True,
+            "id": payload.get("id"),
+            "name": payload.get("name"),
+            "who": payload.get("who"),
+            "batch_year": payload.get("batch_year"),
+            "mentor_id": payload.get("mentor_id"),
+        }
     else:
-        return jsonify({"logged_in": False, "message": "Not logged in"}), 401
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            content={"logged_in": False, "message": "Not logged in"},
+            status_code=401,
+        )
 
 
-@auth_bp.route("/logout", methods=["POST"])
-def logout():
-    session.clear()
-    return jsonify({"message": "Logged out"})
+@router.post("/logout")
+async def logout():
+    return {"message": "Logged out"}
 
 
-@auth_bp.route("/student/<usn>/fcm-token", methods=["POST"])
-def save_fcm_token(usn):
-    token = request.json.get("fcm_token")
-    batch_year = get_batch_year()
+@router.post("/student/{usn}/fcm-token")
+async def save_fcm_token(usn: str, body: FcmTokenRequest, request: Request):
+    batch_year = get_batch_year_from_request(request)
 
-    success, error_msg, status_code = update_fcm_token(usn, token, batch_year)
+    success, error_msg, status_code = await update_fcm_token(
+        usn, body.fcm_token, batch_year
+    )
     if not success:
-        return jsonify({"error": error_msg}), status_code
+        from fastapi.responses import JSONResponse
 
-    return jsonify({"success": True}), 200
+        return JSONResponse(content={"error": error_msg}, status_code=status_code)
+
+    return {"success": True}

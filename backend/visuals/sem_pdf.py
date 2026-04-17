@@ -9,9 +9,7 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import letter
-from services.results_service import SubjectResult
 from models.paths import get_logo_path
-from services.fetch_service import sem_subjects
 import io
 from logger_config import get_logger
 
@@ -21,11 +19,38 @@ styles = getSampleStyleSheet()
 normal_style = styles["Normal"]
 
 
-def generate_sem_pdf(selected_semester, university, semester_subject_mapping):
+async def generate_sem_pdf_async(selected_semester, university, session):
+    """
+    Async version of semester PDF generation.
+    FAANG-level optimization: Uses repository for SQL-level aggregations
+    and avoids redundant student instantiation.
+    """
     try:
-        subjects = semester_subject_mapping.get(selected_semester, [])
-        if not subjects:
-            raise ValueError("No subjects found for the selected semester.")
+        from repositories.academic_repository import AcademicRepository
+
+        repo = AcademicRepository(session)
+
+        # 1. Fetch Summary Stats for the table using ONE SQL QUERY
+        subject_stats = await repo.get_semester_summary_stats(
+            selected_semester, university.batch_year
+        )
+        if not subject_stats:
+            return b""
+
+        # 2. Fetch toppers using optimized SQL-level sort
+        toppers = await repo.get_toppers_by_percentage(
+            selected_semester, university.batch_year
+        )
+
+        # 3. Fetch cohort aggregate stats using SQL
+        cohort_stats = await repo.get_semester_cohort_stats(
+            selected_semester, university.batch_year
+        )
+
+        # 4. Fetch failed students list using optimized SQL query
+        failed_students = await repo.get_semester_failed_students(
+            selected_semester, university.batch_year
+        )
 
         pdf_buffer = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -38,35 +63,27 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping):
         )
 
         elements = []
-
-        styles = getSampleStyleSheet()
-
-        # Add logo
         try:
-            logo = Image(get_logo_path(), width=50, height=50)  # Adjust size as needed
+            logo = Image(get_logo_path(), width=50, height=50)
             elements.append(logo)
         except Exception as e:
             logger.debug(f"Warning: Could not load logo image. {e}")
 
-        # Add college name
         title = Paragraph(
             f"<b>{'JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU'}</b>", styles["Title"]
         )
         elements.append(title)
-
-        # Add a gap
         elements.append(Spacer(1, 20))
-
-        # Add semester title
-        sem_title = Paragraph(
-            f"<b>Semester-Wise Results: {selected_semester}</b>", styles["Heading2"]
+        elements.append(
+            Paragraph(
+                f"<b>Semester-Wise Results: {selected_semester}</b>", styles["Heading2"]
+            )
         )
-        elements.append(sem_title)
         elements.append(Spacer(1, 12))
 
         headers = [
             "Subject Name",
-            "Total Students",
+            "Total",
             "Present",
             "Absent",
             "Pass %",
@@ -75,40 +92,23 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping):
             "SC",
             "Fail",
         ]
-        column_widths = [
-            80,
-            90,
-            70,
-            70,
-            60,
-            50,
-            50,
-            50,
-            50,
-        ]  # Adjust column widths to fit
-
+        column_widths = [110, 50, 50, 50, 60, 40, 40, 40, 40]
         data = [headers]
 
-        # Process each subject
-        for subject_code in subjects:
-            subject_result = SubjectResult(subject_code, selected_semester, university)
-            subject_name = sem_subjects[selected_semester].get(
-                subject_code, "unknown subject"
-            )
+        for stat in subject_stats:
             row = [
-                Paragraph(subject_name, normal_style),
-                subject_result.total_students,
-                subject_result.present_students,
-                subject_result.absent_students,
-                f"{subject_result.pass_percentage:.2f}%",
-                subject_result.fcd_count,
-                subject_result.fc_count,
-                subject_result.sc_count,
-                subject_result.fail_count,
+                Paragraph(stat["subject_name"], normal_style),
+                stat["total_students"],
+                stat["present_students"],
+                stat["absent_students"],
+                f"{stat['pass_percentage']:.2f}%",
+                stat["fcd_count"],
+                stat["fc_count"],
+                stat["sc_count"],
+                stat["fail_count"],
             ]
             data.append(row)
 
-        # Create the table
         table = Table(data, colWidths=column_widths)
         table.setStyle(
             TableStyle(
@@ -117,12 +117,7 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping):
                     ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
                     ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    (
-                        "FONTSIZE",
-                        (0, 0),
-                        (-1, -1),
-                        9,
-                    ),  # Adjust font size for better fit
+                    ("FONTSIZE", (0, 0), (-1, -1), 9),
                     ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
                     ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
@@ -130,163 +125,81 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping):
             )
         )
         elements.append(table)
-
-        # Add totals summary
         elements.append(Spacer(1, 12))
 
+        # Cohort summary from SQL stats
         totals_headers = ["Total Students", "FCD", "FC", "SC", "Fail", "Pass %"]
-        total_students = len(
-            [
-                student
-                for student in university.students
-                if student.semester == selected_semester
-            ]
-        )
-        total_fcd = sum(
-            student.categorize() == "First Class with Distinction (FCD)"
-            for student in university.students
-            if student.semester == selected_semester
-        )
-        total_fc = sum(
-            student.categorize() == "First Class (FC)"
-            for student in university.students
-            if student.semester == selected_semester
-        )
-        total_sc = sum(
-            student.categorize() == "Second Class (SC)"
-            for student in university.students
-            if student.semester == selected_semester
-        )
-        total_fail = sum(
-            "Fail" in student.pass_fail
-            for student in university.students
-            if student.semester == selected_semester
-        )
-        total_present = total_students - total_fail
-        pass_percentage = (
-            (total_present / total_students) * 100 if total_students > 0 else 0.0
-        )
-
         totals_data = [
             totals_headers,
             [
-                total_students,
-                total_fcd,
-                total_fc,
-                total_sc,
-                total_fail,
-                f"{pass_percentage:.2f}%",
+                cohort_stats["total_students"],
+                cohort_stats["total_fcd"],
+                cohort_stats["total_fc"],
+                cohort_stats["total_sc"],
+                cohort_stats["total_fail"],
+                f"{cohort_stats['pass_percentage']:.2f}%",
             ],
         ]
-
-        totals_table = Table(
-            totals_data, colWidths=column_widths[: len(totals_headers)]
-        )
+        totals_table = Table(totals_data, colWidths=[90, 50, 50, 50, 50, 70])
         totals_table.setStyle(
             TableStyle(
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), colors.lightblue),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
                     ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, -1), 9),  # Adjust font size
+                    ("FONTSIZE", (0, 0), (-1, -1), 9),
                     ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ]
             )
         )
         elements.append(totals_table)
         elements.append(Spacer(1, 20))
 
-        result = university.calculate_academic_performance_by_semester(
-            selected_semester
+        # Toppers
+        elements.append(
+            Paragraph(f"<b> Toppers  {selected_semester}</b>", styles["Heading2"])
         )
-        toppers = sorted(result, key=lambda x: x["percentage"], reverse=True)[
-            :10
-        ]  # Get top 10 students by percentage
-
-        topper_title = Paragraph(
-            f"<b> Toppers  {selected_semester}</b>", styles["Heading2"]
-        )
-        elements.append(topper_title)
         elements.append(Spacer(1, 12))
-
         topper_headers = ["No", "USN", "Name", "Percentage"]
-        column_widths = [80, 90, 130, 70]  # Adjust column widths to fit
-
         topper_data = [topper_headers]
-
-        # Process each subject
         for i, topper in enumerate(toppers, start=1):
-            row1 = [
-                str(i),
-                topper["usn"],
-                topper["name"],
-                round(topper["percentage"], 2),
-            ]
-            topper_data.append(row1)
+            topper_data.append(
+                [str(i), topper["usn"], topper["name"], f"{topper['percentage']:.2f}%"]
+            )
 
-        # Create the table
-        topper_table = Table(topper_data, colWidths=column_widths)
+        topper_table = Table(topper_data, colWidths=[30, 90, 200, 70])
         topper_table.setStyle(
             TableStyle(
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), colors.lightblue),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
                     ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    (
-                        "FONTSIZE",
-                        (0, 0),
-                        (-1, -1),
-                        9,
-                    ),  # Adjust font size for better fit
-                    ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
                     ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ]
             )
         )
         elements.append(topper_table)
+        elements.append(Spacer(1, 20))
 
-        # Display failed students
-
-        failed_students = university.find_failed_students_old(selected_semester)
-        fail_title = Paragraph(
-            f"<b> Slow Learners  {selected_semester}</b>", styles["Heading2"]
+        # Slow Learners
+        elements.append(
+            Paragraph(f"<b> Slow Learners  {selected_semester}</b>", styles["Heading2"])
         )
-        elements.append(fail_title)
         elements.append(Spacer(1, 12))
-
         fail_headers = ["USN", "Subjects failed"]
-        column_widths = [90, 400]  # Adjust column widths to fit
-
         fail_data = [fail_headers]
+        for fail_item in failed_students:
+            fail_data.append(
+                [
+                    fail_item["usn"],
+                    Paragraph(", ".join(fail_item["subject_codes"]), normal_style),
+                ]
+            )
 
-        for usn, failed_sub_codes in failed_students.items():
-            subjects_str = ", ".join(failed_sub_codes)  # neat comma-separated string
-            row2 = [
-                usn,
-                Paragraph(subjects_str, normal_style),
-            ]
-            fail_data.append(row2)
-
-        # Create the table
-        fail_table = Table(fail_data, colWidths=column_widths)
+        fail_table = Table(fail_data, colWidths=[90, 400])
         fail_table.setStyle(
             TableStyle(
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), colors.lightblue),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
-                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    (
-                        "FONTSIZE",
-                        (0, 0),
-                        (-1, -1),
-                        9,
-                    ),  # Adjust font size for better fit
-                    ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
                     ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ]
@@ -294,13 +207,10 @@ def generate_sem_pdf(selected_semester, university, semester_subject_mapping):
         )
         elements.append(fail_table)
 
-        # Build the PDF
         doc.build(elements)
-
-        pdf_buffer.seek(0)  # <-- seek to beginning
-        pdf_bytes = pdf_buffer.read()  # <-- read full content
-        pdf_buffer.close()
-        return pdf_bytes
+        pdf_buffer.seek(0)
+        return pdf_buffer.read()
 
     except Exception as e:
-        logger.debug(f"Error generating PDF: {e}")
+        logger.exception(f"Error generating async PDF: {e}")
+        return b""
