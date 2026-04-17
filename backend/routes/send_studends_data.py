@@ -3,6 +3,7 @@ import io
 
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import JSONResponse, FileResponse
+from schemas import StudentResultResponse, ChartResponse
 from cache_config import cache
 from logger_config import get_logger
 from services.student_service import Student
@@ -16,7 +17,7 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["student"])
 
 
-@router.get("/auth/Student/result")
+@router.get("/auth/Student/result", response_model=StudentResultResponse)
 @cache(expire=3600)
 async def get_student_info(
     request: Request, usn: str = Query(None), semester: str = Query(None)
@@ -66,7 +67,7 @@ async def download_report(filename: str):
     return FileResponse(filepath, filename=safe_filename, media_type="application/pdf")
 
 
-@router.get("/auth/Student/chart")
+@router.get("/auth/Student/chart", response_model=ChartResponse)
 @cache(expire=3600)
 async def get_student_chart(
     request: Request, usn: str = Query(None), semester: str = Query(None)

@@ -1,23 +1,14 @@
 import React, { useState, useEffect } from "react";
 import jssLogo from "./assets/jssLogo.png";
-import axiosInstance from "./axiosInstance";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import ForgotPassword from "./ForgotPassword";
-import API_BASE from "./config";
 import { requestForToken } from "./firebase";
 import LoadingSpinner from "./LoadingSpinner";
 import { parseJwt } from "./utils/auth";
 import { getToken, setToken, clearToken } from "./utils/storage";
-import axios, { type AxiosError } from "axios";
-
-interface AuthResponse {
-    token: string;
-}
-
-interface ErrorResponse {
-    error?: string;
-}
+import { authAuthPost, saveFcmTokenStudentUsnFcmTokenPost } from "./client/sdk.gen";
+import { parseApiError } from "./utils/errorHandler";
 
 const Auth: React.FC = () => {
     let { who } = useParams<{ who?: string }>();
@@ -62,15 +53,17 @@ const Auth: React.FC = () => {
         e.preventDefault();
 
         try {
-            const res = await axiosInstance.post<AuthResponse>(`${API_BASE}/auth`, {
-                who,
-                username,
-                password,
+            const { data: authData } = await authAuthPost({
+                body: {
+                    who,
+                    username,
+                    password,
+                }
             });
 
-            const token = res.data.token;
+            const token = authData?.token;
             if (!token) {
-                alert("Login failed");
+                alert("Login failed: No token received");
                 return;
             }
 
@@ -82,17 +75,18 @@ const Auth: React.FC = () => {
                 return;
             }
             
-            const { id, name, mentor_id } = payload;
+            const id = payload.id as string;
+            const name = payload.name as string;
+            const mentor_id = payload.mentor_id as string;
 
             // 🔹 request FCM token
             try {
                 const fcmToken = await requestForToken();
                 if (fcmToken) {
-                    await axiosInstance.post(
-                        `${API_BASE}/student/${id}/fcm-token`,
-                        { fcm_token: fcmToken },
-                        { headers: { Authorization: `Bearer ${token}` } }
-                    );
+                    await saveFcmTokenStudentUsnFcmTokenPost({
+                        path: { usn: id },
+                        body: { fcm_token: fcmToken }
+                    });
                 }
             } catch (err) {
                 console.warn("Failed to save FCM token:", err);
@@ -102,12 +96,7 @@ const Auth: React.FC = () => {
                 state: { who, id, name, mentor_id },
             });
         } catch (err: unknown) {
-            if (axios.isAxiosError(err)) {
-                const axiosErr = err as AxiosError<ErrorResponse>;
-                alert(axiosErr.response?.data?.error || "Login failed");
-            } else {
-                alert("Login failed");
-            }
+            alert(parseApiError(err) || "Login failed");
         }
     };
 

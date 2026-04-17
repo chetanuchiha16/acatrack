@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import axiosInstance from "./axiosInstance";
-import API_BASE from "./config";
+import { getStudentInfoAuthStudentResultGet } from "./client/sdk.gen";
+import type { StudentResultResponse as StudentResult, SubjectResult } from "./client/types.gen";
+import type { Semester } from "./types";
 import ResultCardView from "./ResultCardView";
 import StudentAIInsights from "./StudentAIInsights";
 import ResultGlossary from "./ResultGlossary";
-import type { StudentResult, Semester } from "./types";
 import { parseApiError } from "./utils/errorHandler";
 
 interface ResultProps {
@@ -17,22 +17,20 @@ export default function Result({ usn, semester, view }: ResultProps) {
     const [data, setData] = useState<StudentResult | null>(null);
     const [error, setError] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
-    // const [view, setView] = useState("table");
 
     const fetchStudent = async () => {
         if (!usn || !semester) return;
         setLoading(true);
         setError("");
         try {
-            const res = await axiosInstance.get(
-                `${API_BASE}/auth/Student/result`,
-                {
-                    params: { usn, semester },
-                    withCredentials: true,
-                }
-            );
-            setData(res.data);
-            setError("");
+            const { data: resultData } = await getStudentInfoAuthStudentResultGet({
+                query: { usn, semester }
+            });
+            
+            if (resultData) {
+                setData(resultData as StudentResult);
+                setError("");
+            }
         } catch (err: unknown) {
             setError(parseApiError(err));
             setData(null);
@@ -43,7 +41,6 @@ export default function Result({ usn, semester, view }: ResultProps) {
 
     useEffect(() => {
         void fetchStudent();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [usn, semester]);
 
     const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
