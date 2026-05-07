@@ -22,10 +22,11 @@ export default function useProtectedPage(_role: string | null = null): Protected
     loading: studentLoading,
   } = useStudentStore();
 
-  // Check auth once on mount only — dep array must be empty to avoid re-triggering
-  // on every failed fetch (which keeps user null → infinite 401 loop)
+  // Check auth once on mount only if user isn't already loaded
   useEffect(() => {
-    void fetchAuthStatus();
+    if (!user) {
+      void fetchAuthStatus();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
