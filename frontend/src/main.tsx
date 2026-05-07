@@ -25,8 +25,10 @@ import { client } from "./client/client.gen";
 import axiosInstance from "./axiosInstance";
 
 // 🚀 Bridge SDK with configured Axios instance
-client.instance = axiosInstance;
-client.instance.defaults.baseURL = API_BASE;
+client.setConfig({
+  axios: axiosInstance,
+  baseURL: API_BASE,
+});
 
 const withHiddenShortcut = (children: ReactNode) => (
   <>
