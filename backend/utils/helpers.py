@@ -28,7 +28,6 @@ def sanitize_jwt_header(auth_header: str) -> str:
 def get_jwt_payload_from_request(request: Request) -> dict | None:
     """Extract and decode JWT from the Authorization header."""
     auth_header = request.headers.get("Authorization", "")
-    logger.error(f"Auth Header: {auth_header}")
     token = auth_header.split(" ")[1] if " " in auth_header else None
     if not token:
         return None
