@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FaFolder, FaFilePdf, FaRegFolderOpen } from "react-icons/fa";
-import API_BASE from "./config";
-import { fetchWithAuth } from "./fetchWithAuth";
+import { listNotesAuthStudentNotesGet } from "./client/sdk.gen";
 import LoadingSpinner from "./LoadingSpinner";
 
 interface FileItemProps {
@@ -97,9 +96,9 @@ const FileExplorer: React.FC = () => {
     const [currentPath, setCurrentPath] = useState<string>("");
 
     useEffect(() => {
-        fetchWithAuth(`${API_BASE}/auth/Student/notes`)
-            .then((res) => res.json())
-            .then((data: unknown) => {
+        listNotesAuthStudentNotesGet()
+            .then((res) => {
+                const data = res.data as any;
                 setFileTree(isFileTree(data) ? data : {});
             })
             .catch((err) => console.error("Failed to load notes:", err));

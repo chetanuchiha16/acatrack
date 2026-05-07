@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import API_BASE from "./config";
+import { 
+    listMentorPdfsMenteeMentorMentorIdPdfsGet,
+    downloadMenteePdfMenteeMentorMentorIdDownloadUsnGet
+} from "./client/sdk.gen";
 
 interface MentorRecordsProps {
     mentor_id: string;
@@ -27,10 +29,11 @@ export default function MentorRecords({ mentor_id, batchYear }: MentorRecordsPro
     useEffect(() => {
         const fetchPdfs = async () => {
             try {
-                const res = await axios.get<MentorPdfEntry[]>(
-                    `${API_BASE}/mentee/mentor/${mentor_id}/pdfs?batch_year=${batchYear}`
-                );
-                setPdfs(res.data);
+                const res = await listMentorPdfsMenteeMentorMentorIdPdfsGet({
+                    path: { mentor_id },
+                    query: { batch_year: batchYear }
+                });
+                if (res.data) setPdfs(res.data as MentorPdfEntry[]);
             } catch {
                 setError("Failed to fetch PDFs.");
             } finally {
@@ -43,11 +46,13 @@ export default function MentorRecords({ mentor_id, batchYear }: MentorRecordsPro
     // Fetch signed file URL before viewing/downloading
     const fetchPdfUrl = async (usn: string): Promise<string | null> => {
         try {
-            const res = await axios.get<MentorPdfDownloadResponse>(
-                `${API_BASE}/mentee/mentor/${mentor_id}/download/${usn}?batch_year=${batchYear}`
-            );
-            setPdfUrl(res.data.file_url);
-            return res.data.file_url;
+            const res = await downloadMenteePdfMenteeMentorMentorIdDownloadUsnGet({
+                path: { mentor_id, usn },
+                query: { batch_year: batchYear }
+            });
+            const fileUrl = (res.data as any)?.file_url;
+            setPdfUrl(fileUrl);
+            return fileUrl;
         } catch {
             setError("Failed to load the PDF.");
             return null;

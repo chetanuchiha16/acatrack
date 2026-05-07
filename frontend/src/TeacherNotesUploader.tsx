@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaFolder, FaFilePdf } from "react-icons/fa";
-import API_BASE from "./config";
-import { fetchWithAuth } from "./fetchWithAuth";
+import { 
+    listNotesAuthStaffUploadNotesGet,
+    uploadNoteAuthStaffUploadNotesPost
+} from "./client/sdk.gen";
 function FileItem({ name, isFolder, onClick, selected }) {
     return (
         <div
@@ -76,9 +78,8 @@ export default function TeacherNotesUploader() {
     const fileInputRef = useRef(null);
 
     useEffect(() => {
-        void fetchWithAuth(`${API_BASE}/auth/Staff/upload_notes`)
-            .then((res) => res.json())
-            .then(setFileTree)
+        listNotesAuthStaffUploadNotesGet()
+            .then((res) => setFileTree(res.data as any))
             .catch((err) => console.error("Failed to load notes:", err));
     }, []);
 
@@ -107,37 +108,31 @@ export default function TeacherNotesUploader() {
         }
     };
 
-    const uploadFile = (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("path", currentPath);
+    const uploadFile = async (file: File) => {
+        setUploadStatus("Uploading...");
+        try {
+            const res = await uploadNoteAuthStaffUploadNotesPost({
+                body: { file: file as any },
+                query: { path: currentPath },
+                onUploadProgress: (progressEvent) => {
+                    if (progressEvent.total) {
+                        setUploadProgress(
+                            Math.round((progressEvent.loaded / progressEvent.total) * 100)
+                        );
+                    }
+                }
+            } as any); // Use 'as any' if the SDK type doesn't explicitly show onUploadProgress but axios does
 
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", `${API_BASE}/auth/Staff/upload_notes`, true);
+            if (res.error) throw new Error("Upload failed");
 
-        xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-                setUploadProgress(
-                    Math.round((event.loaded / event.total) * 100)
-                );
-            }
-        };
-
-        xhr.onload = () => {
-            if (xhr.status === 200) {
-                setUploadStatus("✅ Uploaded successfully");
-                setUploadProgress(0);
-                void fetchWithAuth(`${API_BASE}/auth/Staff/upload_notes`)
-                    .then((res) => res.json())
-                    .then(setFileTree);
-            } else {
-                setUploadStatus("❌ Upload failed");
-            }
-        };
-
-        xhr.onerror = () => setUploadStatus("❌ Upload error");
-
-        xhr.send(formData);
+            setUploadStatus("✅ Uploaded successfully");
+            setUploadProgress(0);
+            const refreshRes = await listNotesAuthStaffUploadNotesGet();
+            setFileTree(refreshRes.data as any);
+        } catch (err) {
+            console.error(err);
+            setUploadStatus("❌ Upload error");
+        }
     };
 
     return (
