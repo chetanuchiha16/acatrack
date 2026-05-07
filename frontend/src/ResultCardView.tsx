@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import axiosInstance from "./axiosInstance";
-import API_BASE from "./config";
+import { getStudentInfoAuthStudentResultGet } from "./client/sdk.gen";
 import type { StudentResult, Semester } from "./types";
 import { parseApiError } from "./utils/errorHandler";
 
@@ -15,12 +14,10 @@ export default function ResultCardView({ usn, semester }: ResultCardViewProps) {
 
     const fetchStudent = useCallback(async () => {
         try {
-            const res = await axiosInstance.get<StudentResult>(
-                `${API_BASE}/auth/Student/result`,
-                {
-                    params: { usn, semester }}
-            );
-            setData(res.data);
+            const res = await getStudentInfoAuthStudentResultGet({
+                query: { usn, semester }
+            });
+            setData(res.data as StudentResult);
             setError("");
         } catch (err: unknown) {
             setError(parseApiError(err));

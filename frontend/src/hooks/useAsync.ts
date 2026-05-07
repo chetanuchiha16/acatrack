@@ -8,7 +8,7 @@
  *
  * @example
  * const { data, loading, error, refetch } = useAsync(
- *   () => axiosInstance.get<StudentResult>(`${API_BASE}/auth/Student/result`).then(r => r.data),
+ *   () => getStudentInfoAuthStudentResultGet().then(r => r.data),
  *   []
  * );
  */

@@ -26,13 +26,42 @@ import ParentDashboard from "./ParentDashboard";
 import ParentResult from "./ParentResult";
 import ResetPassword from "./ResetPassword";
 import { client } from "./client/client.gen";
-import axiosInstance from "./axiosInstance";
+import { getToken, clearToken } from "./utils/storage";
 
 // 🚀 Bridge SDK with configured Axios instance
 client.setConfig({
-  axios: axiosInstance,
   baseURL: API_BASE,
 });
+
+// ─── Request interceptor: attach JWT ─────────────────────────────────────────
+client.instance.interceptors.request.use((config) => {
+    const token = getToken();
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+// ─── Response interceptor: handle 401 globally ───────────────────────────────
+client.instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            const url = (error.config?.url ?? "");
+            // Always clear token on 401 so localStorage doesn't lie to the app
+            clearToken();
+
+            // Never hard-redirect for the auth probe itself
+            const isAuthProbe = url.includes("/auth/status");
+            if (!isAuthProbe) {
+                if (!window.location.pathname.startsWith("/auth")) {
+                    window.location.href = "/auth";
+                }
+            }
+        }
+        return Promise.reject(error);
+    }
+);
 
 const withHiddenShortcut = (children: ReactNode) => (
   <>
