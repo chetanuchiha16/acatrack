@@ -4,7 +4,11 @@ import "./index.css";
 import App from "./App";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Auth from "./Auth";
-import Student from "./Student";
+import StudentLayout from "./StudentLayout";
+import StudentOverview from "./StudentOverview";
+import StudentResultWrapper from "./StudentResultWrapper";
+import Classroom from "./Classroom";
+import { MenteeEmailsWrapper, MenteeRecordWrapper } from "./StudentRouteWrappers";
 import ErrorPage from "./Error";
 import Staff from "./Staff";
 import StaffResults from "./StaffResults";
@@ -47,7 +51,17 @@ const route = createBrowserRouter([
   { path: "/auth/Staff/:id/StaffClassroom", element: withHiddenShortcut(<TeacherNotesUploader />) },
   { path: "/auth/Staff/:id/StaffResults", element: withHiddenShortcut(<StaffResults />) },
   { path: "/auth/Staff/:id", element: withHiddenShortcut(<Staff />) },
-  { path: "/auth/Student/:id", element: withHiddenShortcut(<Student />) },
+  { 
+    path: "/auth/Student/:id", 
+    element: withHiddenShortcut(<StudentLayout />),
+    children: [
+      { index: true, element: <StudentOverview /> },
+      { path: "results", element: <StudentResultWrapper /> },
+      { path: "classroom", element: <Classroom /> },
+      { path: "mentee", element: <MenteeEmailsWrapper /> },
+      { path: "record", element: <MenteeRecordWrapper /> },
+    ]
+  },
   { path: "/auth/:who", element: withHiddenShortcut(<Auth />) },
   { path: "/reset-password/:token", element: withHiddenShortcut(<ResetPassword />) },
   { path: "/auth/", element: withHiddenShortcut(<Auth />) },
