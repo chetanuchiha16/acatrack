@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import SemesterResults from "./SemesterResults";
 import SubjectResults from "./SubjectResults";
 import OverallResults from "./OverallResults";
-import API_BASE from "./config";
-import axios from "axios";
+import { listBatchesBatchesGet } from "./client/sdk.gen";
 
 interface BatchesResponse {
   batches: string[];
@@ -15,9 +14,9 @@ const StaffResults: React.FC = () => {
   const [batchYear, setBatchYear] = useState<string>("");
 
   useEffect(() => {
-      axios.get<BatchesResponse>(`${API_BASE}/batches`)
+      listBatchesBatchesGet()
           .then((res) => {
-              const fetchedBatches = res.data.batches || [];
+              const fetchedBatches = (res.data as any)?.batches || [];
               setBatches(fetchedBatches);
               if (fetchedBatches.length > 0) {
                   setBatchYear(fetchedBatches[fetchedBatches.length - 1]);

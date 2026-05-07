@@ -1,7 +1,6 @@
 // useStudentStore.ts
 import { create } from "zustand";
-import API_BASE from "./config";
-import { fetchWithAuth } from "./fetchWithAuth";
+import { getStudentDetailsParentStudentDetailsGet } from "./client/sdk.gen";
 import type { StudentInfo, MentorInfo, StudentData } from "./types";
 
 // Re-export for consumers that previously imported from this file
@@ -23,12 +22,8 @@ const useStudentStore = create<StudentState>((set) => ({
     fetchStudentData: async () => {
         set({ loading: true, error: null });
         try {
-            const res = await fetchWithAuth(
-                `${API_BASE}/parent/student-details`,
-                {}
-            );
-            const data: StudentData = await res.json();
-            set({ studentData: data, loading: false });
+            const res = await getStudentDetailsParentStudentDetailsGet();
+            if (res.data) set({ studentData: res.data as StudentData, loading: false });
         } catch (err: unknown) {
             console.error(err);
             const message = err instanceof Error ? err.message : "Unknown error";

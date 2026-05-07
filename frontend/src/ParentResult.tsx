@@ -3,8 +3,11 @@ import { useTranslation } from "react-i18next";
 import { semesterOptions } from "./config";
 import jssLogo from "./assets/jssLogo.png";
 import useStudentStore from "./useStudentStore";
-import API_BASE from "./config";
-import { fetchWithAuth } from "./fetchWithAuth";
+import { 
+    getStudentInfoAuthStudentResultGet,
+    aiSummaryAiSummaryGet,
+    aiProfileAiProfileGet
+} from "./client/sdk.gen";
 import ResultGlossary from "./ResultGlossary";
 import type { StudentResult } from "./types";
 
@@ -66,9 +69,10 @@ export default function ParentResult() {
     const fetchSemesterData = async (usn: string, semester: string) => {
         setSemLoading(true);
         try {
-            const res = await fetchWithAuth(`${API_BASE}/auth/Student/result?usn=${usn}&semester=${semester}`);
-            const data = await res.json() as StudentResult;
-            setSemData(data);
+            const res = await getStudentInfoAuthStudentResultGet({
+                query: { usn, semester }
+            });
+            if (res.data) setSemData(res.data as StudentResult);
         } catch (err: unknown) {
             console.error(err);
         } finally {
@@ -81,15 +85,19 @@ export default function ParentResult() {
         setAiError("");
         try {
             const [summaryRes, profileRes] = await Promise.all([
-                fetchWithAuth(`${API_BASE}/ai/summary?usn=${usn}&semester=${semester}&lng=${lang}`, {}),
-                fetchWithAuth(`${API_BASE}/ai/profile?usn=${usn}&semester=${semester}&lng=${lang}`, {})
+                aiSummaryAiSummaryGet({
+                    query: { usn, semester, lng: lang as any }
+                }),
+                aiProfileAiProfileGet({
+                    query: { usn, semester, lng: lang as any }
+                })
             ]);
 
-            const summaryJson = await summaryRes.json() as { ai_summary: AiSummary };
-            const profileJson = await profileRes.json() as AiProfile;
+            const summaryJson = (summaryRes.data as any)?.ai_summary as AiSummary;
+            const profileJson = profileRes.data as AiProfile;
 
             setAiData({
-                summary: summaryJson.ai_summary,
+                summary: summaryJson,
                 profile: profileJson,
             });
         } catch (err: unknown) {
