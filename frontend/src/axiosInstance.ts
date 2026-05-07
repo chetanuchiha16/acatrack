@@ -21,11 +21,18 @@ axiosInstance.interceptors.response.use(
     (response) => response,
     (error: AxiosError) => {
         if (error.response?.status === 401) {
-            // Token expired or invalid — clear storage and redirect to login
+            const url = (error.config?.url ?? "");
+            // Always clear token on 401 so localStorage doesn't lie to the app
             clearToken();
-            // Use window.location so router context isn't required here
-            if (!window.location.pathname.startsWith("/auth")) {
-                window.location.href = "/auth";
+
+            // Never hard-redirect for the auth probe itself — let the store/hook
+            // handle it via React Router. A hard reload here creates an infinite
+            // remount loop: 401 → reload → mount → probe → 401 → reload → ∞
+            const isAuthProbe = url.includes("/auth/status");
+            if (!isAuthProbe) {
+                if (!window.location.pathname.startsWith("/auth")) {
+                    window.location.href = "/auth";
+                }
             }
         }
         return Promise.reject(error);
