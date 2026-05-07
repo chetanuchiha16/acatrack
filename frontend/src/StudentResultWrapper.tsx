@@ -49,24 +49,18 @@ const StudentResultWrapper: React.FC = () => {
                         </select>
                     </label>
 
-                    <div className="overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 shadow-sm hidden sm:inline-flex">
+                    <div className="overflow-hidden rounded-full border border-gray-200/60 dark:border-gray-800 shadow-sm hidden sm:inline-flex bg-gray-100/80 dark:bg-gray-900 p-1 backdrop-blur-md">
                         <button
                             onClick={() => setView("cards")}
-                            className={`px-3 py-2 text-xs sm:text-sm transition ${view === "cards" ? "bg-slate-900 text-white" : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                            className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 ${view !== "ai" ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm border border-gray-200/50 dark:border-gray-700" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
                         >
-                            Cards
-                        </button>
-                        <button
-                            onClick={() => setView("table")}
-                            className={`px-3 py-2 text-xs sm:text-sm transition ${view === "table" ? "bg-slate-900 text-white" : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
-                        >
-                            Table
+                            📄 Official Scorecard
                         </button>
                         <button
                             onClick={() => setView("ai")}
-                            className={`px-3 py-2 text-xs sm:text-sm transition ${view === "ai" ? "bg-slate-900 text-white" : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                            className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 ${view === "ai" ? "bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 shadow-sm border border-gray-200/50 dark:border-gray-700" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
                         >
-                            AI
+                            ✨ AI Insights
                         </button>
                     </div>
                 </div>
