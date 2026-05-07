@@ -1,6 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import axios from "axios";
-import API_BASE from "./config";
+import { uploadFormMenteeUploadFormPost } from "./client/sdk.gen";
 
 interface MenteeRecordFillingProps {
     usn: string;
@@ -111,12 +110,11 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         try {
-            const res = await axios.post(
-                `${API_BASE}/mentee/upload_form`,
-                formData
-            );
-            if (res.data.status === "success") {
-                setMessage(`PDF generated successfully: ${res.data.filename}`);
+            const res = await uploadFormMenteeUploadFormPost({
+                body: formData as any
+            });
+            if (res.data && (res.data as any).status === "success") {
+                setMessage(`PDF generated successfully: ${(res.data as any).filename}`);
             }
         } catch (err) {
             setMessage("Error submitting form.");

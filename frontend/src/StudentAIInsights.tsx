@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
-import API_BASE from "./config";
-import { fetchWithAuth } from "./fetchWithAuth";
+import {
+    aiSummaryAiSummaryGet,
+    aiProfileAiProfileGet,
+    aiTrendAiTrendGet,
+    aiPredictCgpaAiPredictCgpaGet,
+    getStudentAnalysisAuthStudentAnalysisGet,
+    getStudentChartAuthStudentChartGet
+} from "./client/sdk.gen";
 import {
     Sparkles, BarChart3, TrendingUp, TrendingDown,
     Minus, AlertTriangle, CheckCircle, Lightbulb, Target, BookOpen, GraduationCap, ArrowRight
@@ -111,22 +117,17 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
         try {
             const [summaryRes, profileRes, trendRes, predictRes] =
                 await Promise.all([
-                    fetchWithAuth(`${API_BASE}/ai/summary?usn=${usn}&semester=${semester}`, {}),
-                    fetchWithAuth(`${API_BASE}/ai/profile?usn=${usn}&semester=${semester}`, {}),
-                    fetchWithAuth(`${API_BASE}/ai/trend?usn=${usn}`, {}),
-                    fetchWithAuth(`${API_BASE}/ai/predict_cgpa?usn=${usn}`, {}),
+                    aiSummaryAiSummaryGet({ query: { usn, semester } }),
+                    aiProfileAiProfileGet({ query: { usn, semester } }),
+                    aiTrendAiTrendGet({ query: { usn } }),
+                    aiPredictCgpaAiPredictCgpaGet({ query: { usn } }),
                 ]);
 
-            const summaryJson = await summaryRes.json();
-            const profileJson = await profileRes.json();
-            const trendJson = await trendRes.json();
-            const predictJson = await predictRes.json();
-
             setAiData({
-                ai_summary: summaryJson.ai_summary,
-                ai_profile: profileJson,
-                trend: trendJson,
-                cgpa_prediction: predictJson,
+                ai_summary: (summaryRes.data as any)?.ai_summary,
+                ai_profile: profileRes.data as any,
+                trend: trendRes.data as any,
+                cgpa_prediction: predictRes.data as any,
             });
         } catch (err) {
             console.error(err);
@@ -143,13 +144,12 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
         setLoadingPerf(true);
 
         try {
-            const res = await fetchWithAuth(
-                `${API_BASE}/auth/Student/analysis?usn=${usn}&semester=${semester}`,
-                {}
-            );
-            const data = await res.json();
+            const res = await getStudentAnalysisAuthStudentAnalysisGet({
+                query: { usn, semester }
+            });
+            const data = res.data as any;
 
-            if (res.ok) {
+            if (res.data) {
                 setPerformanceData({
                     ...data,
                     subject_analysis: Array.isArray(data.subject_analysis) ? data.subject_analysis : [],
@@ -158,7 +158,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                 });
                 void fetchChart();
             } else {
-                setErrorPerf(data?.error || "Failed to fetch student performance");
+                setErrorPerf((res.error as any)?.error || "Failed to fetch student performance");
             }
         } catch (err: unknown) {
             setErrorPerf("Server error: " + (err instanceof Error ? err.message : "Unknown"));
@@ -170,13 +170,12 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
     // Fetch Chart
     const fetchChart = async () => {
         try {
-            const res = await fetchWithAuth(
-                `${API_BASE}/auth/Student/chart?usn=${usn}&semester=${semester}`,
-                {}
-            );
-            if (!res.ok) return;
-            const data = await res.json();
-            setChartUrl(data.image || "");
+            const res = await getStudentChartAuthStudentChartGet({
+                query: { usn, semester }
+            });
+            if (res.data) {
+                setChartUrl((res.data as any).image || "");
+            }
         } catch (err) {
             console.error("Failed to fetch chart:", err);
         }
