@@ -146,7 +146,7 @@ const MentorResults: React.FC<MentorResultsProps> = ({ mentor_id, batchYear }) =
 
                                 <div className="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0 mt-3 md:mt-0">
                                     <a
-                                        href={mentee.pdf_url}
+                                        href={mentee.pdf_url || "#"}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition text-center w-full md:w-auto"

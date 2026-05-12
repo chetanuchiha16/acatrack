@@ -55,14 +55,14 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
         setData(null);
         try {
             const res = await getSemesterResultsAuthStaffSemResGet({
-                query: { semester: selected, batch_year: batchYear }
+                query: { semester: selected, batch_year: parseInt(batchYear, 10) }
             });
             if (res.error) {
                 throw new Error(
                     (res.error as any)?.error || `Request failed`
                 );
             }
-            setData(res.data as SemesterData);
+            setData(res.data as unknown as SemesterData);
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Unknown error");
         } finally {
@@ -75,7 +75,7 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
         try {
             const res = await downloadSemesterReportAuthStaffSemResReportSemesterGet({
                 path: { semester },
-                query: { batch_year: batchYear }
+                query: { batch_year: parseInt(batchYear, 10) }
             });
             if (res.error) {
                 throw new Error("Failed to fetch PDF");

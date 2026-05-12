@@ -72,7 +72,7 @@ export default function ParentResult() {
             const res = await getStudentInfoAuthStudentResultGet({
                 query: { usn, semester }
             });
-            if (res.data) setSemData(res.data as StudentResult);
+            if (res.data) setSemData(res.data as unknown as StudentResult);
         } catch (err: unknown) {
             console.error(err);
         } finally {
@@ -86,10 +86,10 @@ export default function ParentResult() {
         try {
             const [summaryRes, profileRes] = await Promise.all([
                 aiSummaryAiSummaryGet({
-                    query: { usn, semester, lng: lang as any }
+                    query: { usn, lng: lang as any }
                 }),
                 aiProfileAiProfileGet({
-                    query: { usn, semester, lng: lang as any }
+                    query: { usn, lng: lang as any }
                 })
             ]);
 

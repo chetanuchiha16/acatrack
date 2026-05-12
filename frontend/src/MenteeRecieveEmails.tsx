@@ -67,7 +67,7 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
     const fetchMessageDetail = async (msgId: number | string) => {
         try {
             const res = await getStudentMessageDetailStudentUsnMessagesMsgIdGet({
-                path: { usn, msg_id: msgId as string }
+                path: { usn, msg_id: Number(msgId) }
             });
             if (res.data) {
                 setSelectedMessage(res.data as InboxMessage);
@@ -80,7 +80,7 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
     const markAsRead = async (msgId: number | string) => {
         try {
             await markMessageReadStudentUsnMessagesMsgIdReadPost({
-                path: { usn, msg_id: msgId as string }
+                path: { usn, msg_id: Number(msgId) }
             });
             void fetchMessages();
         } catch (err) {

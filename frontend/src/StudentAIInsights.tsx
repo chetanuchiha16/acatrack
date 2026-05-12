@@ -117,8 +117,8 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
         try {
             const [summaryRes, profileRes, trendRes, predictRes] =
                 await Promise.all([
-                    aiSummaryAiSummaryGet({ query: { usn, semester } }),
-                    aiProfileAiProfileGet({ query: { usn, semester } }),
+                    aiSummaryAiSummaryGet({ query: { usn } }),
+                    aiProfileAiProfileGet({ query: { usn } }),
                     aiTrendAiTrendGet({ query: { usn } }),
                     aiPredictCgpaAiPredictCgpaGet({ query: { usn } }),
                 ]);

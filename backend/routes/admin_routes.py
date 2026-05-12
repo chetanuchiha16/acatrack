@@ -22,6 +22,7 @@ from utils.cloud import upload_excel_to_supabase
 from settings import settings
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select
+from schemas import BatchRequest
 
 logger = get_logger(__name__)
 
@@ -244,16 +245,13 @@ async def download_teachers_csv(
 
 
 @router.post("/create-batch")
-async def create_batch(request: Request, x_admin_secret: str | None = Header(None)):
+async def create_batch(
+    body: BatchRequest, x_admin_secret: str | None = Header(None)
+):
     if not _check_secret(x_admin_secret):
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
 
-    data = await request.json()
-    batch_year = data.get("batch_year")
-    if not batch_year:
-        return JSONResponse(content={"error": "Missing batch_year"}, status_code=400)
-    batch_year = int(batch_year)
-
+    batch_year = body.batch_year
     batches = await bm.list_batches()
     if batch_year in batches:
         return JSONResponse(
@@ -271,16 +269,13 @@ async def create_batch(request: Request, x_admin_secret: str | None = Header(Non
 
 
 @router.post("/refresh-batch")
-async def refresh_batch(request: Request, x_admin_secret: str | None = Header(None)):
+async def refresh_batch(
+    body: BatchRequest, x_admin_secret: str | None = Header(None)
+):
     if not _check_secret(x_admin_secret):
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
 
-    data = await request.json()
-    batch_year = data.get("batch_year")
-    if not batch_year:
-        return JSONResponse(content={"error": "Missing batch_year"}, status_code=400)
-    batch_year = int(batch_year)
-
+    batch_year = body.batch_year
     try:
         await bm.refresh_batch_data(batch_year)
         return {"status": "success", "batch_year": batch_year}
