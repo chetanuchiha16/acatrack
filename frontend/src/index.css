@@ -58,7 +58,7 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  background-image: url("./assets/jss-1.jpeg");
+  background-image: url("/jss-1.jpeg");
   background-repeat: no-repeat;
   background-size: cover;
   background-attachment: fixed;
