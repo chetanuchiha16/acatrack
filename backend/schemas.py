@@ -28,7 +28,7 @@ class AuthStatusResponse(BaseModel):
     who: str
     id: Optional[str] = None
     name: Optional[str] = None
-    mentor_id: Optional[str] = None
+    mentor_id: Optional[int] = None
 
 class ChartResponse(BaseModel):
     image: str
