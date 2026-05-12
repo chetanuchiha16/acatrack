@@ -15,6 +15,7 @@ from schemas import (
     MentorMenteeListResponse,
     MentorMessageResponse,
     EmailAllStatus,
+    MentorSendEmailAllRequest,
 )
 from typing import List
 
@@ -232,12 +233,14 @@ async def send_email_student(
 
 @router.post("/mentor/{mentor_id}/send-email/all", response_model=List[EmailAllStatus])
 async def send_email_all(
-    mentor_id: int, request: Request, batch_year: int | None = Query(None)
+    mentor_id: int,
+    body: MentorSendEmailAllRequest,
+    request: Request,
+    batch_year: int | None = Query(None),
 ):
-    data = await request.json()
-    recipient_type = data.get("recipientType", "student").lower()
-    subject = data.get("subject")
-    message = data.get("message")
+    recipient_type = body.recipientType.lower()
+    subject = body.subject
+    message = body.message
     by = batch_year or get_batch_year_from_request(request)
 
     async with bm.session_scope(by) as session:

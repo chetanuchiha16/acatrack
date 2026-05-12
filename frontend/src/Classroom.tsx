@@ -83,7 +83,7 @@ function getDirAtPath(tree: FileTree | null, path: string): FileTree | null {
 
     for (const part of parts) {
         if (!isFileTree(current)) return {};
-        const next = current[part];
+        const next: FileTreeNode = (current as FileTree)[part];
         if (!next) return {};
         current = next;
     }
