@@ -1,32 +1,35 @@
-import React, { StrictMode, type ReactNode } from "react";
+import React, { StrictMode, Suspense, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Auth from "./Auth";
-import StudentLayout from "./StudentLayout";
-import StudentOverview from "./StudentOverview";
-import StudentResultWrapper from "./StudentResultWrapper";
-import Classroom from "./Classroom";
-import { MenteeEmailsWrapper, MenteeRecordWrapper } from "./StudentRouteWrappers";
 import ErrorPage from "./Error";
-import Staff from "./Staff";
-import StaffResults from "./StaffResults";
-import ExcelViewer from "./ExcelViewer";
-import TeacherNotesUploader from "./TeacherNotesUploader";
-import SemesterResults from "./SemesterResults";
-import SendEmails from "./SendEmails";
-import AdminLogin from "./AdminLogin";
-import HiddenShortcut from "./HiddenShortcut"; 
-import AdminPanel from "./AdminPanel";
-import MentorResults from "./MentorResults";
-import MentorDashboard from "./MentorDashboard";
+import HiddenShortcut from "./HiddenShortcut";
+import LoadingSpinner from "./LoadingSpinner";
 import API_BASE from "./config";
-import ParentDashboard from "./ParentDashboard";
-import ParentResult from "./ParentResult";
-import ResetPassword from "./ResetPassword";
 import { client } from "./client/client.gen";
 import { getToken, clearToken } from "./utils/storage";
+
+// ─── Lazy-loaded page components (code-split per route) ──────────────────────
+const StudentLayout = React.lazy(() => import("./StudentLayout"));
+const StudentOverview = React.lazy(() => import("./StudentOverview"));
+const StudentResultWrapper = React.lazy(() => import("./StudentResultWrapper"));
+const Classroom = React.lazy(() => import("./Classroom"));
+const Staff = React.lazy(() => import("./Staff"));
+const StaffResults = React.lazy(() => import("./StaffResults"));
+const ExcelViewer = React.lazy(() => import("./ExcelViewer"));
+const TeacherNotesUploader = React.lazy(() => import("./TeacherNotesUploader"));
+const SemesterResults = React.lazy(() => import("./SemesterResults"));
+const SendEmails = React.lazy(() => import("./SendEmails"));
+const AdminLogin = React.lazy(() => import("./AdminLogin"));
+const AdminPanel = React.lazy(() => import("./AdminPanel"));
+const MentorResults = React.lazy(() => import("./MentorResults"));
+const MentorDashboard = React.lazy(() => import("./MentorDashboard"));
+const ParentDashboard = React.lazy(() => import("./ParentDashboard"));
+const ParentResult = React.lazy(() => import("./ParentResult"));
+const ResetPassword = React.lazy(() => import("./ResetPassword"));
+
 
 // 🚀 Bridge SDK with configured Axios instance
 client.setConfig({
@@ -66,9 +69,15 @@ client.instance.interceptors.response.use(
 const withHiddenShortcut = (children: ReactNode) => (
   <>
     <HiddenShortcut />
-    {children}
+    <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={true} />}>
+      {children}
+    </Suspense>
   </>
 );
+
+// Lazy-load the route wrappers too
+const MenteeEmailsWrapper = React.lazy(() => import("./StudentRouteWrappers").then(m => ({ default: m.MenteeEmailsWrapper })));
+const MenteeRecordWrapper = React.lazy(() => import("./StudentRouteWrappers").then(m => ({ default: m.MenteeRecordWrapper })));
 
 const route = createBrowserRouter([
   { path: "/auth/Parent/:id/ParentResult", element: withHiddenShortcut(<ParentResult />) },
@@ -84,11 +93,11 @@ const route = createBrowserRouter([
     path: "/auth/Student/:id", 
     element: withHiddenShortcut(<StudentLayout />),
     children: [
-      { index: true, element: <StudentOverview /> },
-      { path: "results", element: <StudentResultWrapper /> },
-      { path: "classroom", element: <Classroom /> },
-      { path: "mentee", element: <MenteeEmailsWrapper /> },
-      { path: "record", element: <MenteeRecordWrapper /> },
+      { index: true, element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><StudentOverview /></Suspense> },
+      { path: "results", element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><StudentResultWrapper /></Suspense> },
+      { path: "classroom", element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><Classroom /></Suspense> },
+      { path: "mentee", element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><MenteeEmailsWrapper /></Suspense> },
+      { path: "record", element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><MenteeRecordWrapper /></Suspense> },
     ]
   },
   { path: "/auth/:who", element: withHiddenShortcut(<Auth />) },
