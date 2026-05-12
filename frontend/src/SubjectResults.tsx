@@ -49,9 +49,9 @@ const SubjectResults: React.FC<SubjectResultsProps> = ({ batchYear }) => {
         if (!semester || !subject || !batchYear) return;
         try {
             const res = await getSubjectResultsAuthStaffSubResGet({
-                query: { semester, subject, batch_year: batchYear }
+                query: { semester, subject, batch_year: parseInt(batchYear, 10) }
             });
-            if (res.data) setData(res.data as SubjectData);
+            if (res.data) setData(res.data as unknown as SubjectData);
         } catch (error) {
             console.error("Failed to fetch subject data:", error);
             setData(null);
@@ -63,7 +63,7 @@ const SubjectResults: React.FC<SubjectResultsProps> = ({ batchYear }) => {
 
         try {
             const res = await getSubjectReportPdfAuthStaffSubResReportGet({
-                query: { semester, subject, batch_year: batchYear }
+                query: { semester, subject, batch_year: parseInt(batchYear, 10) }
             });
 
             if (res.error) {

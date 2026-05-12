@@ -4,7 +4,14 @@ import {
     listNotesAuthStaffUploadNotesGet,
     uploadNoteAuthStaffUploadNotesPost
 } from "./client/sdk.gen";
-function FileItem({ name, isFolder, onClick, selected }) {
+interface FileItemProps {
+    name: string;
+    isFolder: boolean;
+    onClick: () => void;
+    selected: boolean;
+}
+
+function FileItem({ name, isFolder, onClick, selected }: FileItemProps) {
     return (
         <div
             className={`flex flex-col items-center w-24 sm:w-28 m-2 p-3 rounded-xl cursor-pointer transition 
@@ -26,8 +33,14 @@ function FileItem({ name, isFolder, onClick, selected }) {
     );
 }
 
-function FileGrid({ tree, path = "", setPath }) {
-    const [selected, setSelected] = useState(null);
+interface FileGridProps {
+    tree: any;
+    path?: string;
+    setPath: (path: string) => void;
+}
+
+function FileGrid({ tree, path = "", setPath }: FileGridProps) {
+    const [selected, setSelected] = useState<string | null>(null);
     const entries = Object.entries(tree);
 
     return (
@@ -58,7 +71,7 @@ function FileGrid({ tree, path = "", setPath }) {
     );
 }
 
-function getDirAtPath(tree, path) {
+function getDirAtPath(tree: any, path: string) {
     if (!path) return tree;
     const parts = path.split("/").filter(Boolean);
     let current = tree;
@@ -70,12 +83,12 @@ function getDirAtPath(tree, path) {
 }
 
 export default function TeacherNotesUploader() {
-    const [fileTree, setFileTree] = useState(null);
-    const [currentPath, setCurrentPath] = useState("");
-    const [dragActive, setDragActive] = useState(false);
-    const [uploadStatus, setUploadStatus] = useState("");
-    const [uploadProgress, setUploadProgress] = useState(0);
-    const fileInputRef = useRef(null);
+    const [fileTree, setFileTree] = useState<any>(null);
+    const [currentPath, setCurrentPath] = useState<string>("");
+    const [dragActive, setDragActive] = useState<boolean>(false);
+    const [uploadStatus, setUploadStatus] = useState<string>("");
+    const [uploadProgress, setUploadProgress] = useState<number>(0);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         listNotesAuthStaffUploadNotesGet()
@@ -91,7 +104,7 @@ export default function TeacherNotesUploader() {
         setCurrentPath("/" + parts.join("/"));
     };
 
-    const handleFileSelect = (file) => {
+    const handleFileSelect = (file: File) => {
         if (file.type !== "application/pdf") {
             setUploadStatus("❌ Only PDF files are allowed.");
             return;
@@ -99,7 +112,7 @@ export default function TeacherNotesUploader() {
         uploadFile(file);
     };
 
-    const handleDrop = (e) => {
+    const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
         setDragActive(false);
@@ -114,7 +127,7 @@ export default function TeacherNotesUploader() {
             const res = await uploadNoteAuthStaffUploadNotesPost({
                 body: { file: file as any },
                 query: { path: currentPath },
-                onUploadProgress: (progressEvent) => {
+                onUploadProgress: (progressEvent: any) => {
                     if (progressEvent.total) {
                         setUploadProgress(
                             Math.round((progressEvent.loaded / progressEvent.total) * 100)
@@ -193,7 +206,7 @@ export default function TeacherNotesUploader() {
                 <div className="mt-6 flex justify-center">
                     <button
                         className="px-5 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 active:scale-95 transition"
-                        onClick={() => fileInputRef.current.click()}
+                        onClick={() => fileInputRef.current?.click()}
                     >
                         📤 Upload PDF
                     </button>
@@ -204,7 +217,7 @@ export default function TeacherNotesUploader() {
                     ref={fileInputRef}
                     accept="application/pdf"
                     onChange={(e) => {
-                        if (e.target.files[0])
+                        if (e.target.files?.[0])
                             handleFileSelect(e.target.files[0]);
                     }}
                     className="hidden"

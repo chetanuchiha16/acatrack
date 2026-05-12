@@ -30,8 +30,8 @@ export default function MentorRecords({ mentor_id, batchYear }: MentorRecordsPro
         const fetchPdfs = async () => {
             try {
                 const res = await listMentorPdfsMenteeMentorMentorIdPdfsGet({
-                    path: { mentor_id },
-                    query: { batch_year: batchYear }
+                    path: { mentor_id: parseInt(mentor_id, 10) },
+                    query: { batch_year: parseInt(batchYear, 10) }
                 });
                 if (res.data) setPdfs(res.data as MentorPdfEntry[]);
             } catch {
@@ -47,8 +47,8 @@ export default function MentorRecords({ mentor_id, batchYear }: MentorRecordsPro
     const fetchPdfUrl = async (usn: string): Promise<string | null> => {
         try {
             const res = await downloadMenteePdfMenteeMentorMentorIdDownloadUsnGet({
-                path: { mentor_id, usn },
-                query: { batch_year: batchYear }
+                path: { mentor_id: parseInt(mentor_id, 10), usn },
+                query: { batch_year: parseInt(batchYear, 10) }
             });
             const fileUrl = (res.data as any)?.file_url;
             setPdfUrl(fileUrl);

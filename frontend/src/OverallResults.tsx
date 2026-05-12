@@ -46,12 +46,12 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
             const res = await getAcademicPerformanceAuthStaffOverallResGet({
                 query: { 
                     semester, 
-                    batch_year: batchYear,
+                    batch_year: parseInt(batchYear, 10),
                     show_toppers: view === "toppers" ? true : undefined,
                     show_failed: view === "failed" ? true : undefined
                 }
             });
-            if (res.data) setData(res.data as StudentResult[]);
+            if (res.data) setData(res.data as unknown as StudentResult[]);
         } catch (error) {
             console.error("Failed to fetch overall results:", error);
             setData([]);
@@ -66,7 +66,7 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
                 res = await getAcademicPerformanceAuthStaffOverallResGet({
                     query: { 
                         semester, 
-                        batch_year: batchYear,
+                        batch_year: parseInt(batchYear, 10),
                         show_toppers: true,
                         format: "pdf" as any
                     }
@@ -74,7 +74,7 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
             } else {
                 res = await getReportAuthStaffReportSemesterGet({
                     path: { semester },
-                    query: { batch_year: batchYear }
+                    query: { batch_year: parseInt(batchYear, 10) }
                 });
             }
 
