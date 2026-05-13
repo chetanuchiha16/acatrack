@@ -32,8 +32,8 @@ const StaffResults: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-6xl mx-auto shadow-xl rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
+    <div className="space-y-6">
+      <div className="shadow-xl rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
         {/* Batch Selector Header */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">Staff Dashboard</h2>
