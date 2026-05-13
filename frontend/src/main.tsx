@@ -16,7 +16,8 @@ const StudentLayout = React.lazy(() => import("./StudentLayout"));
 const StudentOverview = React.lazy(() => import("./StudentOverview"));
 const StudentResultWrapper = React.lazy(() => import("./StudentResultWrapper"));
 const Classroom = React.lazy(() => import("./Classroom"));
-const Staff = React.lazy(() => import("./Staff"));
+const StaffLayout = React.lazy(() => import("./StaffLayout"));
+const StaffOverview = React.lazy(() => import("./StaffOverview"));
 const StaffResults = React.lazy(() => import("./StaffResults"));
 const ExcelViewer = React.lazy(() => import("./ExcelViewer"));
 const TeacherNotesUploader = React.lazy(() => import("./TeacherNotesUploader"));
@@ -82,13 +83,19 @@ const MenteeRecordWrapper = React.lazy(() => import("./StudentRouteWrappers").th
 const route = createBrowserRouter([
   { path: "/auth/Parent/:id/ParentResult", element: withHiddenShortcut(<ParentResult />) },
   { path: "/auth/Parent/:id", element: withHiddenShortcut(<ParentDashboard />) },
-  { path: "/auth/Staff/:id/MentorDashboard", element: withHiddenShortcut(<MentorDashboard />) },
-  { path: "/auth/Staff/:id/MentorResults", element: withHiddenShortcut(<MentorResults batchYear="" />) },
-  { path: "/auth/Staff/:id/SendEmails", element: withHiddenShortcut(<SendEmails />) },
-  { path: "/auth/Staff/:id/UploadResults", element: withHiddenShortcut(<ExcelViewer excel_route={`${API_BASE}/excel/template.xlsx`} />) },
-  { path: "/auth/Staff/:id/StaffClassroom", element: withHiddenShortcut(<TeacherNotesUploader />) },
-  { path: "/auth/Staff/:id/StaffResults", element: withHiddenShortcut(<StaffResults />) },
-  { path: "/auth/Staff/:id", element: withHiddenShortcut(<Staff />) },
+  {
+    path: "/auth/Staff/:id",
+    element: withHiddenShortcut(<StaffLayout />),
+    children: [
+      { index: true, element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><StaffOverview /></Suspense> },
+      { path: "results", element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><StaffResults /></Suspense> },
+      { path: "emails", element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><SendEmails /></Suspense> },
+      { path: "upload", element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><ExcelViewer excel_route={`${API_BASE}/excel/template.xlsx`} /></Suspense> },
+      { path: "classroom", element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><TeacherNotesUploader /></Suspense> },
+      { path: "mentees", element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><MentorDashboard /></Suspense> },
+      { path: "mentees/results", element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><MentorResults batchYear="" /></Suspense> },
+    ]
+  },
   { 
     path: "/auth/Student/:id", 
     element: withHiddenShortcut(<StudentLayout />),

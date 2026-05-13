@@ -1,30 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { BarChart3, Users, CalendarDays, FileText, ArrowLeft } from "lucide-react";
+import { BarChart3, Users, CalendarDays, FileText } from "lucide-react";
 import MentorResults from "./MentorResults";
 import MentorSendEmails from "./MentorSendEmails";
-import { useLocation, useParams, useNavigate } from "react-router-dom";
 import MentorMeetings from "./MentorMeetings";
 import MentorRecords from "./MentorRecord"; // adjust the path if needed
 import { listBatchesBatchesGet } from "./client/sdk.gen";
-
-interface LocationState {
-    mentor_id?: string;
-}
+import useAuthStore from "./useAuthStore";
 
 const MentorDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<string>("results");
     const [batches, setBatches] = useState<number[]>([]);
     const [batchYear, setBatchYear] = useState<string>("");
     
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [_, setDate] = useState<string>("");
-    
-    const locationState = useLocation().state as LocationState | null;
-    const mentor_id = locationState?.mentor_id || "";
-    
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { finalId } = useParams<{ finalId: string }>();
-    const navigate = useNavigate();
+    // Read mentor_id from the JWT-backed auth store (production-grade: persistent, refresh-safe)
+    const user = useAuthStore((s) => s.user);
+    const mentor_id = user?.mentor_id ? String(user.mentor_id) : "";
 
     useEffect(() => {
         listBatchesBatchesGet()
@@ -62,19 +52,11 @@ const MentorDashboard: React.FC = () => {
     ];
 
     return (
-        <div className="min-h-screen w-full bg-gray-50 dark:bg-[#0b1220] p-4 sm:p-6 md:p-8">
-            <div className="max-w-7xl mx-auto space-y-6">
+        <div className="space-y-6">
                 
                 {/* Header Card */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between">
                     <div className="flex items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
-                        <button 
-                            onClick={() => navigate(-1)} 
-                            className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm"
-                            title="Go Back"
-                        >
-                            <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-                        </button>
                         <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
                             Mentor Dashboard
                         </h1>
@@ -159,7 +141,6 @@ const MentorDashboard: React.FC = () => {
                     </div>
                 </div>
                 </div>
-            </div>
         </div>
     );
 };
