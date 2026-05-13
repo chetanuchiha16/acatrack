@@ -22,10 +22,13 @@ export default function useProtectedPage(_role: string | null = null): Protected
     loading: studentLoading,
   } = useStudentStore();
 
-  // Always check auth on mount
+  // Check auth once on mount only if user isn't already loaded
   useEffect(() => {
-    if (!user) void fetchAuthStatus();
-  }, [user, fetchAuthStatus]);
+    if (!user) {
+      void fetchAuthStatus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Redirect if not logged in
   useEffect(() => {

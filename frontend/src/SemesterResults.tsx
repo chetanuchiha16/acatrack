@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
-import API_BASE from "./config";
-import { fetchWithAuth } from "./fetchWithAuth";
+import { 
+    getSemesterResultsAuthStaffSemResGet,
+    downloadSemesterReportAuthStaffSemResReportSemesterGet
+} from "./client/sdk.gen";
 
 interface SemesterResultsProps {
     batchYear: string;
@@ -52,19 +54,16 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
         setError("");
         setData(null);
         try {
-            const q = new URLSearchParams({ semester: selected, batch_year: batchYear }).toString();
-            const res = await fetchWithAuth(
-                `${API_BASE}/auth/Staff/sem_res?${q}`,
-                {}
-            );
-            if (!res.ok) {
-                const json = await res.json().catch(() => null);
+            const res = await getSemesterResultsAuthStaffSemResGet({
+                query: { semester: selected, batch_year: parseInt(batchYear, 10) }
+            });
+            if (res.error) {
+                const errorData = res.error as { error?: string };
                 throw new Error(
-                    json?.error || `Request failed with ${res.status}`
+                    errorData?.error || `Request failed`
                 );
             }
-            const json: SemesterData = await res.json();
-            setData(json);
+            setData(res.data as unknown as SemesterData);
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Unknown error");
         } finally {
@@ -75,14 +74,14 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
     const downloadPDF = async (): Promise<void> => {
         if (!semester) return;
         try {
-            const response = await fetchWithAuth(
-                `${API_BASE}/auth/Staff/sem_res/report/${semester}?batch_year=${batchYear}`,
-                { method: "GET" }
-            );
-            if (!response.ok) {
+            const res = await downloadSemesterReportAuthStaffSemResReportSemesterGet({
+                path: { semester },
+                query: { batch_year: parseInt(batchYear, 10) }
+            });
+            if (res.error) {
                 throw new Error("Failed to fetch PDF");
             }
-            const blob = await response.blob();
+            const blob = res.data as unknown as Blob;
             const url = window.URL.createObjectURL(
                 new Blob([blob], { type: "application/pdf" })
             );

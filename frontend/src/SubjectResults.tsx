@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import API_BASE from "./config";
 import { semesterOptions, subjectMapping } from "./config";
-import { fetchWithAuth } from "./fetchWithAuth";
+import { 
+    getSubjectResultsAuthStaffSubResGet,
+    getSubjectReportPdfAuthStaffSubResReportGet
+} from "./client/sdk.gen";
 
 interface SubjectResultsProps {
     batchYear: string;
@@ -46,12 +48,10 @@ const SubjectResults: React.FC<SubjectResultsProps> = ({ batchYear }) => {
     const fetchData = async () => {
         if (!semester || !subject || !batchYear) return;
         try {
-            const res = await fetchWithAuth(
-                `${API_BASE}/auth/Staff/sub_res?semester=${semester}&subject=${subject}&batch_year=${batchYear}`,
-                {}
-            );
-            const json: SubjectData = await res.json();
-            setData(json);
+            const res = await getSubjectResultsAuthStaffSubResGet({
+                query: { semester, subject, batch_year: parseInt(batchYear, 10) }
+            });
+            if (res.data) setData(res.data as unknown as SubjectData);
         } catch (error) {
             console.error("Failed to fetch subject data:", error);
             setData(null);
@@ -61,17 +61,17 @@ const SubjectResults: React.FC<SubjectResultsProps> = ({ batchYear }) => {
     const downloadPDF = async () => {
         if (!semester) return;
 
-        const url = `${API_BASE}/auth/Staff/sub_res/report?semester=${semester}&subject=${subject}&batch_year=${batchYear}`;
-
         try {
-            const response = await fetchWithAuth(url, {});
+            const res = await getSubjectReportPdfAuthStaffSubResReportGet({
+                query: { semester, subject, batch_year: parseInt(batchYear, 10) }
+            });
 
-            if (!response.ok) {
+            if (res.error) {
                 console.error("PDF download failed");
                 return;
             }
 
-            const blob = await response.blob();
+            const blob = res.data as unknown as Blob;
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
             a.download = `${semester}_report.pdf`;

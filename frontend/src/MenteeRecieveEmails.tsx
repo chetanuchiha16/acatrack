@@ -1,6 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
-import API_BASE from "./config";
-import { fetchWithAuth } from "./fetchWithAuth";
+import { 
+    getStudentMessagesStudentUsnMessagesGet,
+    getMenteeMeetingsAuthStudentMenteeMeetingStudentUsnGet,
+    getStudentMessageDetailStudentUsnMessagesMsgIdGet,
+    markMessageReadStudentUsnMessagesMsgIdReadPost
+} from "./client/sdk.gen";
 
 interface MenteeRecieveEmailsProps {
     usn: string;
@@ -34,12 +38,10 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
     const fetchMessages = useCallback(async () => {
         setLoadingMessages(true);
         try {
-            const res = await fetchWithAuth(
-                `${API_BASE}/student/${usn}/messages`,
-                {}
-            );
-            const data = await res.json();
-            setMessages(data);
+            const res = await getStudentMessagesStudentUsnMessagesGet({
+                path: { usn }
+            });
+            if (res.data) setMessages(res.data as InboxMessage[]);
         } catch (err) {
             console.error("Error fetching messages:", err);
         } finally {
@@ -51,12 +53,10 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
     const fetchMeetings = useCallback(async () => {
         setLoadingMeetings(true);
         try {
-            const res = await fetchWithAuth(
-                `${API_BASE}/auth/Student/Mentee/meeting/${usn}`,
-                {}
-            );
-            const data = await res.json();
-            setMeetings(data);
+            const res = await getMenteeMeetingsAuthStudentMenteeMeetingStudentUsnGet({
+                path: { student_usn: usn }
+            });
+            if (res.data) setMeetings(res.data as MeetingEntry[]);
         } catch (err) {
             console.error("Error fetching meetings:", err);
         } finally {
@@ -66,13 +66,11 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
 
     const fetchMessageDetail = async (msgId: number | string) => {
         try {
-            const res = await fetchWithAuth(
-                `${API_BASE}/student/${usn}/messages/${msgId}`,
-                {}
-            );
-            if (res.ok) {
-                const data = await res.json();
-                setSelectedMessage(data);
+            const res = await getStudentMessageDetailStudentUsnMessagesMsgIdGet({
+                path: { usn, msg_id: Number(msgId) }
+            });
+            if (res.data) {
+                setSelectedMessage(res.data as InboxMessage);
             }
         } catch (err) {
             console.error("Error fetching message detail:", err);
@@ -81,12 +79,9 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
 
     const markAsRead = async (msgId: number | string) => {
         try {
-            await fetchWithAuth(
-                `${API_BASE}/student/${usn}/messages/${msgId}/read`,
-                {
-                    method: "POST",
-                }
-            );
+            await markMessageReadStudentUsnMessagesMsgIdReadPost({
+                path: { usn, msg_id: Number(msgId) }
+            });
             void fetchMessages();
         } catch (err) {
             console.error("Error marking as read:", err);

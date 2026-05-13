@@ -5,6 +5,7 @@ from logger_config import get_logger
 from services.auth_service import authenticate_user, update_fcm_token
 from pydantic import BaseModel
 from typing import Optional
+from schemas import AuthStatusResponse, LoginResponse, BatchesResponse
 
 logger = get_logger(__name__)
 
@@ -22,13 +23,13 @@ class FcmTokenRequest(BaseModel):
     fcm_token: str
 
 
-@router.get("/batches")
+@router.get("/batches", response_model=BatchesResponse)
 async def list_batches():
     batches = await bm.list_batches()
     return {"batches": batches}
 
 
-@router.post("/auth")
+@router.post("/auth", response_model=LoginResponse)
 async def auth(body: AuthRequest):
     result, error_msg, status_code = await authenticate_user(
         body.who, body.username, body.password, body.batch_year
@@ -42,7 +43,7 @@ async def auth(body: AuthRequest):
     return {"token": result["token"]}
 
 
-@router.get("/auth/status")
+@router.get("/auth/status", response_model=AuthStatusResponse)
 async def auth_status(request: Request):
     payload = get_jwt_payload_from_request(request)
     if payload:

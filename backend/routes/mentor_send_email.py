@@ -11,6 +11,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from cache_config import cache
 from validators.email_validators import SaveMessageRequest, SendStudentEmailRequest
+from schemas import (
+    MentorMenteeListResponse,
+    MentorMessageResponse,
+    EmailAllStatus,
+    MentorSendEmailAllRequest,
+)
+from typing import List
 
 router = APIRouter(tags=["mentor_email"])
 
@@ -104,7 +111,7 @@ async def delete_message(
     return {"success": True}
 
 
-@router.get("/mentor/{mentor_id}/students")
+@router.get("/mentor/{mentor_id}/students", response_model=MentorMenteeListResponse)
 @cache(expire=3600)
 async def get_mentor_students(
     mentor_id: int, request: Request, batch_year: int | None = Query(None)
@@ -141,7 +148,7 @@ async def get_mentor_students(
     return {"students": students}
 
 
-@router.get("/mentor/{mentor_id}/messages")
+@router.get("/mentor/{mentor_id}/messages", response_model=List[MentorMessageResponse])
 async def get_messages(
     mentor_id: int, request: Request, batch_year: int | None = Query(None)
 ):
@@ -152,7 +159,7 @@ async def get_messages(
         return [await serialize_message_with_read_status(session, m, by) for m in msgs]
 
 
-@router.post("/mentor/{mentor_id}/messages")
+@router.post("/mentor/{mentor_id}/messages", response_model=MentorMessageResponse)
 async def send_mentor_message(
     mentor_id: int,
     body: SaveMessageRequest,
@@ -224,14 +231,16 @@ async def send_email_student(
     return {"success": True}
 
 
-@router.post("/mentor/{mentor_id}/send-email/all")
+@router.post("/mentor/{mentor_id}/send-email/all", response_model=List[EmailAllStatus])
 async def send_email_all(
-    mentor_id: int, request: Request, batch_year: int | None = Query(None)
+    mentor_id: int,
+    body: MentorSendEmailAllRequest,
+    request: Request,
+    batch_year: int | None = Query(None),
 ):
-    data = await request.json()
-    recipient_type = data.get("recipientType", "student").lower()
-    subject = data.get("subject")
-    message = data.get("message")
+    recipient_type = body.recipientType.lower()
+    subject = body.subject
+    message = body.message
     by = batch_year or get_batch_year_from_request(request)
 
     async with bm.session_scope(by) as session:

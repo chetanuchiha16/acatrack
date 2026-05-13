@@ -8,6 +8,7 @@ from services.batch_manager import bm
 from repositories.student_repository import StudentRepository
 from logger_config import get_logger
 from utils.helpers import get_batch_year_from_request
+from schemas import MenteeUploadFormRequest
 import requests as http_requests
 import asyncio
 
@@ -21,27 +22,26 @@ TEMPLATE_PATH = str(base_dir / "Inputs" / "New_mentor_Record[final].pdf")
 
 
 @router.post("/upload_form")
-async def upload_form(request: Request):
-    data = await request.json()
-    name = data.get("name")
-    usn = data.get("usn")
-    mentor_name = data.get("mentor_name")
-    mentor_phone = data.get("mentor_phone")
-    temporary_address = data.get("temporary_address")
-    permanent_address = data.get("permanent_address")
-    phone_number = data.get("phone_number")
-    email = data.get("email")
-    father_name = data.get("father_name")
-    Contact = data.get("Contact")
-    Occupation = data.get("Occupation")
-    mother_name = data.get("mother_name")
-    Contact_Mother = data.get("Contact_Mother")
-    Occupation_Mother = data.get("Occupation_Mother")
-    sgpas = data.get("sgpa", [])
-    projects = data.get("projects", [])
-    internships = data.get("internships", [])
-    activities = data.get("activities", [])
-    summary = data.get("summary", {})
+async def upload_form(body: MenteeUploadFormRequest):
+    name = body.name
+    usn = body.usn
+    mentor_name = body.mentor_name
+    mentor_phone = body.mentor_phone
+    temporary_address = body.temporary_address
+    permanent_address = body.permanent_address
+    phone_number = body.phone_number
+    email = body.email
+    father_name = body.father_name
+    Contact = body.Contact
+    Occupation = body.Occupation
+    mother_name = body.mother_name
+    Contact_Mother = body.Contact_Mother
+    Occupation_Mother = body.Occupation_Mother
+    sgpas = body.sgpa
+    projects = [p.model_dump() for p in body.projects]
+    internships = [i.model_dump() for i in body.internships]
+    activities = [a.model_dump() for a in body.activities]
+    summary = body.summary.model_dump()
 
     def _generate_pdf():
         pdf = fitz.open(TEMPLATE_PATH)

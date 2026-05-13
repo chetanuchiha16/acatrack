@@ -1,8 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaFolder, FaFilePdf } from "react-icons/fa";
-import API_BASE from "./config";
-import { fetchWithAuth } from "./fetchWithAuth";
-function FileItem({ name, isFolder, onClick, selected }) {
+import { 
+    listNotesAuthStaffUploadNotesGet,
+    uploadNoteAuthStaffUploadNotesPost
+} from "./client/sdk.gen";
+interface FileItemProps {
+    name: string;
+    isFolder: boolean;
+    onClick: () => void;
+    selected: boolean;
+}
+
+function FileItem({ name, isFolder, onClick, selected }: FileItemProps) {
     return (
         <div
             className={`flex flex-col items-center w-24 sm:w-28 m-2 p-3 rounded-xl cursor-pointer transition 
@@ -24,8 +33,14 @@ function FileItem({ name, isFolder, onClick, selected }) {
     );
 }
 
-function FileGrid({ tree, path = "", setPath }) {
-    const [selected, setSelected] = useState(null);
+interface FileGridProps {
+    tree: Record<string, unknown>;
+    path?: string;
+    setPath: (path: string) => void;
+}
+
+function FileGrid({ tree, path = "", setPath }: FileGridProps) {
+    const [selected, setSelected] = useState<string | null>(null);
     const entries = Object.entries(tree);
 
     return (
@@ -56,29 +71,32 @@ function FileGrid({ tree, path = "", setPath }) {
     );
 }
 
-function getDirAtPath(tree, path) {
+function getDirAtPath(tree: Record<string, unknown>, path: string): Record<string, unknown> {
     if (!path) return tree;
     const parts = path.split("/").filter(Boolean);
-    let current = tree;
-    for (let part of parts) {
-        current = current?.[part];
-        if (!current) return {};
+    let current: unknown = tree;
+    for (const part of parts) {
+        const next = (current as Record<string, unknown>)?.[part];
+        if (next && typeof next === "object") {
+            current = next;
+        } else {
+            return {};
+        }
     }
-    return current;
+    return current as Record<string, unknown>;
 }
 
 export default function TeacherNotesUploader() {
-    const [fileTree, setFileTree] = useState(null);
-    const [currentPath, setCurrentPath] = useState("");
-    const [dragActive, setDragActive] = useState(false);
-    const [uploadStatus, setUploadStatus] = useState("");
-    const [uploadProgress, setUploadProgress] = useState(0);
-    const fileInputRef = useRef(null);
+    const [fileTree, setFileTree] = useState<Record<string, unknown> | null>(null);
+    const [currentPath, setCurrentPath] = useState<string>("");
+    const [dragActive, setDragActive] = useState<boolean>(false);
+    const [uploadStatus, setUploadStatus] = useState<string>("");
+    const [uploadProgress, setUploadProgress] = useState<number>(0);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        void fetchWithAuth(`${API_BASE}/auth/Staff/upload_notes`)
-            .then((res) => res.json())
-            .then(setFileTree)
+        listNotesAuthStaffUploadNotesGet()
+            .then((res) => setFileTree(res.data as Record<string, unknown>))
             .catch((err) => console.error("Failed to load notes:", err));
     }, []);
 
@@ -90,15 +108,15 @@ export default function TeacherNotesUploader() {
         setCurrentPath("/" + parts.join("/"));
     };
 
-    const handleFileSelect = (file) => {
+    const handleFileSelect = (file: File) => {
         if (file.type !== "application/pdf") {
             setUploadStatus("❌ Only PDF files are allowed.");
             return;
         }
-        uploadFile(file);
+        void uploadFile(file);
     };
 
-    const handleDrop = (e) => {
+    const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
         setDragActive(false);
@@ -107,37 +125,33 @@ export default function TeacherNotesUploader() {
         }
     };
 
-    const uploadFile = (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("path", currentPath);
+    const uploadFile = async (file: File) => {
+        setUploadStatus("Uploading...");
+        try {
+            const res = await uploadNoteAuthStaffUploadNotesPost({
+                body: { 
+                    file: file as unknown as File,
+                    path: currentPath 
+                },
+                onUploadProgress: (progressEvent: { loaded: number; total?: number }) => {
+                    if (progressEvent.total) {
+                        setUploadProgress(
+                            Math.round((progressEvent.loaded / progressEvent.total) * 100)
+                        );
+                    }
+                }
+            } as unknown as Parameters<typeof uploadNoteAuthStaffUploadNotesPost>[0]);
 
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", `${API_BASE}/auth/Staff/upload_notes`, true);
+            if ("error" in res && res.error) throw new Error("Upload failed");
 
-        xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-                setUploadProgress(
-                    Math.round((event.loaded / event.total) * 100)
-                );
-            }
-        };
-
-        xhr.onload = () => {
-            if (xhr.status === 200) {
-                setUploadStatus("✅ Uploaded successfully");
-                setUploadProgress(0);
-                void fetchWithAuth(`${API_BASE}/auth/Staff/upload_notes`)
-                    .then((res) => res.json())
-                    .then(setFileTree);
-            } else {
-                setUploadStatus("❌ Upload failed");
-            }
-        };
-
-        xhr.onerror = () => setUploadStatus("❌ Upload error");
-
-        xhr.send(formData);
+            setUploadStatus("✅ Uploaded successfully");
+            setUploadProgress(0);
+            const refreshRes = await listNotesAuthStaffUploadNotesGet();
+            setFileTree(refreshRes.data as Record<string, unknown>);
+        } catch (err) {
+            console.error(err);
+            setUploadStatus("❌ Upload error");
+        }
     };
 
     return (
@@ -198,7 +212,7 @@ export default function TeacherNotesUploader() {
                 <div className="mt-6 flex justify-center">
                     <button
                         className="px-5 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 active:scale-95 transition"
-                        onClick={() => fileInputRef.current.click()}
+                        onClick={() => fileInputRef.current?.click()}
                     >
                         📤 Upload PDF
                     </button>
@@ -209,7 +223,7 @@ export default function TeacherNotesUploader() {
                     ref={fileInputRef}
                     accept="application/pdf"
                     onChange={(e) => {
-                        if (e.target.files[0])
+                        if (e.target.files?.[0])
                             handleFileSelect(e.target.files[0]);
                     }}
                     className="hidden"

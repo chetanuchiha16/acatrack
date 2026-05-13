@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
-import axiosInstance from "./axiosInstance";
-import API_BASE from "./config";
+import { 
+    getMessagesMessagesGet, 
+    saveMessageMessagesPost, 
+    deleteMessageMessagesMsgIdDelete,
+    sendEmailToAllSendEmailAllPost,
+    sendEmailToStudentSendEmailStudentPost
+} from "./client/sdk.gen";
 import type { SentMessage } from "./types";
 
 export default function SendEmails() {
@@ -25,10 +30,8 @@ export default function SendEmails() {
 
     const fetchMessages = async () => {
         try {
-            const res = await axiosInstance.get(`${API_BASE}/messages`, {
-                withCredentials: true,
-            });
-            setMessages(res.data);
+            const res = await getMessagesMessagesGet();
+            if (res.data) setMessages(res.data as SentMessage[]);
         } catch (err) {
             console.error("Failed to fetch messages", err);
         }
@@ -36,9 +39,7 @@ export default function SendEmails() {
 
     const saveMessage = async (data: Partial<SentMessage>) => {
         try {
-            await axiosInstance.post(`${API_BASE}/messages`, data, {
-                withCredentials: true,
-            });
+            await saveMessageMessagesPost({ body: data as SentMessage });
             await fetchMessages(); // refresh after saving
         } catch (err) {
             console.error("Failed to save message", err);
@@ -47,9 +48,7 @@ export default function SendEmails() {
 
     const deleteMessage = async (id: string | number) => {
         try {
-            await axiosInstance.delete(`${API_BASE}/messages/${id}`, {
-                withCredentials: true,
-            });
+            await deleteMessageMessagesMsgIdDelete({ path: { msg_id: id as number } });
             setMessages(messages.filter((m) => m.id !== id));
         } catch (err) {
             console.error("Failed to delete message", err);
@@ -65,10 +64,12 @@ export default function SendEmails() {
             return;
         }
         try {
-            await axiosInstance.post(`${API_BASE}/send-email/all`, {
-                recipientType: "student",
-                subject: subjectAll,
-                message: messageAll,
+            await sendEmailToAllSendEmailAllPost({
+                body: {
+                    recipientType: "student",
+                    subject: subjectAll,
+                    message: messageAll,
+                }
             });
             await saveMessage({
                 recipientType: "student",
@@ -97,10 +98,12 @@ export default function SendEmails() {
             return;
         }
         try {
-            await axiosInstance.post(`${API_BASE}/send-email/all`, {
-                recipientType: "parent",
-                subject: subjectAll,
-                message: messageAll,
+            await sendEmailToAllSendEmailAllPost({
+                body: {
+                    recipientType: "parent",
+                    subject: subjectAll,
+                    message: messageAll,
+                }
             });
             await saveMessage({
                 recipientType: "parent",
@@ -136,11 +139,13 @@ export default function SendEmails() {
             return;
         }
         try {
-            await axiosInstance.post(`${API_BASE}/send-email/student`, {
-                usn,
-                recipientType: "student",
-                subject: subjectInd,
-                message: messageInd,
+            await sendEmailToStudentSendEmailStudentPost({
+                body: {
+                    usn,
+                    recipientType: "student",
+                    subject: subjectInd,
+                    message: messageInd,
+                }
             });
             await saveMessage({
                 usn,
@@ -177,11 +182,13 @@ export default function SendEmails() {
             return;
         }
         try {
-            await axiosInstance.post(`${API_BASE}/send-email/student`, {
-                usn,
-                recipientType: "parent",
-                subject: subjectInd,
-                message: messageInd,
+            await sendEmailToStudentSendEmailStudentPost({
+                body: {
+                    usn,
+                    recipientType: "parent",
+                    subject: subjectInd,
+                    message: messageInd,
+                }
             });
             await saveMessage({
                 usn,

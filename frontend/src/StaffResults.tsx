@@ -2,25 +2,23 @@ import React, { useState, useEffect } from "react";
 import SemesterResults from "./SemesterResults";
 import SubjectResults from "./SubjectResults";
 import OverallResults from "./OverallResults";
-import API_BASE from "./config";
-import axios from "axios";
+import { listBatchesBatchesGet } from "./client/sdk.gen";
 
-interface BatchesResponse {
-  batches: string[];
-}
+import type { BatchesResponse } from "./client";
 
 const StaffResults: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("semester");
-  const [batches, setBatches] = useState<string[]>([]);
+  const [batches, setBatches] = useState<number[]>([]);
   const [batchYear, setBatchYear] = useState<string>("");
 
   useEffect(() => {
-      axios.get<BatchesResponse>(`${API_BASE}/batches`)
+      listBatchesBatchesGet()
           .then((res) => {
-              const fetchedBatches = res.data.batches || [];
+              const responseData = res.data as BatchesResponse;
+              const fetchedBatches = responseData?.batches || [];
               setBatches(fetchedBatches);
               if (fetchedBatches.length > 0) {
-                  setBatchYear(fetchedBatches[fetchedBatches.length - 1]);
+                  setBatchYear(String(fetchedBatches[fetchedBatches.length - 1]));
               }
           })
           .catch(() => setBatches([]));

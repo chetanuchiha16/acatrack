@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
-import API_BASE from "./config";
-import { fetchWithAuth } from "./fetchWithAuth";
+import { 
+    getAcademicPerformanceAuthStaffOverallResGet,
+    getReportAuthStaffReportSemesterGet
+} from "./client/sdk.gen";
 
 interface OverallResultsProps {
     batchYear: string;
@@ -40,14 +42,16 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
 
     const fetchData = async () => {
         if (!semester || !batchYear) return;
-        let url = `${API_BASE}/auth/Staff/overall_res?semester=${semester}&batch_year=${batchYear}`;
-        if (view === "toppers") url += "&show_toppers=true";
-        if (view === "failed") url += "&show_failed=true";
-
         try {
-            const res = await fetchWithAuth(url, {});
-            const json: StudentResult[] = await res.json();
-            setData(json);
+            const res = await getAcademicPerformanceAuthStaffOverallResGet({
+                query: { 
+                    semester, 
+                    batch_year: parseInt(batchYear, 10),
+                    show_toppers: view === "toppers" ? true : undefined,
+                    show_failed: view === "failed" ? true : undefined
+                }
+            });
+            if (res.data) setData(res.data as unknown as StudentResult[]);
         } catch (error) {
             console.error("Failed to fetch overall results:", error);
             setData([]);
@@ -56,22 +60,29 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
 
     const downloadPDF = async () => {
         if (!semester) return;
-        let url: string;
-        if (view === "toppers") {
-            // Top 10 Toppers PDF
-            url = `${API_BASE}/auth/Staff/overall_res?semester=${semester}&show_toppers=true&format=pdf&batch_year=${batchYear}`;
-        } else {
-            // Full report as before
-            url = `${API_BASE}/auth/Staff/report/${semester}?batch_year=${batchYear}`;
-        }
-
         try {
-            const response = await fetchWithAuth(url, {});
-            if (!response.ok) {
-                console.error("PDF download failed", response.status);
+            let res;
+            if (view === "toppers") {
+                res = await getAcademicPerformanceAuthStaffOverallResGet({
+                    query: { 
+                        semester, 
+                        batch_year: parseInt(batchYear, 10),
+                        show_toppers: true,
+                        format: "pdf" as "pdf" | "json" | undefined
+                    }
+                });
+            } else {
+                res = await getReportAuthStaffReportSemesterGet({
+                    path: { semester },
+                    query: { batch_year: parseInt(batchYear, 10) }
+                });
+            }
+
+            if (res.error) {
+                console.error("PDF download failed", res.error);
                 return;
             }
-            const blob = await response.blob();
+            const blob = res.data as unknown as Blob;
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
             a.download =

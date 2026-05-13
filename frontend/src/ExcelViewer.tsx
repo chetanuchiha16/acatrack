@@ -6,9 +6,9 @@ import React, {
     useMemo,
 } from "react";
 import ExcelJs from "exceljs";
-import API_BASE from "./config";
 import { subjectMapping } from "./config";
-import { fetchWithAuth } from "./fetchWithAuth";
+import { excelExcelPost } from "./client/sdk.gen";
+import { client } from "./client/client.gen";
 
 type ExcelCellValue = string | number | boolean | Date | null | undefined;
 type ExcelRowData = ExcelCellValue[];
@@ -117,10 +117,9 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
 
     // Load Excel file once
     useEffect(() => {
-        void fetchWithAuth(`${excel_route}`, {})
-            .then((res) => res.arrayBuffer())
-            .then(async (buffer) => {
-                const workbook = await new ExcelJs.Workbook().xlsx.load(buffer);
+        void client.instance.get(excel_route, { responseType: "arraybuffer" })
+            .then(async (res) => {
+                const workbook = await new ExcelJs.Workbook().xlsx.load(res.data as ArrayBuffer);
                 workbookRef.current = workbook;
                 setWorksheets(workbook.worksheets);
             });
@@ -180,15 +179,18 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
         const buffer = await workbookRef.current.xlsx.writeBuffer();
         let blob = new Blob([buffer], { type: "application/octet-stream" });
 
-        let formData = new FormData();
-        formData.append("file", blob, `${excel_route.split("/").pop()}`);
-
-        const res = await fetchWithAuth(`${API_BASE}/excel`, {
-            method: "POST",
-            body: formData,
-        });
-        const data = (await res.json()) as ExcelUploadResponse;
-        alert(data.message || data.error);
+        try {
+            const res = await excelExcelPost({
+                body: { file: blob }
+            });
+            if (res.data) {
+                const data = res.data as { message?: string; error?: string };
+                alert(data?.message || data?.error);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Error uploading Excel file.");
+        }
     }
 
     function addRow() {

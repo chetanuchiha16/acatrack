@@ -1,12 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { FaUser } from "react-icons/fa";
-import axiosInstance from "./axiosInstance";
-import API_BASE from "./config";
+import { requestResetAuthForgotRequestPost } from "./client/sdk.gen";
 import { parseApiError } from "./utils/errorHandler";
-
-interface ForgotPasswordResponse {
-    message?: string;
-}
 
 interface ForgotPasswordProps {
     onClose: () => void;
@@ -26,16 +21,21 @@ export default function ForgotPassword({ onClose }: ForgotPasswordProps) {
         setStatus(null); // clear previous messages
 
         try {
-            const res = await axiosInstance.post<ForgotPasswordResponse>(
-                `${API_BASE}/auth/forgot/request`,
-                {
-                    username,
-                }
-            );
-            setStatus({
-                type: "success",
-                message: res.data.message ?? "Reset link sent successfully!",
+            const { data } = await requestResetAuthForgotRequestPost({
+                body: { username }
             });
+            
+            if (data && typeof data === "object" && 'message' in data) {
+                setStatus({
+                    type: "success",
+                    message: (data as { message: string }).message,
+                });
+            } else {
+                setStatus({
+                    type: "success",
+                    message: "Reset link sent successfully!",
+                });
+            }
             setUsername("");
         } catch (err: unknown) {
             setStatus({
