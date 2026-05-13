@@ -123,11 +123,12 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                     aiPredictCgpaAiPredictCgpaGet({ query: { usn } }),
                 ]);
 
+            const summaryData = summaryRes.data as { ai_summary: AiSummary };
             setAiData({
-                ai_summary: (summaryRes.data as any)?.ai_summary,
-                ai_profile: profileRes.data as any,
-                trend: trendRes.data as any,
-                cgpa_prediction: predictRes.data as any,
+                ai_summary: summaryData.ai_summary,
+                ai_profile: profileRes.data as AiProfile,
+                trend: trendRes.data as AiTrend,
+                cgpa_prediction: predictRes.data as CgpaPrediction,
             });
         } catch (err) {
             console.error(err);
@@ -147,7 +148,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
             const res = await getStudentAnalysisAuthStudentAnalysisGet({
                 query: { usn, semester }
             });
-            const data = res.data as any;
+            const data = res.data as PerformanceData;
 
             if (res.data) {
                 setPerformanceData({
@@ -158,7 +159,8 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                 });
                 void fetchChart();
             } else {
-                setErrorPerf((res.error as any)?.error || "Failed to fetch student performance");
+                const errorData = res.error as { error?: string };
+                setErrorPerf(errorData?.error || "Failed to fetch student performance");
             }
         } catch (err: unknown) {
             setErrorPerf("Server error: " + (err instanceof Error ? err.message : "Unknown"));
@@ -174,7 +176,8 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                 query: { usn, semester }
             });
             if (res.data) {
-                setChartUrl((res.data as any).image || "");
+                const chartData = res.data as { image?: string };
+                setChartUrl(chartData.image || "");
             }
         } catch (err) {
             console.error("Failed to fetch chart:", err);

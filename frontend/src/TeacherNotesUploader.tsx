@@ -34,7 +34,7 @@ function FileItem({ name, isFolder, onClick, selected }: FileItemProps) {
 }
 
 interface FileGridProps {
-    tree: any;
+    tree: Record<string, unknown>;
     path?: string;
     setPath: (path: string) => void;
 }
@@ -71,19 +71,23 @@ function FileGrid({ tree, path = "", setPath }: FileGridProps) {
     );
 }
 
-function getDirAtPath(tree: any, path: string) {
+function getDirAtPath(tree: Record<string, unknown>, path: string): Record<string, unknown> {
     if (!path) return tree;
     const parts = path.split("/").filter(Boolean);
-    let current = tree;
-    for (let part of parts) {
-        current = current?.[part];
-        if (!current) return {};
+    let current: unknown = tree;
+    for (const part of parts) {
+        const next = (current as Record<string, unknown>)?.[part];
+        if (next && typeof next === "object") {
+            current = next;
+        } else {
+            return {};
+        }
     }
-    return current;
+    return current as Record<string, unknown>;
 }
 
 export default function TeacherNotesUploader() {
-    const [fileTree, setFileTree] = useState<any>(null);
+    const [fileTree, setFileTree] = useState<Record<string, unknown> | null>(null);
     const [currentPath, setCurrentPath] = useState<string>("");
     const [dragActive, setDragActive] = useState<boolean>(false);
     const [uploadStatus, setUploadStatus] = useState<string>("");
@@ -92,7 +96,7 @@ export default function TeacherNotesUploader() {
 
     useEffect(() => {
         listNotesAuthStaffUploadNotesGet()
-            .then((res) => setFileTree(res.data as any))
+            .then((res) => setFileTree(res.data as Record<string, unknown>))
             .catch((err) => console.error("Failed to load notes:", err));
     }, []);
 
@@ -109,7 +113,7 @@ export default function TeacherNotesUploader() {
             setUploadStatus("❌ Only PDF files are allowed.");
             return;
         }
-        uploadFile(file);
+        void uploadFile(file);
     };
 
     const handleDrop = (e: React.DragEvent) => {
@@ -125,23 +129,25 @@ export default function TeacherNotesUploader() {
         setUploadStatus("Uploading...");
         try {
             const res = await uploadNoteAuthStaffUploadNotesPost({
-                body: { file: file as any },
-                query: { path: currentPath },
-                onUploadProgress: (progressEvent: any) => {
+                body: { 
+                    file: file as unknown as File,
+                    path: currentPath 
+                },
+                onUploadProgress: (progressEvent: { loaded: number; total?: number }) => {
                     if (progressEvent.total) {
                         setUploadProgress(
                             Math.round((progressEvent.loaded / progressEvent.total) * 100)
                         );
                     }
                 }
-            } as any); // Use 'as any' if the SDK type doesn't explicitly show onUploadProgress but axios does
+            } as unknown as Parameters<typeof uploadNoteAuthStaffUploadNotesPost>[0]);
 
             if (res.error) throw new Error("Upload failed");
 
             setUploadStatus("✅ Uploaded successfully");
             setUploadProgress(0);
             const refreshRes = await listNotesAuthStaffUploadNotesGet();
-            setFileTree(refreshRes.data as any);
+            setFileTree(refreshRes.data as Record<string, unknown>);
         } catch (err) {
             console.error(err);
             setUploadStatus("❌ Upload error");

@@ -29,7 +29,7 @@ const StudentOverview: React.FC = () => {
     const finalUsn = user.id || "USN";
 
     const navigateTo = (path: string) => {
-        navigate(`/auth/Student/${finalUsn}/${path}`, { state: locationState });
+        void navigate(`/auth/Student/${finalUsn}/${path}`, { state: locationState });
     };
 
     return (

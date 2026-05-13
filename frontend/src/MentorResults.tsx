@@ -53,7 +53,8 @@ const MentorResults: React.FC<MentorResultsProps> = ({ mentor_id, batchYear }) =
                     batch_year: Number(batchYear)
                 }
             });
-            const chartImage = (data as any)?.image;
+            const dataObj = data as { image?: string };
+            const chartImage = dataObj?.image;
             if (chartImage) {
                 setChartData(chartImage);
                 setSelectedMentee(usn);

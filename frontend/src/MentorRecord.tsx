@@ -50,7 +50,8 @@ export default function MentorRecords({ mentor_id, batchYear }: MentorRecordsPro
                 path: { mentor_id: parseInt(mentor_id, 10), usn },
                 query: { batch_year: parseInt(batchYear, 10) }
             });
-            const fileUrl = (res.data as any)?.file_url;
+            const dataObj = res.data as { file_url?: string };
+            const fileUrl = dataObj?.file_url ?? null;
             setPdfUrl(fileUrl);
             return fileUrl;
         } catch {
