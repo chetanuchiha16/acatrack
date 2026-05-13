@@ -39,7 +39,7 @@ export default function SendEmails() {
 
     const saveMessage = async (data: Partial<SentMessage>) => {
         try {
-            await saveMessageMessagesPost({ body: data as any });
+            await saveMessageMessagesPost({ body: data as SentMessage });
             await fetchMessages(); // refresh after saving
         } catch (err) {
             console.error("Failed to save message", err);

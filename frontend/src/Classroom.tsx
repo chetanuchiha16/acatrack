@@ -98,7 +98,7 @@ const FileExplorer: React.FC = () => {
     useEffect(() => {
         listNotesAuthStudentNotesGet()
             .then((res) => {
-                const data = res.data as any;
+                const data = res.data as unknown;
                 setFileTree(isFileTree(data) ? data : {});
             })
             .catch((err) => console.error("Failed to load notes:", err));

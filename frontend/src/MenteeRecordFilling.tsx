@@ -111,10 +111,13 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
         e.preventDefault();
         try {
             const res = await uploadFormMenteeUploadFormPost({
-                body: formData as any
+                body: formData as unknown as { [key: string]: unknown }
             });
-            if (res.data && (res.data as any).status === "success") {
-                setMessage(`PDF generated successfully: ${(res.data as any).filename}`);
+            if (res.data) {
+                const data = res.data as { status: string; filename: string };
+                if (data.status === "success") {
+                    setMessage(`PDF generated successfully: ${data.filename}`);
+                }
             }
         } catch (err) {
             setMessage("Error submitting form.");
