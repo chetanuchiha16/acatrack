@@ -7,7 +7,7 @@ import {
     sendEmailAllMentorMentorIdSendEmailAllPost, 
     deleteMessageMentorMentorIdMessagesMsgIdDelete 
 } from "./client/sdk.gen";
-import { parseApiError } from "./utils/errorHandler";
+// import { parseApiError } from "./utils/errorHandler";
 
 interface MentorSendEmailsProps {
     mentorId: string;
@@ -102,7 +102,7 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
             void fetchStudents();
             void fetchMessages();
         }
-    }, [mentorId, batch_year_num, fetchStudents, fetchMessages]);
+    }, [mentorId, batchYear, fetchStudents, fetchMessages]);
 
     const toggleExpand = (usn: string) => {
         setExpanded((prev) => ({ ...prev, [usn]: !prev[usn] }));
@@ -132,10 +132,11 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
             if (stored) {
                 setStudentMessages((prev) => {
                     const key = usn || "all";
+                    const dataObj = stored as MessageEntry;
                     const newMsg: MessageEntry = {
-                        ...(stored as unknown as MessageEntry),
+                        ...dataObj,
                         read_status:
-                            (stored as any).read_status?.map((s: any) => ({
+                            dataObj.read_status?.map((s: ReadStatus) => ({
                                 ...s,
                                 read: false,
                             })) || [],
@@ -159,7 +160,7 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
                     path: { mentor_id: Number(mentorId) },
                     query: { batch_year: batch_year_num },
                     body: { recipientType: recipientType as "student" | "parent", subject, message }
-                } as any);
+                });
             }
 
             if (response) {

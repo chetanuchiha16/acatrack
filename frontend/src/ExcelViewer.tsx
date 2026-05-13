@@ -117,9 +117,9 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
 
     // Load Excel file once
     useEffect(() => {
-        client.instance.get(excel_route, { responseType: "arraybuffer" })
+        void client.instance.get(excel_route, { responseType: "arraybuffer" })
             .then(async (res) => {
-                const workbook = await new ExcelJs.Workbook().xlsx.load(res.data);
+                const workbook = await new ExcelJs.Workbook().xlsx.load(res.data as ArrayBuffer);
                 workbookRef.current = workbook;
                 setWorksheets(workbook.worksheets);
             });
@@ -181,10 +181,12 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
 
         try {
             const res = await excelExcelPost({
-                body: { file: blob as any }
+                body: { file: blob }
             });
-            const data = res.data as any;
-            alert(data?.message || data?.error);
+            if (res.data) {
+                const data = res.data as { message?: string; error?: string };
+                alert(data?.message || data?.error);
+            }
         } catch (err) {
             console.error(err);
             alert("Error uploading Excel file.");

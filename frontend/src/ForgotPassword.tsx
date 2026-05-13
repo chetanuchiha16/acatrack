@@ -25,10 +25,17 @@ export default function ForgotPassword({ onClose }: ForgotPasswordProps) {
                 body: { username }
             });
             
-            setStatus({
-                type: "success",
-                message: (data as any)?.message ?? "Reset link sent successfully!",
-            });
+            if (data && typeof data === "object" && 'message' in data) {
+                setStatus({
+                    type: "success",
+                    message: (data as { message: string }).message,
+                });
+            } else {
+                setStatus({
+                    type: "success",
+                    message: "Reset link sent successfully!",
+                });
+            }
             setUsername("");
         } catch (err: unknown) {
             setStatus({

@@ -33,7 +33,8 @@ const ResetPassword: React.FC = () => {
                 body: { password }
             });
             
-            setStatus((data as any)?.message || "Success");
+            const responseData = data as { message?: string };
+            setStatus(responseData?.message || "Success");
             setTimeout(() => { void navigate("/auth"); }, 2000);
         } catch (err: unknown) {
             setStatus(parseApiError(err) || "Something went wrong");

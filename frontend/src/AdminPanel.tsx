@@ -56,10 +56,13 @@ export default function AdminPanel() {
             headers: { "X-Admin-Secret": secret },
         })
             .then((res) => {
-                const data = res.data as any;
-                if (data.batches && data.batches.length > 0) {
-                    setAvailableBatches(data.batches);
-                    setBatchYear(data.batches[0]);
+                const data = res.data as { batches?: number[] } | undefined;
+                if (data?.batches) {
+                    const batches = data.batches;
+                    if (batches.length > 0) {
+                        setAvailableBatches(batches);
+                        setBatchYear(batches[0]);
+                    }
                 }
             })
             .catch((err) => {
@@ -86,10 +89,13 @@ export default function AdminPanel() {
         setStatus("Generating accounts...");
         try {
             const res = await generateAccountsAdminGenerateAccountsPost({
-                query: { mode: mode as any, batch_year: batchYear },
+                query: { mode: mode as "all" | "missing", batch_year: batchYear },
                 headers: { "X-Admin-Secret": secret }
             });
-            if (res.error) throw new Error((res.error as any).detail || "Generation failed");
+            if (res.error) {
+                const detail = (res.error as { detail?: string }).detail || "Generation failed";
+                throw new Error(detail);
+            }
             
             const blob = res.data as unknown as Blob;
             const url = window.URL.createObjectURL(blob);
@@ -112,13 +118,18 @@ export default function AdminPanel() {
             const res = await uploadEmailsAdminUploadEmailsPost({
                 query: { batch_year: batchYear! },
                 headers: { "X-Admin-Secret": secret },
-                body: { file: emailFile as any }
+                body: { file: emailFile }
             });
-            const data = res.data as any;
-            if (res.error) throw new Error((res.error as any).error || "Unknown error");
-            setStatus(
-                `✅ Uploaded emails. Inserted ${data.emails_inserted} records and Updated ${data.emails_updated} records.`
-            );
+            if (res.error) {
+                const errMsg = (res.error as { error?: string }).error || "Unknown error";
+                throw new Error(errMsg);
+            }
+            if (res.data) {
+                const data = res.data as { emails_inserted: number; emails_updated: number };
+                setStatus(
+                    `✅ Uploaded emails. Inserted ${data.emails_inserted} records and Updated ${data.emails_updated} records.`
+                );
+            }
         } catch (err: unknown) {
             setStatus("❌ Error: " + getErrMsg(err));
         }
@@ -133,14 +144,19 @@ export default function AdminPanel() {
             const res = await uploadMentorsAdminUploadMentorsPost({
                 query: { batch_year: batchYear! },
                 headers: { "X-Admin-Secret": secret },
-                body: { file: mentorFile as any }
+                body: { file: mentorFile }
             });
-            const data = res.data as any;
-            if (res.error) throw new Error((res.error as any).error || "Unknown error");
+            if (res.error) {
+                const errMsg = (res.error as { error?: string }).error || "Unknown error";
+                throw new Error(errMsg);
+            }
 
-            setStatus(
-                `✅ Uploaded mentors. Inserted ${data.mentors_inserted} mentors and ${data.mappings_inserted} mappings.`
-            );
+            if (res.data) {
+                const data = res.data as { mentors_inserted: number; mappings_inserted: number };
+                setStatus(
+                    `✅ Uploaded mentors. Inserted ${data.mentors_inserted} mentors and ${data.mappings_inserted} mappings.`
+                );
+            }
 
             // SDK doesn't natively handle the automatic follow-up fetch for CSV as easily in one call,
             // but we can keep the logic similar if needed. However, the backend should ideally return the data.
@@ -161,7 +177,10 @@ export default function AdminPanel() {
                 headers: { "X-Admin-Secret": secret },
                 body: { batch_year: parseInt(newBatchYear, 10) }
             });
-            if (res.error) throw new Error((res.error as any).error || "Unknown error");
+            if (res.error) {
+                const errMsg = (res.error as { error?: string }).error || "Unknown error";
+                throw new Error(errMsg);
+            }
             setStatus(`✅ Batch ${newBatchYear} created successfully.`);
             setNewBatchYear("");
             fetchBatches();
@@ -180,7 +199,10 @@ export default function AdminPanel() {
                 headers: { "X-Admin-Secret": secret },
                 body: { batch_year: batchYear }
             });
-            if (res.error) throw new Error((res.error as any).error || "Unknown error");
+            if (res.error) {
+                const errMsg = (res.error as { error?: string }).error || "Unknown error";
+                throw new Error(errMsg);
+            }
             setStatus(`✅ Batch ${batchYear} refreshed successfully.`);
         } catch (err: unknown) {
             setStatus("❌ Error: " + getErrMsg(err));
@@ -205,9 +227,14 @@ export default function AdminPanel() {
                     download_dir: downloadDir || undefined,
                 }
             });
-            const data = res.data as any;
-            if (res.error) throw new Error((res.error as any).error || "Unknown error");
-            setStatus(`✅ Fetch started: ${data.message}`);
+            if (res.error) {
+                const errMsg = (res.error as { error?: string }).error || "Unknown error";
+                throw new Error(errMsg);
+            }
+            if (res.data) {
+                const data = res.data as { message: string };
+                setStatus(`✅ Fetch started: ${data.message}`);
+            }
         } catch (err: unknown) {
             setStatus("❌ Error: " + getErrMsg(err));
         }
@@ -223,16 +250,18 @@ export default function AdminPanel() {
         try {
             const res = await uploadArchivePdftoexcelUploadPost({
                 headers: { "X-Admin-Secret": secret },
-                body: { file: pdfZipFile as any }
+                body: { file: pdfZipFile }
             });
 
-            const data = res.data as any;
-            if (res.error) throw new Error((res.error as any).error || "Unknown error");
-            void pollJobStatus(data.job_id);
-
-            setStatus(
-                `✅ Processed PDFs. Job ID: ${data.job_id}`
-            );
+            if (res.error) {
+                const errMsg = (res.error as { error?: string }).error || "Unknown error";
+                throw new Error(errMsg);
+            }
+            if (res.data) {
+                const data = res.data as { job_id: string | number };
+                void pollJobStatus(data.job_id);
+                setStatus(`✅ Processed PDFs. Job ID: ${data.job_id}`);
+            }
         } catch (err: unknown) {
             setStatus("❌ Error: " + getErrMsg(err));
         }
@@ -241,16 +270,21 @@ export default function AdminPanel() {
     const pollJobStatus = async (jobId: string | number) => {
         try {
             const res = await getStatusPdftoexcelStatusJobIdGet({
-                path: { job_id: jobId as string }
+                path: { job_id: String(jobId) }
             });
-            const data = res.data as any;
-            if (res.error) throw new Error((res.error as any).error || "Unknown error");
+            if (res.error) {
+                const errMsg = (res.error as { error?: string }).error || "Unknown error";
+                throw new Error(errMsg);
+            }
 
-            if (data.status === "done") {
-                setStatus(`✅ Done! Excel at ${data.excel_url}`);
-            } else {
-                setStatus(`Processing... ${data.progress} PDFs done`);
-                setTimeout(() => { void pollJobStatus(jobId); }, 1000); // poll every second
+            if (res.data) {
+                const data = res.data as { status: string; excel_url?: string; progress?: number };
+                if (data.status === "done") {
+                    setStatus(`✅ Done! Excel at ${data.excel_url}`);
+                } else {
+                    setStatus(`Processing... ${data.progress} PDFs done`);
+                    setTimeout(() => { void pollJobStatus(jobId); }, 1000); // poll every second
+                }
             }
         } catch (err: unknown) {
             console.error(err);
