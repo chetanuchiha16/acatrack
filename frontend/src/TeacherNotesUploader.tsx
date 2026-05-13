@@ -142,7 +142,7 @@ export default function TeacherNotesUploader() {
                 }
             } as unknown as Parameters<typeof uploadNoteAuthStaffUploadNotesPost>[0]);
 
-            if (res.error) throw new Error("Upload failed");
+            if ("error" in res && res.error) throw new Error("Upload failed");
 
             setUploadStatus("✅ Uploaded successfully");
             setUploadProgress(0);
