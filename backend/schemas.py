@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
+
 class SubjectResult(BaseModel):
     code: str
     subject_name: str
@@ -9,6 +10,7 @@ class SubjectResult(BaseModel):
     total: float | str
     credit: int
     status: str
+
 
 class StudentResultResponse(BaseModel):
     usn: str
@@ -23,6 +25,7 @@ class StudentResultResponse(BaseModel):
     pdf_url: Optional[str] = None
     semester: Optional[str] = None
 
+
 class AuthStatusResponse(BaseModel):
     logged_in: bool
     who: str
@@ -31,8 +34,10 @@ class AuthStatusResponse(BaseModel):
     mentor_id: Optional[int | str] = None
     batch_year: Optional[int] = None
 
+
 class BatchRequest(BaseModel):
     batch_year: int
+
 
 class FetchResultsRequest(BaseModel):
     usn_prefix: str
@@ -41,19 +46,24 @@ class FetchResultsRequest(BaseModel):
     sem: int
     download_dir: Optional[str] = None
 
+
 class MentorSendEmailAllRequest(BaseModel):
     recipientType: str = "student"
     subject: str
     message: str
 
+
 class ChartResponse(BaseModel):
     image: str
+
 
 class LoginResponse(BaseModel):
     token: str
 
+
 class BatchesResponse(BaseModel):
     batches: List[int]
+
 
 class MentorMenteeEntry(BaseModel):
     usn: str
@@ -62,13 +72,16 @@ class MentorMenteeEntry(BaseModel):
     parent_email: Optional[str] = None
     parent_phone: Optional[str] = None
 
+
 class MentorMenteeListResponse(BaseModel):
     students: List[MentorMenteeEntry]
+
 
 class MessageReadStatus(BaseModel):
     usn: str
     name: str
     read: bool
+
 
 class MentorMessageResponse(BaseModel):
     id: int
@@ -79,9 +92,11 @@ class MentorMessageResponse(BaseModel):
     student_usn: Optional[str] = None
     read_status: List[MessageReadStatus] = []
 
+
 class EmailAllStatus(BaseModel):
     usn: str
     success: bool
+
 
 class MenteeProjectInternship(BaseModel):
     company: Optional[str] = None
@@ -89,11 +104,13 @@ class MenteeProjectInternship(BaseModel):
     duration: Optional[str] = None
     stipend: Optional[str] = None
 
+
 class MenteeActivity(BaseModel):
     Sports: Optional[str] = None
     conference_details: Optional[str] = None
     papers_published: Optional[str] = None
     certifications_from_MOOC: Optional[str] = None
+
 
 class MenteeSummary(BaseModel):
     cultural_activities: Optional[str] = None
@@ -101,6 +118,7 @@ class MenteeSummary(BaseModel):
     hackathon: Optional[str] = None
     coding_competitions: Optional[str] = None
     other_achievements: Optional[str] = None
+
 
 class MenteeUploadFormRequest(BaseModel):
     name: Optional[str] = None
