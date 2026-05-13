@@ -68,7 +68,7 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
                         semester, 
                         batch_year: parseInt(batchYear, 10),
                         show_toppers: true,
-                        format: "pdf" as any
+                        format: "pdf" as "pdf" | "json" | undefined
                     }
                 });
             } else {

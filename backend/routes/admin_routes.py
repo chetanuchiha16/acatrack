@@ -11,7 +11,7 @@ import base64
 import hashlib
 from cryptography.fernet import Fernet
 
-from fastapi import APIRouter, Request, UploadFile, File, Header, Query
+from fastapi import APIRouter, UploadFile, File, Header, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 from logger_config import get_logger
 from models import Mentor, ParentAuth, StudentAuth, Teacher
@@ -245,9 +245,7 @@ async def download_teachers_csv(
 
 
 @router.post("/create-batch")
-async def create_batch(
-    body: BatchRequest, x_admin_secret: str | None = Header(None)
-):
+async def create_batch(body: BatchRequest, x_admin_secret: str | None = Header(None)):
     if not _check_secret(x_admin_secret):
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
 
@@ -269,9 +267,7 @@ async def create_batch(
 
 
 @router.post("/refresh-batch")
-async def refresh_batch(
-    body: BatchRequest, x_admin_secret: str | None = Header(None)
-):
+async def refresh_batch(body: BatchRequest, x_admin_secret: str | None = Header(None)):
     if not _check_secret(x_admin_secret):
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
 

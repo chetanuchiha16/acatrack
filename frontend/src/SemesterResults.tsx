@@ -58,8 +58,9 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
                 query: { semester: selected, batch_year: parseInt(batchYear, 10) }
             });
             if (res.error) {
+                const errorData = res.error as { error?: string };
                 throw new Error(
-                    (res.error as any)?.error || `Request failed`
+                    errorData?.error || `Request failed`
                 );
             }
             setData(res.data as unknown as SemesterData);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getStudentInfoAuthStudentResultGet } from "./client/sdk.gen";
 import type { StudentResultResponse as StudentResult, SubjectResult } from "./client/types.gen";
 import type { Semester } from "./types";
@@ -18,7 +18,7 @@ export default function Result({ usn, semester, view }: ResultProps) {
     const [error, setError] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
 
-    const fetchStudent = async () => {
+    const fetchStudent = useCallback(async () => {
         if (!usn || !semester) return;
         setLoading(true);
         setError("");
@@ -37,11 +37,11 @@ export default function Result({ usn, semester, view }: ResultProps) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [usn, semester]);
 
     useEffect(() => {
         void fetchStudent();
-    }, [usn, semester]);
+    }, [fetchStudent]);
 
     const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
 

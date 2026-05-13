@@ -86,14 +86,15 @@ export default function ParentResult() {
         try {
             const [summaryRes, profileRes] = await Promise.all([
                 aiSummaryAiSummaryGet({
-                    query: { usn, lng: lang as any }
+                    query: { usn, lng: lang as "en" | "hi" | "kan" }
                 }),
                 aiProfileAiProfileGet({
-                    query: { usn, lng: lang as any }
+                    query: { usn, lng: lang as "en" | "hi" | "kan" }
                 })
             ]);
 
-            const summaryJson = (summaryRes.data as any)?.ai_summary as AiSummary;
+            const summaryData = summaryRes.data as { ai_summary?: AiSummary };
+            const summaryJson = summaryData?.ai_summary as AiSummary;
             const profileJson = profileRes.data as AiProfile;
 
             setAiData({

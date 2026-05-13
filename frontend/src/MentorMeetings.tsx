@@ -48,7 +48,7 @@ export default function MentorMeetings({ mentorId, batchYear }: MentorMeetingsPr
 
     useEffect(() => {
         if (mentorId && batchYear) void fetchMeetings();
-    }, [mentorId, batch_year_num, fetchMeetings]);
+    }, [mentorId, batchYear, fetchMeetings]);
 
     // Add a new meeting
     const addMeeting = async () => {
