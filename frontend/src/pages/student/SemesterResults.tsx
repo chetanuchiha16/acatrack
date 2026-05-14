@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { 
+    GraduationCap, 
+    ChevronDown, 
+    FileText, 
+    ArrowLeft, 
+    ChevronRight,
+    Search
+} from "lucide-react";
+import { 
     getSemesterResultsAuthStaffSemResGet,
     downloadSemesterReportAuthStaffSemResReportSemesterGet
 } from "../../client/sdk.gen";
@@ -111,53 +119,61 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-4 sm:p-6">
-            <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-3 sm:gap-4 mb-6">
-                <div className="flex items-center justify-center">
-                    <div className="text-xl sm:text-2xl font-extrabold">
-                        Semester Results
+        <div className="w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-500/10 rounded-2xl">
+                        <GraduationCap className="w-6 h-6 text-blue-500" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-none">Semester Overview</h2>
+                        <p className="text-xs text-gray-500 mt-1">Detailed subject performance metrics</p>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                    <label className="flex items-center gap-2 backdrop-blur px-3 py-2 rounded-xl  w-40">
+                <div className="flex items-center gap-3">
+                    <div className="relative">
                         <select
                             value={semester}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSemester(e.target.value)}
-                            className="appearance-none bg-transparent outline-none text-sm font-medium "
+                            className="pl-4 pr-10 py-2.5 bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/50 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 outline-none appearance-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer shadow-sm min-w-[140px]"
                         >
                             {semesters.map((s) => (
-                                <option value={s} key={s}>
-                                    {s}
-                                </option>
+                                <option value={s} key={s}>{s.toUpperCase()}</option>
                             ))}
                         </select>
-                    </label>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                    </div>
 
-                    <div className="inline-flex overflow-hidden rounded-xl border shadow-sm">
+                    <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
                         <button
                             onClick={() => setView("cards")}
-                            className={`px-3 py-2 text-xs sm:text-sm ${
-                                view === "cards"
-                                    ? "bg-slate-900 text-white"
-                                    : "text-slate-600"
+                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                view === "cards" ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm" : "text-gray-500"
                             }`}
                         >
                             Cards
                         </button>
                         <button
                             onClick={() => setView("table")}
-                            className={`px-3 py-2 text-xs sm:text-sm ${
-                                view === "table"
-                                    ? "bg-slate-900 text-white"
-                                    : "text-slate-600"
+                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                view === "table" ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm" : "text-gray-500"
                             }`}
                         >
                             Table
                         </button>
                     </div>
+
+                    <button
+                        onClick={downloadPDF}
+                        disabled={!semester}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
+                    >
+                        <FileText size={18} />
+                        Report
+                    </button>
                 </div>
-            </header>
+            </div>
 
             <main>
                 <div className="mb-4">
@@ -202,74 +218,48 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
                                 {data.results.map((r) => (
                                     <article
                                         key={r.subject_code}
-                                        className="group rounded-2xl p-3 sm:p-4 shadow hover:shadow-lg transition-shadow border"
+                                        className="group relative bg-white dark:bg-gray-800/40 rounded-3xl p-5 border border-gray-100 dark:border-gray-700/50 hover:border-blue-500/30 dark:hover:border-blue-400/30 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/5 overflow-hidden"
                                     >
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div>
-                                                <div className="text-[10px] sm:text-xs text-slate-400">
-                                                    Subject
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150 duration-700"></div>
+                                        
+                                        <div className="relative z-10">
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="flex-1 min-w-0">
+                                                    <span className="inline-block px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold uppercase tracking-wider mb-2">
+                                                        {r.subject_code}
+                                                    </span>
+                                                    <h3 className="font-bold text-gray-900 dark:text-white truncate" title={r.subject_name}>
+                                                        {r.subject_name}
+                                                    </h3>
                                                 </div>
-                                                <div className="font-semibold text-base sm:text-lg break-words">
-                                                    {r.subject_name} (
-                                                    {r.subject_code})
-                                                </div>
-                                                <div className="text-xs sm:text-sm text-slate-500 mt-1">
-                                                    Students: {r.total_students}
+                                                <div className="flex flex-col items-end">
+                                                    <div className="text-2xl font-black text-blue-600 dark:text-blue-400 leading-none">
+                                                        {r.pass_percentage}%
+                                                    </div>
+                                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mt-1">Passing</span>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xs sm:text-sm font-semibold">
-                                                    {r.pass_percentage}%
-                                                </div>
-                                            </div>
-                                        </div>
 
-                                        <div className="mt-4 grid grid-cols-3 gap-2 text-xs sm:text-sm">
-                                            <div className="col-span-1 rounded-lg p-2 text-center">
-                                                <div className="text-[10px] sm:text-xs text-slate-400">
-                                                    Present
+                                            <div className="grid grid-cols-3 gap-3">
+                                                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3 border border-gray-100 dark:border-gray-800/50">
+                                                    <div className="text-[10px] text-gray-400 font-bold uppercase mb-1">Present</div>
+                                                    <div className="text-sm font-bold text-gray-900 dark:text-white">{r.present_students}</div>
                                                 </div>
-                                                <div className="font-medium">
-                                                    {r.present_students}
+                                                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3 border border-gray-100 dark:border-gray-800/50">
+                                                    <div className="text-[10px] text-gray-400 font-bold uppercase mb-1">Fail</div>
+                                                    <div className="text-sm font-bold text-rose-500">{r.fail_count}</div>
                                                 </div>
-                                            </div>
-                                            <div className="col-span-1 rounded-lg p-2 text-center">
-                                                <div className="text-[10px] sm:text-xs text-slate-400">
-                                                    Absent
-                                                </div>
-                                                <div className="font-medium">
-                                                    {r.absent_students}
+                                                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3 border border-gray-100 dark:border-gray-800/50">
+                                                    <div className="text-[10px] text-gray-400 font-bold uppercase mb-1">Absent</div>
+                                                    <div className="text-sm font-bold text-gray-500">{r.absent_students}</div>
                                                 </div>
                                             </div>
-                                            <div className="col-span-1 rounded-lg p-2 text-center">
-                                                <div className="text-[10px] sm:text-xs text-slate-400">
-                                                    Fail
-                                                </div>
-                                                <div className="font-medium">
-                                                    {r.fail_count}
-                                                </div>
-                                            </div>
-                                        </div>
 
-                                        <div className="mt-3 flex items-center justify-between text-[10px] sm:text-xs text-slate-500">
-                                            <div className="flex items-center gap-3">
-                                                <div>
-                                                    FCD:{" "}
-                                                    <span className="font-medium text-slate-700">
-                                                        {r.fcd_count}
-                                                    </span>
-                                                </div>
-                                                <div>
-                                                    FC:{" "}
-                                                    <span className="font-medium text-slate-700">
-                                                        {r.fc_count}
-                                                    </span>
-                                                </div>
-                                                <div>
-                                                    SC:{" "}
-                                                    <span className="font-medium text-slate-700">
-                                                        {r.sc_count}
-                                                    </span>
+                                            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between text-[10px] font-bold text-gray-400">
+                                                <div className="flex gap-4">
+                                                    <span>FCD <span className="text-gray-900 dark:text-gray-300 ml-1">{r.fcd_count}</span></span>
+                                                    <span>FC <span className="text-gray-900 dark:text-gray-300 ml-1">{r.fc_count}</span></span>
+                                                    <span>SC <span className="text-gray-900 dark:text-gray-300 ml-1">{r.sc_count}</span></span>
                                                 </div>
                                             </div>
                                         </div>
@@ -350,13 +340,6 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
                             </div>
                         )}
 
-                        <button
-                            onClick={downloadPDF}
-                            className="mt-4 bg-green-500 hover:bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm hover:scale-102"
-                            disabled={!semester}
-                        >
-                            PDF
-                        </button>
                     </section>
                 )}
             </main>
