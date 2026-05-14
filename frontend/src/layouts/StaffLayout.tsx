@@ -4,6 +4,8 @@ import jssLogo from "../assets/jssLogo.png";
 import LogoutButton from "../components/LogoutButton";
 import useProtectedPage from "../hooks/useProtectedPage";
 import LoadingSpinner from "../components/LoadingSpinner";
+import useStaffStore from "../store/useStaffStore";
+import { useEffect } from "react";
 import {
     LayoutDashboard,
     GraduationCap,
@@ -13,12 +15,21 @@ import {
     Users,
     Menu,
     X,
+    ChevronDown,
 } from "lucide-react";
 
 const StaffLayout: React.FC = () => {
     const { user, loading } = useProtectedPage("Staff");
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const navigate = useNavigate();
+
+    const { batchYear, setBatchYear, availableBatches, fetchBatches } = useStaffStore();
+
+    useEffect(() => {
+        if (user) {
+            void fetchBatches();
+        }
+    }, [user, fetchBatches]);
 
     if (loading) return <LoadingSpinner message="Authenticating Dashboard..." fullScreen={true} />;
     if (!user) return null;
@@ -68,9 +79,33 @@ const StaffLayout: React.FC = () => {
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-                        <div className="mb-4 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                            Staff Menu
+                    <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+                        {/* Global Batch Selector */}
+                        <div className="mb-6 px-2">
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em] mb-2 px-1">
+                                Active Batch
+                            </label>
+                            <div className="relative group">
+                                <select
+                                    value={batchYear}
+                                    onChange={(e) => setBatchYear(e.target.value)}
+                                    className="w-full pl-4 pr-10 py-2.5 bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/50 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 outline-none appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40 transition-all cursor-pointer shadow-sm relative z-0"
+                                >
+                                    <option value="" disabled>Select Batch</option>
+                                    {availableBatches.map((year) => (
+                                        <option key={year} value={year}>
+                                            Batch {year}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400 z-10">
+                                    <ChevronDown size={16} strokeWidth={2.5} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mb-2 px-2 text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em]">
+                            Main Menu
                         </div>
                         {navItems.map((item) => (
                             <NavLink

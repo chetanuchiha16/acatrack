@@ -241,52 +241,48 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
     }, [excelData, sheetIndex, worksheets]);
 
     return (
-        <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-6">
-            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent mb-6">
-                Spreadsheet Editor
-            </h1>
-
-            <div className="flex flex-wrap items-center gap-4 mb-6">
-                <select
-                    value={sheetIndex}
-                    onChange={(e) => setSheetIndex(Number(e.target.value))}
-                    className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm min-w-[150px]"
-                >
-                    {worksheets?.map((sheet, index) => (
-                        <option key={index} value={index}>
-                            {sheet.name}
-                        </option>
-                    ))}
-                </select>
-                <div className="flex items-center gap-2 ml-auto">
+        <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-[80vh]">
+            {/* Toolbar */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 flex items-center justify-between">
+                <div>
+                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                        Spreadsheet Editor
+                    </h1>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Editing: <span className="font-semibold text-blue-500">{worksheets?.[sheetIndex]?.name || "Loading..."}</span>
+                    </p>
+                </div>
+                
+                <div className="flex items-center gap-3">
                     <button
                         onClick={addRow}
-                        className="text-white px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 font-medium text-sm transition-colors shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm active:scale-95"
                     >
-                        ➕ Add Row
+                        <span className="text-blue-500">➕</span> Add Row
                     </button>
                     <button
                         onClick={toExcel}
-                        className="text-white px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 font-medium text-sm transition-colors shadow-sm"
+                        className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95"
                     >
-                        ⬆ Upload Data
+                        <span className="text-lg">⬆</span> Upload Data
                     </button>
                 </div>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400">
+            {/* Table Area */}
+            <div className="flex-1 overflow-auto relative">
+                <table className="w-full text-sm text-left border-collapse">
+                    <thead className="sticky top-0 z-20 bg-gray-50 dark:bg-gray-900 shadow-sm">
                         <tr>
                             <th
                                 rowSpan={2}
-                                className="px-4 py-3 font-semibold uppercase tracking-wider text-xs border-b border-gray-200 dark:border-gray-700 min-w-[180px]"
+                                className="px-4 py-4 font-bold uppercase tracking-wider text-[10px] text-gray-500 dark:text-gray-400 border-b border-r border-gray-200 dark:border-gray-700 min-w-[180px] bg-gray-50 dark:bg-gray-900"
                             >
                                 Student USN
                             </th>
                             <th
                                 rowSpan={2}
-                                className="px-4 py-3 font-semibold uppercase tracking-wider text-xs border-b border-gray-200 dark:border-gray-700 min-w-[200px]"
+                                className="px-4 py-4 font-bold uppercase tracking-wider text-[10px] text-gray-500 dark:text-gray-400 border-b border-r border-gray-200 dark:border-gray-700 min-w-[200px] bg-gray-50 dark:bg-gray-900"
                             >
                                 Student Name
                             </th>
@@ -294,7 +290,7 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
                                 <th
                                     key={idx}
                                     colSpan={h.colSpan}
-                                    className="px-4 py-3 text-center font-semibold uppercase tracking-wider text-xs border-b border-l border-gray-200 dark:border-gray-700"
+                                    className="px-4 py-2 text-center font-bold uppercase tracking-wider text-[10px] text-blue-600 dark:text-blue-400 border-b border-r border-gray-200 dark:border-gray-700 bg-blue-50/30 dark:bg-blue-900/10"
                                 >
                                     {h.label}
                                 </th>
@@ -304,14 +300,14 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
                             {headers.sub.map((label, idx) => (
                                 <th
                                     key={idx}
-                                    className="px-4 py-2 text-center font-semibold text-xs border-b border-l border-gray-100 dark:border-gray-800 bg-gray-100 dark:bg-gray-800/30 text-gray-500 dark:text-gray-400 min-w-[100px]"
+                                    className="px-4 py-2 text-center font-semibold text-[10px] border-b border-r border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/80 text-gray-400 dark:text-gray-500 min-w-[100px]"
                                 >
                                     {label}
                                 </th>
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700/50">
                         {excelData.slice(1).map((row, idx) => (
                             <Row
                                 key={idx}
@@ -322,6 +318,26 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Sheet Tabs (Bottom Bar) */}
+            <div className="px-4 py-2 bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex items-center gap-1 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-2 px-3 border-r border-gray-300 dark:border-gray-700 mr-2 text-gray-400">
+                    <span className="text-xs font-bold uppercase tracking-tighter">Sheets</span>
+                </div>
+                {worksheets?.map((sheet, index) => (
+                    <button
+                        key={index}
+                        onClick={() => setSheetIndex(index)}
+                        className={`px-4 py-1.5 rounded-t-lg text-xs font-bold transition-all whitespace-nowrap border-x border-t -mb-2 ${
+                            sheetIndex === index
+                                ? "bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-gray-200 dark:border-gray-700 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]"
+                                : "bg-transparent text-gray-500 dark:text-gray-400 border-transparent hover:bg-gray-200 dark:hover:bg-gray-800/50"
+                        }`}
+                    >
+                        {sheet.name}
+                    </button>
+                ))}
             </div>
         </div>
     );
