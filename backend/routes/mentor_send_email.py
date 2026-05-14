@@ -130,19 +130,16 @@ async def get_mentor_students(
         for s in students_list:
             if str(s.batch_year) != str(by):
                 continue
+            
+            parent = s.parent_account[0] if s.parent_account else None
+            
             students.append(
                 {
                     "usn": s.usn,
                     "name": s.name,
-                    "parent_name": s.parent_account.name
-                    if hasattr(s, "parent_account") and s.parent_account
-                    else None,
-                    "parent_email": s.parent_account.email
-                    if hasattr(s, "parent_account") and s.parent_account
-                    else None,
-                    "parent_phone": s.parent_account.phone
-                    if hasattr(s, "parent_account") and s.parent_account
-                    else None,
+                    "parent_name": parent.name if parent else None,
+                    "parent_email": parent.email if parent else None,
+                    "parent_phone": parent.phone if parent else None,
                 }
             )
     return {"students": students}
@@ -187,15 +184,22 @@ async def send_email_student(
         student_repo = StudentRepository(session)
         mentor_repo = MentorRepository(session)
 
-        student = await student_repo.get_auth_by_usn(body.usn)
+        student = await session.execute(
+            select(StudentAuth)
+            .options(selectinload(StudentAuth.parent_account))
+            .where(StudentAuth.usn == body.usn)
+        )
+        student = student.scalars().first()
+        
         if not student:
             return JSONResponse(content={"error": "Student not found"}, status_code=404)
 
         if body.recipientType == "parent":
-            to_email = getattr(student, "parent_email", None)
-            name = getattr(student, "parent_name", None) or student.name
+            parent = student.parent_account[0] if student.parent_account else None
+            to_email = parent.email if parent else None
+            name = parent.name if parent else student.name
         else:
-            to_email = getattr(student, "student_email", None)
+            to_email = student.student_email
             name = student.name
 
         mentor = await mentor_repo.get_by_id(mentor_id)
@@ -258,16 +262,9 @@ async def send_email_all(
                 continue
 
             if recipient_type == "parent":
-                to_email = (
-                    getattr(s.parent_account, "email", None)
-                    if s.parent_account
-                    else None
-                )
-                name = (
-                    getattr(s.parent_account, "name", None)
-                    if s.parent_account
-                    else s.name
-                )
+                parent = s.parent_account[0] if s.parent_account else None
+                to_email = parent.email if parent else None
+                name = parent.name if parent else s.name
             else:
                 to_email = getattr(s, "student_email", None)
                 name = s.name
