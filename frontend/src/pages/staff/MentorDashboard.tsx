@@ -41,86 +41,61 @@ const MentorDashboard: React.FC = () => {
     ];
 
     return (
-        <div className="space-y-6">
-                
-                {/* Header Card */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between">
-                    <div className="flex items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
-                        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                            Mentor Dashboard
-                        </h1>
-                    </div>
-                    {batchYear && (
-                        <div className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 rounded-xl">
-                            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">Batch {batchYear}</span>
+        <div className="w-full h-full flex flex-col">
+            {/* Segmented Control Tabs */}
+            <div className="flex justify-center mb-6 flex-shrink-0">
+                <div className="inline-flex bg-gray-100 dark:bg-gray-800/80 p-1 rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-inner">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ease-in-out
+                                ${activeTab === tab.id
+                                    ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm transform scale-100"
+                                    : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/50 transform scale-95"
+                                }`}
+                        >
+                            <span>{tab.icon}</span>
+                            <span>{tab.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="flex-1 bg-white dark:bg-gray-800/50 rounded-3xl border border-gray-200 dark:border-gray-700/50 shadow-xl overflow-hidden flex flex-col">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                    {batchYear ? (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            {activeTab === "results" && (
+                                <MentorResults mentor_id={mentor_id} batchYear={batchYear} />
+                            )}
+
+                            {activeTab === "communication" && (
+                                <MentorSendEmails mentorId={mentor_id} batchYear={batchYear} />
+                            )}
+
+                            {activeTab === "meetings" && (
+                                <MentorMeetings mentorId={mentor_id} batchYear={batchYear} />
+                            )}
+
+                            {activeTab === "records" && (
+                                <MentorRecords mentor_id={mentor_id} batchYear={batchYear} />
+                            )}
+                        </div>
+                    ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-center py-20">
+                            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-full mb-4">
+                                <Users className="w-10 h-10 text-gray-400" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Batch Selected</h3>
+                            <p className="text-gray-500 dark:text-gray-400 max-w-sm">
+                                Please select an active batch year to view your mentees and manage records.
+                            </p>
                         </div>
                     )}
                 </div>
-
-                <div className="w-full mx-auto p-4 sm:p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
-                {/* Segmented Control Tabs */}
-                <div className="flex justify-center mb-8">
-                    <div className="inline-flex bg-gray-100 dark:bg-gray-800/80 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700/50 shadow-inner">
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ease-in-out
-                                    ${activeTab === tab.id
-                                        ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-md transform scale-100"
-                                        : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/50 transform scale-95"
-                                    }`}
-                            >
-                                <span className={`${activeTab === tab.id ? "animate-pulse" : ""}`}>
-                                    {tab.icon}
-                                </span>
-                                <span>{tab.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-4 sm:p-6 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden">
-                    {/* Background decoration */}
-                    <div className="absolute top-0 right-0 -m-4 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl"></div>
-                    <div className="absolute bottom-0 left-0 -m-4 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl"></div>
-                    
-                    <div className="relative z-10">
-                        {batchYear ? (
-                            <>
-                                {activeTab === "results" && (
-                                    <MentorResults mentor_id={mentor_id} batchYear={batchYear} />
-                                )}
-
-                                {activeTab === "communication" && (
-                                    <MentorSendEmails mentorId={mentor_id} batchYear={batchYear} />
-                                )}
-
-                                {activeTab === "meetings" && (
-                                    <div className="flex flex-col gap-3">
-                                        <MentorMeetings mentorId={mentor_id} batchYear={batchYear} />
-                                    </div>
-                                )}
-
-                                {activeTab === "records" && (
-                                    <MentorRecords mentor_id={mentor_id} batchYear={batchYear} />
-                                )}
-                            </>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-full mb-4">
-                                    <Users className="w-8 h-8 text-gray-400 dark:text-gray-500" />
-                                </div>
-                                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">No Batch Selected</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
-                                    Please select a batch year from the dropdown menu above to view mentor details, results, and communications.
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-                </div>
+            </div>
         </div>
     );
 };
