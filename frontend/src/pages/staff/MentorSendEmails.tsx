@@ -1,5 +1,19 @@
 import { useEffect, useState, useCallback } from "react";
 import { 
+    Send, 
+    Users, 
+    Search, 
+    Trash2, 
+    History, 
+    Mail, 
+    ChevronDown, 
+    ChevronUp, 
+    CheckCircle2, 
+    AlertCircle,
+    Smartphone,
+    UserCircle
+} from "lucide-react";
+import { 
     getMentorStudentsMentorMentorIdStudentsGet, 
     getMessagesMentorMentorIdMessagesGet, 
     sendMentorMessageMentorMentorIdMessagesPost, 
@@ -7,7 +21,6 @@ import {
     sendEmailAllMentorMentorIdSendEmailAllPost, 
     deleteMessageMentorMentorIdMessagesMsgIdDelete 
 } from "../../client/sdk.gen";
-// import { parseApiError } from "../../utils/errorHandler";
 
 interface MentorSendEmailsProps {
     mentorId: string;
@@ -122,6 +135,7 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
             return;
         }
 
+        setLoading(true);
         try {
             const { data: stored } = await sendMentorMessageMentorMentorIdMessagesPost({
                 path: { mentor_id: Number(mentorId) },
@@ -165,13 +179,10 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
 
             if (response) {
                 setFeedback({
-                    text: `Email sent to ${
-                        usn || "all"
-                    } ${recipientType}(s) successfully!`,
+                    text: `Successfully sent to ${usn || "all"} ${recipientType}(s)!`,
                     type: "success",
                 });
 
-                // Clear input after success
                 if (usn) {
                     setStudentInputs((prev) => ({
                         ...prev,
@@ -181,26 +192,16 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
                     setBroadcastSubject("");
                     setBroadcastMsg("");
                 }
-            } else {
-                throw new Error("Email failed");
             }
         } catch (err) {
             console.error("Email sending failed", err);
             setFeedback({
-                text: `Message stored but email failed for ${
-                    usn || "all"
-                } ${recipientType}(s).`,
+                text: "Failed to send email. Message recorded in history.",
                 type: "error",
             });
-
-            setStudentMessages((prev) => {
-                const key = usn || "all";
-                const updated = [...(prev[key] || [])];
-                if (updated.length > 0) {
-                    updated[0] = { ...updated[0], email_failed: true };
-                }
-                return { ...prev, [key]: updated };
-            });
+        } finally {
+            setLoading(false);
+            setTimeout(() => setFeedback({ text: "", type: "" }), 5000);
         }
     };
 
@@ -232,358 +233,269 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
     );
 
     return (
-        <div className="space-y-6 ">
-            <h2 className="text-2xl font-bold text-center">
-                Mentor Email Panel
-            </h2>
-
+        <div className="flex flex-col gap-6 h-full">
+            {/* Feedback Alert */}
             {feedback.text && (
-                <p
-                    className={`p-3 rounded-xl text-center ${
-                        feedback.type === "success"
-                            ? "bg-green-100/70 text-green-900 backdrop-blur-md"
-                            : "bg-red-100/70 text-red-900 backdrop-blur-md"
-                    }`}
-                >
-                    {feedback.text}
-                </p>
+                <div className={`flex items-center gap-2 p-4 rounded-2xl animate-in fade-in slide-in-from-top-4 duration-300 ${
+                    feedback.type === "success" 
+                        ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20" 
+                        : "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20"
+                }`}>
+                    {feedback.type === "success" ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                    <p className="text-sm font-bold">{feedback.text}</p>
+                </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Broadcast */}
-                <div className="rounded-2xl p-6 shadow-xl border border-white/20 bg-white/40 dark:bg-gray-800/40 backdrop-blur-lg space-y-3">
-                    <h2 className="text-xl font-semibold mb-[-4]">
-                        Broadcast to All
-                    </h2>
-                    <input
-                        type="text"
-                        placeholder="Subject"
-                        value={broadcastSubject}
-                        onChange={(e) => setBroadcastSubject(e.target.value)}
-                        className="border px-3 py-2 w-full rounded bg-white/50 dark:bg-gray-900/50 backdrop-blur-md"
-                    />
-                    <textarea
-                        placeholder="Message..."
-                        rows={3}
-                        value={broadcastMsg}
-                        onChange={(e) => setBroadcastMsg(e.target.value)}
-                        className="border px-3 py-2 w-full rounded bg-white/50 dark:bg-gray-900/50 backdrop-blur-md"
-                    />
-                    <div className="flex gap-3">
-                        <button
-                            onClick={() =>
-                                void sendEmail(
-                                    "student",
-                                    null,
-                                    broadcastSubject,
-                                    broadcastMsg
-                                )
-                            }
-                            className="bg-green-600 text-white px-4 py-2 rounded-xl shadow hover:bg-green-700 transition"
-                        >
-                            Email All Students
-                        </button>
-                        <button
-                            onClick={() =>
-                                void sendEmail(
-                                    "parent",
-                                    null,
-                                    broadcastSubject,
-                                    broadcastMsg
-                                )
-                            }
-                            className="bg-yellow-600 text-white px-4 py-2 rounded-xl shadow hover:bg-yellow-700 transition"
-                        >
-                            Email All Parents
-                        </button>
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 flex-1 overflow-hidden">
+                {/* Left Column: Broadcast & History (4 cols) */}
+                <div className="xl:col-span-5 flex flex-col gap-6 overflow-hidden">
+                    {/* Broadcast Card */}
+                    <div className="bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-sm overflow-hidden flex flex-col">
+                        <div className="p-4 border-b border-gray-100 dark:border-gray-700/50 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/20">
+                            <div className="flex items-center gap-2">
+                                <div className="p-1.5 bg-blue-500/10 text-blue-500 rounded-lg">
+                                    <Send className="w-4 h-4" />
+                                </div>
+                                <h3 className="text-sm font-black uppercase tracking-wider text-gray-900 dark:text-white">Broadcast</h3>
+                            </div>
+                        </div>
+                        <div className="p-4 space-y-3">
+                            <input
+                                type="text"
+                                placeholder="Broadcast Subject..."
+                                value={broadcastSubject}
+                                onChange={(e) => setBroadcastSubject(e.target.value)}
+                                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                            />
+                            <textarea
+                                placeholder="Write your announcement here..."
+                                rows={4}
+                                value={broadcastMsg}
+                                onChange={(e) => setBroadcastMsg(e.target.value)}
+                                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all resize-none"
+                            />
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => void sendEmail("student", null, broadcastSubject, broadcastMsg)}
+                                    disabled={loading}
+                                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                                >
+                                    <Users className="w-4 h-4" />
+                                    <span>All Students</span>
+                                </button>
+                                <button
+                                    onClick={() => void sendEmail("parent", null, broadcastSubject, broadcastMsg)}
+                                    disabled={loading}
+                                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-lg shadow-amber-500/20 disabled:opacity-50"
+                                >
+                                    <UserCircle className="w-4 h-4" />
+                                    <span>All Parents</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* History */}
-                    <div>
-                        <h3 className="font-medium mt-4 mb-2">
-                            Broadcast History
-                        </h3>
-                        {loadingMessages ? (
-                            <p>Loading...</p>
-                        ) : !studentMessages["all"] ||
-                          studentMessages["all"].length === 0 ? (
-                            <p className="text-gray-500">
-                                No broadcast messages yet.
-                            </p>
-                        ) : (
-                            <ul className="space-y-2">
-                                {studentMessages["all"].map((msg) => {
-                                    const total = msg.read_status?.length || 0;
-                                    const readCount = msg.read_status
-                                        ? msg.read_status.filter((s) => s.read)
-                                              .length
-                                        : 0;
-                                    return (
-                                        <li
-                                            key={msg.id}
-                                            className="border rounded-xl p-3 flex justify-between items-center bg-white/40 dark:bg-gray-900/40 backdrop-blur-md"
-                                        >
+                    {/* Broadcast History */}
+                    <div className="flex-1 bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-sm overflow-hidden flex flex-col">
+                        <div className="p-4 border-b border-gray-100 dark:border-gray-700/50 flex items-center gap-2 bg-gray-50/50 dark:bg-gray-900/20">
+                            <div className="p-1.5 bg-gray-500/10 text-gray-500 rounded-lg">
+                                <History className="w-4 h-4" />
+                            </div>
+                            <h3 className="text-sm font-black uppercase tracking-wider text-gray-900 dark:text-white">Announcement History</h3>
+                        </div>
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+                            {loadingMessages ? (
+                                <div className="flex justify-center py-10">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+                                </div>
+                            ) : !studentMessages["all"] || studentMessages["all"].length === 0 ? (
+                                <div className="text-center py-10 text-gray-500 italic text-sm">No announcements sent yet.</div>
+                            ) : (
+                                studentMessages["all"].map((msg) => (
+                                    <div key={msg.id} className="group p-4 rounded-xl border border-gray-100 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-900/30 hover:border-gray-200 dark:hover:border-gray-600 transition-all">
+                                        <div className="flex justify-between items-start mb-2">
                                             <div>
-                                                <p className="text-sm font-semibold">
-                                                    {msg.subject}{" "}
-                                                    {msg.email_failed && (
-                                                        <span className="text-red-600 ml-2">
-                                                            (Email Failed)
-                                                        </span>
-                                                    )}
-                                                </p>
-                                                <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-line">
-                                                    {msg.message}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    Seen by {readCount}/{total}{" "}
-                                                    students
-                                                </p>
+                                                <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                                    {msg.subject}
+                                                    {msg.email_failed && <AlertCircle className="w-3.5 h-3.5 text-rose-500" />}
+                                                </h4>
+                                                <span className="text-[10px] text-gray-400 font-medium">{new Date(msg.created_at).toLocaleString()}</span>
                                             </div>
-                                            <button
-                                                onClick={() =>
-                                                    void deleteMessage(msg.id, null)
-                                                }
-                                                className="text-red-600 hover:text-red-800 text-sm"
+                                            <button 
+                                                onClick={() => void deleteMessage(msg.id, null)}
+                                                className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all"
                                             >
-                                                Delete
+                                                <Trash2 className="w-3.5 h-3.5" />
                                             </button>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        )}
+                                        </div>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">{msg.message}</p>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                {/* Student List */}
-                <div>
-                    <div className="mb-4">
+                {/* Right Column: Student List (8 cols) */}
+                <div className="xl:col-span-7 flex flex-col gap-4 overflow-hidden">
+                    {/* Search Bar */}
+                    <div className="relative group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                         <input
                             type="text"
-                            placeholder="Search students by name or USN..."
+                            placeholder="Search mentees by name or USN..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="border px-3 py-2 w-full rounded bg-white/50 dark:bg-gray-900/50 backdrop-blur-md"
+                            className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
                         />
                     </div>
 
-                    <h2 className="text-xl font-semibold mb-4">Students</h2>
-                    {loading ? (
-                        <p>Loading students...</p>
-                    ) : filteredStudents.length === 0 ? (
-                        <p>No students match your search.</p>
-                    ) : (
-                        <div className="space-y-4">
-                            {filteredStudents.map((s) => (
-                                <div
-                                    key={s.usn}
-                                    className="rounded-2xl p-4 shadow-lg border border-white/20 bg-white/40 dark:bg-gray-800/40 backdrop-blur-lg transition"
-                                >
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <p className="font-semibold">
-                                                {s.name}
-                                            </p>
-                                            <p className="text-gray-600 dark:text-gray-400">
-                                                USN: {s.usn}
-                                            </p>
-                                            <p className="text-gray-600 dark:text-gray-400">
-                                                Parent Name: {s.parent_name}
-                                            </p>
-                                            <p className="text-gray-600 dark:text-gray-400">
-                                                Parent Email: {s.parent_email}
-                                            </p>
-                                            <p className="text-gray-600 dark:text-gray-400">
-                                                Parent Phone: {s.parent_phone}
-                                            </p>
+                    {/* Student List */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
+                        {loading ? (
+                             <div className="flex justify-center py-20">
+                                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500" />
+                            </div>
+                        ) : filteredStudents.map((s) => (
+                            <div key={s.usn} className="bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-sm overflow-hidden transition-all hover:shadow-md">
+                                {/* Student Header */}
+                                <div className="p-4 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/20">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20">
+                                            {s.name.charAt(0)}
                                         </div>
-                                        <button
-                                            onClick={() => toggleExpand(s.usn)}
-                                            className="text-sm text-gray-800 dark:text-gray-200 bg-gray-200/60 dark:bg-gray-700/60 px-3 py-1 rounded-xl hover:bg-gray-300/60 dark:hover:bg-gray-600/60"
-                                        >
-                                            {expanded[s.usn] ? "Hide" : "Show"}
-                                        </button>
+                                        <div>
+                                            <h3 className="font-bold text-gray-900 dark:text-white leading-tight">{s.name}</h3>
+                                            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-tighter">{s.usn}</p>
+                                        </div>
                                     </div>
+                                    <button
+                                        onClick={() => toggleExpand(s.usn)}
+                                        className={`p-2 rounded-xl transition-all ${
+                                            expanded[s.usn] 
+                                                ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20" 
+                                                : "bg-gray-100 dark:bg-gray-700 text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                                        }`}
+                                    >
+                                        {expanded[s.usn] ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                                    </button>
+                                </div>
 
-                                    {expanded[s.usn] && (
-                                        <div className="mt-4 space-y-4">
-                                            {/* Form */}
-                                            <div className="space-y-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Subject"
-                                                    value={
-                                                        studentInputs[s.usn]
-                                                            ?.subject || ""
-                                                    }
-                                                    onChange={(e) =>
-                                                        setStudentInputs(
-                                                            (prev) => ({
-                                                                ...prev,
-                                                                [s.usn]: {
-                                                                    subject: e.target.value,
-                                                                    message: prev[s.usn]?.message ?? "",
-                                                                } satisfies StudentInput,
-                                                            })
-                                                        )
-                                                    }
-                                                    className="border px-3 py-2 w-full rounded bg-white/50 dark:bg-gray-900/50 backdrop-blur-md"
-                                                />
-                                                <textarea
-                                                    placeholder="Message..."
-                                                    rows={3}
-                                                    value={
-                                                        studentInputs[s.usn]
-                                                            ?.message || ""
-                                                    }
-                                                    onChange={(e) =>
-                                                        setStudentInputs(
-                                                            (prev) => ({
-                                                                ...prev,
-                                                                [s.usn]: {
-                                                                    subject: prev[s.usn]?.subject ?? "",
-                                                                    message: e.target.value,
-                                                                } satisfies StudentInput,
-                                                            })
-                                                        )
-                                                    }
-                                                    className="border px-3 py-2 w-full rounded bg-white/50 dark:bg-gray-900/50 backdrop-blur-md"
-                                                />
-                                                <div className="flex gap-3">
-                                                    <button
-                                                        onClick={() =>
-                                                            void sendEmail(
-                                                                "student",
-                                                                s.usn,
-                                                                studentInputs[
-                                                                    s.usn
-                                                                ]?.subject ||
-                                                                    "",
-                                                                studentInputs[
-                                                                    s.usn
-                                                                ]?.message || ""
-                                                            )
-                                                        }
-                                                        className="bg-green-600 text-white px-4 py-2 rounded-xl shadow hover:bg-green-700"
-                                                    >
-                                                        Email Student
-                                                    </button>
-                                                    <button
-                                                        onClick={() =>
-                                                            void sendEmail(
-                                                                "parent",
-                                                                s.usn,
-                                                                studentInputs[
-                                                                    s.usn
-                                                                ]?.subject ||
-                                                                    "",
-                                                                studentInputs[
-                                                                    s.usn
-                                                                ]?.message || ""
-                                                            )
-                                                        }
-                                                        className="bg-yellow-600 text-white px-4 py-2 rounded-xl shadow hover:bg-yellow-700"
-                                                    >
-                                                        Email Parent
-                                                    </button>
-                                                </div>
+                                {expanded[s.usn] && (
+                                    <div className="p-4 border-t border-gray-100 dark:border-gray-700/50 space-y-6 animate-in slide-in-from-top-2 duration-300">
+                                        {/* Contact Grid */}
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                            <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700/50">
+                                                <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Parent Name</p>
+                                                <p className="text-xs font-bold text-gray-700 dark:text-gray-300">{s.parent_name || 'N/A'}</p>
                                             </div>
+                                            <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700/50">
+                                                <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Parent Email</p>
+                                                <p className="text-xs font-bold text-gray-700 dark:text-gray-300 truncate">{s.parent_email || 'N/A'}</p>
+                                            </div>
+                                            <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700/50">
+                                                <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Parent Phone</p>
+                                                <p className="text-xs font-bold text-gray-700 dark:text-gray-300">{s.parent_phone || 'N/A'}</p>
+                                            </div>
+                                        </div>
 
-                                            {/* History */}
-                                            <div>
-                                                <h3 className="font-medium mb-2">
-                                                    Messages
-                                                </h3>
-                                                {loadingMessages ? (
-                                                    <p>Loading...</p>
-                                                ) : !studentMessages[s.usn] ||
-                                                  studentMessages[s.usn]
-                                                      .length === 0 ? (
-                                                    <p className="text-gray-500">
-                                                        No messages yet.
-                                                    </p>
-                                                ) : (
-                                                    <ul className="space-y-2">
-                                                        {studentMessages[
-                                                            s.usn
-                                                        ].map((msg) => {
-                                                            const status =
-                                                                msg.read_status?.find(
-                                                                    ({ usn }) =>
-                                                                        usn ===
-                                                                        s.usn
-                                                                );
-                                                            return (
-                                                                <li
-                                                                    key={msg.id}
-                                                                    className="border rounded-xl p-3 flex justify-between items-center bg-white/40 dark:bg-gray-900/40 backdrop-blur-md"
+                                        {/* Compose Message */}
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <Mail className="w-4 h-4 text-blue-500" />
+                                                <span className="text-xs font-black uppercase tracking-wider text-gray-900 dark:text-white">Compose Message</span>
+                                            </div>
+                                            <input
+                                                type="text"
+                                                placeholder="Subject"
+                                                value={studentInputs[s.usn]?.subject || ""}
+                                                onChange={(e) => setStudentInputs(prev => ({
+                                                    ...prev,
+                                                    [s.usn]: { ...prev[s.usn], subject: e.target.value } as StudentInput
+                                                }))}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
+                                            />
+                                            <textarea
+                                                placeholder="Type your message here..."
+                                                rows={3}
+                                                value={studentInputs[s.usn]?.message || ""}
+                                                onChange={(e) => setStudentInputs(prev => ({
+                                                    ...prev,
+                                                    [s.usn]: { ...prev[s.usn], message: e.target.value } as StudentInput
+                                                }))}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
+                                            />
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => void sendEmail("student", s.usn, studentInputs[s.usn]?.subject || "", studentInputs[s.usn]?.message || "")}
+                                                    disabled={loading}
+                                                    className="flex-1 py-2 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[11px] font-black uppercase tracking-widest hover:bg-blue-600 dark:hover:bg-blue-500 dark:hover:text-white transition-all disabled:opacity-50"
+                                                >
+                                                    Email Student
+                                                </button>
+                                                <button
+                                                    onClick={() => void sendEmail("parent", s.usn, studentInputs[s.usn]?.subject || "", studentInputs[s.usn]?.message || "")}
+                                                    disabled={loading}
+                                                    className="flex-1 py-2 rounded-xl bg-amber-500 text-white text-[11px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all disabled:opacity-50"
+                                                >
+                                                    Email Parent
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Message History */}
+                                        <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-gray-700/50">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <History className="w-4 h-4 text-gray-400" />
+                                                <span className="text-xs font-black uppercase tracking-wider text-gray-500">Message History</span>
+                                            </div>
+                                            {!studentMessages[s.usn] || studentMessages[s.usn].length === 0 ? (
+                                                <div className="text-[11px] text-gray-400 italic">No previous messages.</div>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    {studentMessages[s.usn].map((msg) => {
+                                                        const status = msg.read_status?.find(rs => rs.usn === s.usn);
+                                                        return (
+                                                            <div key={msg.id} className="p-3 rounded-xl border border-gray-50 dark:border-gray-700/30 bg-gray-50/50 dark:bg-gray-900/20 flex justify-between items-center group">
+                                                                <div className="flex-1 min-w-0 pr-4">
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <p className="text-[11px] font-bold text-gray-900 dark:text-white truncate">{msg.subject}</p>
+                                                                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${
+                                                                            status?.read 
+                                                                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" 
+                                                                                : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
+                                                                        }`}>
+                                                                            {status?.read ? "Read" : "Sent"}
+                                                                        </span>
+                                                                    </div>
+                                                                    <p className="text-[11px] text-gray-500 line-clamp-1">{msg.message}</p>
+                                                                </div>
+                                                                <button 
+                                                                    onClick={() => void deleteMessage(msg.id, s.usn)}
+                                                                    className="p-1.5 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-rose-500 transition-all"
                                                                 >
-                                                                    <div>
-                                                                        <p className="text-sm font-semibold">
-                                                                            {
-                                                                                msg.subject
-                                                                            }{" "}
-                                                                            {msg.email_failed && (
-                                                                                <span className="text-red-600 ml-2">
-                                                                                    (Email
-                                                                                    Failed)
-                                                                                </span>
-                                                                            )}
-                                                                        </p>
-                                                                        <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-line">
-                                                                            {
-                                                                                msg.message
-                                                                            }
-                                                                        </p>
-                                                                        <p className="text-xs text-gray-500">
-                                                                            {status
-                                                                                ? status.read
-                                                                                    ? "✅ Read"
-                                                                                    : "📩 Unread"
-                                                                                : "📩 Unread"}
-                                                                        </p>
-                                                                        <time
-                                                                            dateTime={
-                                                                                msg.created_at
-                                                                            }
-                                                                        >
-                                                                            {new Date(
-                                                                                msg.created_at
-                                                                            ).toLocaleString(
-                                                                                "en-IN",
-                                                                                {
-                                                                                    timeZone:
-                                                                                        "Asia/Kolkata",
-                                                                                    }
-                                                                                )}
-                                                                            </time>
-                                                                        </div>
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                void deleteMessage(
-                                                                                    msg.id,
-                                                                                    s.usn
-                                                                                )
-                                                                            }
-                                                                            className="text-red-600 hover:text-red-800 text-sm"
-                                                                        >
-                                                                            Delete
-                                                                        </button>
-                                                                    </li>
-                                                                );
-                                                            })}
-                                                        </ul>
-                                                    )}
+                                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
-                                            </div>
-                                        )}
+                                            )}
+                                        </div>
                                     </div>
-                                ))}
+                                )}
+                            </div>
+                        ))}
+                        {filteredStudents.length === 0 && !loading && (
+                            <div className="text-center py-20 bg-gray-50 dark:bg-gray-800/30 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-700">
+                                <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                                <h4 className="text-gray-900 dark:text-white font-bold">No Mentees Found</h4>
+                                <p className="text-sm text-gray-500">Try adjusting your search criteria.</p>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
+        </div>
     );
 }
