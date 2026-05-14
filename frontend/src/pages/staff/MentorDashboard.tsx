@@ -4,29 +4,18 @@ import MentorResults from "./MentorResults";
 import MentorSendEmails from "./MentorSendEmails";
 import MentorMeetings from "./MentorMeetings";
 import MentorRecords from "./MentorRecord"; // adjust the path if needed
-import { listBatchesBatchesGet } from "../../client/sdk.gen";
 import useAuthStore from "../../store/useAuthStore";
+import useStaffStore from "../../store/useStaffStore";
 
 const MentorDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<string>("results");
-    const [batches, setBatches] = useState<number[]>([]);
-    const [batchYear, setBatchYear] = useState<string>("");
     
     // Read mentor_id from the JWT-backed auth store (production-grade: persistent, refresh-safe)
     const user = useAuthStore((s) => s.user);
     const mentor_id = user?.mentor_id ? String(user.mentor_id) : "";
 
-    useEffect(() => {
-        listBatchesBatchesGet()
-            .then((res) => {
-                const fetchedBatches = res.data?.batches || [];
-                setBatches(fetchedBatches);
-                if (fetchedBatches.length > 0) {
-                    setBatchYear(String(fetchedBatches[fetchedBatches.length - 1]));
-                }
-            })
-            .catch(() => setBatches([]));
-    }, []);
+    // Use global batch year from StaffStore
+    const { batchYear } = useStaffStore();
 
     const tabs = [
         {
@@ -61,20 +50,11 @@ const MentorDashboard: React.FC = () => {
                             Mentor Dashboard
                         </h1>
                     </div>
-
-                    <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-900 p-2 rounded-xl border border-gray-100 dark:border-gray-700 shadow-inner">
-                        <span className="text-sm font-medium text-gray-600 dark:text-gray-300 px-2">Active Batch:</span>
-                        <select
-                            value={batchYear}
-                            onChange={(e) => setBatchYear(e.target.value)}
-                            className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500 w-32 shadow-sm"
-                        >
-                            <option value="">Select</option>
-                            {batches.map(year => (
-                                <option key={year} value={year}>{year}</option>
-                            ))}
-                        </select>
-                    </div>
+                    {batchYear && (
+                        <div className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 rounded-xl">
+                            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">Batch {batchYear}</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="w-full mx-auto p-4 sm:p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
