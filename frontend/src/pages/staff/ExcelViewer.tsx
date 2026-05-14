@@ -241,9 +241,9 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
     }, [excelData, sheetIndex, worksheets]);
 
     return (
-        <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-[80vh]">
+        <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-full max-h-[85vh]">
             {/* Toolbar */}
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 flex items-center justify-between flex-shrink-0">
                 <div>
                     <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                         Spreadsheet Editor

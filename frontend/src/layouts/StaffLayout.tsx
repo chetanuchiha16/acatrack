@@ -46,7 +46,7 @@ const StaffLayout: React.FC = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
+        <div className="h-screen bg-gray-50 dark:bg-gray-950 flex overflow-hidden">
             {/* Mobile Sidebar Overlay */}
             {sidebarOpen && (
                 <div
@@ -79,7 +79,7 @@ const StaffLayout: React.FC = () => {
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+                    <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar">
                         {/* Global Batch Selector */}
                         <div className="mb-6 px-2">
                             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em] mb-2 px-1">
@@ -141,9 +141,9 @@ const StaffLayout: React.FC = () => {
             </aside>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <div className="flex-1 flex flex-col min-w-0">
                 {/* Top Header (Mobile) */}
-                <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 py-4 px-4 sm:px-6 lg:px-8 flex items-center justify-between shadow-sm lg:hidden">
+                <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 py-4 px-4 sm:px-6 lg:px-8 flex items-center justify-between shadow-sm lg:hidden flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <button
                             className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white lg:hidden"
@@ -157,8 +157,8 @@ const StaffLayout: React.FC = () => {
                 </header>
 
                 {/* Main Content Scrollable Area */}
-                <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 lg:p-8">
-                    <div className="max-w-7xl mx-auto w-full">
+                <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 lg:p-8 flex flex-col">
+                    <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col justify-center">
                         <Outlet />
                     </div>
                 </main>
