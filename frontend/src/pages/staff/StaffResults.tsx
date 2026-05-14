@@ -17,15 +17,7 @@ const StaffResults: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="shadow-xl rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">Staff Dashboard</h2>
-            {batchYear && (
-                <div className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-bold uppercase tracking-wider">
-                    Batch {batchYear}
-                </div>
-            )}
-        </div>
+
 
         {/* Tabs */}
         <div className="flex flex-col sm:flex-row">

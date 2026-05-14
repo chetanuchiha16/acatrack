@@ -183,10 +183,10 @@ export default function TeacherNotesUploader() {
     const breadcrumbs = currentPath.split("/").filter(Boolean);
 
     return (
-        <div className="w-full space-y-6">
-            <div className="w-full flex flex-col bg-white dark:bg-gray-800/80 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden min-h-[75vh] backdrop-blur-sm">
+        <>
+            <div className="w-full h-full max-h-[85vh] flex flex-col bg-white dark:bg-gray-800/80 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden backdrop-blur-sm">
                 {/* Explorer Header */}
-                <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 flex flex-col sm:flex-row items-center justify-between gap-4 flex-shrink-0">
                     <div className="flex items-center gap-3 w-full">
                         <button
                             onClick={goBack}
@@ -290,6 +290,6 @@ export default function TeacherNotesUploader() {
                 }}
                 className="hidden"
             />
-        </div>
+        </>
     );
 }
