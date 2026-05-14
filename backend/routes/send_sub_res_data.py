@@ -3,7 +3,6 @@ from fastapi.responses import JSONResponse, Response
 from cache_config import cache
 from services.university_service import University
 from services.results_service import SubjectResult
-from models.paths import postgres_db_url
 from visuals import create_subject_report
 from utils.helpers import get_batch_year_from_request
 from logger_config import get_logger
@@ -29,7 +28,7 @@ async def get_subject_results(
         )
 
     def _sync():
-        university = University(postgres_url=postgres_db_url, batch_year=by)
+        university = University(batch_year=by)
         subject_result = SubjectResult(subject, semester, university)
         return subject_result.get_subject_results_dict()
 
@@ -52,7 +51,7 @@ async def get_subject_report_pdf(
         )
 
     def _sync():
-        university = University(postgres_url=postgres_db_url, batch_year=by)
+        university = University(batch_year=by)
         subject_result = SubjectResult(subject, semester, university)
         return create_subject_report(subject_result)
 
