@@ -1,7 +1,7 @@
 import React from "react";
-import "./App.css";
-import Auth from "./Auth";
-import HiddenShortcut from "./HiddenShortcut";
+import "./styles/App.css";
+import Auth from "./pages/auth/Auth";
+import HiddenShortcut from "./components/HiddenShortcut";
 import "./i18n";
 
 const App: React.FC = () => {
