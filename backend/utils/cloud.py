@@ -57,8 +57,11 @@ SUPABASE_KEY = settings.supabase_key
 SUPABASE_BUCKET = "uploads"
 
 supabase = None
-if IS_PRODUCTION and SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        logger.error(f"Failed to initialize Supabase client: {e}")
 
 
 def sanitize_folder(folder: str) -> str:

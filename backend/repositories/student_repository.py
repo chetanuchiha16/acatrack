@@ -48,7 +48,9 @@ class StudentRepository:
         self, mentor_id: int, batch_year: int
     ) -> list[StudentAuth]:
         result = await self.db.execute(
-            select(StudentAuth).where(
+            select(StudentAuth)
+            .options(selectinload(StudentAuth.parent_account))
+            .where(
                 StudentAuth.mentor_id == mentor_id,
                 StudentAuth.batch_year == batch_year,
             )
@@ -57,7 +59,9 @@ class StudentRepository:
 
     async def get_mentees_by_mentor(self, mentor_id: int) -> list[StudentAuth]:
         result = await self.db.execute(
-            select(StudentAuth).where(StudentAuth.mentor_id == mentor_id)
+            select(StudentAuth)
+            .options(selectinload(StudentAuth.parent_account))
+            .where(StudentAuth.mentor_id == mentor_id)
         )
         return list(result.scalars().all())
 
