@@ -324,7 +324,7 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
                                             </div>
                                         </div>
                                     </div>
-                                    <button className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all"><MoreVertical className="w-5 h-5" /></button>
+                                    
                                 </div>
 
                                 {/* Message History */}
