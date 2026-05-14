@@ -307,10 +307,13 @@ export default function ExcelViewer({ excel_route }: ExcelViewerProps) {
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700/50">
+                    <tbody 
+                        key={sheetIndex}
+                        className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700/50"
+                    >
                         {excelData.slice(1).map((row, idx) => (
                             <Row
-                                key={idx}
+                                key={`${sheetIndex}-${idx}`}
                                 row={row}
                                 rowIndex={idx + 1}
                                 updateCell={updateCell}
