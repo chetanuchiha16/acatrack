@@ -24,6 +24,12 @@ async def seed_data():
         mentor = Mentor(name="Demo Mentor")
         session.add(mentor)
         await session.flush() # Get mentor ID
+
+        # 1.5 Create Section
+        from models.schema import Section, Subject, SubjectAssignment
+        section = Section(name="A", batch_year=2023)
+        session.add(section)
+        await session.flush()
         
         # 2. Create Staff (Teacher)
         staff = Teacher(
@@ -44,10 +50,25 @@ async def seed_data():
             password=password_hash,
             student_email="student_demo@example.com",
             student_phno="1234567890",
-            mentor_id=mentor.id
+            mentor_id=mentor.id,
+            section_id=section.id
         )
         session.add(student)
         await session.flush() # Get student ID
+
+        # 3.5 Create Subject & Assignment
+        subject = Subject(subject_code="DEMO101", subject_name="Demo Subject", semester="sem1", credits=4)
+        session.add(subject)
+        await session.flush()
+
+        assignment = SubjectAssignment(
+            teacher_username="staff",
+            subject_code="DEMO101",
+            section_id=section.id,
+            semester="sem1",
+            batch_year=2023
+        )
+        session.add(assignment)
         
         # 4. Create Parent
         parent = ParentAuth(

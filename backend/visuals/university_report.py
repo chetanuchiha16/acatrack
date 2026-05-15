@@ -18,7 +18,7 @@ from logger_config import get_logger
 logger = get_logger(__name__)
 
 
-async def create_university_report_async(university, selected_semester, session):
+async def create_university_report_async(university, selected_semester, session, section_name=None):
     """
     Async version of university report generation.
     FAANG-level optimization: Avoid redundant fetches and use async I/O.
@@ -31,7 +31,7 @@ async def create_university_report_async(university, selected_semester, session)
 
     # Fetch students once
     students = await university.get_students_for_semester_async(
-        session, selected_semester
+        session, selected_semester, section_name
     )
     if not students:
         logger.debug(f"No students found for {selected_semester}")

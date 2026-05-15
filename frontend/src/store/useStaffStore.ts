@@ -5,8 +5,14 @@ import { listBatchesBatchesGet } from "../client/sdk.gen";
 interface StaffState {
     batchYear: string;
     availableBatches: string[];
+    semester: string;
+    section: string;
+    assignments: any[];
     loadingBatches: boolean;
     setBatchYear: (year: string) => void;
+    setSemester: (sem: string) => void;
+    setSection: (sec: string) => void;
+    setAssignments: (assignments: any[]) => void;
     fetchBatches: () => Promise<void>;
 }
 
@@ -15,9 +21,15 @@ const useStaffStore = create<StaffState>()(
         (set, get) => ({
             batchYear: "",
             availableBatches: [],
+            semester: "sem1",
+            section: "ALL",
+            assignments: [],
             loadingBatches: false,
 
             setBatchYear: (year: string) => set({ batchYear: year }),
+            setSemester: (sem: string) => set({ semester: sem }),
+            setSection: (sec: string) => set({ section: sec }),
+            setAssignments: (assignments: any[]) => set({ assignments }),
 
             fetchBatches: async () => {
                 if (get().availableBatches.length > 0 && get().batchYear) return;
@@ -43,7 +55,11 @@ const useStaffStore = create<StaffState>()(
         }),
         {
             name: "staff-storage",
-            partialize: (state) => ({ batchYear: state.batchYear }),
+            partialize: (state) => ({ 
+                batchYear: state.batchYear,
+                semester: state.semester,
+                section: state.section
+            }),
         }
     )
 );

@@ -22,7 +22,7 @@ function getErrMsg(err: unknown): string {
 
 export default function AdminPanel() {
     const navigate = useNavigate();
-    const [secret, setSecret] = useState<string>("");
+    const [secret, setSecret] = useState<string>(localStorage.getItem("admin_secret") || "");
     const [mode, setMode] = useState<string>("missing");
     const [status, setStatus] = useState<string>("");
 

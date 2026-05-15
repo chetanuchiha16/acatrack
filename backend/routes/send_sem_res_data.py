@@ -20,6 +20,7 @@ async def get_semester_results(
     request: Request,
     semester: str = Query(None),
     batch_year: int | None = Query(None),
+    section: str = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     by = batch_year or get_batch_year_from_request(request)
@@ -34,7 +35,7 @@ async def get_semester_results(
         repo = AcademicRepository(db)
 
         # FAANG-level optimization: Get ALL subject stats in ONE SQL query
-        results = await repo.get_semester_summary_stats(semester, by)
+        results = await repo.get_semester_summary_stats(semester, by, section)
 
         if not results:
             return JSONResponse(
