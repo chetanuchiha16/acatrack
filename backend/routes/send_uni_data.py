@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, Request, Query, Cookie
 from fastapi.responses import JSONResponse, Response
 from cache_config import cache
 from services.university_service import University
@@ -18,16 +18,20 @@ router = APIRouter(tags=["university"])
 @router.get("/auth/Staff/overall_res")
 @cache(expire=3600)
 async def get_academic_performance(
-    request: Request,
-    semester: str = Query(None),
+    semester: str | None = Query(None),
     show_toppers: bool = Query(False),
     show_failed: bool = Query(False),
     format: str = Query("json"),
     batch_year: int | None = Query(None),
-    section: str = Query(None),
+    section: str | None = Query(None),
+    access_token: str | None = Cookie(None),
     db: AsyncSession = Depends(get_db),
 ):
-    by = batch_year or get_batch_year_from_request(request)
+    by = batch_year
+    if not by and access_token:
+        from utils.helpers import decode_jwt
+        payload = decode_jwt(access_token)
+        by = payload.get("batch_year") if payload else None
 
     try:
         university = University(session=db, batch_year=by)
@@ -66,12 +70,16 @@ async def get_academic_performance(
 @cache(expire=3600)
 async def get_report(
     semester: str,
-    request: Request,
     batch_year: int | None = Query(None),
-    section: str = Query(None),
+    section: str | None = Query(None),
+    access_token: str | None = Cookie(None),
     db: AsyncSession = Depends(get_db),
 ):
-    by = batch_year or get_batch_year_from_request(request)
+    by = batch_year
+    if not by and access_token:
+        from utils.helpers import decode_jwt
+        payload = decode_jwt(access_token)
+        by = payload.get("batch_year") if payload else None
 
     university = University(session=db, batch_year=by)
     pdf_bytes = await create_university_report_async(university, semester, db, section_name=section)

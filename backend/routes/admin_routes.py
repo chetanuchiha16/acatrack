@@ -12,7 +12,8 @@ import hashlib
 from cryptography.fernet import Fernet
 
 from typing import List, Dict
-from fastapi import APIRouter, UploadFile, File, Header, Query, Body, Depends, Request
+from fastapi import APIRouter, UploadFile, File, Header, Query, Body, Depends, Request, Cookie
+from utils.helpers import decode_jwt
 from fastapi.responses import JSONResponse, StreamingResponse
 from logger_config import get_logger
 from models import Mentor, ParentAuth, StudentAuth, Teacher
@@ -285,12 +286,17 @@ async def refresh_batch(body: BatchRequest, x_admin_secret: str | None = Header(
             content={"error": "Failed to refresh batch data."}, status_code=500
         )
 @router.get("/my-assignments")
-async def get_my_assignments(request: Request, batch_year: int = Query(...)):
-    from utils.helpers import get_jwt_payload_from_request
+async def get_my_assignments(
+    batch_year: int = Query(...),
+    access_token: str | None = Cookie(None)
+):
     from models.schema import SubjectAssignment
     from sqlalchemy.orm import selectinload
 
-    payload = get_jwt_payload_from_request(request)
+    if not access_token:
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+    
+    payload = decode_jwt(access_token)
     if not payload or payload.get("who") != "Staff":
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
 
