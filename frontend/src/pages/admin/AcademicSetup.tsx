@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
     Database, BookOpen, UserCheck, Link,
     CheckCircle, AlertCircle, Loader2, ChevronRight
@@ -7,7 +7,8 @@ import {
     initBatchAdminInitBatchPost,
     registerSubjectsAdminRegisterSubjectsPost,
     enrollStudentsAdminEnrollStudentsPost,
-    assignSubjectsAdminAssignSubjectsPost
+    assignSubjectsAdminAssignSubjectsPost,
+    listStaffAdminListStaffGet
 } from "../../client/sdk.gen";
 
 interface AcademicSetupProps {
@@ -32,6 +33,25 @@ const AcademicSetup: React.FC<AcademicSetupProps> = ({ secret, batchYear }) => {
     const [teacherUsername, setTeacherUsername] = useState<string>("");
     const [subjectCode, setSubjectCode] = useState<string>("");
     const [mapSectionId, setMapSectionId] = useState<string>("");
+    const [staffList, setStaffList] = useState<Array<{username: string, name: string}>>([]);
+
+    const fetchStaff = async () => {
+        try {
+            const res = await listStaffAdminListStaffGet({
+                headers: { "X-Admin-Secret": secret }
+            });
+            if (res.data) setStaffList(res.data as any);
+        } catch (err) {
+            console.error("Failed to fetch staff:", err);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === "mapping") {
+            fetchStaff();
+        }
+    }, [activeTab, secret]);
+
 
     const handleInitBatch = async () => {
         setLoading(true);
@@ -286,15 +306,31 @@ const AcademicSetup: React.FC<AcademicSetupProps> = ({ secret, batchYear }) => {
                                 <p className="text-sm text-slate-500">Assign specific staff members to subjects within sections.</p>
                             </div>
 
-                            <div className="space-y-4 pt-4">
+                            <div className="bg-purple-50 dark:bg-purple-900/10 p-5 rounded-2xl border border-purple-100 dark:border-purple-900/20 mb-8">
+                                <h4 className="text-sm font-black text-purple-700 dark:text-purple-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                    <AlertCircle size={16} /> Instructions
+                                </h4>
+                                <p className="text-xs text-purple-600/80 leading-relaxed font-medium">
+                                    Select a registered staff member and assign them to a specific subject code and section. 
+                                    Staff members must be registered in the <span className="font-bold underline">Staff Registry</span> before they appear here.
+                                </p>
+                            </div>
+
+                            <div className="space-y-6 pt-4">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Teacher Username</label>
-                                    <input
-                                        type="text"
+                                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Select Staff Member</label>
+                                    <select
                                         value={teacherUsername}
                                         onChange={(e) => setTeacherUsername(e.target.value)}
-                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-purple-500 outline-none transition-all"
-                                    />
+                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-purple-500 outline-none transition-all font-bold text-slate-700 dark:text-slate-200"
+                                    >
+                                        <option value="">-- Choose Staff --</option>
+                                        {staffList.map(s => (
+                                            <option key={s.username} value={s.username}>
+                                                {s.name} ({s.username})
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
@@ -303,6 +339,7 @@ const AcademicSetup: React.FC<AcademicSetupProps> = ({ secret, batchYear }) => {
                                             type="text"
                                             value={subjectCode}
                                             onChange={(e) => setSubjectCode(e.target.value)}
+                                            placeholder="e.g. 21CS41"
                                             className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-purple-500 outline-none transition-all"
                                         />
                                     </div>
@@ -312,6 +349,7 @@ const AcademicSetup: React.FC<AcademicSetupProps> = ({ secret, batchYear }) => {
                                             type="number"
                                             value={mapSectionId}
                                             onChange={(e) => setMapSectionId(e.target.value)}
+                                            placeholder="ID from DB"
                                             className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-purple-500 outline-none transition-all"
                                         />
                                     </div>
