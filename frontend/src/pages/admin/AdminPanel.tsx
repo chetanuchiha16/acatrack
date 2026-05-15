@@ -17,7 +17,10 @@ import {
     refreshBatchAdminRefreshBatchPost,
     fetchResultsRouteWebscrapeFetchResultsPost,
     uploadArchivePdftoexcelUploadPost,
-    getStatusPdftoexcelStatusJobIdGet
+    getStatusPdftoexcelStatusJobIdGet,
+    listStaffAdminListStaffGet,
+    registerStaffAdminRegisterStaffPost,
+    uploadStaffListAdminUploadStaffListPost
 } from "../../client/sdk.gen";
 import AcademicSetup from "./AcademicSetup";
 
@@ -67,6 +70,11 @@ const AdminPanel = () => {
     const [pdfExcelFilename, setPdfExcelFilename] = useState<string>(
         "result_list_YEAR.xlsx"
     );
+
+    const [staffList, setStaffList] = useState<Array<{username: string, name: string, email: string}>>([]);
+    const [newStaffName, setNewStaffName] = useState<string>("");
+    const [newStaffEmail, setNewStaffEmail] = useState<string>("");
+    const [staffFile, setStaffFile] = useState<File | null>(null);
     // Redirect if no secret
     useEffect(() => {
         if (!secret) {
@@ -99,6 +107,25 @@ const AdminPanel = () => {
     useEffect(() => {
         fetchBatches();
     }, [secret, fetchBatches]);
+
+    const fetchStaff = useCallback(async () => {
+        if (!secret) return;
+        try {
+            const res = await listStaffAdminListStaffGet({
+                headers: { "X-Admin-Secret": secret }
+            });
+            if (res.data) setStaffList(res.data as any);
+        } catch (err) {
+            console.error("Failed to fetch staff:", err);
+        }
+    }, [secret]);
+
+    useEffect(() => {
+        if (activeConfigTab === "registry") {
+            fetchStaff();
+        }
+    }, [activeConfigTab, fetchStaff]);
+
 
     const handleSecretSubmit = () => {
         if (!secret) return alert("Enter admin secret");
@@ -179,13 +206,51 @@ const AdminPanel = () => {
             }
 
             if (res.data) {
-                const data = res.data as { mentors_inserted: number; mappings_inserted: number };
-                updateLog(logId, 'success', `Mentors assigned: ${data.mentors_inserted} staff, ${data.mappings_inserted} student mappings.`);
+                const data = res.data as { mappings_inserted: number };
+                updateLog(logId, 'success', `Mentors assigned: ${data.mappings_inserted} student mappings.`);
                 setStatus(`✅ Mentors uploaded.`);
             }
         } catch (err: unknown) {
             updateLog(logId, 'error', `Mentor assignment failed: ${getErrMsg(err)}`);
             setStatus("❌ Error: " + getErrMsg(err));
+        }
+    };
+
+    const handleRegisterStaff = async () => {
+        if (!newStaffName || !newStaffEmail) return alert("Name and Email required");
+        if (!secret) return alert("Secret missing");
+        
+        setStatus("Registering staff...");
+        try {
+            const res = await registerStaffAdminRegisterStaffPost({
+                query: { name: newStaffName, email: newStaffEmail },
+                headers: { "X-Admin-Secret": secret }
+            });
+            if (res.error) throw new Error("Registration failed");
+            setStatus(`✅ Registered ${newStaffName}. Username: ${newStaffEmail.split('@')[0]}`);
+            setNewStaffName("");
+            setNewStaffEmail("");
+            fetchStaff();
+        } catch (err) {
+            setStatus("❌ " + getErrMsg(err));
+        }
+    };
+
+    const handleUploadStaffList = async () => {
+        if (!staffFile) return alert("Select a file first");
+        if (!secret) return alert("Secret missing");
+
+        setStatus("Processing staff list...");
+        try {
+            const res = await uploadStaffListAdminUploadStaffListPost({
+                body: { file: staffFile },
+                headers: { "X-Admin-Secret": secret }
+            });
+            if (res.error) throw new Error("Bulk upload failed");
+            setStatus("✅ Staff list processed successfully");
+            fetchStaff();
+        } catch (err) {
+            setStatus("❌ " + getErrMsg(err));
         }
     };
 
@@ -681,7 +746,79 @@ const AdminPanel = () => {
                                             </div>
                                             <div>
                                                 <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">Identity & Registry Management</h3>
-                                                <p className="text-xs font-medium text-slate-500">Bulk enrollments and faculty mentorship mapping</p>
+                                                <p className="text-xs font-medium text-slate-500">Explicit staff registration and student enrollment</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Staff Registry Section */}
+                                        <div className="mb-12 space-y-8">
+                                            <div className="p-8 rounded-3xl bg-slate-50/50 dark:bg-[#0b0f19]/50 border border-slate-200 dark:border-slate-800">
+                                                <div className="flex items-center justify-between mb-8">
+                                                    <div>
+                                                        <h4 className="text-lg font-black text-slate-800 dark:text-white">1. Staff Registry</h4>
+                                                        <p className="text-xs font-medium text-slate-500">Register teachers here *before* assigning them to students or subjects.</p>
+                                                    </div>
+                                                    <div className="px-4 py-2 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                                                        Phase 1: Identity
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                                    {/* Quick Add Staff */}
+                                                    <div className="space-y-6">
+                                                        <h5 className="text-xs font-black uppercase tracking-widest text-slate-400">Quick Register</h5>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                            <input 
+                                                                type="text" 
+                                                                placeholder="Full Name" 
+                                                                value={newStaffName}
+                                                                onChange={(e) => setNewStaffName(e.target.value)}
+                                                                className="px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm focus:border-purple-500 outline-none transition-all"
+                                                            />
+                                                            <input 
+                                                                type="email" 
+                                                                placeholder="Official Email" 
+                                                                value={newStaffEmail}
+                                                                onChange={(e) => setNewStaffEmail(e.target.value)}
+                                                                className="px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm focus:border-purple-500 outline-none transition-all"
+                                                            />
+                                                        </div>
+                                                        <button onClick={handleRegisterStaff} className="w-full py-3 bg-purple-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-purple-700 transition-all shadow-lg shadow-purple-600/20">Add Staff Member</button>
+                                                        
+                                                        <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                                                            <h5 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Bulk Staff Upload</h5>
+                                                            <div className="flex items-center gap-4">
+                                                                <input type="file" onChange={(e) => setStaffFile(e.target.files?.[0] ?? null)} className="flex-1 text-[10px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-slate-100 dark:file:bg-slate-800 file:text-slate-600 file:font-bold" />
+                                                                <button onClick={handleUploadStaffList} className="px-6 py-2 bg-slate-800 dark:bg-slate-700 text-white rounded-full font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all">Upload List</button>
+                                                            </div>
+                                                            <p className="mt-3 text-[10px] font-medium text-slate-400">Excel format: Columns <code className="text-purple-500 font-bold">Name</code>, <code className="text-purple-500 font-bold">Email</code></p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Staff List Table */}
+                                                    <div className="bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                                        <div className="max-h-64 overflow-y-auto">
+                                                            <table className="w-full text-left">
+                                                                <thead className="bg-slate-50 dark:bg-slate-800/50 sticky top-0">
+                                                                    <tr>
+                                                                        <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400">Username</th>
+                                                                        <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400">Name</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                                                    {staffList.length === 0 ? (
+                                                                        <tr><td colSpan={2} className="px-4 py-8 text-center text-xs text-slate-400 italic">No staff registered yet</td></tr>
+                                                                    ) : staffList.map(s => (
+                                                                        <tr key={s.username} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                                                            <td className="px-4 py-3 text-xs font-mono font-bold text-purple-600">{s.username}</td>
+                                                                            <td className="px-4 py-3 text-xs font-bold text-slate-700 dark:text-slate-300">{s.name}</td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -707,12 +844,17 @@ const AdminPanel = () => {
                                                     <div className="w-10 h-10 bg-purple-500/10 text-purple-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                                         <Users size={20} />
                                                     </div>
-                                                    <h4 className="text-md font-black text-slate-800 dark:text-white">Mentor Mapping</h4>
+                                                    <h4 className="text-md font-black text-slate-800 dark:text-white">2. Mentor Mapping</h4>
                                                 </div>
-                                                <p className="text-xs font-medium text-slate-500 mb-6 leading-relaxed">Establish faculty-student mentorship links for the selected batch.</p>
+                                                <p className="text-xs font-medium text-slate-500 mb-6 leading-relaxed">Assign registered staff to their student mentees.</p>
                                                 <div className="space-y-4">
                                                     <input type="file" onChange={(e) => setMentorFile(e.target.files?.[0] ?? null)} className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer" />
                                                     <button onClick={uploadMentors} className="w-full py-3 bg-purple-600 text-white rounded-xl font-black shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest text-xs">Assign Faculty Links</button>
+                                                    <p className="text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800/50 p-3 rounded-lg leading-relaxed">
+                                                        <span className="text-purple-500 font-bold block mb-1">INSTRUCTION:</span>
+                                                        Excel format: <code className="text-purple-500">Mentor_Username</code>, <code className="text-purple-500">student_usn</code>. <br/>
+                                                        The username must exist in the Staff Registry.
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
