@@ -153,6 +153,16 @@ export type BodyUploadNoteAuthStaffUploadNotesPost = {
 };
 
 /**
+ * Body_upload_staff_list_admin_upload_staff_list_post
+ */
+export type BodyUploadStaffListAdminUploadStaffListPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
  * ChartResponse
  */
 export type ChartResponse = {
@@ -904,6 +914,102 @@ export type UploadEmailsAdminUploadEmailsPostErrors = {
 export type UploadEmailsAdminUploadEmailsPostError = UploadEmailsAdminUploadEmailsPostErrors[keyof UploadEmailsAdminUploadEmailsPostErrors];
 
 export type UploadEmailsAdminUploadEmailsPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListStaffAdminListStaffGetData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/list-staff';
+};
+
+export type ListStaffAdminListStaffGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListStaffAdminListStaffGetError = ListStaffAdminListStaffGetErrors[keyof ListStaffAdminListStaffGetErrors];
+
+export type ListStaffAdminListStaffGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type RegisterStaffAdminRegisterStaffPostData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Email
+         */
+        email: string;
+    };
+    url: '/admin/register-staff';
+};
+
+export type RegisterStaffAdminRegisterStaffPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RegisterStaffAdminRegisterStaffPostError = RegisterStaffAdminRegisterStaffPostErrors[keyof RegisterStaffAdminRegisterStaffPostErrors];
+
+export type RegisterStaffAdminRegisterStaffPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UploadStaffListAdminUploadStaffListPostData = {
+    body: BodyUploadStaffListAdminUploadStaffListPost;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/upload-staff-list';
+};
+
+export type UploadStaffListAdminUploadStaffListPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UploadStaffListAdminUploadStaffListPostError = UploadStaffListAdminUploadStaffListPostErrors[keyof UploadStaffListAdminUploadStaffListPostErrors];
+
+export type UploadStaffListAdminUploadStaffListPostResponses = {
     /**
      * Successful Response
      */

@@ -18,7 +18,12 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from logger_config import get_logger
 from models import Mentor, ParentAuth, StudentAuth, Teacher
 from models.schema import ExportCache
-from services.admin_service import process_email_upload_file
+from services.admin_service import (
+    process_email_upload_file, 
+    get_all_staff, 
+    register_staff_single, 
+    process_staff_bulk_upload
+)
 from services.batch_manager import bm
 from services.academic_service import AcademicService
 from utils.cloud import upload_excel_to_supabase
@@ -150,6 +155,58 @@ async def upload_emails(
     return JSONResponse(content=result, status_code=status_code)
 
 
+@router.get("/list-staff")
+async def list_staff(x_admin_secret: str | None = Header(None)):
+    if not _check_secret(x_admin_secret):
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+    return get_all_staff()
+
+
+@router.post("/register-staff")
+async def register_staff(
+    name: str = Query(...),
+    email: str = Query(...),
+    x_admin_secret: str | None = Header(None)
+):
+    if not _check_secret(x_admin_secret):
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+    from security import hash_password as _hp
+    result, code = register_staff_single(name, email, _hp)
+    return JSONResponse(content=result, status_code=code)
+
+
+@router.post("/upload-staff-list")
+async def upload_staff_list(
+    file: UploadFile = File(...),
+    x_admin_secret: str | None = Header(None)
+):
+    if not _check_secret(x_admin_secret):
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+    
+    filename = file.filename or ""
+    if not filename.endswith(".xlsx"):
+        return JSONResponse(content={"error": "Only .xlsx allowed"}, status_code=400)
+    
+    with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmpfile:
+        content = await file.read()
+        tmpfile.write(content)
+        tmpfile.flush()
+        temp_path = tmpfile.name
+    
+    try:
+        import asyncio
+        from security import hash_password as _hp
+        result, code = await asyncio.get_event_loop().run_in_executor(
+            None, process_staff_bulk_upload, temp_path, _hp
+        )
+        return JSONResponse(content=result, status_code=code)
+    finally:
+        try:
+            os.remove(temp_path)
+        except Exception:
+            pass
+
+
 @router.post("/upload-mentors")
 async def upload_mentors(
     file: UploadFile = File(...),
@@ -168,11 +225,7 @@ async def upload_mentors(
     if not filename.endswith(".xlsx"):
         return JSONResponse(content={"error": "Only .xlsx allowed"}, status_code=400)
 
-    from services.admin_service import (
-        process_mentor_upload_file,
-        _unique_teacher_username,
-        _safe_seed,
-    )
+    from services.admin_service import process_mentor_upload_file
 
     try:
         import asyncio
@@ -195,8 +248,8 @@ async def upload_mentors(
             Mentor,
             Teacher,
             StudentAuth,
-            _unique_teacher_username,
-            _safe_seed,
+            None, # _unique_teacher_username no longer used
+            None, # _safe_seed no longer used
             upload_excel_to_supabase,
         )
         os.remove(temp_path)
