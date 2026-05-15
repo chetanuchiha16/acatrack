@@ -803,7 +803,9 @@ const AdminPanel = () => {
                                                                 <input type="file" onChange={(e) => setStaffFile(e.target.files?.[0] ?? null)} className="flex-1 text-[10px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-slate-100 dark:file:bg-slate-800 file:text-slate-600 file:font-bold" />
                                                                 <button onClick={handleUploadStaffList} className="px-6 py-2 bg-slate-800 dark:bg-slate-700 text-white rounded-full font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all">Upload List</button>
                                                             </div>
-                                                            <p className="mt-3 text-[10px] font-medium text-slate-400">Excel format: Columns <code className="text-purple-500 font-bold">Name</code>, <code className="text-purple-500 font-bold">Email</code></p>
+                                                            <p className="mt-3 text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800/50 p-2 rounded-lg leading-relaxed">
+                                                                <span className="text-purple-500 font-bold">REQUIRED HEADERS:</span> <code className="text-purple-500">Name</code>, <code className="text-purple-500">Email</code>
+                                                            </p>
                                                         </div>
                                                     </div>
 
@@ -847,6 +849,11 @@ const AdminPanel = () => {
                                                 <div className="space-y-4">
                                                     <input type="file" onChange={(e) => setEmailFile(e.target.files?.[0] ?? null)} className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer" />
                                                     <button onClick={uploadEmails} className="w-full py-3 bg-emerald-600 text-white rounded-xl font-black shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest text-xs">Execute Email Sync</button>
+                                                    <p className="text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800/50 p-3 rounded-lg leading-relaxed">
+                                                        <span className="text-emerald-500 font-bold block mb-1">REQUIRED HEADERS:</span>
+                                                        <code className="text-emerald-500">student_usn</code>, <code className="text-emerald-500">student_name</code>, <br/>
+                                                        <code className="text-emerald-500">Parent_Email</code>, <code className="text-emerald-500">Student_Email</code>
+                                                    </p>
                                                 </div>
                                             </div>
 
@@ -863,8 +870,8 @@ const AdminPanel = () => {
                                                     <input type="file" onChange={(e) => setMentorFile(e.target.files?.[0] ?? null)} className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer" />
                                                     <button onClick={uploadMentors} className="w-full py-3 bg-purple-600 text-white rounded-xl font-black shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest text-xs">Assign Faculty Links</button>
                                                     <p className="text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800/50 p-3 rounded-lg leading-relaxed">
-                                                        <span className="text-purple-500 font-bold block mb-1">INSTRUCTION:</span>
-                                                        Excel format: <code className="text-purple-500">Mentor_Username</code>, <code className="text-purple-500">student_usn</code>. <br/>
+                                                        <span className="text-purple-500 font-bold block mb-1">REQUIRED HEADERS:</span>
+                                                        <code className="text-purple-500">Mentor_Username</code>, <code className="text-purple-500">student_usn</code>. <br/>
                                                         The username must exist in the Staff Registry.
                                                     </p>
                                                 </div>
