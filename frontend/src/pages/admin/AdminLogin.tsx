@@ -7,12 +7,12 @@ const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
 
   const handleLogin = (): void => {
-    if (!secret) {
-        alert("Enter admin secret");
-        return;
+    if (secret === "supersecretkey") {
+        localStorage.setItem("admin_secret", secret);
+        void navigate("/admin/panel");
+    } else {
+        alert("Invalid admin secret");
     }
-    localStorage.setItem("admin_secret", "supersecretkey");
-    void navigate("/admin/panel");
   };
 
   return (

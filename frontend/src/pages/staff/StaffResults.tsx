@@ -1,13 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { GraduationCap } from "lucide-react";
 import SemesterResults from "../student/SemesterResults";
 import SubjectResults from "../student/SubjectResults";
 import OverallResults from "../student/OverallResults";
+import AcademicContextSelector from "../../components/AcademicContextSelector";
 import useStaffStore from "../../store/useStaffStore";
 
 const StaffResults: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("semester");
-  const { batchYear } = useStaffStore();
+  const { batchYear, setAssignments } = useStaffStore();
+
+  useEffect(() => {
+    if (batchYear) {
+      void fetchAssignments();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [batchYear]);
+
+  const fetchAssignments = async () => {
+    try {
+      // Use the internal client's request or standard fetch
+      const token = localStorage.getItem("token"); // Assuming token is here
+      const response = await fetch(`/api/admin/my-assignments?batch_year=${batchYear}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.assignments) {
+        setAssignments(data.assignments);
+      }
+    } catch (err) {
+      console.error("Failed to fetch assignments", err);
+    }
+  };
 
   const tabs = [
     { id: "semester", label: "Semester Results" },
@@ -17,8 +43,11 @@ const StaffResults: React.FC = () => {
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* Modern Segmented Control for Tabs */}
-      <div className="flex justify-center mb-6 flex-shrink-0">
+      {/* Top Bar: Context Selector & Tabs */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 flex-shrink-0">
+        <AcademicContextSelector />
+        
+        {/* Modern Segmented Control for Tabs */}
         <div className="inline-flex bg-gray-100 dark:bg-gray-800/80 p-1 rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-inner">
           {tabs.map((tab) => (
             <button

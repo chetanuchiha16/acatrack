@@ -11,18 +11,22 @@ import base64
 import hashlib
 from cryptography.fernet import Fernet
 
-from fastapi import APIRouter, UploadFile, File, Header, Query
+from typing import List, Dict
+from fastapi import APIRouter, UploadFile, File, Header, Query, Body, Depends, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from logger_config import get_logger
 from models import Mentor, ParentAuth, StudentAuth, Teacher
 from models.schema import ExportCache
 from services.admin_service import process_email_upload_file
 from services.batch_manager import bm
+from services.academic_service import AcademicService
 from utils.cloud import upload_excel_to_supabase
 from settings import settings
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 from schemas import BatchRequest
+from database import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 
@@ -280,3 +284,103 @@ async def refresh_batch(body: BatchRequest, x_admin_secret: str | None = Header(
         return JSONResponse(
             content={"error": "Failed to refresh batch data."}, status_code=500
         )
+@router.get("/my-assignments")
+async def get_my_assignments(request: Request, batch_year: int = Query(...)):
+    from utils.helpers import get_jwt_payload_from_request
+    from models.schema import SubjectAssignment
+    from sqlalchemy.orm import selectinload
+
+    payload = get_jwt_payload_from_request(request)
+    if not payload or payload.get("who") != "Staff":
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+
+    username = payload.get("id")  # For teachers, id is the username
+
+    async with bm.session_scope(batch_year) as session:
+        stmt = (
+            select(SubjectAssignment)
+            .where(
+                SubjectAssignment.teacher_username == username,
+                SubjectAssignment.batch_year == batch_year,
+            )
+            .options(selectinload(SubjectAssignment.subject))
+        )
+
+        result = await session.execute(stmt)
+        assignments = result.scalars().all()
+
+        return {
+            "assignments": [
+                {
+                    "subject_code": a.subject_code,
+                    "subject_name": a.subject.subject_name,
+                    "section_id": a.section_id,
+                    "semester": a.semester,
+                }
+                for a in assignments
+            ]
+        }
+
+# --- Academic Setup Workspace Endpoints ---
+
+@router.post("/init-batch")
+async def init_batch(
+    batch_year: int = Query(...),
+    sections: List[str] = Query(...),
+    x_admin_secret: str | None = Header(None),
+    db: AsyncSession = Depends(get_db)
+):
+    if not _check_secret(x_admin_secret):
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+    
+    await AcademicService.initialize_batch(db, batch_year, sections)
+    return {"status": "success", "message": f"Batch {batch_year} initialized with sections {sections}"}
+
+@router.post("/register-subjects")
+async def register_subjects(
+    semester: str = Query(...),
+    subjects: List[Dict] = Body(...),
+    x_admin_secret: str | None = Header(None),
+    db: AsyncSession = Depends(get_db)
+):
+    if not _check_secret(x_admin_secret):
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+    
+    await AcademicService.register_subjects(db, semester, subjects)
+    return {"status": "success", "message": f"Subjects registered for {semester}"}
+
+@router.post("/enroll-students")
+async def enroll_students(
+    batch_year: int = Query(...),
+    section_name: str = Query(...),
+    students: List[Dict] = Body(...),
+    x_admin_secret: str | None = Header(None),
+    db: AsyncSession = Depends(get_db)
+):
+    if not _check_secret(x_admin_secret):
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+    
+    try:
+        await AcademicService.enroll_students(db, batch_year, section_name, students)
+        return {"status": "success", "message": f"Enrolled {len(students)} students in {section_name}"}
+    except ValueError as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
+
+@router.post("/assign-subjects")
+async def assign_subjects(
+    teacher_username: str = Query(...),
+    subject_code: str = Query(...),
+    section_id: int = Query(...),
+    semester: str = Query(...),
+    batch_year: int = Query(...),
+    x_admin_secret: str | None = Header(None),
+    db: AsyncSession = Depends(get_db)
+):
+    if not _check_secret(x_admin_secret):
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+    
+    try:
+        await AcademicService.assign_subject_to_teacher(db, teacher_username, subject_code, section_id, semester, batch_year)
+        return {"status": "success", "message": "Subject assigned to teacher"}
+    except ValueError as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)

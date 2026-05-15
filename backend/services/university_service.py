@@ -40,7 +40,7 @@ class University:
         repo = UniversityRepository(session)
         return await repo.get_semesters_by_batch(self.batch_year)
 
-    def fetch_students(self, semester):
+    def fetch_students(self, semester, section_name=None):
         """
         Fetch all unique USNs for a given semester based on AcademicResult and Subject.
         """
@@ -57,19 +57,19 @@ class University:
 
             with SyncSession() as session:
                 repo = UniversityRepository(session)
-                usns = repo.get_student_usns_by_semester_sync(semester, self.batch_year)
+                usns = repo.get_student_usns_by_semester_sync(semester, self.batch_year, section_name)
             engine.dispose()
             return usns
         except Exception as e:
             logger.debug(f"Error fetching students for {semester}: {e}")
             return []
 
-    def get_students_for_semester(self, selected_semester):
+    def get_students_for_semester(self, selected_semester, section_name=None):
         """
         Fetch all Student objects for a semester instantly using a bulk query,
         avoiding N+1 queries. Returns a list representing the cohort.
         """
-        all_usns = self.fetch_students(selected_semester)
+        all_usns = self.fetch_students(selected_semester, section_name)
         if not all_usns:
             logger.debug(
                 f"No students found for {selected_semester} in batch {self.batch_year}."
@@ -83,7 +83,7 @@ class University:
         """Calculates SGPA and CGPA for each student. This was redundant as Student calculates it, leaving intact for compatibility."""
         pass
 
-    async def calculate_academic_performance_async(self, session, selected_semester):
+    async def calculate_academic_performance_async(self, session, selected_semester, section_name=None):
         """
         Calculates academic performance using SQL aggregations.
         # FAANG-level optimization: Use repository for O(1) stats retrieval.
@@ -104,7 +104,7 @@ class University:
         # But we avoid re-calculating everything if possible.
 
         students = await self.get_students_for_semester_async(
-            session, selected_semester
+            session, selected_semester, section_name
         )
         semester_results = []
         for student in students:
@@ -127,13 +127,13 @@ class University:
             )
         return semester_results
 
-    async def get_students_for_semester_async(self, session, selected_semester):
+    async def get_students_for_semester_async(self, session, selected_semester, section_name=None):
         from repositories.university_repository import UniversityRepository
 
         repo = UniversityRepository(session)
 
         all_usns = await repo.get_student_usns_by_semester(
-            selected_semester, self.batch_year
+            selected_semester, self.batch_year, section_name
         )
 
         if not all_usns:
@@ -145,11 +145,11 @@ class University:
         )
 
     async def find_failed_students_async(
-        self, session, selected_semester, students=None
+        self, session, selected_semester, students=None, section_name=None
     ):
         if students is None:
             students = await self.get_students_for_semester_async(
-                session, selected_semester
+                session, selected_semester, section_name
             )
 
         failed_students_list = []
