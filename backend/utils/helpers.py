@@ -60,3 +60,12 @@ def get_mentor_id_from_request(request: Request) -> int | None:
 def get_who_from_request(request: Request) -> str | None:
     payload = get_jwt_payload_from_request(request)
     return payload.get("who") if payload else None
+
+
+def decode_jwt(token: str) -> dict | None:
+    """Decode a JWT token string."""
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
+        return payload
+    except Exception:
+        return None
