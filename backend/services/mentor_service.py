@@ -42,38 +42,35 @@ async def get_mentor_students_data(
                 if not student:
                     raise ValueError(f"No student data found for USN {s.usn}")
 
+                # Use to_dict() and map to StudentResultResponse
+                data = student.to_dict()
                 return {
-                    "name": student.name,
-                    "usn": student.usn,
-                    "total_marks": student.total_marks,
-                    "percentage": student.percentage,
-                    "credits": student.obtained_credits,
-                    "sgpa": student.sgpa,
-                    "cgpa": student.cgpa,
-                    "subjects": [
-                        {
-                            "subject_name": subject_name,
-                            "code": code,
-                            "ia": ia,
-                            "see": see,
-                            "total": ia + see,
-                            "credit": credit,
-                            "status": status,
-                        }
-                        for code, subject_name, ia, see, credit, status in zip(
-                            student.subject_codes,
-                            student.subject_names,
-                            student.ia_marks,
-                            student.see_marks,
-                            student.credits,
-                            student.pass_fail,
-                        )
-                    ],
+                    "name": data["name"],
+                    "usn": data["usn"],
+                    "total_marks": data["total_marks"],
+                    "percentage": data["percentage"],
+                    "credits": data["credits"],
+                    "sgpa": data["sgpa"],
+                    "cgpa": data["cgpa"],
+                    "status": data["status"],
+                    "subjects": data["subjects"],
+                    "semester": data.get("semester"),
                 }
 
             except Exception as e:
                 logger.debug(f"[WARNING] Student data not found for USN {s.usn}: {e}")
-                return {"usn": s.usn, "error": "Student data not found"}
+                # Return a placeholder that matches StudentResultResponse schema
+                return {
+                    "usn": s.usn,
+                    "name": "N/A",
+                    "total_marks": 0,
+                    "percentage": 0,
+                    "credits": 0,
+                    "sgpa": 0,
+                    "cgpa": 0.0,
+                    "status": "No Data",
+                    "subjects": [],
+                }
 
         tasks = [_process_student(s) for s in students]
         results = await asyncio.gather(*tasks)
