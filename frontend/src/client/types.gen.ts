@@ -1036,6 +1036,204 @@ export type RefreshBatchAdminRefreshBatchPostResponses = {
     200: unknown;
 };
 
+export type GetMyAssignmentsAdminMyAssignmentsGetData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+    };
+    url: '/admin/my-assignments';
+};
+
+export type GetMyAssignmentsAdminMyAssignmentsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetMyAssignmentsAdminMyAssignmentsGetError = GetMyAssignmentsAdminMyAssignmentsGetErrors[keyof GetMyAssignmentsAdminMyAssignmentsGetErrors];
+
+export type GetMyAssignmentsAdminMyAssignmentsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type InitBatchAdminInitBatchPostData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+        /**
+         * Sections
+         */
+        sections: Array<string>;
+    };
+    url: '/admin/init-batch';
+};
+
+export type InitBatchAdminInitBatchPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type InitBatchAdminInitBatchPostError = InitBatchAdminInitBatchPostErrors[keyof InitBatchAdminInitBatchPostErrors];
+
+export type InitBatchAdminInitBatchPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type RegisterSubjectsAdminRegisterSubjectsPostData = {
+    /**
+     * Subjects
+     */
+    body: Array<{
+        [key: string]: unknown;
+    }>;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Semester
+         */
+        semester: string;
+    };
+    url: '/admin/register-subjects';
+};
+
+export type RegisterSubjectsAdminRegisterSubjectsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RegisterSubjectsAdminRegisterSubjectsPostError = RegisterSubjectsAdminRegisterSubjectsPostErrors[keyof RegisterSubjectsAdminRegisterSubjectsPostErrors];
+
+export type RegisterSubjectsAdminRegisterSubjectsPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type EnrollStudentsAdminEnrollStudentsPostData = {
+    /**
+     * Students
+     */
+    body: Array<{
+        [key: string]: unknown;
+    }>;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+        /**
+         * Section Name
+         */
+        section_name: string;
+    };
+    url: '/admin/enroll-students';
+};
+
+export type EnrollStudentsAdminEnrollStudentsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type EnrollStudentsAdminEnrollStudentsPostError = EnrollStudentsAdminEnrollStudentsPostErrors[keyof EnrollStudentsAdminEnrollStudentsPostErrors];
+
+export type EnrollStudentsAdminEnrollStudentsPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type AssignSubjectsAdminAssignSubjectsPostData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Teacher Username
+         */
+        teacher_username: string;
+        /**
+         * Subject Code
+         */
+        subject_code: string;
+        /**
+         * Section Id
+         */
+        section_id: number;
+        /**
+         * Semester
+         */
+        semester: string;
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+    };
+    url: '/admin/assign-subjects';
+};
+
+export type AssignSubjectsAdminAssignSubjectsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AssignSubjectsAdminAssignSubjectsPostError = AssignSubjectsAdminAssignSubjectsPostErrors[keyof AssignSubjectsAdminAssignSubjectsPostErrors];
+
+export type AssignSubjectsAdminAssignSubjectsPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type ExcelExcelPostData = {
     body: BodyExcelExcelPost;
     path?: never;
@@ -2009,6 +2207,9 @@ export type GetSemesterResultsAuthStaffSemResGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        /**
+         * Section
+         */
         section?: string;
     };
     url: '/auth/Staff/sem_res';
@@ -2043,7 +2244,6 @@ export type DownloadSemesterReportAuthStaffSemResReportSemesterGetData = {
          * Batch Year
          */
         batch_year?: number | null;
-        section?: string;
     };
     url: '/auth/Staff/sem_res/report/{semester}';
 };
@@ -2176,6 +2376,9 @@ export type GetSubjectResultsAuthStaffSubResGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        /**
+         * Section
+         */
         section?: string;
     };
     url: '/auth/Staff/sub_res';
@@ -2213,6 +2416,9 @@ export type GetSubjectReportPdfAuthStaffSubResReportGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        /**
+         * Section
+         */
         section?: string;
     };
     url: '/auth/Staff/sub_res/report';
@@ -2241,7 +2447,7 @@ export type GetAcademicPerformanceAuthStaffOverallResGetData = {
         /**
          * Semester
          */
-        semester?: string;
+        semester?: string | null;
         /**
          * Show Toppers
          */
@@ -2261,7 +2467,7 @@ export type GetAcademicPerformanceAuthStaffOverallResGetData = {
         /**
          * Section
          */
-        section?: string;
+        section?: string | null;
     };
     url: '/auth/Staff/overall_res';
 };
@@ -2298,7 +2504,7 @@ export type GetReportAuthStaffReportSemesterGetData = {
         /**
          * Section
          */
-        section?: string;
+        section?: string | null;
     };
     url: '/auth/Staff/report/{semester}';
 };
