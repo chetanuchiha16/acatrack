@@ -227,7 +227,9 @@ const AdminPanel = () => {
                 headers: { "X-Admin-Secret": secret }
             });
             if (res.error) throw new Error("Registration failed");
-            setStatus(`✅ Registered ${newStaffName}. Username: ${newStaffEmail.split('@')[0]}`);
+            
+            const data = res.data as { username: string; plain_password?: string };
+            setStatus(`✅ Registered ${newStaffName}. Username: ${data.username} | Password: ${data.plain_password}`);
             setNewStaffName("");
             setNewStaffEmail("");
             fetchStaff();
@@ -247,7 +249,10 @@ const AdminPanel = () => {
                 headers: { "X-Admin-Secret": secret }
             });
             if (res.error) throw new Error("Bulk upload failed");
-            setStatus("✅ Staff list processed successfully");
+            
+            const data = res.data as { registered?: any[] };
+            const count = data.registered?.length || 0;
+            setStatus(`✅ Bulk upload successful! Registered ${count} new staff members. All passwords follow the 'staff_username' pattern.`);
             fetchStaff();
         } catch (err) {
             setStatus("❌ " + getErrMsg(err));
@@ -785,6 +790,13 @@ const AdminPanel = () => {
                                                         </div>
                                                         <button onClick={handleRegisterStaff} className="w-full py-3 bg-purple-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-purple-700 transition-all shadow-lg shadow-purple-600/20">Add Staff Member</button>
                                                         
+                                                        <div className="bg-amber-50 dark:bg-amber-900/10 p-3 rounded-xl border border-amber-100 dark:border-amber-900/20">
+                                                            <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                                                                <AlertCircle size={12} />
+                                                                INITIAL PASSWORD: staff_username
+                                                            </p>
+                                                        </div>
+
                                                         <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
                                                             <h5 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Bulk Staff Upload</h5>
                                                             <div className="flex items-center gap-4">
