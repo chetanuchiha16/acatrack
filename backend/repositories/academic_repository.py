@@ -1,6 +1,6 @@
 from sqlalchemy import select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
-from models.schema import AcademicResult, Subject, StudentAuth
+from models.schema import AcademicResult, Subject, StudentAuth, Section
 from typing import List, Dict, Any
 
 
@@ -9,7 +9,7 @@ class AcademicRepository:
         self.db = db_session
 
     async def get_semester_summary_stats(
-        self, semester: str, batch_year: int
+        self, semester: str, batch_year: int, section_name: str = None
     ) -> List[Dict[str, Any]]:
         """
         Calculates all summary statistics (Total, Pass, Fail, FCD, etc.)
@@ -64,11 +64,16 @@ class AcademicRepository:
                 ).label("sc_count"),
             )
             .join(Subject, AcademicResult.subject_code == Subject.subject_code)
+            .join(StudentAuth, AcademicResult.student_id == StudentAuth.id)
             .where(
                 Subject.semester == semester, AcademicResult.batch_year == batch_year
             )
-            .group_by(Subject.subject_code, Subject.subject_name)
         )
+
+        if section_name and section_name != "ALL":
+            query = query.join(Section, StudentAuth.section_id == Section.id).where(Section.name == section_name)
+
+        query = query.group_by(Subject.subject_code, Subject.subject_name)
 
         result = await self.db.execute(query)
         stats = []
@@ -96,7 +101,7 @@ class AcademicRepository:
         return stats
 
     async def get_toppers_by_percentage(
-        self, semester: str, batch_year: int, limit: int = 10
+        self, semester: str, batch_year: int, limit: int = 10, section_name: str = None
     ) -> List[Dict[str, Any]]:
         """
         Fetches toppers for a semester using SQL sorting and projection.
@@ -129,8 +134,12 @@ class AcademicRepository:
             .where(
                 Subject.semester == semester, AcademicResult.batch_year == batch_year
             )
-            .group_by(StudentAuth.id, StudentAuth.usn, StudentAuth.name)
         )
+
+        if section_name and section_name != "ALL":
+            topper_query = topper_query.join(Section, StudentAuth.section_id == Section.id).where(Section.name == section_name)
+
+        topper_query = topper_query.group_by(StudentAuth.id, StudentAuth.usn, StudentAuth.name)
 
         result = await self.db.execute(topper_query)
         toppers = []
@@ -158,7 +167,7 @@ class AcademicRepository:
         return toppers[:limit]
 
     async def get_semester_cohort_stats(
-        self, semester: str, batch_year: int
+        self, semester: str, batch_year: int, section_name: str = None
     ) -> Dict[str, Any]:
         """
         Calculates cohort-wide statistics (FCD, FC, SC, Pass %, Total Students)
@@ -189,8 +198,12 @@ class AcademicRepository:
             .where(
                 Subject.semester == semester, AcademicResult.batch_year == batch_year
             )
-            .group_by(StudentAuth.id)
-        ).subquery()
+        )
+
+        if section_name and section_name != "ALL":
+            subq = subq.join(Section, StudentAuth.section_id == Section.id).where(Section.name == section_name)
+
+        subq = subq.group_by(StudentAuth.id).subquery()
 
         avg_marks = subq.c.total_marks / subq.c.num_subjects
 

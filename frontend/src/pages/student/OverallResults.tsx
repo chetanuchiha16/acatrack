@@ -21,16 +21,16 @@ interface StudentResult {
     subject_names: string[];
 }
 
+import useStaffStore from "../../store/useStaffStore";
+
 const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
-    const [semester, setSemester] = useState<string>("");
+    const { semester, section } = useStaffStore();
     const [view, setView] = useState<string>("normal");
     const [data, setData] = useState<StudentResult[]>([]);
     const [search, setSearch] = useState<string>("");
     const [sortBy, setSortBy] = useState<keyof StudentResult | "">("cgpa");
     const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
     const [expandedRow, setExpandedRow] = useState<number | null>(null);
-
-    const semesterOptions: string[] = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"];
 
     useEffect(() => {
         if (semester && batchYear) {
@@ -39,7 +39,7 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
             setData([]);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [batchYear, semester, view]);
+    }, [batchYear, semester, section, view]);
 
     const fetchData = async () => {
         if (!semester || !batchYear) return;
@@ -47,6 +47,7 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
             const res = await getAcademicPerformanceAuthStaffOverallResGet({
                 query: { 
                     semester, 
+                    section,
                     batch_year: parseInt(batchYear, 10),
                     show_toppers: view === "toppers" ? true : undefined,
                     show_failed: view === "failed" ? true : undefined
@@ -67,6 +68,7 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
                 res = await getAcademicPerformanceAuthStaffOverallResGet({
                     query: { 
                         semester, 
+                        section,
                         batch_year: parseInt(batchYear, 10),
                         show_toppers: true,
                         format: "pdf" as "pdf" | "json" | undefined
@@ -75,7 +77,10 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
             } else {
                 res = await getReportAuthStaffReportSemesterGet({
                     path: { semester },
-                    query: { batch_year: parseInt(batchYear, 10) }
+                    query: { 
+                        batch_year: parseInt(batchYear, 10),
+                        section
+                    }
                 });
             }
 
@@ -147,19 +152,6 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
-                    <div className="relative">
-                        <select
-                            value={semester}
-                            onChange={(e) => setSemester(e.target.value)}
-                            className="pl-4 pr-10 py-2.5 bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/50 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 outline-none appearance-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer shadow-sm min-w-[140px]"
-                        >
-                            <option value="">Select Semester</option>
-                            {semesterOptions.map((sem) => (
-                                <option key={sem} value={sem}>{sem.toUpperCase()}</option>
-                            ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
-                    </div>
 
                     <div className="relative">
                         <select

@@ -24,13 +24,14 @@ async def get_academic_performance(
     show_failed: bool = Query(False),
     format: str = Query("json"),
     batch_year: int | None = Query(None),
+    section: str = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     by = batch_year or get_batch_year_from_request(request)
 
     try:
         university = University(session=db, batch_year=by)
-        result = await university.calculate_academic_performance_async(db, semester)
+        result = await university.calculate_academic_performance_async(db, semester, section)
 
         if show_toppers:
             toppers = sorted(result, key=lambda x: x["percentage"], reverse=True)[:10]
@@ -49,7 +50,7 @@ async def get_academic_performance(
             return toppers
 
         elif show_failed:
-            failed_students = await university.find_failed_students_async(db, semester)
+            failed_students = await university.find_failed_students_async(db, semester, section_name=section)
             return failed_students
         else:
             return result
@@ -67,12 +68,13 @@ async def get_report(
     semester: str,
     request: Request,
     batch_year: int | None = Query(None),
+    section: str = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     by = batch_year or get_batch_year_from_request(request)
 
     university = University(session=db, batch_year=by)
-    pdf_bytes = await create_university_report_async(university, semester, db)
+    pdf_bytes = await create_university_report_async(university, semester, db, section_name=section)
 
     return Response(
         content=pdf_bytes,

@@ -2009,6 +2009,7 @@ export type GetSemesterResultsAuthStaffSemResGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        section?: string;
     };
     url: '/auth/Staff/sem_res';
 };
@@ -2042,6 +2043,7 @@ export type DownloadSemesterReportAuthStaffSemResReportSemesterGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        section?: string;
     };
     url: '/auth/Staff/sem_res/report/{semester}';
 };
@@ -2174,6 +2176,7 @@ export type GetSubjectResultsAuthStaffSubResGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        section?: string;
     };
     url: '/auth/Staff/sub_res';
 };
@@ -2210,6 +2213,7 @@ export type GetSubjectReportPdfAuthStaffSubResReportGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        section?: string;
     };
     url: '/auth/Staff/sub_res/report';
 };
@@ -2254,6 +2258,10 @@ export type GetAcademicPerformanceAuthStaffOverallResGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        /**
+         * Section
+         */
+        section?: string;
     };
     url: '/auth/Staff/overall_res';
 };
@@ -2287,6 +2295,10 @@ export type GetReportAuthStaffReportSemesterGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        /**
+         * Section
+         */
+        section?: string;
     };
     url: '/auth/Staff/report/{semester}';
 };

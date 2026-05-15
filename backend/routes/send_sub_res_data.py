@@ -20,6 +20,7 @@ async def get_subject_results(
     semester: str = Query(None),
     subject: str = Query(None),
     batch_year: int | None = Query(None),
+    section: str = Query(None),
 ):
     by = batch_year or get_batch_year_from_request(request)
     if not semester or not subject:
@@ -29,7 +30,7 @@ async def get_subject_results(
 
     def _sync():
         university = University(batch_year=by)
-        subject_result = SubjectResult(subject, semester, university)
+        subject_result = SubjectResult(subject, semester, university, section_name=section)
         return subject_result.get_subject_results_dict()
 
     result_data = await asyncio.get_event_loop().run_in_executor(None, _sync)
@@ -43,6 +44,7 @@ async def get_subject_report_pdf(
     semester: str = Query(None),
     subject: str = Query(None),
     batch_year: int | None = Query(None),
+    section: str = Query(None),
 ):
     by = batch_year or get_batch_year_from_request(request)
     if not semester or not subject:
@@ -52,7 +54,7 @@ async def get_subject_report_pdf(
 
     def _sync():
         university = University(batch_year=by)
-        subject_result = SubjectResult(subject, semester, university)
+        subject_result = SubjectResult(subject, semester, university, section_name=section)
         return create_subject_report(subject_result)
 
     pdf_bytes = await asyncio.get_event_loop().run_in_executor(None, _sync)

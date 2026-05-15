@@ -32,8 +32,10 @@ interface SubjectData {
     fail_count: number;
 }
 
+import useStaffStore from "../../store/useStaffStore";
+
 const SubjectResults: React.FC<SubjectResultsProps> = ({ batchYear }) => {
-    const [semester, setSemester] = useState<string>("");
+    const { semester, section, assignments } = useStaffStore();
     const [subject, setSubject] = useState<string>("");
     const [data, setData] = useState<SubjectData | null>(null);
 
@@ -86,9 +88,15 @@ const SubjectResults: React.FC<SubjectResultsProps> = ({ batchYear }) => {
     
     // Safety check to handle potential unmapped semesters gracefully
     const currentMapping = semester ? subjectMapping[semester as keyof typeof subjectMapping] : undefined;
-    const mappedSubjects = currentMapping 
+    const allMappedSubjects = currentMapping 
         ? Object.entries(currentMapping) 
         : [];
+
+    // Filter to only show teacher's assignments if they exist
+    const teacherAssignmentsForSem = assignments.filter(a => a.semester === semester);
+    const displayedSubjects = teacherAssignmentsForSem.length > 0
+        ? teacherAssignmentsForSem.map(a => [a.subject_code, a.subject_name])
+        : allMappedSubjects;
 
     return (
         <div className="w-full">
@@ -104,22 +112,6 @@ const SubjectResults: React.FC<SubjectResultsProps> = ({ batchYear }) => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <select
-                            value={semester}
-                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                setSemester(e.target.value);
-                                setSubject("");
-                            }}
-                            className="pl-4 pr-10 py-2.5 bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/50 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 outline-none appearance-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer shadow-sm min-w-[140px]"
-                        >
-                            <option value="">Select Semester</option>
-                            {semesterOptions.map((sem) => (
-                                <option key={sem} value={sem}>{sem.toUpperCase()}</option>
-                            ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
-                    </div>
 
                     <div className="relative">
                         <select
@@ -129,7 +121,7 @@ const SubjectResults: React.FC<SubjectResultsProps> = ({ batchYear }) => {
                             className="pl-4 pr-10 py-2.5 bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/50 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 outline-none appearance-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer shadow-sm min-w-[200px] disabled:opacity-50"
                         >
                             <option value="">Select Subject</option>
-                            {semester && mappedSubjects.map(([code, name]) => (
+                            {semester && displayedSubjects.map(([code, name]) => (
                                 <option key={code} value={code}>{String(name)}</option>
                             ))}
                         </select>
