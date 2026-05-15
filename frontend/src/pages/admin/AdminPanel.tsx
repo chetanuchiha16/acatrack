@@ -1,4 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
+import { 
+    LayoutDashboard, Settings, LogOut, 
+    Download, Upload, FileArchive, Globe, 
+    History, Users, Mail, GraduationCap,
+    CheckCircle, AlertCircle, Loader2,
+    Database, FileText, ChevronRight, Search
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { clearToken } from "../../utils/storage";
 import { 
@@ -21,15 +28,30 @@ function getErrMsg(err: unknown): string {
     return "Unknown error";
 }
 
-export default function AdminPanel() {
+const AdminPanel = () => {
     const navigate = useNavigate();
     const [secret, setSecret] = useState<string>(localStorage.getItem("admin_secret") || "");
     const [mode, setMode] = useState<string>("missing");
     const [status, setStatus] = useState<string>("");
 
     const [batchYear, setBatchYear] = useState<number | null>(null);
+    const [actionLog, setActionLog] = useState<Array<{id: string, msg: string, type: 'info' | 'success' | 'error' | 'loading', time: string}>>([]);
+
+    const logAction = (msg: string, type: 'info' | 'success' | 'error' | 'loading' = 'info') => {
+        const id = Math.random().toString(36).substr(2, 9);
+        const time = new Date().toLocaleTimeString();
+        setActionLog(prev => [{id, msg, type, time}, ...prev].slice(0, 10));
+        return id;
+    };
+
+    const updateLog = (id: string, type: 'success' | 'error' | 'loading' | 'info', newMsg?: string) => {
+        setActionLog(prev => prev.map(log => 
+            log.id === id ? { ...log, type, msg: newMsg || log.msg } : log
+        ));
+    };
     const [availableBatches, setAvailableBatches] = useState<number[]>([]);
     const [activeView, setActiveView] = useState<"results" | "setup">("results");
+    const [activeConfigTab, setActiveConfigTab] = useState<"setup" | "registry" | "security">("setup");
 
     const [emailFile, setEmailFile] = useState<File | null>(null);
     const [mentorFile, setMentorFile] = useState<File | null>(null);
@@ -116,6 +138,7 @@ export default function AdminPanel() {
         if (!emailFile) return setStatus("Please select an email file first.");
         if (!secret) return alert("Admin secret missing");
 
+        const logId = logAction(`Uploading emails from ${emailFile.name}...`, 'loading');
         setStatus("Uploading emails...");
         try {
             const res = await uploadEmailsAdminUploadEmailsPost({
@@ -129,11 +152,11 @@ export default function AdminPanel() {
             }
             if (res.data) {
                 const data = res.data as { emails_inserted: number; emails_updated: number };
-                setStatus(
-                    `✅ Uploaded emails. Inserted ${data.emails_inserted} records and Updated ${data.emails_updated} records.`
-                );
+                updateLog(logId, 'success', `Emails synced: ${data.emails_inserted} new, ${data.emails_updated} updated.`);
+                setStatus(`✅ Emails uploaded.`);
             }
         } catch (err: unknown) {
+            updateLog(logId, 'error', `Email upload failed: ${getErrMsg(err)}`);
             setStatus("❌ Error: " + getErrMsg(err));
         }
     };
@@ -142,6 +165,7 @@ export default function AdminPanel() {
         if (!mentorFile) return setStatus("Please select a mentor file first.");
         if (!secret) return alert("Admin secret missing");
 
+        const logId = logAction(`Assigning mentors from ${mentorFile.name}...`, 'loading');
         setStatus("Uploading mentors...");
         try {
             const res = await uploadMentorsAdminUploadMentorsPost({
@@ -156,15 +180,11 @@ export default function AdminPanel() {
 
             if (res.data) {
                 const data = res.data as { mentors_inserted: number; mappings_inserted: number };
-                setStatus(
-                    `✅ Uploaded mentors. Inserted ${data.mentors_inserted} mentors and ${data.mappings_inserted} mappings.`
-                );
+                updateLog(logId, 'success', `Mentors assigned: ${data.mentors_inserted} staff, ${data.mappings_inserted} student mappings.`);
+                setStatus(`✅ Mentors uploaded.`);
             }
-
-            // SDK doesn't natively handle the automatic follow-up fetch for CSV as easily in one call,
-            // but we can keep the logic similar if needed. However, the backend should ideally return the data.
-            // For now, let's stick to the upload.
         } catch (err: unknown) {
+            updateLog(logId, 'error', `Mentor assignment failed: ${getErrMsg(err)}`);
             setStatus("❌ Error: " + getErrMsg(err));
         }
     };
@@ -174,6 +194,7 @@ export default function AdminPanel() {
             return setStatus("Enter a new batch year to create.");
         if (!secret) return alert("Admin secret missing");
 
+        const logId = logAction(`Creating new academic batch ${newBatchYear}...`, 'loading');
         setStatus(`Creating batch ${newBatchYear}...`);
         try {
             const res = await createBatchAdminCreateBatchPost({
@@ -184,10 +205,12 @@ export default function AdminPanel() {
                 const errMsg = (res.error as { error?: string }).error || "Unknown error";
                 throw new Error(errMsg);
             }
-            setStatus(`✅ Batch ${newBatchYear} created successfully.`);
+            updateLog(logId, 'success', `Batch ${newBatchYear} created successfully.`);
+            setStatus(`✅ Batch ${newBatchYear} created.`);
             setNewBatchYear("");
             fetchBatches();
         } catch (err: unknown) {
+            updateLog(logId, 'error', `Batch creation failed: ${getErrMsg(err)}`);
             setStatus("❌ Error: " + getErrMsg(err));
         }
     };
@@ -196,6 +219,7 @@ export default function AdminPanel() {
         if (!batchYear) return setStatus("Select batch year to refresh.");
         if (!secret) return alert("Admin secret missing");
 
+        const logId = logAction(`Refreshing all records for batch ${batchYear}...`, 'loading');
         setStatus(`Refreshing batch ${batchYear}...`);
         try {
             const res = await refreshBatchAdminRefreshBatchPost({
@@ -206,8 +230,10 @@ export default function AdminPanel() {
                 const errMsg = (res.error as { error?: string }).error || "Unknown error";
                 throw new Error(errMsg);
             }
-            setStatus(`✅ Batch ${batchYear} refreshed successfully.`);
+            updateLog(logId, 'success', `Batch ${batchYear} records refreshed.`);
+            setStatus(`✅ Batch ${batchYear} refreshed.`);
         } catch (err: unknown) {
+            updateLog(logId, 'error', `Batch refresh failed: ${getErrMsg(err)}`);
             setStatus("❌ Error: " + getErrMsg(err));
         }
     };
@@ -218,7 +244,8 @@ export default function AdminPanel() {
         if (!usnPrefix || !usnStart || !usnEnd || !sem)
             return setStatus("Please fill all required fields.");
 
-        setStatus("Starting result fetch... (check console for CAPTCHA steps)");
+        const logId = logAction(`Fetching VTU Results for ${usnPrefix}...`, 'loading');
+        setStatus("Starting result fetch...");
 
         try {
             const res = await fetchResultsRouteWebscrapeFetchResultsPost({
@@ -235,10 +262,11 @@ export default function AdminPanel() {
                 throw new Error(errMsg);
             }
             if (res.data) {
-                const data = res.data as { message: string };
-                setStatus(`✅ Fetch started: ${data.message}`);
+                updateLog(logId, 'success', `Fetched ${usnPrefix} results.`);
+                setStatus(`✅ Fetch started.`);
             }
         } catch (err: unknown) {
+            updateLog(logId, 'error', `Fetch failed: ${getErrMsg(err)}`);
             setStatus("❌ Error: " + getErrMsg(err));
         }
     };
@@ -248,6 +276,7 @@ export default function AdminPanel() {
             return setStatus("Please select a zip file of PDFs first.");
         if (!secret) return alert("Admin secret missing");
 
+        const logId = logAction(`Uploading ${pdfZipFile.name}...`, 'loading');
         setStatus("Uploading PDF zip...");
 
         try {
@@ -262,15 +291,17 @@ export default function AdminPanel() {
             }
             if (res.data) {
                 const data = res.data as { job_id: string | number };
-                void pollJobStatus(data.job_id);
-                setStatus(`✅ Processed PDFs. Job ID: ${data.job_id}`);
+                updateLog(logId, 'info', `Processing ZIP (Job: ${data.job_id})...`);
+                void pollJobStatus(data.job_id, logId);
+                setStatus(`✅ Uploaded. Processing...`);
             }
         } catch (err: unknown) {
+            updateLog(logId, 'error', `Upload failed: ${getErrMsg(err)}`);
             setStatus("❌ Error: " + getErrMsg(err));
         }
     };
 
-    const pollJobStatus = async (jobId: string | number) => {
+    const pollJobStatus = async (jobId: string | number, logId: string) => {
         try {
             const res = await getStatusPdftoexcelStatusJobIdGet({
                 path: { job_id: String(jobId) }
@@ -283,186 +314,447 @@ export default function AdminPanel() {
             if (res.data) {
                 const data = res.data as { status: string; excel_url?: string; progress?: number };
                 if (data.status === "done") {
+                    updateLog(logId, 'success', `Converted successfully!`);
                     setStatus(`✅ Done! Excel at ${data.excel_url}`);
                 } else {
-                    setStatus(`Processing... ${data.progress} PDFs done`);
-                    setTimeout(() => { void pollJobStatus(jobId); }, 1000); // poll every second
+                    updateLog(logId, 'loading', `Processing... ${data.progress} PDFs done`);
+                    setTimeout(() => { void pollJobStatus(jobId, logId); }, 1000);
                 }
             }
         } catch (err: unknown) {
-            console.error(err);
+            updateLog(logId, 'error', `Polling error: ${getErrMsg(err)}`);
             setStatus("❌ Error fetching job status: " + getErrMsg(err));
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex transition-colors">
+        <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0b0f19] flex transition-colors font-sans relative overflow-hidden">
+            {/* Animated Mesh Background */}
+            <div className="absolute inset-0 z-0 pointer-events-none opacity-40 dark:opacity-20">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-400 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-400 rounded-full blur-[120px] animate-pulse delay-700" />
+            </div>
+
             {/* Sidebar */}
-            <div className="w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 flex flex-col p-4 gap-4">
-                <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 px-2">Admin Panel</h1>
-                <button
-                    onClick={() => setActiveView("results")}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                        activeView === "results"
-                            ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800"
-                            : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700"
-                    }`}
-                >
-                    📊 Results Processing
-                </button>
-                <button
-                    onClick={() => setActiveView("setup")}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                        activeView === "setup"
-                            ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800"
-                            : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700"
-                    }`}
-                >
-                    ⚙️ System Setup
-                </button>
-                <div className="mt-auto border-t border-gray-200 dark:border-gray-700 pt-4">
+            <div className="w-80 bg-white/70 dark:bg-[#111827]/70 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col shadow-2xl z-30 transition-all duration-500">
+                <div className="p-10 border-b border-slate-100 dark:border-slate-800/50">
+                    <div className="flex items-center gap-4 mb-3">
+                        <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/30 transform hover:rotate-6 transition-transform">
+                            <GraduationCap size={28} />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-500 dark:from-white dark:to-slate-400 leading-tight">
+                                AcaTrack
+                            </h1>
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Management OS</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <nav className="flex-1 p-8 space-y-3">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 ml-2">Navigation</p>
+                    <button
+                        onClick={() => setActiveView("results")}
+                        className={`w-full flex items-center gap-4 px-6 py-4 rounded-[1.25rem] text-sm font-bold transition-all duration-500 group relative overflow-hidden ${
+                            activeView === "results"
+                                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                                : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                    >
+                        <LayoutDashboard size={20} className={activeView === "results" ? "text-white" : "group-hover:scale-110 transition-transform"} />
+                        Results Center
+                        {activeView === "results" && <div className="absolute right-0 top-0 bottom-0 w-1 bg-white/20" />}
+                    </button>
+                    <button
+                        onClick={() => setActiveView("setup")}
+                        className={`w-full flex items-center gap-4 px-6 py-4 rounded-[1.25rem] text-sm font-bold transition-all duration-500 group relative overflow-hidden ${
+                            activeView === "setup"
+                                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                                : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                    >
+                        <Settings size={20} className={activeView === "setup" ? "text-white" : "group-hover:rotate-45 transition-transform"} />
+                        System Config
+                        {activeView === "setup" && <div className="absolute right-0 top-0 bottom-0 w-1 bg-white/20" />}
+                    </button>
+                </nav>
+
+                <div className="p-8">
+                    <div className="bg-slate-900/5 dark:bg-white/5 rounded-3xl p-6 mb-6">
+                        <div className="flex items-center gap-3 mb-2">
+                            <AlertCircle size={14} className="text-indigo-500" />
+                            <span className="text-[10px] font-black uppercase text-indigo-500 tracking-wider">Storage Health</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div className="h-full w-[65%] bg-indigo-500 rounded-full" />
+                        </div>
+                    </div>
                     <button
                         onClick={() => {
-                            localStorage.removeItem("admin_secret");
+                            clearToken();
                             navigate("/admin");
                         }}
-                        className="w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-left"
+                        className="w-full flex items-center gap-4 px-6 py-4 rounded-[1.25rem] text-sm font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10 transition-all active:scale-95"
                     >
-                        Logout
+                        <LogOut size={20} />
+                        Terminate Session
                     </button>
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 p-6 overflow-y-auto">
-                {activeView === "results" ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-                        {/* ====== Column 1 (Results) ====== */}
-                        <div className="flex flex-col gap-6 lg:col-span-1">
-                            {/* Results Workflow */}
-                            <div className="shadow-lg rounded-2xl p-6 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700">
-                                <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-100">
-                                    📊 Results Processing
-                                </h2>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                                    Fetch results from VTU or process PDFs.
-                                </p>
-
-                                {/* Fetch VTU */}
-                                <input
-                                    type="text"
-                                    value={usnPrefix}
-                                    onChange={(e) => setUsnPrefix(e.target.value)}
-                                    placeholder="USN Prefix"
-                                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0f1720] border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 mb-2"
-                                />
-                                <div className="flex gap-2 mb-2">
-                                    <input
-                                        type="number"
-                                        value={usnStart}
-                                        onChange={(e) => setUsnStart(e.target.value)}
-                                        placeholder="Start"
-                                        className="flex-1 px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0f1720] border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200"
-                                    />
-                                    <input
-                                        type="number"
-                                        value={usnEnd}
-                                        onChange={(e) => setUsnEnd(e.target.value)}
-                                        placeholder="End"
-                                        className="flex-1 px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0f1720] border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200"
-                                    />
-                                </div>
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
+                <header className="h-24 bg-white/40 dark:bg-[#0b0f19]/40 backdrop-blur-2xl border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-12 transition-all">
+                    <div>
+                        <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
+                            {activeView === "results" ? "Command Center" : "Core Systems"}
+                        </h2>
+                    </div>
+                    
+                    <div className="flex items-center gap-6">
+                        <div className="group relative">
+                            <div className="flex flex-col items-end">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mb-1">Session Identity</span>
                                 <select
-                                    value={sem}
-                                    onChange={(e) => setSem(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0f1720] border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 mb-2"
+                                    value={batchYear ?? ""}
+                                    onChange={(e) => setBatchYear(e.target.value ? parseInt(e.target.value, 10) : null)}
+                                    className="text-sm font-black text-indigo-600 dark:text-indigo-400 bg-white/50 dark:bg-slate-800/50 px-4 py-2 rounded-xl outline-none cursor-pointer border border-indigo-500/20 hover:border-indigo-500 transition-all shadow-sm"
                                 >
-                                    <option value="">Semester</option>
-                                    {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={s}>{s}</option>)}
+                                    <option value="">No Batch Selected</option>
+                                    {availableBatches.map(b => <option key={b} value={b}>Active Batch: {b}</option>)}
                                 </select>
-                                <button
-                                    onClick={fetchResults}
-                                    className="bg-indigo-600 text-white w-full py-2 rounded-lg hover:bg-indigo-700 transition"
-                                >
-                                    Fetch
-                                </button>
-
-                                <div className="bg-gray-200 dark:bg-gray-700 h-px my-4" />
-
-                                {/* PDF to Excel */}
-                                <input
-                                    type="file"
-                                    accept=".zip"
-                                    onChange={(e) => setPdfZipFile(e.target.files?.[0] ?? null)}
-                                    className="w-full text-sm mb-2"
-                                />
-                                <button
-                                    onClick={uploadPdfZip}
-                                    className="bg-teal-600 text-white w-full py-2 rounded-lg hover:bg-teal-700 transition"
-                                >
-                                    Upload PDF Zip
-                                </button>
                             </div>
-
-                            {status && (
-                                <div className="shadow-lg rounded-2xl p-6 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700">
-                                    <p className="text-sm text-gray-700 dark:text-gray-300 break-words">{status}</p>
-                                </div>
-                            )}
                         </div>
+                        <div className="h-10 w-px bg-slate-200 dark:bg-slate-800" />
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white font-black text-xs shadow-lg">
+                                AD
+                            </div>
+                        </div>
+                    </div>
+                </header>
 
-                        {/* ====== Column 2 ====== */}
-                        <div className="flex flex-col gap-6 lg:col-span-2">
-                            <div className="shadow-lg rounded-2xl p-6 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700">
-                                <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">🎓 Batch & Student Management</h2>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Active Batch</label>
-                                        <select
-                                            value={batchYear ?? ""}
-                                            onChange={(e) => setBatchYear(e.target.value ? parseInt(e.target.value, 10) : null)}
-                                            className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0f1720] border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200"
+                <main className="flex-1 p-6 overflow-y-auto custom-scrollbar">
+                    <div className="max-w-[1600px] mx-auto">
+                        {activeView === "results" ? (
+                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                                {/* Left Column: Tools */}
+                                <div className="xl:col-span-8 space-y-6 relative">
+                                    {!batchYear && (
+                                        <div className="absolute inset-0 z-40 bg-white/10 dark:bg-black/10 backdrop-blur-[2px] flex items-center justify-center rounded-[3rem] border-4 border-dashed border-indigo-500/20">
+                                            <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-2xl text-center border border-slate-200 dark:border-slate-800 max-w-sm transform hover:scale-105 transition-transform">
+                                                <div className="w-16 h-16 bg-indigo-500/10 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                                                    <AlertCircle size={32} />
+                                                </div>
+                                                <h4 className="text-xl font-black text-slate-800 dark:text-white mb-2">Context Required</h4>
+                                                <p className="text-sm text-slate-500 mb-8 font-medium">Please select an academic batch year in the header to unlock operation tools.</p>
+                                                <div className="flex justify-center">
+                                                    <div className="flex items-center gap-2 text-indigo-500 animate-bounce">
+                                                        <span className="text-xs font-black uppercase">Select Batch Above</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* VTU Scraper Card */}
+                                    <section className="bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800/50 transition-all hover:shadow-2xl hover:border-blue-500/30 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[80px] -mr-32 -mt-32" />
+                                        
+                                        <div className="flex items-center justify-between mb-8">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center shadow-inner">
+                                                    <Globe size={24} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">University Portal Link</h3>
+                                                    <p className="text-xs font-medium text-slate-500">Live scraping engine for VTU result archives</p>
+                                                </div>
+                                            </div>
+                                            <div className="px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-widest">
+                                                Active Stream
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+                                            <div className="space-y-2 md:col-span-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">USN Pattern</label>
+                                                <div className="relative group">
+                                                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                                                    <input
+                                                        type="text"
+                                                        value={usnPrefix}
+                                                        onChange={(e) => setUsnPrefix(e.target.value)}
+                                                        placeholder="1JS21CS"
+                                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50/50 dark:bg-[#0b0f19]/50 border-2 border-transparent focus:border-blue-500 outline-none transition-all font-mono text-sm shadow-inner"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2 md:col-span-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Semester Cycle</label>
+                                                <select
+                                                    value={sem}
+                                                    onChange={(e) => setSem(e.target.value)}
+                                                    className="w-full px-4 py-3 rounded-xl bg-slate-50/50 dark:bg-[#0b0f19]/50 border-2 border-transparent focus:border-blue-500 outline-none appearance-none font-bold text-sm text-slate-700 dark:text-slate-200 shadow-inner"
+                                                >
+                                                    <option value="">Sem</option>
+                                                    {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Sem {s}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2 md:col-span-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Range Start</label>
+                                                <input
+                                                    type="number"
+                                                    value={usnStart}
+                                                    onChange={(e) => setUsnStart(e.target.value)}
+                                                    placeholder="001"
+                                                    className="w-full px-4 py-3 rounded-xl bg-slate-50/50 dark:bg-[#0b0f19]/50 border-2 border-transparent focus:border-blue-500 outline-none font-bold text-sm shadow-inner"
+                                                />
+                                            </div>
+                                            <div className="space-y-2 md:col-span-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Range End</label>
+                                                <input
+                                                    type="number"
+                                                    value={usnEnd}
+                                                    onChange={(e) => setUsnEnd(e.target.value)}
+                                                    placeholder="100"
+                                                    className="w-full px-4 py-3 rounded-xl bg-slate-50/50 dark:bg-[#0b0f19]/50 border-2 border-transparent focus:border-blue-500 outline-none font-bold text-sm shadow-inner"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={fetchResults}
+                                            className="mt-6 w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-black shadow-lg shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group"
                                         >
-                                            {availableBatches.map(b => <option key={b} value={b}>{b}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Create New Batch</label>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="number"
-                                                value={newBatchYear}
-                                                onChange={(e) => setNewBatchYear(e.target.value)}
-                                                className="flex-1 px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0f1720] border border-gray-300 dark:border-gray-600"
-                                            />
-                                            <button onClick={createBatch} className="bg-orange-600 text-white px-4 rounded-lg">Create</button>
+                                            <Globe size={18} className="group-hover:rotate-180 transition-transform duration-1000" />
+                                            TRIGGER DATA ACQUISITION
+                                        </button>
+                                    </section>
+
+                                    {/* Conversion Card */}
+                                    <section className="bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800/50 group relative overflow-hidden transition-all hover:border-teal-500/30">
+                                        <div className="absolute top-0 right-0 p-8 text-teal-500/5">
+                                            <FileArchive size={150} />
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-12 h-12 bg-teal-500/10 text-teal-500 rounded-2xl flex items-center justify-center shadow-inner">
+                                                <FileArchive size={24} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">Binary to Spreadsheet</h3>
+                                                <p className="text-xs font-medium text-slate-500">Transform raw PDF archives into structured datasets</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="relative group/drop">
+                                            <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-8 bg-slate-50/30 dark:bg-[#0b0f19]/30 transition-all group-hover/drop:border-teal-500 group-hover/drop:bg-teal-500/5">
+                                                <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-md mb-4 group-hover/drop:scale-110 transition-transform">
+                                                    <Upload size={20} className="text-teal-500" />
+                                                </div>
+                                                <p className="text-sm font-black text-slate-700 dark:text-slate-300 mb-1">
+                                                    {pdfZipFile ? "Archive Ready" : "Upload Payload"}
+                                                </p>
+                                                <p className="text-xs font-medium text-slate-400 mb-6 text-center max-w-xs">
+                                                    {pdfZipFile ? pdfZipFile.name : "Drag and drop your ZIP archive containing PDF results"}
+                                                </p>
+                                                <label className="cursor-pointer bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-2.5 rounded-xl font-black shadow-lg hover:scale-105 active:scale-95 transition-all text-xs uppercase tracking-widest">
+                                                    Select File
+                                                    <input
+                                                        type="file"
+                                                        accept=".zip,.rar"
+                                                        onChange={(e) => setPdfZipFile(e.target.files?.[0] ?? null)}
+                                                        className="hidden"
+                                                    />
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={uploadPdfZip}
+                                            disabled={!pdfZipFile}
+                                            className="mt-6 w-full py-4 bg-teal-600 text-white rounded-xl text-sm font-black shadow-lg shadow-teal-500/30 disabled:opacity-30 disabled:grayscale transition-all flex items-center justify-center gap-3 group"
+                                        >
+                                            <Database size={18} className="group-hover:rotate-12 transition-transform" />
+                                            RUN CONVERSION PIPELINE
+                                        </button>
+                                    </section>
+                                </div>
+
+                                {/* Right Column: Status Log */}
+                                <div className="xl:col-span-4 space-y-8">
+                                    <div className="bg-slate-900 dark:bg-[#111827] rounded-[3rem] p-10 shadow-2xl border border-slate-800 h-[600px] flex flex-col relative overflow-hidden">
+                                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500" />
+                                        
+                                        <div className="flex items-center justify-between mb-10">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center">
+                                                    <History size={20} className="text-indigo-400" />
+                                                </div>
+                                                <h3 className="font-black text-white uppercase tracking-[0.2em] text-xs">Runtime Logs</h3>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                                                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Live</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex-1 space-y-4 overflow-y-auto pr-4 custom-scrollbar">
+                                            {actionLog.length === 0 ? (
+                                                <div className="h-full flex flex-col items-center justify-center text-slate-500 text-center px-10">
+                                                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                                                        <Search size={32} className="text-slate-600" />
+                                                    </div>
+                                                    <p className="text-sm font-bold italic tracking-tight">Waiting for system activities...</p>
+                                                </div>
+                                            ) : (
+                                                actionLog.map(log => (
+                                                    <div key={log.id} className="p-5 rounded-[1.5rem] bg-white/5 border border-white/5 hover:border-white/10 transition-all animate-in slide-in-from-right-4 duration-500 group">
+                                                        <div className="flex items-start gap-4">
+                                                            <div className="mt-1">
+                                                                {log.type === 'loading' && <Loader2 size={16} className="text-blue-400 animate-spin" />}
+                                                                {log.type === 'success' && <CheckCircle size={16} className="text-emerald-400" />}
+                                                                {log.type === 'error' && <AlertCircle size={16} className="text-rose-400" />}
+                                                                {log.type === 'info' && <Search size={16} className="text-indigo-400" />}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-xs font-bold text-slate-200 leading-relaxed">{log.msg}</p>
+                                                                <div className="flex items-center gap-2 mt-2">
+                                                                    <div className="h-px flex-1 bg-white/5" />
+                                                                    <p className="text-[9px] text-slate-500 font-black uppercase tracking-tighter">{log.time}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
                                         </div>
                                     </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                    <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700">
-                                        <h3 className="font-semibold mb-2">📧 Emails Upload</h3>
-                                        <input type="file" onChange={(e) => setEmailFile(e.target.files?.[0] ?? null)} className="text-xs mb-2" />
-                                        <button onClick={uploadEmails} className="w-full py-1 bg-green-600 text-white rounded-lg text-sm">Upload</button>
-                                    </div>
-                                    <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700">
-                                        <h3 className="font-semibold mb-2">👨‍🏫 Mentor Mapping</h3>
-                                        <input type="file" onChange={(e) => setMentorFile(e.target.files?.[0] ?? null)} className="text-xs mb-2" />
-                                        <button onClick={uploadMentors} className="w-full py-1 bg-purple-600 text-white rounded-lg text-sm">Upload</button>
-                                    </div>
+                                    
+                                    {status && (
+                                        <div className="p-8 rounded-[2.5rem] bg-indigo-600 text-white shadow-2xl shadow-indigo-500/40 relative overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+                                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                                                <History size={64} />
+                                            </div>
+                                            <p className="text-xs font-black uppercase tracking-[0.2em] mb-3 text-indigo-200">System Message</p>
+                                            <p className="text-sm font-bold leading-relaxed pr-8">{status}</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {/* Sub-navigation */}
+                                <div className="flex flex-wrap gap-2 p-2 bg-slate-100 dark:bg-slate-800/50 rounded-2xl w-fit">
+                                    <button onClick={() => setActiveConfigTab("setup")} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeConfigTab === "setup" ? "bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>Academic Setup</button>
+                                    <button onClick={() => setActiveConfigTab("registry")} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeConfigTab === "registry" ? "bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>Registry Sync</button>
+                                    <button onClick={() => setActiveConfigTab("security")} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeConfigTab === "security" ? "bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>Security & Access</button>
+                                </div>
+
+                                {activeConfigTab === "setup" && (
+                                    <section className="bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl rounded-[2rem] p-8 lg:p-12 shadow-xl border border-white dark:border-slate-800/50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div className="flex items-center justify-between mb-10">
+                                            <div className="flex items-center gap-5">
+                                                <div className="w-14 h-14 bg-orange-500/10 text-orange-500 rounded-2xl flex items-center justify-center shadow-inner">
+                                                    <Database size={28} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">Academic Foundation Setup</h3>
+                                                    <p className="text-xs font-medium text-slate-500">Configure core batches, sections, and subject catalogs</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <AcademicSetup secret={secret} batchYear={batchYear} />
+                                    </section>
+                                )}
+
+                                {activeConfigTab === "registry" && (
+                                    <section className="bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl rounded-[2rem] p-8 lg:p-12 shadow-xl border border-white dark:border-slate-800/50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div className="flex items-center gap-5 mb-10">
+                                            <div className="w-14 h-14 bg-purple-500/10 text-purple-500 rounded-2xl flex items-center justify-center shadow-inner">
+                                                <Users size={28} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">Identity & Registry Management</h3>
+                                                <p className="text-xs font-medium text-slate-500">Bulk enrollments and faculty mentorship mapping</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {/* Emails Upload */}
+                                            <div className="p-8 rounded-2xl bg-slate-50/50 dark:bg-[#0b0f19]/50 border border-slate-100 dark:border-slate-800 hover:border-emerald-500/50 transition-all group">
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className="w-10 h-10 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                        <Mail size={20} />
+                                                    </div>
+                                                    <h4 className="text-md font-black text-slate-800 dark:text-white">Email Database</h4>
+                                                </div>
+                                                <p className="text-xs font-medium text-slate-500 mb-6 leading-relaxed">Sync parent and student contact records from Excel/CSV sources.</p>
+                                                <div className="space-y-4">
+                                                    <input type="file" onChange={(e) => setEmailFile(e.target.files?.[0] ?? null)} className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer" />
+                                                    <button onClick={uploadEmails} className="w-full py-3 bg-emerald-600 text-white rounded-xl font-black shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest text-xs">Execute Email Sync</button>
+                                                </div>
+                                            </div>
+
+                                            {/* Mentors Upload */}
+                                            <div className="p-8 rounded-2xl bg-slate-50/50 dark:bg-[#0b0f19]/50 border border-slate-100 dark:border-slate-800 hover:border-purple-500/50 transition-all group">
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className="w-10 h-10 bg-purple-500/10 text-purple-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                        <Users size={20} />
+                                                    </div>
+                                                    <h4 className="text-md font-black text-slate-800 dark:text-white">Mentor Mapping</h4>
+                                                </div>
+                                                <p className="text-xs font-medium text-slate-500 mb-6 leading-relaxed">Establish faculty-student mentorship links for the selected batch.</p>
+                                                <div className="space-y-4">
+                                                    <input type="file" onChange={(e) => setMentorFile(e.target.files?.[0] ?? null)} className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer" />
+                                                    <button onClick={uploadMentors} className="w-full py-3 bg-purple-600 text-white rounded-xl font-black shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest text-xs">Assign Faculty Links</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                )}
+
+                                {activeConfigTab === "security" && (
+                                    <section className="bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl rounded-[2rem] p-8 lg:p-12 shadow-xl border border-white dark:border-slate-800/50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div className="p-8 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/5 dark:to-orange-900/5 border border-amber-100 dark:border-amber-900/20 relative overflow-hidden group">
+                                            <div className="flex flex-col md:flex-row items-center gap-8 relative">
+                                                <div className="flex-1 text-center md:text-left">
+                                                    <div className="flex items-center justify-center md:justify-start gap-3 text-amber-600 mb-2">
+                                                        <AlertCircle size={20} />
+                                                        <span className="text-xs font-black uppercase tracking-[0.2em]">Security Zone</span>
+                                                    </div>
+                                                    <h4 className="text-xl font-black text-slate-800 dark:text-slate-200 mb-2">Credential Maintenance</h4>
+                                                    <p className="text-sm font-medium text-slate-500">Mass-generate or overwrite user access credentials for this batch.</p>
+                                                </div>
+                                                <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                                                    <select
+                                                        value={mode}
+                                                        onChange={(e) => setMode(e.target.value)}
+                                                        className="w-full sm:w-64 px-6 py-3 rounded-xl bg-white dark:bg-[#0b0f19] border border-amber-200 dark:border-amber-800/50 text-sm font-bold outline-none shadow-sm focus:border-amber-500 transition-all"
+                                                    >
+                                                        <option value="missing">New Accounts Only</option>
+                                                        <option value="all">Full Re-generation</option>
+                                                    </select>
+                                                    <button onClick={generateAccounts} className="w-full sm:w-auto px-8 py-3 bg-amber-600 text-white rounded-xl font-black hover:bg-amber-700 shadow-lg shadow-amber-600/20 transition-all active:scale-95 text-xs uppercase tracking-widest whitespace-nowrap">
+                                                        Generate Access
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                )}
+                            </div>
+                        )}
                     </div>
-                ) : (
-                    <div className="bg-white dark:bg-slate-800 shadow-lg rounded-2xl p-6 border border-gray-200 dark:border-gray-700 h-full">
-                        <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">🎓 Academic Foundation Setup</h2>
-                        <AcademicSetup secret={secret} batchYear={batchYear} />
-                    </div>
-                )}
+                </main>
             </div>
         </div>
     );
-}
+};
+
+export default AdminPanel;
