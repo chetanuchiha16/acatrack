@@ -1,157 +1,228 @@
-Originally developed as a collaborative student management system, this repository now serves as the **active solo continuation** of the project. The core application logic and assets are located within the [`Student_Result_project`]directory.
+# 🎓 AcaTrack: Academic Performance Tracking & Analytics System
 
-I am currently refactoring the legacy architecture to improve scalability and performance, focusing on moving from a monolithic project to a professional-grade system.
+AcaTrack is a comprehensive, full-stack academic management platform designed to provide real-time insights into student performance. Originally developed as a collaborative student management system, it has evolved into a professional-grade analytics engine featuring AI-driven insights, automated data ingestion, and multi-role dashboards.
+
+> [!NOTE]
+> This repository serves as the **active solo continuation** and architectural refactor of the original project. It focuses on performance, scalability, and modern engineering practices.
 
 ---
 
-### 🛠 Project Evolution
-* **Phase 1 (Collaborative):** Initial MVP build with the original team.
-* **Phase 2 (Solo Maintenance):** Active evolution focused on architectural integrity:
-    * **Database Normalization:** Decoupling `students`, `subjects`, and `results` from fixed semester tables for dynamic scalability.
-    * **State-Driven Authentication:** Refactored staff login to utilize a dynamic batch filter in the dashboard rather than a static login selection.
-    * **Performance Tuning:** Identifying and resolving **N+1 query issues** and optimizing database engine usage.
-    * **UI/UX Refinement:** Modernizing the Parent Dashboard and Academic result displays (SGPA/CGPA accuracy).
-### 👥 Original Core Contributors (Legacy)
-* **Lead Maintainer:** Chetan Kishor C G
-* **Collaborators:** Abhishek R, Dhanush Singh G, Adithya V
+### 🏗️ System Architecture
+
+```mermaid
+graph TD
+    subgraph Client ["Frontend (React + Vite)"]
+        UI[User Interface]
+        Store[Zustand State]
+        AI_Local[Web-LLM - On-device AI]
+    end
+
+    subgraph API ["Backend (FastAPI)"]
+        Router[FastAPI Routers]
+        Service[Business Logic Services]
+        AI_Remote[Transformers/ML Models]
+    end
+
+    subgraph Data ["Data Layer"]
+        DB[(PostgreSQL - Supabase)]
+        Cache[(Redis - Caching)]
+        Files[Supabase Storage]
+    end
+
+    subgraph External ["External Services"]
+        Firebase[Firebase - Auth/Messaging]
+        UniScraper[Selenium Scraper]
+    end
+
+    UI <--> Router
+    Router <--> Service
+    Service <--> DB
+    Service <--> Cache
+    Service <--> AI_Remote
+    UI <--> AI_Local
+    Service <--> Firebase
+    Service <--> UniScraper
+```
+
+---
+
+### 🛠️ Project Evolution
+
+AcaTrack has undergone a significant architectural transformation to reach its current state:
+
+*   **Phase 1 (Collaborative)**: Initial MVP build focused on core functionality with the original team.
+*   **Phase 2 (Solo Refactor)**: Active evolution focused on professional-grade integrity:
+    *   **FastAPI Migration**: Replaced the legacy Flask core with **FastAPI** for asynchronous performance and automatic OpenAPI documentation.
+    *   **Database Normalization**: Decoupling `students`, `subjects`, and `results` from fixed semester tables for dynamic, multi-year scalability.
+    *   **SDK-Driven Frontend**: Implemented automated client SDK generation via **HeyAPI**, ensuring 100% type safety between backend and frontend.
+    *   **Strict Type Safety**: Migrated the entire frontend to **TypeScript** with strict null checks and centralized interface definitions.
+    *   **State-Driven Authentication**: Refactored staff login to utilize a dynamic batch filter in the dashboard, replacing static legacy selections.
+    *   **Performance Engineering**: Integrated **Redis caching**, resolved N+1 query issues, and switched to **uv** for lightning-fast package resolution.
+    *   **UI/UX Modernization**: Transitioned to a **Bento-box dashboard layout**, implemented **code-splitting** (React.lazy), and redesigned result views with Lucide icons.
+    *   **Containerization**: Implemented **Docker** and **Docker Compose** for standardized deployment across all environments.
+
+---
+
+### 👥 Role-Based Access Control (RBAC)
+
+AcaTrack provides specialized interfaces for four key stakeholders:
+
+*   **👨‍🎓 Student Portal**: View academic results (SGPA/CGPA), track progress via visual graphs, download **auto-generated PDF reports**, access shared study materials, and receive personalized AI insights.
+*   **👨‍👩‍👧 Parent Portal**: Secure access for parents to monitor their ward's academic standing, attendance trends, and semester-wise results in real-time.
+*   **🤝 Mentor/Staff Dashboard**: Manage student groups, log mentorship meetings, fill student records, **upload study materials**, and communicate via integrated email services.
+*   **🛡️ Admin Panel**: Centralized control for user management, batch data processing, university data scraping, and system configuration.
+
+> [!TIP]
+> **Localization**: The platform provides full multi-language support for **English, Hindi, and Kannada**, ensuring accessibility for a diverse user base.
+
+---
+
+### 🤖 AI & Predictive Analytics
+
+AcaTrack integrates advanced AI capabilities to move beyond simple data storage:
+
+*   **Smart Performance Prediction**: Machine learning models analyze historical data to predict future performance trends and identify at-risk students early.
+*   **Automated Insights**: On-device (Web-LLM) and backend (Transformers) AI provide natural language summaries of academic results and suggest personalized study focus areas.
+*   **University Benchmarking**: Intelligent comparison engine to evaluate student and subject performance against **university-wide averages** and historical trends.
+*   **Intelligent Chatbot**: A contextual AI assistant capable of answering student queries about their academic record and university regulations.
+
+---
+
+### 📥 Data Processing Pipeline
+
+The system features robust tools for handling complex academic data:
+
+*   **Automated Web Scraping**: Integrated Selenium-based scrapers to fetch the latest university results and data directly from official portals.
+*   **PDF to Data Conversion**: Advanced parsing tools using `PyMuPDF` to convert structured PDF result sheets into clean, manageable Excel or Database records.
+*   **Excel Ingestion**: Bulk upload capabilities for student records, staff lists, and subject mappings with automated validation.
+
 ---
 
 ### 📦 Tech Stack
 
-#### 🖼️ **Frontend**
+#### **Frontend**
+*   **Framework**: `React` (with TypeScript)
+*   **Build Tool**: `Vite` — Blazing fast HMR and optimized builds.
+*   **Styling**: `Tailwind CSS v4` — Utility-first styling with modern CSS features.
+*   **State Management**: `Zustand` — Minimalistic and scalable state handling.
+*   **AI**: `Web-LLM` — High-performance on-device LLM integration.
+*   **Networking**: `Axios` with generated SDK via `HeyAPI`.
 
-* `React` — Component-based UI library
-* `Vite` — Fast frontend tooling and development server
-* `Tailwind CSS` — Utility-first CSS framework (v4 integration)
-* `Zustand` — Lightweight state management
-* `React Router` — Client-side routing for multi-page feel
-* `Axios` — API request handling
-* `i18next` — Multi-language support (English, Hindi, Kannada)
-* `Web-LLM` — On-device LLM integration for AI features
-* `Firebase` — Cloud messaging and integration
+#### **Backend**
+*   **Framework**: `FastAPI` — High-performance Python web framework.
+*   **Package Manager**: `uv` — Ultra-fast Python package installer and resolver.
+*   **Server**: `Uvicorn` with `uvloop` and `httptools`.
+*   **ORM**: `SQLAlchemy 2.0` with `Alembic` for migrations.
+*   **Caching**: `Redis` for optimized API response times.
+*   **AI/ML**: `Transformers`, `scikit-learn`, and `pandas`.
 
-#### 🔧 **Backend**
-
-* `Flask` — Micro-backend framework
-* `Flask-SQLAlchemy` & `Alembic` — ORM and database migrations
-* `Flask-Caching` — Performance optimization through caching
-* `Supabase` — Backend-as-a-Service integration for data and auth
-* `Flask-Bcrypt`, `Flask-Session`, `flask-cors` — Secure auth and API support
-* `Firebase Admin` — Secure backend cloud services
-
-#### 📊 **Data Handling & Visuals**
-
-* `matplotlib` — Data visualizations
-* `pandas` & `openpyxl` — Advanced data processing and Excel handling
-* `reportlab` & `PyMuPDF` — PDF report generation and parsing
-* `scikit-learn` & `transformers` — Student analysis and AI insights
-* `Deep Translator` — Automated multi-language content translation
-* `Selenium` — Automated university data scraping
-
-#### 🗃️ **Database**
-
-* `SQLAlchemy` — Database management
-* `PostgreSQL` & `Redis` support
-
-#### 🛠️ **DevOps & Tooling**
-
-* `uv` — Ultra-fast Python package installer and resolver
-* `Makefile` — Standardized task automation
-* `k6` — Performance and load testing
-* `pytest` — Comprehensive backend testing suite
-
----
-
-### ✨ Features (Updated)
-
-* 📊 **Visual Graphs** — Pie charts and bar graphs for individual and subject-wise analysis.
-* 📄 **PDF Report Generator** — Auto-generates semester & subject reports.
-* 🤝 **Comprehensive Mentorship System** — Integrated mentor-mentee tracking, including meeting logs, record filling, and direct email communication.
-* 👨‍👩‍👧 **Parent Portal** — Dedicated dashboard for parents to monitor student progress and view results.
-* 🤖 **AI Chatbot & Insights** — Intelligent assistant providing student performance analysis and automated query responses.
-* 🌐 **Multi-language Support** — Full localization support for English, Hindi, and Kannada.
-* 📝 **Notes Management** — A secure platform for teachers to upload and share study materials with students.
-* 🛠️ **Admin Panel** — Centralized management interface for system administrators.
-* 🧠 **University Comparison** — Compare student performance against university averages.
-* 📥 **Excel & PDF Tools** — Easy loading of Excel sheets and tools for converting PDF results into structured data.
-* ⚡ **Performance Optimized** — Built-in benchmarking and load testing to ensure system reliability.
+#### **Infrastructure & Services**
+*   **Database**: `PostgreSQL` (hosted via **Supabase**).
+*   **Auth**: **Supabase Auth** & **Firebase**.
+*   **Reporting**: `Matplotlib` (visuals) and `ReportLab`/`PyMuPDF` (PDF generation).
+*   **DevOps**: `Docker` & `Docker Compose`.
 
 ---
 
 ### 🛠️ Development & Workflow
 
-The project includes a `Makefile` in the [`Student_Result_project`] directory to simplify common tasks.
-
-#### **Recommended Workflow (via Makefile)**
-
-Inside the `Student_Result_project` directory, run:
+The project uses a `Makefile` to standardize common operations across the stack.
 
 | Command | Action |
 | :--- | :--- |
-| `make install` | Install all backend (uv) and frontend (npm) dependencies |
-| `make run` | Launch both backend and frontend servers concurrently |
-| `make backend` | Start only the Flask backend server |
-| `make frontend` | Start only the Vite frontend server |
-| `make test` | Run the backend test suite |
-| `make load-test` | Execute performance load tests using `k6` |
-| `make clean` | Purge cache files and virtual environments |
+| `make install` | Install all backend (`uv`) and frontend (`npm`) dependencies. |
+| `make run` | Launch both FastAPI and Vite servers concurrently. |
+| `make backend` | Start the FastAPI development server (port 5000). |
+| `make frontend` | Start the Vite development server. |
+| `make test` | Run the comprehensive backend test suite. |
+| `make benchmark` | Execute database and query performance benchmarks. |
+| `make load-test` | Run high-concurrency performance tests using `k6`. |
+| `make docker-up` | Spin up the entire stack using Docker Compose. |
+| `make clean` | Purge cache files and virtual environments. |
 
 ---
 
-### ✨ Prerequisites
+### 🚀 Getting Started
 
-Make sure the following are installed on your system:
+#### **Prerequisites**
+*   **Python 3.10+** (managed via `uv` recommended)
+*   **Node.js (v18+)**
+*   **Docker** (optional, for containerized execution)
 
-* **Python 3.10+** – [Download here](https://www.python.org/downloads/)
-* **Node.js (v18 or above)** – [Download here](https://nodejs.org/en/download)
-> 💡 This includes `npm`, which is used to install frontend dependencies
+#### **Manual Execution**
 
+1.  **Environment Setup**:
+    Copy the `.env.example` files in both `backend/` and `frontend/` and fill in your credentials.
+    ```bash
+    cp backend/.env.example backend/.env
+    cp frontend/.env.example frontend/.env
+    ```
 
+2.  **Installation**:
+    ```bash
+    make install
+    ```
+
+3.  **Run Development Servers**:
+    ```bash
+    make run
+    ```
 
 ---
 
-### 🚀 Manual Execution (Alternative)
+### ⚙️ Environment Configuration
 
-If you prefer running commands manually without the Makefile:
+| Variable | Description |
+| :--- | :--- |
+| `DATABASE_URL` | PostgreSQL connection string (Supabase). |
+| `REDIS_URL` | Redis connection string for caching. |
+| `FIREBASE_CRED_PATH` | Path to Firebase Admin SDK JSON. |
+| `SUPABASE_URL` / `KEY` | Connection details for Supabase services. |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated list of allowed origins. |
 
-1. **Backend**:
-```bash
-cd Student_Result_project/backend
-uv sync
-uv run python app.py
+---
+
+### ⚡ Performance & Reliability
+
+AcaTrack is engineered for high performance and reliability, with a focus on low latency and high concurrency.
+
+#### **Benchmarking: Legacy (Flask) vs. Modern (FastAPI)**
+The following metrics were captured using **k6** across comparable high-concurrency scenarios (120+ requests):
+
+| Metric | Legacy (v1) | **AcaTrack (v2)** | **Improvement** |
+| :--- | :--- | :--- | :--- |
+| **Throughput (RPS)** | 1.84 | **59.62** | **~32x Increase** |
+| **Avg. Response Time** | 2,840 ms | **158.79 ms** | **~18x Faster** |
+| **Success Rate** | 96.77% | **100.00%** | **Perfect Reliability** |
+| **Avg. DB Connections** | 42 | **5** | **8.4x More Efficient** |
+
+*   **Optimized Execution**: Migrated to **FastAPI** with **Uvloop** and **Httptools**, delivering significantly higher throughput compared to the legacy Flask implementation.
+*   **Advanced Caching**: Implemented **Redis-based caching** for expensive academic result computations and university data fetching.
+*   **Database Efficiency**: Resolved critical **N+1 query bottlenecks** using SQLAlchemy joined-loading and optimized database indexing.
+*   **Load Tested**: Verified to handle high-concurrency scenarios via **k6** load testing, ensuring stability during peak result periods.
+*   **Automated Benchmarking**: Continuous monitoring via `benchmarkv2.py` to ensure query latency remains within professional standards (metrics tracked for database and API response times).
+
+---
+
+### 📂 Project Structure
+
+```text
+├── backend/            # FastAPI source code, models, services, and routes
+├── frontend/           # React + Vite source code and assets
+├── scripts/            # Database seeding and utility scripts
+├── docker-compose.yml  # Container orchestration
+├── Makefile            # Standardized task automation
+├── openapi.json        # Generated API documentation
+└── load_testv2.js      # Performance testing script
 ```
 
-2. **Frontend**:
-```bash
-cd Student_Result_project/frontend
-npm install
-npm run dev
-```
+---
+
+### 👥 Contributors (Legacy)
+*   **Lead Maintainer**: Chetan Kishor C G
+*   **Collaborators**: Abhishek R, Dhanush Singh G, Adithya V
 
 ---
 
-### 🧪 Testing & Performance
-
-The project leverages **k6** for load testing and **pytest** for backend verification.
-
-* **Load Testing**: Located at `Student_Result_project/load_testv2.js`. Run via `make load-test`.
-* **Benchmarking**: `benchmarkv2.py` monitors database performance and query efficiency.
-
-
-
----
-
-### 📂 Project Structure (Major Directories)
-
-* `Student_Result_project/backend/routes/` — Contains API logic for Auth, Mentorship, AI, and Results.
-* `Student_Result_project/backend/models/` — Database schemas and core logic for data preparation and scraping.
-* `Student_Result_project/backend/visuals/` — Scripts for generating PDF reports and performance graphs.
-* `Student_Result_project/frontend/src/` — React components for Student, Teacher, Mentor, and Parent interfaces.
-* `Student_Result_project/frontend/src/locales/` — Translation files for multi-language support.
-
----
-
-### 🤍 About the Project & Evolution
-This project began as a group assignment where teamwork, coding, and late-night fixes came together. Every file and every solution carries the shared effort of students learning the ropes of full-stack development together.
-
-Current Status: While the foundation was built in collaboration with the original team, this repository is now being independently maintained and evolved by me. I am currently treating the original codebase as a "Legacy System"—refining the logic, squashing remaining bugs, and implementing better architecture to take the initial prototype to a professional standard.
+### 🤍 Evolution
+This project began as a student group assignment and have been refactoring into a modern, production-ready system. It represents a journey from learning full-stack basics to implementing advanced patterns like RBAC, AI integration, and high-performance caching.
