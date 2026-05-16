@@ -570,3 +570,70 @@ def generate_accounts_csv(mode: str, batch_year: int) -> tuple[io.BytesIO, str]:
 
     sync_engine.dispose()
     return result
+
+def process_subject_upload_file(
+    temp_upload_path: str,
+) -> tuple[list[dict], int]:
+    try:
+        df = pd.read_excel(temp_upload_path)
+    except Exception as e:
+        return {"error": f"Failed to read file: {e}"}, 400
+
+    required_cols = ["code", "name", "credits"]
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        return {"error": f"Missing required columns: {', '.join(missing)}"}, 400
+
+    results = []
+    for _, row in df.iterrows():
+        code = str(row["code"]).strip().upper()
+        name = str(row["name"]).strip()
+        try:
+            credits = int(row["credits"])
+        except ValueError:
+            credits = 0
+        
+        if not code or not name or code == 'NAN' or name == 'NAN':
+            continue
+            
+        results.append({
+            "code": code,
+            "name": name,
+            "credits": credits
+        })
+        
+    return results, 200
+
+
+def process_student_enrollment_upload_file(
+    temp_upload_path: str,
+) -> tuple[list[dict], int]:
+    try:
+        df = pd.read_excel(temp_upload_path)
+    except Exception as e:
+        return {"error": f"Failed to read file: {e}"}, 400
+
+    required_cols = ["usn", "name", "email", "phone"]
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        return {"error": f"Missing required columns: {', '.join(missing)}"}, 400
+
+    results = []
+    for _, row in df.iterrows():
+        usn = str(row["usn"]).strip().upper()
+        name = str(row["name"]).strip()
+        email = str(row.get("email", "")).strip()
+        phone = str(row.get("phone", "")).strip()
+        
+        if not usn or not name or usn == 'NAN' or name == 'NAN':
+            continue
+            
+        results.append({
+            "usn": usn,
+            "name": name,
+            "email": email,
+            "phone": phone
+        })
+        
+    return results, 200
+

@@ -163,6 +163,26 @@ export type BodyUploadStaffListAdminUploadStaffListPost = {
 };
 
 /**
+ * Body_upload_students_excel_admin_upload_students_excel_post
+ */
+export type BodyUploadStudentsExcelAdminUploadStudentsExcelPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
+ * Body_upload_subjects_excel_admin_upload_subjects_excel_post
+ */
+export type BodyUploadSubjectsExcelAdminUploadSubjectsExcelPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
  * ChartResponse
  */
 export type ChartResponse = {
@@ -1290,6 +1310,78 @@ export type EnrollStudentsAdminEnrollStudentsPostResponses = {
     200: unknown;
 };
 
+export type UploadSubjectsExcelAdminUploadSubjectsExcelPostData = {
+    body: BodyUploadSubjectsExcelAdminUploadSubjectsExcelPost;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Semester
+         */
+        semester: string;
+    };
+    url: '/admin/upload-subjects-excel';
+};
+
+export type UploadSubjectsExcelAdminUploadSubjectsExcelPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UploadSubjectsExcelAdminUploadSubjectsExcelPostError = UploadSubjectsExcelAdminUploadSubjectsExcelPostErrors[keyof UploadSubjectsExcelAdminUploadSubjectsExcelPostErrors];
+
+export type UploadSubjectsExcelAdminUploadSubjectsExcelPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UploadStudentsExcelAdminUploadStudentsExcelPostData = {
+    body: BodyUploadStudentsExcelAdminUploadStudentsExcelPost;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+        /**
+         * Section Name
+         */
+        section_name: string;
+    };
+    url: '/admin/upload-students-excel';
+};
+
+export type UploadStudentsExcelAdminUploadStudentsExcelPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UploadStudentsExcelAdminUploadStudentsExcelPostError = UploadStudentsExcelAdminUploadStudentsExcelPostErrors[keyof UploadStudentsExcelAdminUploadStudentsExcelPostErrors];
+
+export type UploadStudentsExcelAdminUploadStudentsExcelPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type AssignSubjectsAdminAssignSubjectsPostData = {
     body?: never;
     headers?: {
@@ -1334,6 +1426,69 @@ export type AssignSubjectsAdminAssignSubjectsPostErrors = {
 export type AssignSubjectsAdminAssignSubjectsPostError = AssignSubjectsAdminAssignSubjectsPostErrors[keyof AssignSubjectsAdminAssignSubjectsPostErrors];
 
 export type AssignSubjectsAdminAssignSubjectsPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListSubjectsAdminListSubjectsGetData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/list-subjects';
+};
+
+export type ListSubjectsAdminListSubjectsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListSubjectsAdminListSubjectsGetError = ListSubjectsAdminListSubjectsGetErrors[keyof ListSubjectsAdminListSubjectsGetErrors];
+
+export type ListSubjectsAdminListSubjectsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListSectionsAdminListSectionsGetData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+    };
+    url: '/admin/list-sections';
+};
+
+export type ListSectionsAdminListSectionsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListSectionsAdminListSectionsGetError = ListSectionsAdminListSectionsGetErrors[keyof ListSectionsAdminListSectionsGetErrors];
+
+export type ListSectionsAdminListSectionsGetResponses = {
     /**
      * Successful Response
      */

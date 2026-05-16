@@ -425,6 +425,90 @@ async def enroll_students(
     except ValueError as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
+
+@router.post("/upload-subjects-excel")
+async def upload_subjects_excel(
+    file: UploadFile = File(...),
+    semester: str = Query(...),
+    x_admin_secret: str | None = Header(None),
+    db: AsyncSession = Depends(get_db)
+):
+    if not _check_secret(x_admin_secret):
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+
+    filename = file.filename or ""
+    if not filename.endswith(".xlsx"):
+        return JSONResponse(content={"error": "Only .xlsx allowed"}, status_code=400)
+
+    import tempfile, os, asyncio
+    with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmpfile:
+        content = await file.read()
+        tmpfile.write(content)
+        tmpfile.flush()
+        temp_upload_path = tmpfile.name
+
+    from services.admin_service import process_subject_upload_file
+    try:
+        results, status_code = await asyncio.get_event_loop().run_in_executor(
+            None,
+            process_subject_upload_file,
+            temp_upload_path,
+        )
+        if status_code == 200:
+            inserted, updated = await AcademicService.bulk_upsert_subjects(db, semester, results)
+            return JSONResponse(content={"status": "success", "inserted": inserted, "updated": updated}, status_code=200)
+        else:
+            return JSONResponse(content=results, status_code=status_code)
+    except Exception as e:
+        logger.error(str(e), exc_info=True)
+        return JSONResponse(content={"error": "Internal server error"}, status_code=500)
+    finally:
+        if os.path.exists(temp_upload_path):
+            os.remove(temp_upload_path)
+
+
+@router.post("/upload-students-excel")
+async def upload_students_excel(
+    file: UploadFile = File(...),
+    batch_year: int = Query(...),
+    section_name: str = Query(...),
+    x_admin_secret: str | None = Header(None),
+    db: AsyncSession = Depends(get_db)
+):
+    if not _check_secret(x_admin_secret):
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+
+    filename = file.filename or ""
+    if not filename.endswith(".xlsx"):
+        return JSONResponse(content={"error": "Only .xlsx allowed"}, status_code=400)
+
+    import tempfile, os, asyncio
+    from security import hash_password as _hp
+    with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmpfile:
+        content = await file.read()
+        tmpfile.write(content)
+        tmpfile.flush()
+        temp_upload_path = tmpfile.name
+
+    from services.admin_service import process_student_enrollment_upload_file
+    try:
+        results, status_code = await asyncio.get_event_loop().run_in_executor(
+            None,
+            process_student_enrollment_upload_file,
+            temp_upload_path,
+        )
+        if status_code == 200:
+            inserted, updated = await AcademicService.bulk_upsert_students(db, batch_year, section_name, results, _hp)
+            return JSONResponse(content={"status": "success", "inserted": inserted, "updated": updated}, status_code=200)
+        else:
+            return JSONResponse(content=results, status_code=status_code)
+    except Exception as e:
+        logger.error(str(e), exc_info=True)
+        return JSONResponse(content={"error": "Internal server error"}, status_code=500)
+    finally:
+        if os.path.exists(temp_upload_path):
+            os.remove(temp_upload_path)
+
 @router.post("/assign-subjects")
 async def assign_subjects(
     teacher_username: str = Query(...),
@@ -443,3 +527,43 @@ async def assign_subjects(
         return {"status": "success", "message": "Subject assigned to teacher"}
     except ValueError as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
+
+@router.get("/list-subjects")
+async def list_subjects(
+    x_admin_secret: str | None = Header(None),
+    db: AsyncSession = Depends(get_db)
+):
+    if not _check_secret(x_admin_secret):
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+    
+    subjects = await AcademicService.get_all_subjects(db)
+    
+    return [
+        {
+            "subject_code": s.subject_code,
+            "subject_name": s.subject_name,
+            "semester": s.semester,
+            "credits": s.credits
+        }
+        for s in subjects
+    ]
+
+@router.get("/list-sections")
+async def list_sections(
+    batch_year: int = Query(...),
+    x_admin_secret: str | None = Header(None),
+    db: AsyncSession = Depends(get_db)
+):
+    if not _check_secret(x_admin_secret):
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+    
+    sections = await AcademicService.get_sections_by_batch(db, batch_year)
+    
+    return [
+        {
+            "id": s.id,
+            "name": s.name,
+            "batch_year": s.batch_year
+        }
+        for s in sections
+    ]
