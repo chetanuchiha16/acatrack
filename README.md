@@ -14,7 +14,6 @@ graph TD
     subgraph Client ["Frontend (React + Vite)"]
         UI[User Interface]
         Store[Zustand State]
-        AI_Local[Web-LLM - On-device AI]
     end
 
     subgraph API ["Backend (FastAPI)"]
@@ -39,7 +38,6 @@ graph TD
     Service <--> DB
     Service <--> Cache
     Service <--> AI_Remote
-    UI <--> AI_Local
     Service <--> Firebase
     Service <--> UniScraper
 ```
@@ -82,9 +80,8 @@ AcaTrack provides specialized interfaces for four key stakeholders:
 AcaTrack integrates advanced AI capabilities to move beyond simple data storage:
 
 *   **Smart Performance Prediction**: Machine learning models analyze historical data to predict future performance trends and identify at-risk students early.
-*   **Automated Insights**: On-device (Web-LLM) and backend (Transformers) AI provide natural language summaries of academic results and suggest personalized study focus areas.
+*   **Automated Insights**: Backend-driven AI (Transformers/ML) provides natural language summaries of academic results and suggests personalized study focus areas.
 *   **University Benchmarking**: Intelligent comparison engine to evaluate student and subject performance against **university-wide averages** and historical trends.
-*   **Intelligent Chatbot**: A contextual AI assistant capable of answering student queries about their academic record and university regulations.
 
 ---
 
@@ -105,7 +102,6 @@ The system features robust tools for handling complex academic data:
 *   **Build Tool**: `Vite` — Blazing fast HMR and optimized builds.
 *   **Styling**: `Tailwind CSS v4` — Utility-first styling with modern CSS features.
 *   **State Management**: `Zustand` — Minimalistic and scalable state handling.
-*   **AI**: `Web-LLM` — High-performance on-device LLM integration.
 *   **Networking**: `Axios` with generated SDK via `HeyAPI`.
 
 #### **Backend**
