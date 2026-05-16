@@ -5,10 +5,12 @@ import {
 } from "lucide-react";
 import { 
     initBatchAdminInitBatchPost,
-    registerSubjectsAdminRegisterSubjectsPost,
-    enrollStudentsAdminEnrollStudentsPost,
     assignSubjectsAdminAssignSubjectsPost,
-    listStaffAdminListStaffGet
+    listStaffAdminListStaffGet,
+    listSubjectsAdminListSubjectsGet,
+    listSectionsAdminListSectionsGet,
+    uploadSubjectsExcelAdminUploadSubjectsExcelPost,
+    uploadStudentsExcelAdminUploadStudentsExcelPost
 } from "../../client/sdk.gen";
 
 interface AcademicSetupProps {
@@ -25,32 +27,53 @@ const AcademicSetup: React.FC<AcademicSetupProps> = ({ secret, batchYear }) => {
     const [newBatch, setNewBatch] = useState<string>("");
     const [sections, setSections] = useState<string>("A, B, C");
     const [semester, setSemester] = useState<string>("sem1");
-    const [subjectJson, setSubjectJson] = useState<string>("");
-    const [studentJson, setStudentJson] = useState<string>("");
     const [sectionName, setSectionName] = useState<string>("A");
+    
+    // File states
+    const [subjectFile, setSubjectFile] = useState<File | null>(null);
+    const [studentFile, setStudentFile] = useState<File | null>(null);
     
     // Mapping states
     const [teacherUsername, setTeacherUsername] = useState<string>("");
     const [subjectCode, setSubjectCode] = useState<string>("");
     const [mapSectionId, setMapSectionId] = useState<string>("");
     const [staffList, setStaffList] = useState<Array<{username: string, name: string}>>([]);
+    const [subjectList, setSubjectList] = useState<Array<{subject_code: string, subject_name: string}>>([]);
+    const [sectionList, setSectionList] = useState<Array<{id: number, name: string, batch_year: number}>>([]);
 
-    const fetchStaff = async () => {
+    const fetchDependencies = async () => {
         try {
-            const res = await listStaffAdminListStaffGet({
-                headers: { "X-Admin-Secret": secret }
-            });
-            if (res.data) setStaffList(res.data as any);
+            const reqs: Promise<any>[] = [];
+            let staffIdx = -1;
+            let subIdx = -1;
+            let secIdx = -1;
+            
+            if (activeTab === "mapping") {
+                staffIdx = reqs.push(listStaffAdminListStaffGet({ headers: { "X-Admin-Secret": secret } })) - 1;
+                subIdx = reqs.push(listSubjectsAdminListSubjectsGet({ headers: { "X-Admin-Secret": secret } })) - 1;
+            }
+            
+            if (batchYear && (activeTab === "mapping" || activeTab === "enroll")) {
+                secIdx = reqs.push(listSectionsAdminListSectionsGet({
+                    headers: { "X-Admin-Secret": secret },
+                    query: { batch_year: batchYear }
+                })) - 1;
+            }
+            
+            if (reqs.length === 0) return;
+            
+            const results = await Promise.all(reqs);
+            if (staffIdx !== -1 && results[staffIdx].data) setStaffList(results[staffIdx].data as any);
+            if (subIdx !== -1 && results[subIdx].data) setSubjectList(results[subIdx].data as any);
+            if (secIdx !== -1 && results[secIdx].data) setSectionList(results[secIdx].data as any);
         } catch (err) {
-            console.error("Failed to fetch staff:", err);
+            console.error("Failed to fetch dependencies:", err);
         }
     };
 
     useEffect(() => {
-        if (activeTab === "mapping") {
-            fetchStaff();
-        }
-    }, [activeTab, secret]);
+        fetchDependencies();
+    }, [activeTab, secret, batchYear]);
 
 
     const handleInitBatch = async () => {
@@ -64,6 +87,8 @@ const AcademicSetup: React.FC<AcademicSetupProps> = ({ secret, batchYear }) => {
                 }
             });
             setStatus("✅ Batch initialized successfully");
+            // Refresh sections dropdown after creating new batch/sections
+            await fetchDependencies();
         } catch (err: any) {
             setStatus("❌ Error: " + (err.body?.error || err.message));
         } finally {
@@ -72,15 +97,15 @@ const AcademicSetup: React.FC<AcademicSetupProps> = ({ secret, batchYear }) => {
     };
 
     const handleRegisterSubjects = async () => {
+        if (!subjectFile) return setStatus("❌ Select a subject Excel file first.");
         setLoading(true);
         try {
-            const subjects = JSON.parse(subjectJson);
-            await registerSubjectsAdminRegisterSubjectsPost({
+            await uploadSubjectsExcelAdminUploadSubjectsExcelPost({
                 headers: { "X-Admin-Secret": secret },
                 query: { semester },
-                body: subjects
+                body: { file: subjectFile }
             });
-            setStatus("✅ Subjects registered successfully");
+            setStatus("✅ Subjects registered successfully from Excel");
         } catch (err: any) {
             setStatus("❌ Error: " + (err.body?.error || err.message));
         } finally {
@@ -90,15 +115,15 @@ const AcademicSetup: React.FC<AcademicSetupProps> = ({ secret, batchYear }) => {
 
     const handleEnrollStudents = async () => {
         if (!batchYear) return setStatus("❌ Select a batch year in the header first.");
+        if (!studentFile) return setStatus("❌ Select a student Excel file first.");
         setLoading(true);
         try {
-            const students = JSON.parse(studentJson);
-            await enrollStudentsAdminEnrollStudentsPost({
+            await uploadStudentsExcelAdminUploadStudentsExcelPost({
                 headers: { "X-Admin-Secret": secret },
                 query: { batch_year: batchYear!, section_name: sectionName },
-                body: students
+                body: { file: studentFile }
             });
-            setStatus(`✅ Enrolled ${students.length} students`);
+            setStatus(`✅ Enrolled students from Excel into section ${sectionName}`);
         } catch (err: any) {
             setStatus("❌ Error: " + (err.body?.error || err.message));
         } finally {
@@ -136,8 +161,8 @@ const AcademicSetup: React.FC<AcademicSetupProps> = ({ secret, batchYear }) => {
     ];
 
     const templates = {
-        subjects: '[{"code": "21CS31", "name": "Data Structures", "credits": 4}, {"code": "21CS32", "name": "Analog Electronics", "credits": 3}]',
-        students: '[{"usn": "1JS23CS001", "name": "Alice Johnson"}, {"usn": "1JS23CS002", "name": "Bob Smith"}]'
+        subjects: "Excel columns required: code, name, credits",
+        students: "Excel columns required: usn, name, email, phone"
     };
 
     return (
@@ -193,6 +218,19 @@ const AcademicSetup: React.FC<AcademicSetupProps> = ({ secret, batchYear }) => {
                                         className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-indigo-500 outline-none transition-all"
                                     />
                                 </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Target Section</label>
+                                    <select
+                                        value={sectionName}
+                                        onChange={(e) => setSectionName(e.target.value)}
+                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-blue-500 outline-none transition-all font-bold text-slate-700 dark:text-slate-200"
+                                    >
+                                        <option value="">-- Choose Section --</option>
+                                        {sectionList.map(s => (
+                                            <option key={s.id} value={s.name}>Section {s.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
                                 <button
                                     onClick={handleInitBatch}
                                     disabled={loading}
@@ -210,40 +248,42 @@ const AcademicSetup: React.FC<AcademicSetupProps> = ({ secret, batchYear }) => {
                             <div className="flex items-start justify-between gap-4">
                                 <div>
                                     <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">2. Register Academic Subjects</h3>
-                                    <p className="text-sm text-slate-500 text-pretty">Bulk register subjects for a specific semester using JSON format.</p>
+                                    <p className="text-sm text-slate-500 text-pretty">Bulk register subjects for a specific semester using an Excel file.</p>
                                 </div>
-                                <button 
-                                    onClick={() => setSubjectJson(templates.subjects)}
-                                    className="text-[10px] font-black uppercase tracking-widest text-teal-600 bg-teal-50 dark:bg-teal-900/20 px-3 py-1.5 rounded-full hover:bg-teal-100 transition-colors"
-                                >
-                                    Insert Template
-                                </button>
                             </div>
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-xs font-black text-slate-400 uppercase ml-1">Target Semester</label>
-                                    <input
-                                        type="text"
+                                    <select
                                         value={semester}
                                         onChange={(e) => setSemester(e.target.value)}
-                                        placeholder="e.g. sem1"
-                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-teal-500 outline-none transition-all"
-                                    />
+                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-teal-500 outline-none transition-all font-bold text-slate-700 dark:text-slate-200"
+                                    >
+                                        <option value="">-- Choose Semester --</option>
+                                        {[...Array(8)].map((_, i) => (
+                                            <option key={i} value={`sem${i + 1}`}>Semester {i + 1}</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Subject Registry (JSON Array)</label>
-                                    <textarea
-                                        value={subjectJson}
-                                        onChange={(e) => setSubjectJson(e.target.value)}
-                                        placeholder='[{"code": "21CS31", "name": "Data Structures", "credits": 4}]'
-                                        className="w-full h-48 px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-teal-500 outline-none transition-all font-mono text-sm leading-relaxed"
-                                    />
+                                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Subject Registry Excel</label>
+                                    <div className="flex flex-col gap-2">
+                                        <input
+                                            type="file"
+                                            accept=".xlsx"
+                                            onChange={(e) => setSubjectFile(e.target.files?.[0] ?? null)}
+                                            className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"
+                                        />
+                                        <p className="text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800/50 p-2 rounded-lg leading-relaxed">
+                                            <span className="text-teal-500 font-bold">REQUIRED HEADERS:</span> <code className="text-teal-500">code</code>, <code className="text-teal-500">name</code>, <code className="text-teal-500">credits</code>
+                                        </p>
+                                    </div>
                                 </div>
                                 <button
                                     onClick={handleRegisterSubjects}
-                                    disabled={loading}
-                                    className="bg-teal-600 text-white px-10 py-4 rounded-2xl font-bold shadow-lg shadow-teal-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 group"
+                                    disabled={loading || !subjectFile}
+                                    className="bg-teal-600 text-white px-10 py-4 rounded-2xl font-bold shadow-lg shadow-teal-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 group disabled:opacity-50"
                                 >
                                     {loading ? <Loader2 className="animate-spin" /> : <BookOpen size={20} className="group-hover:-translate-y-1 transition-transform" />}
                                     Register Catalog
@@ -257,40 +297,42 @@ const AcademicSetup: React.FC<AcademicSetupProps> = ({ secret, batchYear }) => {
                             <div className="flex items-start justify-between gap-4">
                                 <div>
                                     <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">3. Student Enrollment</h3>
-                                    <p className="text-sm text-slate-500">Map students to their respective batch and section.</p>
+                                    <p className="text-sm text-slate-500">Map students to their respective batch and section using an Excel file.</p>
                                 </div>
-                                <button 
-                                    onClick={() => setStudentJson(templates.students)}
-                                    className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-full hover:bg-blue-100 transition-colors"
-                                >
-                                    Insert Template
-                                </button>
                             </div>
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-xs font-black text-slate-400 uppercase ml-1">Target Section</label>
-                                    <input
-                                        type="text"
+                                    <select
                                         value={sectionName}
                                         onChange={(e) => setSectionName(e.target.value)}
-                                        placeholder="e.g. A"
-                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-blue-500 outline-none transition-all"
-                                    />
+                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-blue-500 outline-none transition-all font-bold text-slate-700 dark:text-slate-200"
+                                    >
+                                        <option value="">-- Choose Section --</option>
+                                        {sectionList.map(s => (
+                                            <option key={s.id} value={s.name}>Section {s.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Student Data (JSON Array)</label>
-                                    <textarea
-                                        value={studentJson}
-                                        onChange={(e) => setStudentJson(e.target.value)}
-                                        placeholder='[{"usn": "1JS23CS001", "name": "John Doe"}]'
-                                        className="w-full h-48 px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-blue-500 outline-none transition-all font-mono text-sm leading-relaxed"
-                                    />
+                                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Student Data Excel</label>
+                                    <div className="flex flex-col gap-2">
+                                        <input
+                                            type="file"
+                                            accept=".xlsx"
+                                            onChange={(e) => setStudentFile(e.target.files?.[0] ?? null)}
+                                            className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                                        />
+                                        <p className="text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800/50 p-2 rounded-lg leading-relaxed">
+                                            <span className="text-blue-500 font-bold">REQUIRED HEADERS:</span> <code className="text-blue-500">usn</code>, <code className="text-blue-500">name</code>, <code className="text-blue-500">email</code>, <code className="text-blue-500">phone</code>
+                                        </p>
+                                    </div>
                                 </div>
                                 <button
                                     onClick={handleEnrollStudents}
-                                    disabled={loading}
-                                    className="bg-blue-600 text-white px-10 py-4 rounded-2xl font-bold shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 group"
+                                    disabled={loading || !studentFile}
+                                    className="bg-blue-600 text-white px-10 py-4 rounded-2xl font-bold shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 group disabled:opacity-50"
                                 >
                                     {loading ? <Loader2 className="animate-spin" /> : <UserCheck size={20} className="group-hover:scale-110 transition-transform" />}
                                     Enroll Students
@@ -335,23 +377,33 @@ const AcademicSetup: React.FC<AcademicSetupProps> = ({ secret, batchYear }) => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-xs font-black text-slate-400 uppercase ml-1">Subject Code</label>
-                                        <input
-                                            type="text"
+                                        <select
                                             value={subjectCode}
                                             onChange={(e) => setSubjectCode(e.target.value)}
-                                            placeholder="e.g. 21CS41"
-                                            className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-purple-500 outline-none transition-all"
-                                        />
+                                            className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-purple-500 outline-none transition-all font-bold text-slate-700 dark:text-slate-200"
+                                        >
+                                            <option value="">-- Choose Subject --</option>
+                                            {subjectList.map(s => (
+                                                <option key={s.subject_code} value={s.subject_code}>
+                                                    {s.subject_name} ({s.subject_code})
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-black text-slate-400 uppercase ml-1">Section ID</label>
-                                        <input
-                                            type="number"
+                                        <label className="text-xs font-black text-slate-400 uppercase ml-1">Section</label>
+                                        <select
                                             value={mapSectionId}
                                             onChange={(e) => setMapSectionId(e.target.value)}
-                                            placeholder="ID from DB"
-                                            className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-purple-500 outline-none transition-all"
-                                        />
+                                            className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-purple-500 outline-none transition-all font-bold text-slate-700 dark:text-slate-200"
+                                        >
+                                            <option value="">-- Choose Section --</option>
+                                            {sectionList.map(s => (
+                                                <option key={s.id} value={s.id}>
+                                                    Section {s.name}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
                                 <button

@@ -5,9 +5,61 @@ from security import hash_password
 from logger_config import get_logger
 from typing import List, Dict, Optional
 
+from repositories.academic_repository import AcademicRepository
+
 logger = get_logger(__name__)
 
 class AcademicService:
+    @staticmethod
+    async def get_all_subjects(session: AsyncSession):
+        repo = AcademicRepository(session)
+        return await repo.get_all_subjects()
+
+    @staticmethod
+    async def get_sections_by_batch(session: AsyncSession, batch_year: int):
+        repo = AcademicRepository(session)
+        return await repo.get_sections_by_batch(batch_year)
+
+    @staticmethod
+    async def bulk_upsert_subjects(session: AsyncSession, semester: str, subjects_data: List[Dict]):
+        repo = AcademicRepository(session)
+        inserted = 0
+        updated = 0
+        for sub in subjects_data:
+            ins, upd = await repo.upsert_subject(
+                code=sub["code"],
+                name=sub["name"],
+                semester=semester,
+                credits=sub["credits"]
+            )
+            if ins: inserted += 1
+            if upd: updated += 1
+        await session.commit()
+        return inserted, updated
+
+    @staticmethod
+    async def bulk_upsert_students(session: AsyncSession, batch_year: int, section_name: str, students_data: List[Dict], hash_pw_fn):
+        repo = AcademicRepository(session)
+        section = await repo.get_section_by_name_and_batch(section_name, batch_year)
+        if not section:
+            raise ValueError(f"Section {section_name} for batch {batch_year} not found. Initialize batch first.")
+            
+        inserted = 0
+        updated = 0
+        for student in students_data:
+            ins, upd = await repo.upsert_student_enrollment(
+                usn=student["usn"],
+                name=student["name"],
+                email=student["email"],
+                phone=student["phone"],
+                batch_year=batch_year,
+                section_id=section.id,
+                hash_pw_fn=hash_pw_fn
+            )
+            if ins: inserted += 1
+            if upd: updated += 1
+        await session.commit()
+        return inserted, updated
     @staticmethod
     async def initialize_batch(session: AsyncSession, batch_year: int, sections: List[str]):
         """Creates sections for a given batch year if they don't already exist."""
