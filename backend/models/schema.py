@@ -1,3 +1,4 @@
+import enum
 from datetime import datetime, timezone
 
 from database import Base
@@ -7,6 +8,7 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
+    Enum,
     ForeignKey,
     Integer,
     String,
@@ -15,6 +17,13 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import relationship
+
+
+class BatchStatus(str, enum.Enum):
+    IN_SETUP = "IN_SETUP"
+    READY = "READY"
+    ACTIVE = "ACTIVE"
+    ARCHIVED = "ARCHIVED"
 
 
 def default_email():
@@ -28,6 +37,28 @@ def default_number():
 # ==========================================
 # ACADEMIC MODELS (Normalized)
 # ==========================================
+
+
+class BatchLifecycle(Base):
+    """Tracks the setup status and entity counts for each academic batch year."""
+
+    __tablename__ = "batch_lifecycle"
+
+    batch_year = Column(Integer, primary_key=True)
+    status = Column(
+        Enum(BatchStatus, name="batchstatus"),
+        default=BatchStatus.IN_SETUP,
+        nullable=False,
+    )
+    section_count = Column(Integer, default=0, nullable=False)
+    subject_count = Column(Integer, default=0, nullable=False)
+    student_count = Column(Integer, default=0, nullable=False)
+    assignment_count = Column(Integer, default=0, nullable=False)
+    updated_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
 
 
 class Subject(Base):
