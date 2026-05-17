@@ -1,6 +1,16 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from models.schema import Section, Subject, StudentAuth, ParentAuth, SubjectAssignment, Mentor, Teacher
+from sqlalchemy import select, func
+from models.schema import (
+    Section,
+    Subject,
+    StudentAuth,
+    ParentAuth,
+    SubjectAssignment,
+    Mentor,
+    Teacher,
+    BatchLifecycle,
+    BatchStatus,
+)
 from security import hash_password
 from logger_config import get_logger
 from typing import List, Dict, Optional
@@ -188,3 +198,215 @@ class AcademicService:
             logger.info(f"Assigned {teacher_username} to {subject_code} in section {section_id}")
         
         await session.commit()
+
+
+# ============================================================
+# Batch Lifecycle Service
+# ============================================================
+
+class BatchLifecycleService:
+    """
+    Manages the IN_SETUP → READY → ACTIVE → ARCHIVED state machine for each batch.
+    Auto-promotes status based on entity counts.
+    """
+
+    @staticmethod
+    async def get_or_create(db: AsyncSession, batch_year: int) -> BatchLifecycle:
+        """Return the BatchLifecycle for a batch, creating it (IN_SETUP) if it doesn't exist."""
+        stmt = select(BatchLifecycle).where(BatchLifecycle.batch_year == batch_year)
+        lifecycle = (await db.execute(stmt)).scalar_one_or_none()
+        if not lifecycle:
+            lifecycle = BatchLifecycle(
+                batch_year=batch_year,
+                status=BatchStatus.IN_SETUP,
+                section_count=0,
+                subject_count=0,
+                student_count=0,
+                assignment_count=0,
+            )
+            db.add(lifecycle)
+            await db.flush()
+        return lifecycle
+
+    @staticmethod
+    async def refresh_counts_and_status(db: AsyncSession, batch_year: int) -> BatchLifecycle:
+        """
+        Recalculate counts from the DB and auto-promote status:
+          - Has sections                              → IN_SETUP
+          - Has sections + students                  → IN_SETUP
+          - Has sections + students + any assignments → READY
+        ACTIVE and ARCHIVED are set manually via the update-batch-status endpoint.
+        """
+        lifecycle = await BatchLifecycleService.get_or_create(db, batch_year)
+
+        # Count sections for this batch
+        sec_count = (await db.execute(
+            select(func.count()).where(Section.batch_year == batch_year)
+        )).scalar_one()
+
+        # Count subjects (global — not batch-scoped)
+        sub_count = (await db.execute(
+            select(func.count()).select_from(Subject)
+        )).scalar_one()
+
+        # Count students for this batch
+        stu_count = (await db.execute(
+            select(func.count()).where(StudentAuth.batch_year == batch_year)
+        )).scalar_one()
+
+        # Count assignments for this batch
+        asgn_count = (await db.execute(
+            select(func.count()).where(SubjectAssignment.batch_year == batch_year)
+        )).scalar_one()
+
+        lifecycle.section_count = sec_count
+        lifecycle.subject_count = sub_count
+        lifecycle.student_count = stu_count
+        lifecycle.assignment_count = asgn_count
+
+        # Auto-promote only if currently in a mutable state
+        if lifecycle.status in (BatchStatus.IN_SETUP, BatchStatus.READY):
+            if sec_count > 0 and stu_count > 0 and asgn_count > 0:
+                lifecycle.status = BatchStatus.READY
+            else:
+                lifecycle.status = BatchStatus.IN_SETUP
+
+        await db.commit()
+        await db.refresh(lifecycle)
+        logger.info(
+            f"Batch {batch_year} lifecycle refreshed: "
+            f"status={lifecycle.status}, sections={sec_count}, "
+            f"subjects={sub_count}, students={stu_count}, assignments={asgn_count}"
+        )
+        return lifecycle
+
+    @staticmethod
+    async def set_status(db: AsyncSession, batch_year: int, new_status: BatchStatus) -> BatchLifecycle:
+        """Manually set the batch status (for ACTIVE / ARCHIVED transitions)."""
+        lifecycle = await BatchLifecycleService.get_or_create(db, batch_year)
+        lifecycle.status = new_status
+        await db.commit()
+        await db.refresh(lifecycle)
+        return lifecycle
+
+    # ------------------------------------------------------------------
+    # Dry-Run Validators
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    async def validate_students_excel(
+        db: AsyncSession, batch_year: int, rows: List[Dict]
+    ) -> Dict:
+        """
+        Stage 1 of two-phase commit for student enrollment.
+        Returns a structured preview: { valid, duplicates, errors, total }
+        """
+        required_fields = {"usn", "name", "email", "phone"}
+        valid: List[Dict] = []
+        duplicates: List[Dict] = []
+        errors: List[str] = []
+
+        # Collect all USNs from the uploaded rows
+        seen_usns_in_file: set = set()
+        candidate_usns = [
+            str(r.get("usn", "")).strip().upper()
+            for r in rows
+            if str(r.get("usn", "")).strip()
+        ]
+
+        # Fetch which USNs already exist in the DB for this batch
+        if candidate_usns:
+            existing_result = await db.execute(
+                select(StudentAuth.usn).where(
+                    StudentAuth.usn.in_(candidate_usns),
+                    StudentAuth.batch_year == batch_year,
+                )
+            )
+            existing_usns: set = {row[0] for row in existing_result.fetchall()}
+        else:
+            existing_usns = set()
+
+        for i, row in enumerate(rows, start=2):  # start=2 for Excel row numbers
+            usn = str(row.get("usn", "")).strip().upper()
+            name = str(row.get("name", "")).strip()
+            email = str(row.get("email", "")).strip()
+            phone = str(row.get("phone", "")).strip()
+
+            # Missing required fields
+            missing = [f for f in required_fields if not row.get(f, "")]
+            if missing:
+                errors.append(f"Row {i}: Missing fields — {', '.join(missing)}")
+                continue
+
+            if not usn or usn == "NAN":
+                errors.append(f"Row {i}: Invalid USN")
+                continue
+
+            # Duplicate in the file itself
+            if usn in seen_usns_in_file:
+                duplicates.append({"usn": usn, "name": name, "reason": "Duplicate in file"})
+                continue
+
+            seen_usns_in_file.add(usn)
+
+            # Already exists in DB for this batch (will be updated, not blocked)
+            if usn in existing_usns:
+                duplicates.append({"usn": usn, "name": name, "reason": "Already enrolled — will update"})
+            else:
+                valid.append({"usn": usn, "name": name, "email": email, "phone": phone})
+
+        return {
+            "valid": valid,
+            "duplicates": duplicates,
+            "errors": errors,
+            "total_in_file": len(rows),
+            "will_insert": len(valid),
+            "will_update": len([d for d in duplicates if "update" in d["reason"]]),
+            "will_skip": len([d for d in duplicates if "Duplicate in file" in d["reason"]]),
+        }
+
+    @staticmethod
+    def validate_subjects_excel(rows: List[Dict]) -> Dict:
+        """
+        Stage 1 of two-phase commit for subject registration.
+        Returns a structured preview: { valid, errors }
+        """
+        valid: List[Dict] = []
+        errors: List[str] = []
+        seen_codes: set = set()
+
+        for i, row in enumerate(rows, start=2):
+            code = str(row.get("code", "")).strip().upper()
+            name = str(row.get("name", "")).strip()
+            credits_raw = row.get("credits", "")
+
+            if not code or code == "NAN":
+                errors.append(f"Row {i}: Missing subject code")
+                continue
+
+            if not name or name == "NAN":
+                errors.append(f"Row {i}: Missing subject name (code: {code})")
+                continue
+
+            try:
+                credits = int(credits_raw)
+                if credits < 0 or credits > 10:
+                    raise ValueError
+            except (ValueError, TypeError):
+                errors.append(f"Row {i}: Invalid credits value '{credits_raw}' for {code}")
+                continue
+
+            if code in seen_codes:
+                errors.append(f"Row {i}: Duplicate subject code {code} in file")
+                continue
+
+            seen_codes.add(code)
+            valid.append({"code": code, "name": name, "credits": credits})
+
+        return {
+            "valid": valid,
+            "errors": errors,
+            "total_in_file": len(rows),
+            "will_upsert": len(valid),
+        }
+

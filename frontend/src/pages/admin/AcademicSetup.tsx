@@ -1,408 +1,406 @@
-import React, { useState, useEffect } from "react";
-import { 
-    Database, BookOpen, UserCheck, Link,
-    CheckCircle, AlertCircle, Loader2, ChevronRight
+import React, { useState } from "react";
+import {
+  Database, BookOpen, UserCheck, Link, CheckCircle,
+  Lock, Loader2, RefreshCw, Users, FileText, ChevronRight,
 } from "lucide-react";
-import { 
-    initBatchAdminInitBatchPost,
-    assignSubjectsAdminAssignSubjectsPost,
-    listStaffAdminListStaffGet,
-    listSubjectsAdminListSubjectsGet,
-    listSectionsAdminListSectionsGet,
-    uploadSubjectsExcelAdminUploadSubjectsExcelPost,
-    uploadStudentsExcelAdminUploadStudentsExcelPost
+import {
+  initBatchAdminInitBatchPost,
+  assignSubjectsAdminAssignSubjectsPost,
 } from "../../client/sdk.gen";
+import {
+  useAcademicWorkspace, getStepLocks, getStepStatus,
+  STATUS_META, type StepKey, type BatchLifecycle,
+} from "../../hooks/useAcademicWorkspace";
+import { useStudentDryRun, useSubjectDryRun } from "../../hooks/useDryRunUpload";
+import { StudentDryRunPanel, SubjectDryRunPanel } from "../../components/wizard/DryRunPanel";
 
-interface AcademicSetupProps {
-    secret: string;
-    batchYear: number | null;
-}
+// ─── Props ─────────────────────────────────────────────────────────────────────
+interface Props { secret: string; batchYear: number | null; onBatchCreated?: () => void; }
 
-const AcademicSetup: React.FC<AcademicSetupProps> = ({ secret, batchYear }) => {
-    const [activeTab, setActiveTab] = useState<string>("init");
-    const [status, setStatus] = useState<string>("");
-    const [loading, setLoading] = useState<boolean>(false);
+// ─── Step config ───────────────────────────────────────────────────────────────
+const STEPS: { id: StepKey; label: string; icon: React.ElementType; accent: string }[] = [
+  { id: "infrastructure", label: "Infrastructure",  icon: Database,   accent: "indigo" },
+  { id: "catalog",        label: "Catalog",         icon: BookOpen,   accent: "teal"   },
+  { id: "enrollment",     label: "Enrollment",      icon: UserCheck,  accent: "blue"   },
+  { id: "allocation",     label: "Allocation",      icon: Link,       accent: "purple" },
+];
 
-    // Form states
-    const [newBatch, setNewBatch] = useState<string>("");
-    const [sections, setSections] = useState<string>("A, B, C");
-    const [semester, setSemester] = useState<string>("sem1");
-    const [sectionName, setSectionName] = useState<string>("A");
-    
-    // File states
-    const [subjectFile, setSubjectFile] = useState<File | null>(null);
-    const [studentFile, setStudentFile] = useState<File | null>(null);
-    
-    // Mapping states
-    const [teacherUsername, setTeacherUsername] = useState<string>("");
-    const [subjectCode, setSubjectCode] = useState<string>("");
-    const [mapSectionId, setMapSectionId] = useState<string>("");
-    const [staffList, setStaffList] = useState<Array<{username: string, name: string}>>([]);
-    const [subjectList, setSubjectList] = useState<Array<{subject_code: string, subject_name: string}>>([]);
-    const [sectionList, setSectionList] = useState<Array<{id: number, name: string, batch_year: number}>>([]);
+// ─── Batch Dashboard Header ────────────────────────────────────────────────────
+const BatchDashboard: React.FC<{ lifecycle: BatchLifecycle | null; isLoading: boolean; onRefresh: () => void }> = ({
+  lifecycle, isLoading, onRefresh,
+}) => {
+  const meta = lifecycle ? STATUS_META[lifecycle.status] : null;
+  return (
+    <div className="mb-8 p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center gap-6">
+        {meta && (
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-black uppercase tracking-widest ${meta.color}`}>
+            <span className={`w-2 h-2 rounded-full ${meta.dot}`} />
+            {meta.label}
+          </div>
+        )}
+        {lifecycle ? (
+          <div className="flex flex-wrap gap-6 text-sm">
+            {[
+              { label: "Sections",    val: lifecycle.section_count    },
+              { label: "Subjects",    val: lifecycle.subject_count    },
+              { label: "Students",    val: lifecycle.student_count    },
+              { label: "Assignments", val: lifecycle.assignment_count },
+            ].map(({ label, val }) => (
+              <div key={label} className="text-center">
+                <p className="text-xl font-black text-slate-800 dark:text-white">{val}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-400 font-medium">Select a batch to view status.</p>
+        )}
+      </div>
+      <button onClick={onRefresh} disabled={isLoading}
+        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-xs font-bold text-slate-500 dark:text-slate-300 hover:border-slate-400 transition-all disabled:opacity-50">
+        <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+        Refresh
+      </button>
+    </div>
+  );
+};
 
-    const fetchDependencies = async () => {
-        try {
-            const reqs: Promise<any>[] = [];
-            let staffIdx = -1;
-            let subIdx = -1;
-            let secIdx = -1;
-            
-            if (activeTab === "mapping") {
-                staffIdx = reqs.push(listStaffAdminListStaffGet({ headers: { "X-Admin-Secret": secret } })) - 1;
-                subIdx = reqs.push(listSubjectsAdminListSubjectsGet({ headers: { "X-Admin-Secret": secret } })) - 1;
-            }
-            
-            if (batchYear && (activeTab === "mapping" || activeTab === "enroll")) {
-                secIdx = reqs.push(listSectionsAdminListSectionsGet({
-                    headers: { "X-Admin-Secret": secret },
-                    query: { batch_year: batchYear }
-                })) - 1;
-            }
-            
-            if (reqs.length === 0) return;
-            
-            const results = await Promise.all(reqs);
-            if (staffIdx !== -1 && results[staffIdx].data) setStaffList(results[staffIdx].data as any);
-            if (subIdx !== -1 && results[subIdx].data) setSubjectList(results[subIdx].data as any);
-            if (secIdx !== -1 && results[secIdx].data) setSectionList(results[secIdx].data as any);
-        } catch (err) {
-            console.error("Failed to fetch dependencies:", err);
-        }
-    };
-
-    useEffect(() => {
-        fetchDependencies();
-    }, [activeTab, secret, batchYear]);
-
-
-    const handleInitBatch = async () => {
-        setLoading(true);
-        try {
-            await initBatchAdminInitBatchPost({
-                headers: { "X-Admin-Secret": secret },
-                query: { 
-                    batch_year: parseInt(newBatch, 10),
-                    sections: sections.split(",").map(s => s.trim())
+// ─── Stepper Header ────────────────────────────────────────────────────────────
+const StepperHeader: React.FC<{
+  activeStep: StepKey;
+  lifecycle: BatchLifecycle | null;
+  onSelect: (s: StepKey) => void;
+}> = ({ activeStep, lifecycle, onSelect }) => {
+  const locks = getStepLocks(lifecycle);
+  return (
+    <div className="flex items-center gap-0 mb-8 overflow-x-auto">
+      {STEPS.map((step, idx) => {
+        const status = getStepStatus(step.id, lifecycle);
+        const locked = locks[step.id];
+        const active = activeStep === step.id;
+        const Icon = step.icon;
+        return (
+          <React.Fragment key={step.id}>
+            <button
+              onClick={() => !locked && onSelect(step.id)}
+              disabled={locked}
+              className={`
+                flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-bold transition-all duration-300 whitespace-nowrap
+                ${active
+                  ? `bg-${step.accent}-600 text-white shadow-lg shadow-${step.accent}-600/20`
+                  : locked
+                    ? "text-slate-300 dark:text-slate-600 cursor-not-allowed"
+                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }
-            });
-            setStatus("✅ Batch initialized successfully");
-            // Refresh sections dropdown after creating new batch/sections
-            await fetchDependencies();
-        } catch (err: any) {
-            setStatus("❌ Error: " + (err.body?.error || err.message));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleRegisterSubjects = async () => {
-        if (!subjectFile) return setStatus("❌ Select a subject Excel file first.");
-        setLoading(true);
-        try {
-            await uploadSubjectsExcelAdminUploadSubjectsExcelPost({
-                headers: { "X-Admin-Secret": secret },
-                query: { semester },
-                body: { file: subjectFile }
-            });
-            setStatus("✅ Subjects registered successfully from Excel");
-        } catch (err: any) {
-            setStatus("❌ Error: " + (err.body?.error || err.message));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleEnrollStudents = async () => {
-        if (!batchYear) return setStatus("❌ Select a batch year in the header first.");
-        if (!studentFile) return setStatus("❌ Select a student Excel file first.");
-        setLoading(true);
-        try {
-            await uploadStudentsExcelAdminUploadStudentsExcelPost({
-                headers: { "X-Admin-Secret": secret },
-                query: { batch_year: batchYear!, section_name: sectionName },
-                body: { file: studentFile }
-            });
-            setStatus(`✅ Enrolled students from Excel into section ${sectionName}`);
-        } catch (err: any) {
-            setStatus("❌ Error: " + (err.body?.error || err.message));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleAssignSubjects = async () => {
-        if (!batchYear) return setStatus("❌ Select a batch year in the header first.");
-        setLoading(true);
-        try {
-            await assignSubjectsAdminAssignSubjectsPost({
-                headers: { "X-Admin-Secret": secret },
-                query: {
-                    teacher_username: teacherUsername,
-                    subject_code: subjectCode,
-                    section_id: parseInt(mapSectionId, 10),
-                    semester,
-                    batch_year: batchYear!
-                }
-            });
-            setStatus("✅ Subject assigned to teacher");
-        } catch (err: any) {
-            setStatus("❌ Error: " + (err.body?.error || err.message));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const tabs = [
-        { id: "init", label: "Initialize Batch", icon: Database, color: "text-indigo-500", bg: "bg-indigo-500/10" },
-        { id: "subjects", label: "Register Subjects", icon: BookOpen, color: "text-teal-500", bg: "bg-teal-500/10" },
-        { id: "enroll", label: "Enroll Students", icon: UserCheck, color: "text-blue-500", bg: "bg-blue-500/10" },
-        { id: "mapping", label: "Staff Mapping", icon: Link, color: "text-purple-500", bg: "bg-purple-500/10" }
-    ];
-
-    return (
-        <div className="flex flex-col">
-            <div className="flex flex-wrap gap-4 mb-8">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-3 px-6 py-3 rounded-2xl text-sm font-bold transition-all duration-300 ${
-                            activeTab === tab.id 
-                                ? `${tab.bg} ${tab.color} ring-2 ring-inset ring-current/20 shadow-lg shadow-current/10` 
-                                : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        }`}
-                    >
-                        <tab.icon size={18} />
-                        {tab.label}
-                    </button>
-                ))}
-            </div>
-
-            <div className="flex-1">
-                <div className="bg-white dark:bg-[#1e293b] rounded-[2.5rem] p-10 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
-                    
-                    {/* ── 1. Initialize Batch ── */}
-                    {activeTab === "init" && (
-                        <div className="space-y-6 max-w-xl relative">
-                            <div>
-                                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-1">1. Initialize Section Foundation</h3>
-                                <p className="text-sm text-slate-500">Define the batch year and create the required sections (A, B, C…)</p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Academic Batch Year</label>
-                                    <input
-                                        type="number"
-                                        value={newBatch}
-                                        onChange={(e) => setNewBatch(e.target.value)}
-                                        placeholder="e.g. 2023"
-                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-indigo-500 outline-none transition-all"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Sections (comma-separated)</label>
-                                    <input
-                                        type="text"
-                                        value={sections}
-                                        onChange={(e) => setSections(e.target.value)}
-                                        placeholder="e.g. A, B, C"
-                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-indigo-500 outline-none transition-all"
-                                    />
-                                </div>
-                            </div>
-                            <button
-                                onClick={handleInitBatch}
-                                disabled={loading}
-                                className="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 group"
-                            >
-                                {loading ? <Loader2 className="animate-spin" /> : <Database size={20} className="group-hover:rotate-12 transition-transform" />}
-                                Initialize Infrastructure
-                            </button>
-                        </div>
-                    )}
-
-                    {/* ── 2. Register Subjects ── */}
-                    {activeTab === "subjects" && (
-                        <div className="space-y-6 max-w-xl relative">
-                            <div>
-                                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-1">2. Register Academic Subjects</h3>
-                                <p className="text-sm text-slate-500">Bulk register subjects for a specific semester using an Excel file.</p>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase ml-1">Target Semester</label>
-                                <select
-                                    value={semester}
-                                    onChange={(e) => setSemester(e.target.value)}
-                                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-teal-500 outline-none transition-all font-bold text-slate-700 dark:text-slate-200"
-                                >
-                                    <option value="">-- Choose Semester --</option>
-                                    {[...Array(8)].map((_, i) => (
-                                        <option key={i} value={`sem${i + 1}`}>Semester {i + 1}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase ml-1">Subject Registry Excel</label>
-                                <div className="flex flex-col gap-2">
-                                    <input
-                                        type="file"
-                                        accept=".xlsx"
-                                        onChange={(e) => setSubjectFile(e.target.files?.[0] ?? null)}
-                                        className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"
-                                    />
-                                    <p className="text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800/50 p-2 rounded-lg leading-relaxed">
-                                        <span className="text-teal-500 font-bold">REQUIRED HEADERS:</span> <code className="text-teal-500">code</code>, <code className="text-teal-500">name</code>, <code className="text-teal-500">credits</code>
-                                    </p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={handleRegisterSubjects}
-                                disabled={loading || !subjectFile}
-                                className="bg-teal-600 text-white px-10 py-4 rounded-2xl font-bold shadow-lg shadow-teal-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 group disabled:opacity-50"
-                            >
-                                {loading ? <Loader2 className="animate-spin" /> : <BookOpen size={20} className="group-hover:-translate-y-1 transition-transform" />}
-                                Register Catalog
-                            </button>
-                        </div>
-                    )}
-
-                    {/* ── 3. Student Enrollment ── */}
-                    {activeTab === "enroll" && (
-                        <div className="space-y-6 max-w-xl relative">
-                            <div>
-                                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-1">3. Student Enrollment</h3>
-                                <p className="text-sm text-slate-500">Bulk enroll students into a section. The active batch year is used automatically.</p>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase ml-1">Target Section</label>
-                                <select
-                                    value={sectionName}
-                                    onChange={(e) => setSectionName(e.target.value)}
-                                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-blue-500 outline-none transition-all font-bold text-slate-700 dark:text-slate-200"
-                                >
-                                    <option value="">-- Choose Section --</option>
-                                    {sectionList.map(s => (
-                                        <option key={s.id} value={s.name}>Section {s.name} (Batch {s.batch_year})</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase ml-1">Student Data Excel</label>
-                                <div className="flex flex-col gap-2">
-                                    <input
-                                        type="file"
-                                        accept=".xlsx"
-                                        onChange={(e) => setStudentFile(e.target.files?.[0] ?? null)}
-                                        className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                                    />
-                                    <p className="text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800/50 p-2 rounded-lg leading-relaxed">
-                                        <span className="text-blue-500 font-bold">REQUIRED HEADERS:</span> <code className="text-blue-500">usn</code>, <code className="text-blue-500">name</code>, <code className="text-blue-500">email</code>, <code className="text-blue-500">phone</code>
-                                    </p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={handleEnrollStudents}
-                                disabled={loading || !studentFile}
-                                className="bg-blue-600 text-white px-10 py-4 rounded-2xl font-bold shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 group disabled:opacity-50"
-                            >
-                                {loading ? <Loader2 className="animate-spin" /> : <UserCheck size={20} className="group-hover:scale-110 transition-transform" />}
-                                Enroll Students
-                            </button>
-                        </div>
-                    )}
-
-                    {/* ── 4. Faculty–Subject Mapping ── */}
-                    {activeTab === "mapping" && (
-                        <div className="space-y-6 max-w-2xl relative">
-                            <div>
-                                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-1">4. Faculty–Subject Mapping</h3>
-                                <p className="text-sm text-slate-500">Assign staff to a subject within a section and semester.</p>
-                            </div>
-                            <div className="bg-purple-50 dark:bg-purple-900/10 p-5 rounded-2xl border border-purple-100 dark:border-purple-900/20">
-                                <h4 className="text-sm font-black text-purple-700 dark:text-purple-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                    <AlertCircle size={16} /> Instructions
-                                </h4>
-                                <p className="text-xs text-purple-600/80 leading-relaxed font-medium">
-                                    Select a registered staff member and assign them to a specific subject, section, and semester.
-                                    Staff must be registered in the <span className="font-bold underline">Staff Registry</span> first.
-                                </p>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase ml-1">Select Staff Member</label>
-                                <select
-                                    value={teacherUsername}
-                                    onChange={(e) => setTeacherUsername(e.target.value)}
-                                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-purple-500 outline-none transition-all font-bold text-slate-700 dark:text-slate-200"
-                                >
-                                    <option value="">-- Choose Staff --</option>
-                                    {staffList.map(s => (
-                                        <option key={s.username} value={s.username}>{s.name} ({s.username})</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Semester</label>
-                                    <select
-                                        value={semester}
-                                        onChange={(e) => setSemester(e.target.value)}
-                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-purple-500 outline-none transition-all font-bold text-slate-700 dark:text-slate-200"
-                                    >
-                                        <option value="">-- Semester --</option>
-                                        {[...Array(8)].map((_, i) => (
-                                            <option key={i} value={`sem${i + 1}`}>Sem {i + 1}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Subject</label>
-                                    <select
-                                        value={subjectCode}
-                                        onChange={(e) => setSubjectCode(e.target.value)}
-                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-purple-500 outline-none transition-all font-bold text-slate-700 dark:text-slate-200"
-                                    >
-                                        <option value="">-- Subject --</option>
-                                        {subjectList.map(s => (
-                                            <option key={s.subject_code} value={s.subject_code}>{s.subject_name} ({s.subject_code})</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Section</label>
-                                    <select
-                                        value={mapSectionId}
-                                        onChange={(e) => setMapSectionId(e.target.value)}
-                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-purple-500 outline-none transition-all font-bold text-slate-700 dark:text-slate-200"
-                                    >
-                                        <option value="">-- Section --</option>
-                                        {sectionList.map(s => (
-                                            <option key={s.id} value={s.id}>Sec {s.name} ({s.batch_year})</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                            <button
-                                onClick={handleAssignSubjects}
-                                disabled={loading}
-                                className="bg-purple-600 text-white px-10 py-4 rounded-2xl font-bold shadow-lg shadow-purple-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 group"
-                            >
-                                {loading ? <Loader2 className="animate-spin" /> : <Link size={20} className="group-hover:rotate-45 transition-transform" />}
-                                Finalize Mapping
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {status && (
-                <div className={`mt-8 p-6 rounded-2xl flex items-center gap-4 ${status.includes("❌") ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600"}`}>
-                    {status.includes("❌") ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
-                    <p className="text-sm font-bold">{status}</p>
-                </div>
+              `}
+            >
+              {status === "complete" && !active
+                ? <CheckCircle size={16} className="text-emerald-500" />
+                : locked
+                  ? <Lock size={16} />
+                  : <Icon size={16} />
+              }
+              <span>{idx + 1}. {step.label}</span>
+              {status === "complete" && !active && (
+                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black">✓</span>
+              )}
+            </button>
+            {idx < STEPS.length - 1 && (
+              <ChevronRight size={16} className="text-slate-300 dark:text-slate-600 mx-1 shrink-0" />
             )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+};
+
+// ─── Locked Gate ───────────────────────────────────────────────────────────────
+const LockedGate: React.FC<{ message: string }> = ({ message }) => (
+  <div className="flex flex-col items-center justify-center py-16 text-center">
+    <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+      <Lock size={24} className="text-slate-400" />
+    </div>
+    <p className="text-sm font-bold text-slate-500 dark:text-slate-400 max-w-xs">{message}</p>
+  </div>
+);
+
+// ─── Field helpers ─────────────────────────────────────────────────────────────
+const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div className="space-y-2">
+    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+    {children}
+  </div>
+);
+
+const inputCls = (focus = "indigo") =>
+  `w-full px-5 py-3.5 rounded-2xl bg-slate-50 dark:bg-[#0f1720] border-2 border-transparent focus:border-${focus}-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-200`;
+
+const primaryBtn = (color: string, disabled = false) =>
+  `flex items-center gap-2 px-8 py-3.5 rounded-2xl font-bold text-white shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] ${disabled ? "opacity-40 cursor-not-allowed" : ""} bg-${color}-600 shadow-${color}-600/20`;
+
+// ─── Steps ────────────────────────────────────────────────────────────────────
+
+const InfrastructureStep: React.FC<{ secret: string; onDone: () => void; onBatchCreated?: () => void }> = ({ secret, onDone, onBatchCreated }) => {
+  const [batch, setBatch] = useState("");
+  const [sections, setSections] = useState("A, B, C");
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const handle = async () => {
+    if (!batch || !sections) return;
+    setLoading(true); setMsg(null);
+    try {
+      await initBatchAdminInitBatchPost({
+        headers: { "X-Admin-Secret": secret },
+        query: {
+          batch_year: parseInt(batch, 10),
+          sections: sections.split(",").map(s => s.trim()).filter(Boolean),
+        },
+      });
+      setMsg({ ok: true, text: `Batch ${batch} initialized with sections: ${sections}` });
+      onBatchCreated?.();  // refresh sidebar dropdown
+      onDone();
+    } catch (err: any) {
+      setMsg({ ok: false, text: err.body?.error || err.message || "Failed" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-xl">
+      <div>
+        <h3 className="text-xl font-black text-slate-800 dark:text-white mb-1">1. Initialize Section Foundation</h3>
+        <p className="text-sm text-slate-500">Define the batch year and create sections (A, B, C…). This unlocks all subsequent steps.</p>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Batch Year">
+          <input type="number" value={batch} onChange={e => setBatch(e.target.value)} placeholder="e.g. 2023" className={inputCls("indigo")} />
+        </Field>
+        <Field label="Sections (comma-separated)">
+          <input type="text" value={sections} onChange={e => setSections(e.target.value)} placeholder="A, B, C" className={inputCls("indigo")} />
+        </Field>
+      </div>
+      <button onClick={handle} disabled={loading || !batch} className={primaryBtn("indigo", loading || !batch)}>
+        {loading ? <Loader2 size={18} className="animate-spin" /> : <Database size={18} />}
+        Initialize Infrastructure
+      </button>
+      {msg && (
+        <div className={`p-4 rounded-2xl flex items-center gap-3 text-sm font-semibold ${msg.ok ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400" : "bg-rose-50 text-rose-600 dark:bg-rose-900/10"}`}>
+          {msg.ok ? <CheckCircle size={18} /> : <Lock size={18} />}
+          {msg.text}
         </div>
-    );
+      )}
+    </div>
+  );
+};
+
+const CatalogStep: React.FC<{ secret: string; onDone: () => void }> = ({ secret, onDone }) => {
+  const [semester, setSemester] = useState("sem1");
+  const [file, setFile] = useState<File | null>(null);
+  const dryRun = useSubjectDryRun(secret);
+
+  const handleValidate = () => { if (file) void dryRun.validate(file); };
+  const handleCommit = () => { if (file) void dryRun.commit(file, semester).then(onDone); };
+
+  return (
+    <div className="space-y-6 max-w-xl">
+      <div>
+        <h3 className="text-xl font-black text-slate-800 dark:text-white mb-1">2. Register Academic Subjects</h3>
+        <p className="text-sm text-slate-500">Upload subjects via Excel. File is validated first — you review before committing.</p>
+      </div>
+      <Field label="Target Semester">
+        <select value={semester} onChange={e => setSemester(e.target.value)} className={inputCls("teal")}>
+          {Array.from({ length: 8 }, (_, i) => (
+            <option key={i} value={`sem${i + 1}`}>Semester {i + 1}</option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Subject Registry Excel (.xlsx)">
+        <div className="space-y-2">
+          <input type="file" accept=".xlsx" onChange={e => { setFile(e.target.files?.[0] ?? null); dryRun.reset(); }}
+            className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer" />
+          <p className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800/50 px-3 py-2 rounded-lg font-medium">
+            <span className="text-teal-500 font-bold">REQUIRED HEADERS:</span> code, name, credits
+          </p>
+        </div>
+      </Field>
+      {dryRun.phase === "idle" && (
+        <button onClick={handleValidate} disabled={!file} className={primaryBtn("teal", !file)}>
+          <FileText size={18} /> Validate File
+        </button>
+      )}
+      <SubjectDryRunPanel
+        phase={dryRun.phase} preview={dryRun.preview} result={dryRun.result}
+        errorMsg={dryRun.errorMsg} onConfirm={handleCommit} onCancel={dryRun.reset}
+      />
+    </div>
+  );
+};
+
+const EnrollmentStep: React.FC<{ secret: string; batchYear: number; sections: { id: number; name: string }[]; onDone: () => void }> = ({
+  secret, batchYear, sections, onDone,
+}) => {
+  const [sectionName, setSectionName] = useState(sections[0]?.name ?? "");
+  const [file, setFile] = useState<File | null>(null);
+  const dryRun = useStudentDryRun(secret);
+
+  const handleValidate = () => { if (file) void dryRun.validate(file, batchYear); };
+  const handleCommit = () => { if (file) void dryRun.commit(file, batchYear, sectionName).then(onDone); };
+
+  return (
+    <div className="space-y-6 max-w-xl">
+      <div>
+        <h3 className="text-xl font-black text-slate-800 dark:text-white mb-1">3. Student Enrollment</h3>
+        <p className="text-sm text-slate-500">Upload students via Excel. The dry-run preview shows duplicates and errors before any data is written.</p>
+      </div>
+      <Field label="Target Section">
+        <select value={sectionName} onChange={e => setSectionName(e.target.value)} className={inputCls("blue")}>
+          {sections.map(s => <option key={s.id} value={s.name}>Section {s.name}</option>)}
+        </select>
+      </Field>
+      <Field label="Student Data Excel (.xlsx)">
+        <div className="space-y-2">
+          <input type="file" accept=".xlsx" onChange={e => { setFile(e.target.files?.[0] ?? null); dryRun.reset(); }}
+            className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+          <p className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800/50 px-3 py-2 rounded-lg font-medium">
+            <span className="text-blue-500 font-bold">REQUIRED HEADERS:</span> usn, name, email, phone
+          </p>
+        </div>
+      </Field>
+      {dryRun.phase === "idle" && (
+        <button onClick={handleValidate} disabled={!file} className={primaryBtn("blue", !file)}>
+          <UserCheck size={18} /> Validate File
+        </button>
+      )}
+      <StudentDryRunPanel
+        phase={dryRun.phase} preview={dryRun.preview} result={dryRun.result}
+        errorMsg={dryRun.errorMsg} onConfirm={handleCommit} onCancel={dryRun.reset}
+      />
+    </div>
+  );
+};
+
+const AllocationStep: React.FC<{
+  secret: string; batchYear: number;
+  staff: { username: string; name: string }[];
+  subjects: { subject_code: string; subject_name: string }[];
+  sections: { id: number; name: string }[];
+  onDone: () => void;
+}> = ({ secret, batchYear, staff, subjects, sections, onDone }) => {
+  const [teacher, setTeacher] = useState("");
+  const [subject, setSubject] = useState("");
+  const [section, setSection] = useState("");
+  const [semester, setSemester] = useState("sem1");
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const handle = async () => {
+    if (!teacher || !subject || !section) return;
+    setLoading(true); setMsg(null);
+    try {
+      await assignSubjectsAdminAssignSubjectsPost({
+        headers: { "X-Admin-Secret": secret },
+        query: { teacher_username: teacher, subject_code: subject, section_id: parseInt(section, 10), semester, batch_year: batchYear },
+      });
+      setMsg({ ok: true, text: "Subject assigned successfully." });
+      onDone();
+    } catch (err: any) {
+      setMsg({ ok: false, text: err.body?.error || err.message || "Failed" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h3 className="text-xl font-black text-slate-800 dark:text-white mb-1">4. Faculty–Subject Allocation</h3>
+        <p className="text-sm text-slate-500">Map a registered staff member to a subject, section, and semester.</p>
+      </div>
+      <Field label="Staff Member">
+        <select value={teacher} onChange={e => setTeacher(e.target.value)} className={inputCls("purple")}>
+          <option value="">— Select Staff —</option>
+          {staff.map(s => <option key={s.username} value={s.username}>{s.name} ({s.username})</option>)}
+        </select>
+      </Field>
+      <div className="grid grid-cols-3 gap-4">
+        <Field label="Semester">
+          <select value={semester} onChange={e => setSemester(e.target.value)} className={inputCls("purple")}>
+            {Array.from({ length: 8 }, (_, i) => <option key={i} value={`sem${i + 1}`}>Sem {i + 1}</option>)}
+          </select>
+        </Field>
+        <Field label="Subject">
+          <select value={subject} onChange={e => setSubject(e.target.value)} className={inputCls("purple")}>
+            <option value="">— Subject —</option>
+            {subjects.map(s => <option key={s.subject_code} value={s.subject_code}>{s.subject_name}</option>)}
+          </select>
+        </Field>
+        <Field label="Section">
+          <select value={section} onChange={e => setSection(e.target.value)} className={inputCls("purple")}>
+            <option value="">— Section —</option>
+            {sections.map(s => <option key={s.id} value={s.id}>Section {s.name}</option>)}
+          </select>
+        </Field>
+      </div>
+      <button onClick={handle} disabled={loading || !teacher || !subject || !section}
+        className={primaryBtn("purple", loading || !teacher || !subject || !section)}>
+        {loading ? <Loader2 size={18} className="animate-spin" /> : <Link size={18} />}
+        Finalize Mapping
+      </button>
+      {msg && (
+        <div className={`p-4 rounded-2xl flex items-center gap-3 text-sm font-semibold ${msg.ok ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400" : "bg-rose-50 text-rose-600"}`}>
+          {msg.ok ? <CheckCircle size={18} /> : <Users size={18} />}
+          {msg.text}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Main Wizard Component ────────────────────────────────────────────────────
+const AcademicSetup: React.FC<Props> = ({ secret, batchYear, onBatchCreated }) => {
+  const [activeStep, setActiveStep] = useState<StepKey>("infrastructure");
+  const { state, refresh } = useAcademicWorkspace(batchYear, secret);
+  const { lifecycle, sections, subjects, staff, isLoading } = state;
+  const locks = getStepLocks(lifecycle);
+
+  const LOCK_MESSAGES: Record<StepKey, string> = {
+    infrastructure: "",
+    catalog:    "Initialize batch sections first (Step 1) to unlock the Subject Catalog.",
+    enrollment: "Initialize batch sections first (Step 1) to unlock Student Enrollment.",
+    allocation: "Enroll students first (Step 3) to unlock Staff Allocation.",
+  };
+
+  return (
+    <div className="flex flex-col">
+      <BatchDashboard lifecycle={lifecycle} isLoading={isLoading} onRefresh={refresh} />
+      <StepperHeader activeStep={activeStep} lifecycle={lifecycle} onSelect={setActiveStep} />
+
+      <div className="bg-white dark:bg-[#1e293b] rounded-[2.5rem] p-10 border border-slate-200 dark:border-slate-800 shadow-sm">
+        {locks[activeStep] ? (
+          <LockedGate message={LOCK_MESSAGES[activeStep]} />
+        ) : (
+          <>
+            {activeStep === "infrastructure" && (
+              <InfrastructureStep secret={secret} onDone={refresh} onBatchCreated={onBatchCreated} />
+            )}
+            {activeStep === "catalog" && (
+              <CatalogStep secret={secret} onDone={refresh} />
+            )}
+            {activeStep === "enrollment" && batchYear && (
+              <EnrollmentStep secret={secret} batchYear={batchYear} sections={sections} onDone={refresh} />
+            )}
+            {activeStep === "allocation" && batchYear && (
+              <AllocationStep secret={secret} batchYear={batchYear} staff={staff} subjects={subjects} sections={sections} onDone={refresh} />
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default AcademicSetup;

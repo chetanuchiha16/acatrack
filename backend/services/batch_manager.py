@@ -9,7 +9,7 @@ import sys
 
 from database import AsyncSessionLocal
 from logger_config import get_logger
-from models.schema import StudentAuth
+from models.schema import StudentAuth, Section
 from sqlalchemy import select, distinct
 
 # Ensure the backend directory is in the path so imports work
@@ -63,9 +63,10 @@ class BatchManager:
             raise
 
     async def list_batches(self) -> list[int]:
+        """Returns all batch years that have at least one section defined."""
         try:
             async with AsyncSessionLocal() as session:
-                result = await session.execute(select(distinct(StudentAuth.batch_year)))
+                result = await session.execute(select(distinct(Section.batch_year)))
                 batch_years = [row[0] for row in result.all() if row[0] is not None]
                 return sorted(batch_years)
         except Exception as e:
