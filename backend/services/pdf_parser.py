@@ -7,6 +7,7 @@ import shutil
 import tempfile
 import time
 from pathlib import Path
+from functools import lru_cache
 
 import fitz  # PyMuPDF
 import pandas as pd
@@ -111,6 +112,7 @@ def extract_text_with_ocr(pdf_path):
     return text
 
 
+@lru_cache(maxsize=256)
 def get_pdf_text(pdf_path):
     with pdfplumber.open(pdf_path) as pdf:
         text = "\n".join(page.extract_text() or "" for page in pdf.pages)
@@ -124,14 +126,15 @@ def get_pdf_text(pdf_path):
 def scan_subject_codes(pdf_folder):
     subject_codes = set()
     all_valid_codes = {code for sem in sem_credits.values() for code in sem.keys()}
-    for file in os.listdir(pdf_folder):
-        if file.endswith(".pdf"):
-            pdf_path = os.path.join(pdf_folder, file)
-            text = get_pdf_text(pdf_path)
-            for line in text.splitlines():
-                parts = line.split()
-                if parts and parts[0] in all_valid_codes:
-                    subject_codes.add(parts[0])
+    pdf_files = [f for f in os.listdir(pdf_folder) if f.endswith(".pdf")]
+    # Every student in a batch has the exact same subjects, so scanning 3 PDFs is more than enough
+    for file in pdf_files[:3]:
+        pdf_path = os.path.join(pdf_folder, file)
+        text = get_pdf_text(pdf_path)
+        for line in text.splitlines():
+            parts = line.split()
+            if parts and parts[0] in all_valid_codes:
+                subject_codes.add(parts[0])
     return sorted(subject_codes)
 
 
@@ -185,7 +188,7 @@ def extract_from_pdf(pdf_path, subject_codes, columns):
 
 
 # ---------------- PROCESS PDFs ----------------
-def process_pdfs(excel_filename, pdf_folder):
+def process_pdfs(excel_filename, pdf_folder, supabase_folder=None, progress_callback=None):
     subject_codes = scan_subject_codes(pdf_folder)
     excel_path = Path(tempfile.gettempdir()) / f"{excel_filename}"  # temp path
     columns = ["student_usn", "student_name"]
@@ -199,11 +202,30 @@ def process_pdfs(excel_filename, pdf_folder):
         for sheet in existing_excel.sheet_names:
             existing_sheets[sheet] = pd.read_excel(excel_path, sheet_name=sheet)
 
-    for file in os.listdir(pdf_folder):
-        if not file.endswith(".pdf"):
-            continue
+    pdf_files = [f for f in os.listdir(pdf_folder) if f.endswith(".pdf")]
+    total_pdfs = len(pdf_files)
+    processed_count = 0
+
+    for file in pdf_files:
         pdf_path = os.path.join(pdf_folder, file)
-        row = extract_from_pdf(pdf_path, subject_codes, columns)
+        try:
+            row = extract_from_pdf(pdf_path, subject_codes, columns)
+        except Exception as parse_err:
+            logger.error(f"❌ Failed to parse PDF '{file}': {parse_err}")
+            processed_count += 1
+            if progress_callback:
+                try:
+                    progress_callback(processed_count, total_pdfs)
+                except Exception as cb_err:
+                    logger.warning(f"Progress callback failed: {cb_err}")
+            continue
+
+        processed_count += 1
+        if progress_callback:
+            try:
+                progress_callback(processed_count, total_pdfs)
+            except Exception as cb_err:
+                logger.warning(f"Progress callback failed: {cb_err}")
 
         if not row["student_usn"]:
             logger.debug(f"⚠️ Skipping PDF '{file}' because USN was not found")
@@ -237,9 +259,10 @@ def process_pdfs(excel_filename, pdf_folder):
             df.to_excel(writer, sheet_name=sheet_name, index=False)
 
     # Upload result to Supabase and return public URL
-    supabase_folder = (
-        Path(pdf_folder).name if hasattr(pdf_folder, "name") else str(pdf_folder)
-    )
+    if not supabase_folder:
+        supabase_folder = (
+            Path(pdf_folder).name if hasattr(pdf_folder, "name") else str(pdf_folder)
+        )
     try:
         excel_url = upload_excel_to_supabase(
             str(excel_path), excel_filename, supabase_folder

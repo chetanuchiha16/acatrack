@@ -16,12 +16,22 @@ router = APIRouter(prefix="/pdftoexcel", tags=["pdf_to_excel"])
 @router.post("/upload")
 async def upload_archive(
     request: Request,
+    batch_year: int | None = None,
     file: UploadFile = File(...),
     background_tasks: BackgroundTasks = None,
 ):
-    batch_year = get_batch_year_from_request(request)
-
     filename = file.filename or ""
+    
+    if not batch_year:
+        batch_year = get_batch_year_from_request(request)
+    if not batch_year:
+        import re
+        match = re.search(r"\b(20\d{2})\b", filename)
+        if match:
+            batch_year = int(match.group(1))
+    if not batch_year:
+        batch_year = 2023
+
     if not filename.endswith((".zip", ".rar", ".tar.gz")):
         return JSONResponse(
             content={"error": "Only .zip, .rar, .tar.gz allowed"}, status_code=400
@@ -48,8 +58,11 @@ async def upload_archive(
 
 
 @router.get("/status/{job_id}")
-async def get_status(job_id: str, request: Request):
-    batch_year = get_batch_year_from_request(request)
+async def get_status(job_id: str, request: Request, batch_year: int | None = None):
+    if not batch_year:
+        batch_year = get_batch_year_from_request(request)
+    if not batch_year:
+        batch_year = 2023
 
     async with bm.session_scope(batch_year) as session:
         result = await session.execute(select(Job).where(Job.id == job_id))
