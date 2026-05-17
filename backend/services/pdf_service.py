@@ -3,6 +3,7 @@ import zipfile
 import tarfile
 import shutil
 import tempfile
+import asyncio
 from pathlib import Path
 from services.batch_manager import bm
 from models.schema import Job
@@ -12,7 +13,10 @@ from sqlalchemy import select
 
 logger = get_logger(__name__)
 
+_pdf_processing_semaphore = asyncio.Semaphore(1)
+
 async def process_archive(job_id: str, archive_path: str, batch_year: int):
+    await _pdf_processing_semaphore.acquire()
     logger.info(f"Starting process_archive background task for job {job_id}, batch {batch_year}")
     
     # 1. Update status to processing
@@ -156,6 +160,7 @@ async def process_archive(job_id: str, archive_path: str, batch_year: int):
                 await session.commit()
                 
     finally:
+        _pdf_processing_semaphore.release()
         # Clean up temporary directory and uploaded zip file
         try:
             shutil.rmtree(temp_dir)
