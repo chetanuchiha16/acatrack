@@ -447,9 +447,22 @@ const AdminPanel = () => {
                         }`}
                     >
                         <Settings size={20} className={activeView === "setup" ? "text-white" : "group-hover:rotate-45 transition-transform"} />
-                        System Config
+                        Academic Engine
                         {activeView === "setup" && <div className="absolute right-0 top-0 bottom-0 w-1 bg-white/20" />}
                     </button>
+
+                    {/* ── Batch Selector (primary global control) ── */}
+                    <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-800">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-2">Active Batch</p>
+                        <select
+                            value={batchYear ?? ""}
+                            onChange={(e) => setBatchYear(e.target.value ? parseInt(e.target.value, 10) : null)}
+                            className="w-full px-4 py-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-200 dark:border-indigo-800 text-sm font-black text-indigo-700 dark:text-indigo-300 outline-none cursor-pointer hover:border-indigo-400 transition-all"
+                        >
+                            <option value="">— No Batch Selected —</option>
+                            {availableBatches.map(b => <option key={b} value={b}>Batch {b}</option>)}
+                        </select>
+                    </div>
                 </nav>
 
                 <div className="p-8">
@@ -477,32 +490,19 @@ const AdminPanel = () => {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
-                <header className="h-24 bg-white/40 dark:bg-[#0b0f19]/40 backdrop-blur-2xl border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-12 transition-all">
-                    <div>
-                        <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
-                            {activeView === "results" ? "Command Center" : "Core Systems"}
-                        </h2>
-                    </div>
-                    
-                    <div className="flex items-center gap-6">
-                        <div className="group relative">
-                            <div className="flex flex-col items-end">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mb-1">Session Identity</span>
-                                <select
-                                    value={batchYear ?? ""}
-                                    onChange={(e) => setBatchYear(e.target.value ? parseInt(e.target.value, 10) : null)}
-                                    className="text-sm font-black text-indigo-600 dark:text-indigo-400 bg-white/50 dark:bg-slate-800/50 px-4 py-2 rounded-xl outline-none cursor-pointer border border-indigo-500/20 hover:border-indigo-500 transition-all shadow-sm"
-                                >
-                                    <option value="">No Batch Selected</option>
-                                    {availableBatches.map(b => <option key={b} value={b}>Active Batch: {b}</option>)}
-                                </select>
+                <header className="h-20 bg-white/40 dark:bg-[#0b0f19]/40 backdrop-blur-2xl border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-12 transition-all">
+                    <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
+                        {activeView === "results" ? "Command Center" : "Academic Engine"}
+                    </h2>
+                    <div className="flex items-center gap-3">
+                        {batchYear && (
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
+                                <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                                <span className="text-xs font-black text-indigo-600 dark:text-indigo-400">Batch {batchYear}</span>
                             </div>
-                        </div>
-                        <div className="h-10 w-px bg-slate-200 dark:bg-slate-800" />
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white font-black text-xs shadow-lg">
-                                AD
-                            </div>
+                        )}
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white font-black text-xs shadow-lg">
+                            AD
                         </div>
                     </div>
                 </header>
@@ -739,7 +739,7 @@ const AdminPanel = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                        <AcademicSetup secret={secret} batchYear={batchYear} />
+                                        <AcademicSetup secret={secret} batchYear={batchYear} onBatchCreated={fetchBatches} />
                                     </section>
                                 )}
 

@@ -99,6 +99,26 @@ export type BatchesResponse = {
 };
 
 /**
+ * Body_commit_students_excel_admin_commit_students_excel_post
+ */
+export type BodyCommitStudentsExcelAdminCommitStudentsExcelPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
+ * Body_commit_subjects_excel_admin_commit_subjects_excel_post
+ */
+export type BodyCommitSubjectsExcelAdminCommitSubjectsExcelPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
  * Body_excel_excel_post
  */
 export type BodyExcelExcelPost = {
@@ -176,6 +196,26 @@ export type BodyUploadStudentsExcelAdminUploadStudentsExcelPost = {
  * Body_upload_subjects_excel_admin_upload_subjects_excel_post
  */
 export type BodyUploadSubjectsExcelAdminUploadSubjectsExcelPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
+ * Body_validate_students_excel_admin_validate_students_excel_post
+ */
+export type BodyValidateStudentsExcelAdminValidateStudentsExcelPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
+ * Body_validate_subjects_excel_admin_validate_subjects_excel_post
+ */
+export type BodyValidateSubjectsExcelAdminValidateSubjectsExcelPost = {
     /**
      * File
      */
@@ -1489,6 +1529,213 @@ export type ListSectionsAdminListSectionsGetErrors = {
 export type ListSectionsAdminListSectionsGetError = ListSectionsAdminListSectionsGetErrors[keyof ListSectionsAdminListSectionsGetErrors];
 
 export type ListSectionsAdminListSectionsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetBatchStatusAdminBatchStatusGetData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+    };
+    url: '/admin/batch-status';
+};
+
+export type GetBatchStatusAdminBatchStatusGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetBatchStatusAdminBatchStatusGetError = GetBatchStatusAdminBatchStatusGetErrors[keyof GetBatchStatusAdminBatchStatusGetErrors];
+
+export type GetBatchStatusAdminBatchStatusGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UpdateBatchStatusAdminUpdateBatchStatusPostData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+        /**
+         * Status
+         */
+        status: string;
+    };
+    url: '/admin/update-batch-status';
+};
+
+export type UpdateBatchStatusAdminUpdateBatchStatusPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateBatchStatusAdminUpdateBatchStatusPostError = UpdateBatchStatusAdminUpdateBatchStatusPostErrors[keyof UpdateBatchStatusAdminUpdateBatchStatusPostErrors];
+
+export type UpdateBatchStatusAdminUpdateBatchStatusPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ValidateStudentsExcelAdminValidateStudentsExcelPostData = {
+    body: BodyValidateStudentsExcelAdminValidateStudentsExcelPost;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+    };
+    url: '/admin/validate-students-excel';
+};
+
+export type ValidateStudentsExcelAdminValidateStudentsExcelPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ValidateStudentsExcelAdminValidateStudentsExcelPostError = ValidateStudentsExcelAdminValidateStudentsExcelPostErrors[keyof ValidateStudentsExcelAdminValidateStudentsExcelPostErrors];
+
+export type ValidateStudentsExcelAdminValidateStudentsExcelPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ValidateSubjectsExcelAdminValidateSubjectsExcelPostData = {
+    body: BodyValidateSubjectsExcelAdminValidateSubjectsExcelPost;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/validate-subjects-excel';
+};
+
+export type ValidateSubjectsExcelAdminValidateSubjectsExcelPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ValidateSubjectsExcelAdminValidateSubjectsExcelPostError = ValidateSubjectsExcelAdminValidateSubjectsExcelPostErrors[keyof ValidateSubjectsExcelAdminValidateSubjectsExcelPostErrors];
+
+export type ValidateSubjectsExcelAdminValidateSubjectsExcelPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type CommitStudentsExcelAdminCommitStudentsExcelPostData = {
+    body: BodyCommitStudentsExcelAdminCommitStudentsExcelPost;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+        /**
+         * Section Name
+         */
+        section_name: string;
+    };
+    url: '/admin/commit-students-excel';
+};
+
+export type CommitStudentsExcelAdminCommitStudentsExcelPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CommitStudentsExcelAdminCommitStudentsExcelPostError = CommitStudentsExcelAdminCommitStudentsExcelPostErrors[keyof CommitStudentsExcelAdminCommitStudentsExcelPostErrors];
+
+export type CommitStudentsExcelAdminCommitStudentsExcelPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type CommitSubjectsExcelAdminCommitSubjectsExcelPostData = {
+    body: BodyCommitSubjectsExcelAdminCommitSubjectsExcelPost;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Semester
+         */
+        semester: string;
+    };
+    url: '/admin/commit-subjects-excel';
+};
+
+export type CommitSubjectsExcelAdminCommitSubjectsExcelPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CommitSubjectsExcelAdminCommitSubjectsExcelPostError = CommitSubjectsExcelAdminCommitSubjectsExcelPostErrors[keyof CommitSubjectsExcelAdminCommitSubjectsExcelPostErrors];
+
+export type CommitSubjectsExcelAdminCommitSubjectsExcelPostResponses = {
     /**
      * Successful Response
      */
