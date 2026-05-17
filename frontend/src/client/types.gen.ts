@@ -2521,7 +2521,12 @@ export type GetStudentDetailsParentStudentDetailsGetResponses = {
 export type UploadArchivePdftoexcelUploadPostData = {
     body: BodyUploadArchivePdftoexcelUploadPost;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Batch Year
+         */
+        batch_year?: number | null;
+    };
     url: '/pdftoexcel/upload';
 };
 
@@ -2549,7 +2554,12 @@ export type GetStatusPdftoexcelStatusJobIdGetData = {
          */
         job_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Batch Year
+         */
+        batch_year?: number | null;
+    };
     url: '/pdftoexcel/status/{job_id}';
 };
 
