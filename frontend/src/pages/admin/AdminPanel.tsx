@@ -342,6 +342,8 @@ const AdminPanel = () => {
     };
 
     const uploadPdfZip = async () => {
+        if (!batchYear)
+            return setStatus("Please select a batch from the dropdown first.");
         if (!pdfZipFile)
             return setStatus("Please select a zip file of PDFs first.");
         if (!secret) return alert("Admin secret missing");
@@ -352,6 +354,7 @@ const AdminPanel = () => {
         try {
             const res = await uploadArchivePdftoexcelUploadPost({
                 headers: { "X-Admin-Secret": secret },
+                query: { batch_year: batchYear },
                 body: { file: pdfZipFile }
             });
 
@@ -374,7 +377,8 @@ const AdminPanel = () => {
     const pollJobStatus = async (jobId: string | number, logId: string) => {
         try {
             const res = await getStatusPdftoexcelStatusJobIdGet({
-                path: { job_id: String(jobId) }
+                path: { job_id: String(jobId) },
+                query: { batch_year: batchYear }
             });
             if (res.error) {
                 const errMsg = (res.error as { error?: string }).error || "Unknown error";
@@ -382,12 +386,19 @@ const AdminPanel = () => {
             }
 
             if (res.data) {
-                const data = res.data as { status: string; excel_url?: string; progress?: number };
+                const data = res.data as { 
+                    status: string; 
+                    excel_url?: string; 
+                    progress?: number; 
+                    processed_files?: string[] 
+                };
                 if (data.status === "done") {
                     updateLog(logId, 'success', `Converted successfully!`);
                     setStatus(`✅ Done! Excel at ${data.excel_url}`);
                 } else {
-                    updateLog(logId, 'loading', `Processing... ${data.progress} PDFs done`);
+                    const current = data.progress || 0;
+                    const total = data.processed_files?.length || 0;
+                    updateLog(logId, 'loading', `Processing... ${current} / ${total} PDFs done`);
                     setTimeout(() => { void pollJobStatus(jobId, logId); }, 1000);
                 }
             }
