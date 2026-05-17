@@ -125,6 +125,9 @@ async def process_archive(job_id: str, archive_path: str, batch_year: int):
             
             asyncio.run_coroutine_threadsafe(update_db(), loop)
         
+        import time
+        parse_start_time = time.time()
+
         excel_url = await loop.run_in_executor(
             None, 
             process_pdfs, 
@@ -134,6 +137,9 @@ async def process_archive(job_id: str, archive_path: str, batch_year: int):
             progress_callback
         )
         
+        parse_duration = time.time() - parse_start_time
+        logger.info(f"🎉 PDF-to-Excel parser completed in {parse_duration:.2f} seconds ({parse_duration/60:.2f} minutes) for all PDFs!")
+
         if not excel_url:
             raise RuntimeError("PDF processing completed but failed to generate or upload Excel.")
 

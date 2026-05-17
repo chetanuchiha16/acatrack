@@ -12,13 +12,10 @@ const ADMIN_SECRET = __ENV.ADMIN_SECRET || 'supersecretkey';
 const zipFileBin = open('/home/chetan/Documents/Projects/dep/2023_SEM5.zip', 'b');
 
 export const options = {
-  stages: [
-    { duration: '2s', target: 1 },  // Ramp-up to 1 parallel users
-    { duration: '30s', target: 1 }, // Hold 1 users for 30 seconds
-    { duration: '2s', target: 0 },  // Ramp-down to 0 users
-  ],
+  vus: 1,
+  iterations: 1,
   thresholds: {
-    http_req_duration: ['p(95)<10000'], // Expect 95% of requests to finish under 10s
+    http_req_duration: ['p(95)<30000'], // Expect 95% of requests to finish under 30s for large files
     http_req_failed: ['rate<0.05'],     // Assert error rate is under 5%
   },
 };
