@@ -126,7 +126,46 @@ def main():
 
     run_time = time.time() - start_time
 
-    # Stop resource monitor
+    # Wait for background parsing jobs to complete in the DB
+    print("\n⏳ Uploads completed. Now monitoring background PDF parsing tasks in PostgreSQL...")
+    parsing_duration = 0.0
+    parsing_start_time = time.time()
+    db_polling_conn = None
+    try:
+        clean_db_url = DATABASE_URL.split("?")[0]
+        parsed = urlparse(clean_db_url)
+        db_polling_conn = psycopg2.connect(
+            dbname=parsed.path.lstrip("/"),
+            user=parsed.username,
+            password=parsed.password,
+            host=parsed.hostname or "localhost",
+            port=parsed.port or 5432,
+        )
+        
+        while True:
+            with db_polling_conn.cursor() as cur:
+                cur.execute("SELECT count(*) FROM jobs WHERE status IN ('queued', 'processing');")
+                active_count = cur.fetchone()[0]
+                if active_count == 0:
+                    break
+                
+                # Fetch live progress of active jobs
+                cur.execute("SELECT id, progress, status FROM jobs WHERE status IN ('queued', 'processing');")
+                active_jobs = cur.fetchall()
+                progress_strs = [f"Job {j[0][:8]}...: {j[1]}% ({j[2]})" for j in active_jobs]
+                print(f"\r⏳ Processing PDFs in background... Active Jobs: {len(active_jobs)} | {', '.join(progress_strs)}", end="")
+                
+            time.sleep(2)
+        print("\n✅ All background PDF-to-Excel parsing tasks completed successfully!")
+        parsing_duration = time.time() - parsing_start_time
+    except Exception as poll_err:
+        print(f"⚠️ Error polling database: {poll_err}")
+        parsing_duration = time.time() - parsing_start_time
+    finally:
+        if db_polling_conn:
+            db_polling_conn.close()
+
+    # Stop resource monitor after background jobs finish (captures true peak memory during parsing!)
     global keep_running
     keep_running = False
     monitor_thread.join()
@@ -181,7 +220,9 @@ def main():
 - **ZIP File Audited**: `{os.path.basename(zip_path) if zip_path else 'Unknown'}`
 - **PDFs Per ZIP Archive**: `{pdf_count}` PDFs
 - **Total PDFs Processed**: `{total_pdfs_processed}` PDFs (across all requests)
-- **Total Test Duration**: {run_time:.2f} seconds
+- **Upload Phase Duration**: {run_time:.2f} seconds
+- **Background Parsing Duration**: {parsing_duration:.2f} seconds (~{parsing_duration/60:.2f} minutes)
+- **Average Background Parsing Speed**: {parsing_duration/total_pdfs_processed if total_pdfs_processed else 0:.4f} seconds per PDF
 - **Total Upload Requests**: {http_reqs.get("count", 0)}
 - **Throughput Rate**: {http_reqs.get("rate", 0):.2f} reqs/sec
 - **Failure Rate**: {http_req_failed.get("value", 0) * 100:.2f}%
