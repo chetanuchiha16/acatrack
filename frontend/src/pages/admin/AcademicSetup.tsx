@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Database, BookOpen, UserCheck, Link, CheckCircle,
-  Lock, Loader2, RefreshCw, Users, FileText, ChevronRight,
+  Lock, Loader2, RefreshCw, Users, FileText, ChevronRight, AlertCircle, XCircle,
 } from "lucide-react";
 import {
   initBatchAdminInitBatchPost,
@@ -9,7 +9,7 @@ import {
 } from "../../client/sdk.gen";
 import {
   useAcademicWorkspace, getStepLocks, getStepStatus,
-  STATUS_META, type StepKey, type BatchLifecycle,
+  STATUS_META, type StepKey, type BatchLifecycle, type SubjectItem,
 } from "../../hooks/useAcademicWorkspace";
 import { useStudentDryRun, useSubjectDryRun } from "../../hooks/useDryRunUpload";
 import { StudentDryRunPanel, SubjectDryRunPanel } from "../../components/wizard/DryRunPanel";
@@ -24,6 +24,39 @@ const STEPS: { id: StepKey; label: string; icon: React.ElementType; accent: stri
   { id: "enrollment",     label: "Enrollment",      icon: UserCheck,  accent: "blue"   },
   { id: "allocation",     label: "Allocation",      icon: Link,       accent: "purple" },
 ];
+
+// ─── Reusable premium alert notification banner ──────────────────────────────
+const AlertNotification: React.FC<{
+  type: "success" | "error" | "info";
+  message: string;
+  onDismiss?: () => void;
+}> = ({ type, message, onDismiss }) => {
+  const bg = {
+    success: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-400",
+    error: "bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-400",
+    info: "bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-400",
+  }[type];
+
+  const Icon = {
+    success: CheckCircle,
+    error: XCircle,
+    info: Loader2,
+  }[type];
+
+  return (
+    <div className={`p-4 rounded-2xl border flex items-start gap-3 text-sm font-semibold shadow-sm transition-all duration-300 animate-fadeIn ${bg}`}>
+      <span className="mt-0.5 shrink-0">
+        <Icon size={18} className={type === "info" ? "animate-spin text-indigo-500" : ""} />
+      </span>
+      <div className="flex-1">{message}</div>
+      {onDismiss && (
+        <button onClick={onDismiss} className="text-current opacity-60 hover:opacity-100 font-bold text-xs shrink-0 select-none ml-2">
+          ✕
+        </button>
+      )}
+    </div>
+  );
+};
 
 // ─── Batch Dashboard Header ────────────────────────────────────────────────────
 const BatchDashboard: React.FC<{ lifecycle: BatchLifecycle | null; isLoading: boolean; onRefresh: () => void }> = ({
@@ -170,11 +203,20 @@ const InfrastructureStep: React.FC<{ secret: string; onDone: () => void; onBatch
   };
 
   return (
-    <div className="space-y-6 max-w-xl">
+    <div className="space-y-6 max-w-xl animate-fadeIn">
       <div>
         <h3 className="text-xl font-black text-slate-800 dark:text-white mb-1">1. Initialize Section Foundation</h3>
         <p className="text-sm text-slate-500">Define the batch year and create sections (A, B, C…). This unlocks all subsequent steps.</p>
       </div>
+
+      {msg && (
+        <AlertNotification
+          type={msg.ok ? "success" : "error"}
+          message={msg.text}
+          onDismiss={() => setMsg(null)}
+        />
+      )}
+
       <div className="grid grid-cols-2 gap-4">
         <Field label="Batch Year">
           <input type="number" value={batch} onChange={e => setBatch(e.target.value)} placeholder="e.g. 2023" className={inputCls("indigo")} />
@@ -187,12 +229,6 @@ const InfrastructureStep: React.FC<{ secret: string; onDone: () => void; onBatch
         {loading ? <Loader2 size={18} className="animate-spin" /> : <Database size={18} />}
         Initialize Infrastructure
       </button>
-      {msg && (
-        <div className={`p-4 rounded-2xl flex items-center gap-3 text-sm font-semibold ${msg.ok ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400" : "bg-rose-50 text-rose-600 dark:bg-rose-900/10"}`}>
-          {msg.ok ? <CheckCircle size={18} /> : <Lock size={18} />}
-          {msg.text}
-        </div>
-      )}
     </div>
   );
 };
@@ -206,7 +242,7 @@ const CatalogStep: React.FC<{ secret: string; onDone: () => void }> = ({ secret,
   const handleCommit = () => { if (file) void dryRun.commit(file, semester).then(onDone); };
 
   return (
-    <div className="space-y-6 max-w-xl">
+    <div className="space-y-6 max-w-xl animate-fadeIn">
       <div>
         <h3 className="text-xl font-black text-slate-800 dark:text-white mb-1">2. Register Academic Subjects</h3>
         <p className="text-sm text-slate-500">Upload subjects via Excel. File is validated first — you review before committing.</p>
@@ -251,7 +287,7 @@ const EnrollmentStep: React.FC<{ secret: string; batchYear: number; sections: { 
   const handleCommit = () => { if (file) void dryRun.commit(file, batchYear, sectionName).then(onDone); };
 
   return (
-    <div className="space-y-6 max-w-xl">
+    <div className="space-y-6 max-w-xl animate-fadeIn">
       <div>
         <h3 className="text-xl font-black text-slate-800 dark:text-white mb-1">3. Student Enrollment</h3>
         <p className="text-sm text-slate-500">Upload students via Excel. The dry-run preview shows duplicates and errors before any data is written.</p>
@@ -286,7 +322,7 @@ const EnrollmentStep: React.FC<{ secret: string; batchYear: number; sections: { 
 const AllocationStep: React.FC<{
   secret: string; batchYear: number;
   staff: { username: string; name: string }[];
-  subjects: { subject_code: string; subject_name: string }[];
+  subjects: SubjectItem[];
   sections: { id: number; name: string }[];
   onDone: () => void;
 }> = ({ secret, batchYear, staff, subjects, sections, onDone }) => {
@@ -296,6 +332,16 @@ const AllocationStep: React.FC<{
   const [semester, setSemester] = useState("sem1");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // Sync subject list based on selected semester
+  const filteredSubjects = subjects.filter(s => s.semester === semester);
+
+  // Reset selected subject if it's no longer in the filtered list
+  useEffect(() => {
+    if (subject && !filteredSubjects.some(s => s.subject_code === subject)) {
+      setSubject("");
+    }
+  }, [semester, filteredSubjects, subject]);
 
   const handle = async () => {
     if (!teacher || !subject || !section) return;
@@ -315,11 +361,20 @@ const AllocationStep: React.FC<{
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-2xl animate-fadeIn">
       <div>
         <h3 className="text-xl font-black text-slate-800 dark:text-white mb-1">4. Faculty–Subject Allocation</h3>
         <p className="text-sm text-slate-500">Map a registered staff member to a subject, section, and semester.</p>
       </div>
+
+      {msg && (
+        <AlertNotification
+          type={msg.ok ? "success" : "error"}
+          message={msg.text}
+          onDismiss={() => setMsg(null)}
+        />
+      )}
+
       <Field label="Staff Member">
         <select value={teacher} onChange={e => setTeacher(e.target.value)} className={inputCls("purple")}>
           <option value="">— Select Staff —</option>
@@ -334,8 +389,8 @@ const AllocationStep: React.FC<{
         </Field>
         <Field label="Subject">
           <select value={subject} onChange={e => setSubject(e.target.value)} className={inputCls("purple")}>
-            <option value="">— Subject —</option>
-            {subjects.map(s => <option key={s.subject_code} value={s.subject_code}>{s.subject_name}</option>)}
+            <option value="">— Select Subject —</option>
+            {filteredSubjects.map(s => <option key={s.subject_code} value={s.subject_code}>{s.subject_name} ({s.subject_code})</option>)}
           </select>
         </Field>
         <Field label="Section">
@@ -350,12 +405,6 @@ const AllocationStep: React.FC<{
         {loading ? <Loader2 size={18} className="animate-spin" /> : <Link size={18} />}
         Finalize Mapping
       </button>
-      {msg && (
-        <div className={`p-4 rounded-2xl flex items-center gap-3 text-sm font-semibold ${msg.ok ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400" : "bg-rose-50 text-rose-600"}`}>
-          {msg.ok ? <CheckCircle size={18} /> : <Users size={18} />}
-          {msg.text}
-        </div>
-      )}
     </div>
   );
 };
