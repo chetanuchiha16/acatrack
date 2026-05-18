@@ -247,7 +247,9 @@ def process_pdfs(
 
         # ── Slow path: legacy Python sequential engine (fallback) ─────────────────
         else:
-            logger.warning("⚠️ Rust engine not available — falling back to Python parser")
+            logger.warning(
+                "⚠️ Rust engine not available — falling back to Python parser"
+            )
             columns = ["student_usn", "student_name"]
             for code in subject_codes:
                 columns += [f"{code}_INTERNALS", f"{code}_EXTERNALS", f"{code}_CREDITS"]
