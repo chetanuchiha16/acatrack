@@ -18,7 +18,9 @@ from logger_config import get_logger
 logger = get_logger(__name__)
 
 
-async def create_university_report_async(university, selected_semester, session, section_name=None):
+async def create_university_report_async(
+    university, selected_semester, session, section_name=None
+):
     """
     Async version of university report generation.
     FAANG-level optimization: Avoid redundant fetches and use async I/O.

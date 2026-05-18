@@ -27,6 +27,7 @@ def _get_encryption_cipher():
 def _get_sync_session_maker():
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
+
     _raw_url = settings.database_url
     if _raw_url.startswith("postgresql+asyncpg://"):
         sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
@@ -40,11 +41,15 @@ def get_all_staff():
     SyncSession, engine = _get_sync_session_maker()
     from sqlalchemy import select as sa_select
     from models.schema import Teacher as T
+
     try:
         with SyncSession() as session:
             result = session.execute(sa_select(T))
             teachers = result.scalars().all()
-            return [{"username": t.username, "name": t.name, "email": t.email} for t in teachers]
+            return [
+                {"username": t.username, "name": t.name, "email": t.email}
+                for t in teachers
+            ]
     finally:
         engine.dispose()
 
@@ -53,34 +58,42 @@ def register_staff_single(name, email, hash_pw_fn):
     SyncSession, engine = _get_sync_session_maker()
     from models.schema import Teacher as T, Mentor as M
     from sqlalchemy import select as sa_select
-    username = email.split('@')[0]
+
+    username = email.split("@")[0]
     try:
         with SyncSession() as session:
             # Check if exists
-            existing = session.execute(sa_select(T).where(T.username == username)).scalars().first()
+            existing = (
+                session.execute(sa_select(T).where(T.username == username))
+                .scalars()
+                .first()
+            )
             if existing:
                 return {"error": f"Staff with username {username} already exists"}, 400
-            
+
             mentor = M(name=name)
             session.add(mentor)
             session.flush()
-            
+
             plain_pw = f"staff_{username}"
             pw_hash = hash_pw_fn(plain_pw)
-            
+
             teacher = T(
                 username=username,
                 name=name,
                 email=email,
                 password=pw_hash,
-                mentor_id=mentor.id
+                mentor_id=mentor.id,
             )
             session.add(teacher)
             session.commit()
-            return {"status": "success", "username": username, "plain_password": plain_pw}, 200
+            return {
+                "status": "success",
+                "username": username,
+                "plain_password": plain_pw,
+            }, 200
     finally:
         engine.dispose()
-
 
 
 def process_mentor_upload_file(
@@ -114,12 +127,11 @@ def process_mentor_upload_file(
     required_cols = ["Mentor_Username", "student_usn"]
     missing = [c for c in required_cols if c not in df.columns]
     if missing:
-        return {"error": f"Missing required columns: {missing}. Note: We now use Mentor_Username."}, 400
+        return {
+            "error": f"Missing required columns: {missing}. Note: We now use Mentor_Username."
+        }, 400
 
-
-    count_mentors = 0
     count_mappings = 0
-    mentor_cache = {}
     out = io.StringIO()
     out.write("username,name,plain_password,password_hash,role,linked_student\n")
 
@@ -147,7 +159,7 @@ def process_mentor_upload_file(
 
         # Note: using sync queries directly since this runs in an executor
         from sqlalchemy import select as sa_select
-        from models.schema import StudentAuth as SA, Mentor as M, Teacher as T
+        from models.schema import StudentAuth as SA, Teacher as T
 
         usns_in_df = [str(usn).strip() for usn in df["student_usn"] if str(usn).strip()]
         existing_students = (
@@ -180,7 +192,6 @@ def process_mentor_upload_file(
             if student:
                 student.mentor_id = teacher.mentor_id
                 count_mappings += 1
-
 
         session.commit()
 
@@ -345,7 +356,7 @@ def process_staff_bulk_upload(file_path, hash_pw_fn):
     SyncSession, engine = _get_sync_session_maker()
     from models.schema import Teacher as T, Mentor as M
     from sqlalchemy import select as sa_select
-    
+
     try:
         df = pd.read_excel(file_path)
     except Exception as e:
@@ -364,31 +375,37 @@ def process_staff_bulk_upload(file_path, hash_pw_fn):
                 email = str(row["Email"]).strip()
                 if not name or not email:
                     continue
-                
-                username = email.split('@')[0]
-                
+
+                username = email.split("@")[0]
+
                 # Check if exists
-                existing = session.execute(sa_select(T).where(T.username == username)).scalars().first()
+                existing = (
+                    session.execute(sa_select(T).where(T.username == username))
+                    .scalars()
+                    .first()
+                )
                 if existing:
                     continue
-                
+
                 mentor = M(name=name)
                 session.add(mentor)
                 session.flush()
-                
+
                 plain_pw = f"staff_{username}"
                 pw_hash = hash_pw_fn(plain_pw)
-                
+
                 teacher = T(
                     username=username,
                     name=name,
                     email=email,
                     password=pw_hash,
-                    mentor_id=mentor.id
+                    mentor_id=mentor.id,
                 )
                 session.add(teacher)
-                results.append({"username": username, "name": name, "plain_password": plain_pw})
-            
+                results.append(
+                    {"username": username, "name": name, "plain_password": plain_pw}
+                )
+
             session.commit()
             return {"status": "success", "registered": results}, 200
     finally:
@@ -571,6 +588,7 @@ def generate_accounts_csv(mode: str, batch_year: int) -> tuple[io.BytesIO, str]:
     sync_engine.dispose()
     return result
 
+
 def process_subject_upload_file(
     temp_upload_path: str,
 ) -> tuple[list[dict], int]:
@@ -592,16 +610,12 @@ def process_subject_upload_file(
             credits = int(row["credits"])
         except ValueError:
             credits = 0
-        
-        if not code or not name or code == 'NAN' or name == 'NAN':
+
+        if not code or not name or code == "NAN" or name == "NAN":
             continue
-            
-        results.append({
-            "code": code,
-            "name": name,
-            "credits": credits
-        })
-        
+
+        results.append({"code": code, "name": name, "credits": credits})
+
     return results, 200
 
 
@@ -624,16 +638,10 @@ def process_student_enrollment_upload_file(
         name = str(row["name"]).strip()
         email = str(row.get("email", "")).strip()
         phone = str(row.get("phone", "")).strip()
-        
-        if not usn or not name or usn == 'NAN' or name == 'NAN':
-            continue
-            
-        results.append({
-            "usn": usn,
-            "name": name,
-            "email": email,
-            "phone": phone
-        })
-        
-    return results, 200
 
+        if not usn or not name or usn == "NAN" or name == "NAN":
+            continue
+
+        results.append({"usn": usn, "name": name, "email": email, "phone": phone})
+
+    return results, 200

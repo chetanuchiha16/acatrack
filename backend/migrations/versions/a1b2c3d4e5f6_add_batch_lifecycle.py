@@ -18,9 +18,7 @@ depends_on = None
 
 def upgrade() -> None:
     # Create batchstatus enum type
-    batchstatus = sa.Enum(
-        "IN_SETUP", "READY", "ACTIVE", "ARCHIVED", name="batchstatus"
-    )
+    batchstatus = sa.Enum("IN_SETUP", "READY", "ACTIVE", "ARCHIVED", name="batchstatus")
     batchstatus.create(op.get_bind(), checkfirst=True)
 
     op.create_table(

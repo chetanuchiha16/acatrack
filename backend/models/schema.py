@@ -190,7 +190,9 @@ class SubjectAssignment(Base):
         String(20), ForeignKey("teachers.username", ondelete="CASCADE"), nullable=False
     )
     subject_code = Column(
-        String(20), ForeignKey("subjects.subject_code", ondelete="CASCADE"), nullable=False
+        String(20),
+        ForeignKey("subjects.subject_code", ondelete="CASCADE"),
+        nullable=False,
     )
     section_id = Column(
         Integer, ForeignKey("sections.id", ondelete="CASCADE"), nullable=False
