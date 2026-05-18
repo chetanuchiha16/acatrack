@@ -1,9 +1,8 @@
 import base64
-import io
 
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import JSONResponse, FileResponse
-from schemas import StudentResultResponse, ChartResponse
+from schemas import StudentResultResponse
 from cache_config import cache
 from logger_config import get_logger
 from services.student_service import Student
@@ -65,33 +64,3 @@ async def download_report(filename: str):
     if not os.path.exists(filepath):
         return JSONResponse(content={"error": "File not found"}, status_code=404)
     return FileResponse(filepath, filename=safe_filename, media_type="application/pdf")
-
-
-@router.get("/auth/Student/chart", response_model=ChartResponse)
-@cache(expire=3600)
-async def get_student_chart(
-    request: Request, usn: str = Query(None), semester: str = Query(None)
-):
-    batch_year = get_batch_year_from_request(request)
-
-    import asyncio
-
-    async with bm.session_scope(batch_year) as session:
-        student = await Student.create_async(
-            session, usn=usn, semester=semester, batch_year=batch_year
-        )
-
-    fig = await asyncio.get_event_loop().run_in_executor(
-        None, student.plot_subject_marks
-    )
-
-    buf = io.BytesIO()
-    fig.savefig(buf, format="png")
-    buf.seek(0)
-    img_base64 = base64.b64encode(buf.read()).decode("utf-8")
-
-    import matplotlib.pyplot as plt
-
-    plt.close(fig)
-
-    return {"image": f"data:image/png;base64,{img_base64}"}
