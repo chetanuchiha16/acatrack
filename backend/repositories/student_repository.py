@@ -215,6 +215,12 @@ class StudentRepository:
         )
         return list(result.scalars().all())
 
+    def get_subjects_by_codes_sync(self, subject_codes: list[str]) -> list[Subject]:
+        result = self.db.execute(
+            select(Subject).where(Subject.subject_code.in_(subject_codes))
+        )
+        return list(result.scalars().all())
+
     async def count_subjects(self) -> int:
         from sqlalchemy import func
 
