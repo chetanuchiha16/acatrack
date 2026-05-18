@@ -30,7 +30,9 @@ async def get_subject_results(
 
     def _sync():
         university = University(batch_year=by)
-        subject_result = SubjectResult(subject, semester, university, section_name=section)
+        subject_result = SubjectResult(
+            subject, semester, university, section_name=section
+        )
         return subject_result.get_subject_results_dict()
 
     result_data = await asyncio.get_event_loop().run_in_executor(None, _sync)
@@ -54,7 +56,9 @@ async def get_subject_report_pdf(
 
     def _sync():
         university = University(batch_year=by)
-        subject_result = SubjectResult(subject, semester, university, section_name=section)
+        subject_result = SubjectResult(
+            subject, semester, university, section_name=section
+        )
         return create_subject_report(subject_result)
 
     pdf_bytes = await asyncio.get_event_loop().run_in_executor(None, _sync)

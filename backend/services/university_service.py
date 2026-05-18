@@ -57,7 +57,9 @@ class University:
 
             with SyncSession() as session:
                 repo = UniversityRepository(session)
-                usns = repo.get_student_usns_by_semester_sync(semester, self.batch_year, section_name)
+                usns = repo.get_student_usns_by_semester_sync(
+                    semester, self.batch_year, section_name
+                )
             engine.dispose()
             return usns
         except Exception as e:
@@ -83,7 +85,9 @@ class University:
         """Calculates SGPA and CGPA for each student. This was redundant as Student calculates it, leaving intact for compatibility."""
         pass
 
-    async def calculate_academic_performance_async(self, session, selected_semester, section_name=None):
+    async def calculate_academic_performance_async(
+        self, session, selected_semester, section_name=None
+    ):
         """
         Calculates academic performance using SQL aggregations.
         # FAANG-level optimization: Use repository for O(1) stats retrieval.
@@ -127,7 +131,9 @@ class University:
             )
         return semester_results
 
-    async def get_students_for_semester_async(self, session, selected_semester, section_name=None):
+    async def get_students_for_semester_async(
+        self, session, selected_semester, section_name=None
+    ):
         from repositories.university_repository import UniversityRepository
 
         repo = UniversityRepository(session)

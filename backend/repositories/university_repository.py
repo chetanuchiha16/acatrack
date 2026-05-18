@@ -36,7 +36,9 @@ class UniversityRepository:
         )
 
         if section_name and section_name != "ALL":
-            query = query.join(Section, StudentAuth.section_id == Section.id).where(Section.name == section_name)
+            query = query.join(Section, StudentAuth.section_id == Section.id).where(
+                Section.name == section_name
+            )
 
         query = query.distinct()
         result = await self.db.execute(query)
@@ -68,7 +70,9 @@ class UniversityRepository:
         )
 
         if section_name and section_name != "ALL":
-            query = query.join(Section, StudentAuth.section_id == Section.id).where(Section.name == section_name)
+            query = query.join(Section, StudentAuth.section_id == Section.id).where(
+                Section.name == section_name
+            )
 
         query = query.distinct()
         result = self.db.execute(query)

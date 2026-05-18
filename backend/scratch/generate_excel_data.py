@@ -1,7 +1,6 @@
 import psycopg2
 import pandas as pd
 import os
-import sys
 
 # Predefined subject code to name map from fetch_service.py
 sem_subjects = {
@@ -58,14 +57,18 @@ sem_subjects = {
     "BCS586": "Mini Project",
 }
 
+
 def get_subject_name(code):
     clean_code = code.upper().strip()
     return sem_subjects.get(clean_code, f"{clean_code} Course")
 
+
 def generate():
     os.makedirs("scratch", exist_ok=True)
-    
-    conn = psycopg2.connect("postgresql://chetan:4myHina!@localhost:5432/Group_Project?sslmode=disable")
+
+    conn = psycopg2.connect(
+        "postgresql://chetan:4myHina!@localhost:5432/Group_Project?sslmode=disable"
+    )
     cur = conn.cursor()
 
     # 1. Fetch and generate Students
@@ -77,15 +80,19 @@ def generate():
     df_students["name"] = df_students["name"].str.strip()
     df_students["email"] = df_students["email"].str.strip()
     df_students["phone"] = df_students["phone"].astype(str).str.strip()
-    
+
     # Save student Excel files separated by batch (derived from USN like 1JS23... => 2023, 1JS22... => 2022)
     # We will write both a single combined file and batch-specific files
-    df_students["batch_year"] = df_students["usn"].apply(lambda u: 2023 if "23" in u else (2022 if "22" in u else 2023))
-    
+    df_students["batch_year"] = df_students["usn"].apply(
+        lambda u: 2023 if "23" in u else (2022 if "22" in u else 2023)
+    )
+
     for batch, group in df_students.groupby("batch_year"):
         cols = group[["usn", "name", "email", "phone"]]
         cols.to_excel(f"scratch/students_enrollment_{batch}.xlsx", index=False)
-        print(f"Saved scratch/students_enrollment_{batch}.xlsx with {len(group)} records")
+        print(
+            f"Saved scratch/students_enrollment_{batch}.xlsx with {len(group)} records"
+        )
 
     # 2. Fetch and generate Subjects
     print("Extracting subjects from semester tables...")
@@ -95,14 +102,14 @@ def generate():
         WHERE table_schema = 'public' AND table_name LIKE 'sem%';
     """)
     sem_tables = [r[0] for r in cur.fetchall()]
-    
-    semester_subjects = {} # semester -> set of (code, credits)
-    
+
+    semester_subjects = {}  # semester -> set of (code, credits)
+
     for table in sem_tables:
-        semester = table.split('_')[0].strip().lower() # e.g. "sem1"
+        semester = table.split("_")[0].strip().lower()  # e.g. "sem1"
         if semester not in semester_subjects:
             semester_subjects[semester] = set()
-            
+
         # Get columns of the sem table
         cur.execute(f"""
             SELECT column_name 
@@ -110,16 +117,22 @@ def generate():
             WHERE table_name = '{table}';
         """)
         cols = [r[0] for r in cur.fetchall()]
-        
+
         # Look for _CREDITS columns
-        credit_cols = [c for c in cols if c.endswith("_CREDITS") or c.endswith("_credits")]
+        credit_cols = [
+            c for c in cols if c.endswith("_CREDITS") or c.endswith("_credits")
+        ]
         for c_col in credit_cols:
-            subject_code = c_col.replace("_CREDITS", "").replace("_credits", "").strip().upper()
+            subject_code = (
+                c_col.replace("_CREDITS", "").replace("_credits", "").strip().upper()
+            )
             if not subject_code:
                 continue
-            
+
             # Fetch credit value
-            cur.execute(f'SELECT "{c_col}" FROM "{table}" WHERE "{c_col}" IS NOT NULL LIMIT 1;')
+            cur.execute(
+                f'SELECT "{c_col}" FROM "{table}" WHERE "{c_col}" IS NOT NULL LIMIT 1;'
+            )
             row = cur.fetchone()
             credits_val = int(row[0]) if row and row[0] is not None else 3
             semester_subjects[semester].add((subject_code, credits_val))
@@ -127,11 +140,9 @@ def generate():
     for semester, subjects_set in sorted(semester_subjects.items()):
         subjects_list = []
         for code, creds in sorted(subjects_set):
-            subjects_list.append({
-                "code": code,
-                "name": get_subject_name(code),
-                "credits": creds
-            })
+            subjects_list.append(
+                {"code": code, "name": get_subject_name(code), "credits": creds}
+            )
 
         df_subjects = pd.DataFrame(subjects_list)
         df_subjects.to_excel(f"scratch/subjects_{semester}.xlsx", index=False)
@@ -158,9 +169,11 @@ def generate():
     df_mapping = pd.DataFrame(mapping_data, columns=["Mentor_Username", "student_usn"])
     df_mapping["Mentor_Username"] = df_mapping["Mentor_Username"].str.strip()
     df_mapping["student_usn"] = df_mapping["student_usn"].str.strip().str.upper()
-    
+
     # Save mappings separated by student batch (2022 vs 2023)
-    df_mapping["batch_year"] = df_mapping["student_usn"].apply(lambda u: 2023 if "23" in u else (2022 if "22" in u else 2023))
+    df_mapping["batch_year"] = df_mapping["student_usn"].apply(
+        lambda u: 2023 if "23" in u else (2022 if "22" in u else 2023)
+    )
     for batch, group in df_mapping.groupby("batch_year"):
         cols = group[["Mentor_Username", "student_usn"]]
         cols.to_excel(f"scratch/mentor_mapping_{batch}.xlsx", index=False)
@@ -169,6 +182,7 @@ def generate():
     cur.close()
     conn.close()
     print("🎉 All Excel files generated successfully inside the scratch/ folder!")
+
 
 if __name__ == "__main__":
     generate()

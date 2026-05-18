@@ -35,7 +35,16 @@ def upgrade():
     bind = op.get_bind()
     inspector = sa.inspect(bind)
     existing_tables = inspector.get_table_names()
-    for table_to_drop in ["sem2_2023", "sem2_2022", "sem3_2022", "sem3_2023", "sem1_2023", "sem4_2022", "sem4_2023", "sem1_2022"]:
+    for table_to_drop in [
+        "sem2_2023",
+        "sem2_2022",
+        "sem3_2022",
+        "sem3_2023",
+        "sem1_2023",
+        "sem4_2022",
+        "sem4_2023",
+        "sem1_2022",
+    ]:
         if table_to_drop in existing_tables:
             op.drop_table(table_to_drop)
     with op.batch_alter_table("students", schema=None) as batch_op:
