@@ -4,8 +4,7 @@ import {
     aiProfileAiProfileGet,
     aiTrendAiTrendGet,
     aiPredictCgpaAiPredictCgpaGet,
-    getStudentAnalysisAuthStudentAnalysisGet,
-    getStudentChartAuthStudentChartGet
+    getStudentAnalysisAuthStudentAnalysisGet
 } from "../../client/sdk.gen";
 import {
     Sparkles, BarChart3, TrendingUp, TrendingDown,
@@ -88,6 +87,150 @@ interface PerformanceData {
     [key: string]: unknown;
 }
 
+// ─── Interactive SVG Performance Chart ─────────────────────────────────────────
+const AcademicSVGChart: React.FC<{ subjects: SubjectAnalysis[] }> = ({ subjects }) => {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+
+  if (!subjects || subjects.length === 0) return null;
+
+  const chartHeight = 220;
+  const paddingBottom = 40;
+  const paddingTop = 20;
+  const paddingLeft = 40;
+  const paddingRight = 20;
+  const chartWidth = 500;
+
+  const maxVal = 100;
+  const graphHeight = chartHeight - paddingTop - paddingBottom;
+  const graphWidth = chartWidth - paddingLeft - paddingRight;
+
+  const step = graphWidth / subjects.length;
+  const barWidth = Math.min(30, step * 0.6);
+
+  return (
+    <div className="relative bg-slate-50 dark:bg-[#0b0f19] p-5 rounded-2xl border border-slate-100 dark:border-slate-800/80 shadow-inner w-full">
+      <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto overflow-visible select-none">
+        <defs>
+          <linearGradient id="barGradPass" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#10b981" />
+            <stop offset="100%" stopColor="#059669" />
+          </linearGradient>
+          <linearGradient id="barGradFail" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ef4444" />
+            <stop offset="100%" stopColor="#dc2626" />
+          </linearGradient>
+          <filter id="glowPass" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        {/* Grid Lines */}
+        {[0, 25, 50, 75, 100].map((val) => {
+          const y = paddingTop + graphHeight - (val / maxVal) * graphHeight;
+          return (
+            <g key={val}>
+              <line x1={paddingLeft} y1={y} x2={chartWidth - paddingRight} y2={y} stroke="rgba(148, 163, 184, 0.08)" strokeDasharray="3 3" />
+              <text x={paddingLeft - 10} y={y + 4} textAnchor="end" className="text-[10px] font-black fill-slate-400 dark:fill-slate-500">{val}</text>
+            </g>
+          );
+        })}
+
+        {/* Bars */}
+        {subjects.map((sub, index) => {
+          const total = sub.total || 0;
+          const pct = Math.min(100, Math.max(0, total));
+          const barHeight = (pct / maxVal) * graphHeight;
+          const x = paddingLeft + index * step + (step - barWidth) / 2;
+          const y = paddingTop + graphHeight - barHeight;
+          const isHovered = hoveredIndex === index;
+          const isPass = (sub.status || "").toLowerCase() === "pass";
+
+          return (
+            <g
+              key={sub.code || index}
+              onMouseEnter={(e) => {
+                setHoveredIndex(index);
+                // Position tooltip above the bar
+                setTooltipPos({
+                  x: x + barWidth / 2,
+                  y: y - 10
+                });
+              }}
+              onMouseLeave={() => {
+                setHoveredIndex(null);
+                setTooltipPos(null);
+              }}
+              className="cursor-pointer"
+            >
+              {/* Actual bar */}
+              <rect
+                x={x}
+                y={y}
+                width={barWidth}
+                height={barHeight}
+                rx={4}
+                fill={isPass ? "url(#barGradPass)" : "url(#barGradFail)"}
+                filter={isHovered ? "url(#glowPass)" : undefined}
+                className="transition-all duration-300 origin-bottom"
+                style={{
+                  transform: isHovered ? "scaleY(1.03)" : "none",
+                  transformOrigin: "bottom"
+                }}
+              />
+
+              {/* Subject Code labels at bottom */}
+              <text
+                x={x + barWidth / 2}
+                y={chartHeight - paddingBottom + 16}
+                textAnchor="middle"
+                className={`text-[9px] font-bold uppercase transition-all duration-200 ${isHovered ? "fill-indigo-500 dark:fill-indigo-400 font-extrabold scale-105" : "fill-slate-400 dark:fill-slate-500"}`}
+              >
+                {sub.code || "N/A"}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* X Axis Line */}
+        <line x1={paddingLeft} y1={chartHeight - paddingBottom} x2={chartWidth - paddingRight} y2={chartHeight - paddingBottom} stroke="rgba(148, 163, 184, 0.2)" strokeWidth="1.5" />
+      </svg>
+
+      {/* Floating Interactive Tooltip */}
+      {hoveredIndex !== null && tooltipPos && (
+        <div
+          className="absolute z-50 bg-slate-900/95 dark:bg-slate-950/95 text-white p-3.5 rounded-2xl shadow-xl border border-slate-700/50 backdrop-blur-md pointer-events-none transition-all duration-200"
+          style={{
+            left: `${(tooltipPos.x / chartWidth) * 100}%`,
+            top: `${(tooltipPos.y / chartHeight) * 100}%`,
+            transform: "translate(-50%, -105%)",
+          }}
+        >
+          <div className="flex flex-col gap-1 min-w-[150px]">
+            <div className="flex justify-between items-center gap-4">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{subjects[hoveredIndex].code}</span>
+              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${subjects[hoveredIndex].status?.toLowerCase() === 'pass' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                {subjects[hoveredIndex].status}
+              </span>
+            </div>
+            <span className="text-xs font-bold text-white truncate max-w-[180px]">{subjects[hoveredIndex].subject_name}</span>
+            <div className="border-t border-slate-800/80 my-1"></div>
+            <div className="grid grid-cols-2 gap-x-2 text-[10px] text-slate-300">
+              <span>IA Internals:</span>
+              <span className="text-right font-mono font-bold text-slate-200">{subjects[hoveredIndex].ia}</span>
+              <span>SEE Exam:</span>
+              <span className="text-right font-mono font-bold text-slate-200">{subjects[hoveredIndex].see}</span>
+              <span className="text-white font-bold mt-0.5">Total Marks:</span>
+              <span className="text-right font-mono font-black text-indigo-400 mt-0.5 text-[11px]">{subjects[hoveredIndex].total}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
     const [viewMode, setViewMode] = useState<"ai" | "perf">("ai");
     
@@ -97,7 +240,6 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
     const [loadingPerf, setLoadingPerf] = useState<boolean>(false);
     const [errorAI, setErrorAI] = useState<string>("");
     const [errorPerf, setErrorPerf] = useState<string>("");
-    const [chartUrl, setChartUrl] = useState<string>("");
 
     useEffect(() => {
         if (viewMode === "ai" && !aiData && !loadingAI) {
@@ -157,7 +299,6 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                     improvement_advice: Array.isArray(data.improvement_advice) ? data.improvement_advice : [],
                     study_summary: data.study_summary || "Focus on overall improvement.",
                 });
-                void fetchChart();
             } else {
                 const errorData = res.error as { error?: string };
                 setErrorPerf(errorData?.error || "Failed to fetch student performance");
@@ -166,21 +307,6 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
             setErrorPerf("Server error: " + (err instanceof Error ? err.message : "Unknown"));
         } finally {
             setLoadingPerf(false);
-        }
-    };
-
-    // Fetch Chart
-    const fetchChart = async () => {
-        try {
-            const res = await getStudentChartAuthStudentChartGet({
-                query: { usn, semester }
-            });
-            if (res.data) {
-                const chartData = res.data as { image?: string };
-                setChartUrl(chartData.image || "");
-            }
-        } catch (err) {
-            console.error("Failed to fetch chart:", err);
         }
     };
 
@@ -513,12 +639,12 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
 
                                 {/* Right Column: Chart & Advice */}
                                 <div className="space-y-6">
-                                    {chartUrl && (
-                                        <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center">
-                                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider w-full mb-4">
-                                                Performance Chart
+                                    {performanceData.subject_analysis && performanceData.subject_analysis.length > 0 && (
+                                        <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+                                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                                <BarChart3 size={16} className="text-indigo-500" /> Interactive Performance Chart
                                             </h4>
-                                            <img src={chartUrl} alt="Performance Chart" className="w-full rounded-xl border border-gray-100 dark:border-gray-700" />
+                                            <AcademicSVGChart subjects={performanceData.subject_analysis} />
                                         </div>
                                     )}
 

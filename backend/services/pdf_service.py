@@ -168,20 +168,24 @@ async def process_archive(job_id: str, archive_path: str, batch_year: int):
         if local_temp_path.exists():
             try:
                 from services.data_prep import convert_excel_to_postgres
-                logger.info("🔄 Resilient DB Sync: Proactively importing parsed results to Postgres...")
-                await loop.run_in_executor(
-                    None,
-                    convert_excel_to_postgres,
-                    str(local_temp_path),
-                    batch_year
+
+                logger.info(
+                    "🔄 Resilient DB Sync: Proactively importing parsed results to Postgres..."
                 )
-                logger.info("✅ Resilient DB Sync: Postgres database updated successfully!")
+                await loop.run_in_executor(
+                    None, convert_excel_to_postgres, str(local_temp_path), batch_year
+                )
+                logger.info(
+                    "✅ Resilient DB Sync: Postgres database updated successfully!"
+                )
             except Exception as db_err:
                 logger.error(f"❌ Resilient DB Sync failed: {db_err}", exc_info=True)
 
         if not excel_url:
             if local_temp_path.exists():
-                logger.warning("⚠️ Excel upload to Supabase failed, but local copy exists. Proceeding with local fallback URL.")
+                logger.warning(
+                    "⚠️ Excel upload to Supabase failed, but local copy exists. Proceeding with local fallback URL."
+                )
                 excel_url = f"local_fallback://{excel_filename}"
             else:
                 raise RuntimeError(
