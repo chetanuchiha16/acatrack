@@ -160,13 +160,9 @@ async def process_archive(job_id: str, archive_path: str, batch_year: int):
         )
 
         parsed_rows = []
-        if isinstance(result, tuple):
-            if len(result) == 3:
-                excel_url, parse_duration, parsed_rows = result
-            elif len(result) == 2:
-                excel_url, parse_duration = result
+        if isinstance(result, tuple) and len(result) == 3:
+            _, parse_duration, parsed_rows = result
         else:
-            excel_url = result
             parse_duration = time.time() - parse_start_time
 
         logger.info(
@@ -276,9 +272,7 @@ async def build_excel_and_upload_async(
         # Save excel_url to the completed job record
         if excel_url:
             async with bm.session_scope(batch_year) as session:
-                result_job = await session.execute(
-                    select(Job).where(Job.id == job_id)
-                )
+                result_job = await session.execute(select(Job).where(Job.id == job_id))
                 job = result_job.scalars().first()
                 if job:
                     job.excel_url = excel_url

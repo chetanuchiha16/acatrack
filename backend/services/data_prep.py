@@ -311,7 +311,9 @@ def convert_in_memory_rows_to_postgres(rows: list[dict], batch_year: int):
                     subject_cols[subj_code]["credits"] = col
 
         # 2. Pre-fetch students, subjects, and results to avoid N+1 queries
-        usns_in_group = {str(r.get("student_usn")).strip() for r in sem_rows if r.get("student_usn")}
+        usns_in_group = {
+            str(r.get("student_usn")).strip() for r in sem_rows if r.get("student_usn")
+        }
         usns_in_group.discard("None")
         usns_in_group.discard("nan")
 
@@ -325,8 +327,10 @@ def convert_in_memory_rows_to_postgres(rows: list[dict], batch_year: int):
 
         student_ids = [s.id for s in existing_students]
         if student_ids and subject_codes:
-            existing_results = student_repo.get_results_by_student_ids_and_subjects_sync(
-                student_ids, subject_codes
+            existing_results = (
+                student_repo.get_results_by_student_ids_and_subjects_sync(
+                    student_ids, subject_codes
+                )
             )
         else:
             existing_results = []
@@ -350,7 +354,9 @@ def convert_in_memory_rows_to_postgres(rows: list[dict], batch_year: int):
 
             # Process subjects and academic results
             for subj_code, metrics in subject_cols.items():
-                real_subject_name = sem_subjects.get(semester_name, {}).get(subj_code, subj_code)
+                real_subject_name = sem_subjects.get(semester_name, {}).get(
+                    subj_code, subj_code
+                )
 
                 # Get or Create Subject
                 subject = subject_map.get(subj_code)
@@ -359,13 +365,16 @@ def convert_in_memory_rows_to_postgres(rows: list[dict], batch_year: int):
                         subject_code=subj_code,
                         subject_name=real_subject_name,
                         semester=semester_name,
-                        credits=0
+                        credits=0,
                     )
                     db.session.add(subject)
                     db.session.flush()
                     subject_map[subj_code] = subject
                 else:
-                    if subject.subject_name == subj_code and real_subject_name != subj_code:
+                    if (
+                        subject.subject_name == subj_code
+                        and real_subject_name != subj_code
+                    ):
                         subject.subject_name = real_subject_name
 
                 # Extract Credits
@@ -387,17 +396,29 @@ def convert_in_memory_rows_to_postgres(rows: list[dict], batch_year: int):
                     continue
 
                 try:
-                    ia_marks = int(float(r[ia_col])) if ia_col and r.get(ia_col) is not None else 0
+                    ia_marks = (
+                        int(float(r[ia_col]))
+                        if ia_col and r.get(ia_col) is not None
+                        else 0
+                    )
                 except (ValueError, TypeError):
                     ia_marks = 0
 
                 try:
-                    see_marks = int(float(r[see_col])) if see_col and r.get(see_col) is not None else 0
+                    see_marks = (
+                        int(float(r[see_col]))
+                        if see_col and r.get(see_col) is not None
+                        else 0
+                    )
                 except (ValueError, TypeError):
                     see_marks = 0
 
                 try:
-                    total_marks = int(float(r[total_col])) if total_col and r.get(total_col) is not None else (ia_marks + see_marks)
+                    total_marks = (
+                        int(float(r[total_col]))
+                        if total_col and r.get(total_col) is not None
+                        else (ia_marks + see_marks)
+                    )
                 except (ValueError, TypeError):
                     total_marks = ia_marks + see_marks
 
@@ -413,7 +434,7 @@ def convert_in_memory_rows_to_postgres(rows: list[dict], batch_year: int):
                         batch_year=batch_year,
                         ia_marks=ia_marks,
                         see_marks=see_marks,
-                        total_marks=total_marks
+                        total_marks=total_marks,
                     )
                     db.session.add(result)
                     result_map[(student.id, subj_code)] = result
@@ -423,4 +444,6 @@ def convert_in_memory_rows_to_postgres(rows: list[dict], batch_year: int):
                     result.total_marks = total_marks
 
         db.session.commit()
-        logger.debug(f"Saved in-memory semester group '{semester_name}' to normalized tables.")
+        logger.debug(
+            f"Saved in-memory semester group '{semester_name}' to normalized tables."
+        )
