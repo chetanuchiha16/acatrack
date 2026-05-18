@@ -93,11 +93,11 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
 
         student_repo = StudentRepository(db.session)
 
-        existing_students = student_repo.get_auths_by_usns(list(usns_in_df))
+        existing_students = student_repo.get_auths_by_usns_sync(list(usns_in_df))
         student_map = {s.usn: s for s in existing_students}
 
         subject_codes = list(subject_cols.keys())
-        existing_subjects = student_repo.get_subjects_by_codes(subject_codes)
+        existing_subjects = student_repo.get_subjects_by_codes_sync(subject_codes)
         subject_map = {s.subject_code: s for s in existing_subjects}
 
         student_ids = [s.id for s in existing_students]
