@@ -19,6 +19,13 @@ from logger_config import get_logger
 from utils.cloud import upload_excel_to_supabase
 from PIL import Image
 
+# ── Rust high-performance PDF engine (falls back gracefully if not compiled) ──
+try:
+    import acatrack_rust
+    RUST_ENGINE_AVAILABLE = True
+except ImportError:
+    RUST_ENGINE_AVAILABLE = False
+
 logger = get_logger(__name__)
 
 # ---------------- CONFIG ----------------
@@ -191,9 +198,6 @@ def extract_from_pdf(pdf_path, subject_codes, columns):
 def process_pdfs(excel_filename, pdf_folder, supabase_folder=None, progress_callback=None):
     subject_codes = scan_subject_codes(pdf_folder)
     excel_path = Path(tempfile.gettempdir()) / f"{excel_filename}"  # temp path
-    columns = ["student_usn", "student_name"]
-    for code in subject_codes:
-        columns += [f"{code}_INTERNALS", f"{code}_EXTERNALS", f"{code}_CREDITS"]
 
     # load existing Excel if present
     existing_sheets = {}
@@ -204,46 +208,71 @@ def process_pdfs(excel_filename, pdf_folder, supabase_folder=None, progress_call
 
     pdf_files = [f for f in os.listdir(pdf_folder) if f.endswith(".pdf")]
     total_pdfs = len(pdf_files)
-    processed_count = 0
+    pdf_paths = [os.path.join(pdf_folder, f) for f in pdf_files]
 
-    for file in pdf_files:
-        pdf_path = os.path.join(pdf_folder, file)
-        try:
-            row = extract_from_pdf(pdf_path, subject_codes, columns)
-        except Exception as parse_err:
-            logger.error(f"❌ Failed to parse PDF '{file}': {parse_err}")
-            processed_count += 1
-            if progress_callback:
-                try:
-                    progress_callback(processed_count, total_pdfs)
-                except Exception as cb_err:
-                    logger.warning(f"Progress callback failed: {cb_err}")
-            continue
+    # ── Fast path: Rust parallel engine ───────────────────────────────────────
+    if RUST_ENGINE_AVAILABLE:
+        logger.info(f"🦀 Using Rust parallel engine for {total_pdfs} PDFs...")
+        t_start = time.perf_counter()
 
-        processed_count += 1
+        raw_rows = acatrack_rust.parse_pdfs_parallel(pdf_paths, subject_codes)
+
+        elapsed = time.perf_counter() - t_start
+        logger.info(f"🎉 Rust engine parsed {total_pdfs} PDFs in {elapsed:.3f}s "
+                    f"({elapsed / total_pdfs:.4f}s per PDF)")
+
+        rows = [r for r in raw_rows if r is not None]
+
+        # Signal 100% progress immediately after Rust finishes
         if progress_callback:
             try:
-                progress_callback(processed_count, total_pdfs)
+                progress_callback(total_pdfs, total_pdfs)
             except Exception as cb_err:
                 logger.warning(f"Progress callback failed: {cb_err}")
 
-        if not row["student_usn"]:
-            logger.debug(f"⚠️ Skipping PDF '{file}' because USN was not found")
+    # ── Slow path: legacy Python sequential engine (fallback) ─────────────────
+    else:
+        logger.warning("⚠️ Rust engine not available — falling back to Python parser")
+        columns = ["student_usn", "student_name"]
+        for code in subject_codes:
+            columns += [f"{code}_INTERNALS", f"{code}_EXTERNALS", f"{code}_CREDITS"]
+
+        rows = []
+        for idx, (file, pdf_path) in enumerate(zip(pdf_files, pdf_paths)):
+            try:
+                row = extract_from_pdf(pdf_path, subject_codes, columns)
+                rows.append(row)
+            except Exception as parse_err:
+                logger.error(f"❌ Failed to parse PDF '{file}': {parse_err}")
+
+            if progress_callback:
+                try:
+                    progress_callback(idx + 1, total_pdfs)
+                except Exception as cb_err:
+                    logger.warning(f"Progress callback failed: {cb_err}")
+
+    # ── Shared: merge all rows into per-semester Excel sheets ─────────────────
+    for row in rows:
+        if not row.get("student_usn"):
             continue
 
         sem_sheet = f"sem{row.get('SEMESTER', 'Unknown')}"
-        row.pop("SEMESTER", None)
+        row_clean = {k: v for k, v in row.items() if k != "SEMESTER"}
+
+        # Inject credits column from the sem_credits lookup table
+        semester_key = f"sem{row.get('SEMESTER', '')}"
+        for code in subject_codes:
+            credit_val = sem_credits.get(semester_key, {}).get(code, 0)
+            row_clean[f"{code}_CREDITS"] = credit_val
 
         df_new = (
-            pd.DataFrame([row])
+            pd.DataFrame([row_clean])
             .dropna(axis=1, how="all")
             .set_index("student_usn", drop=False)
         )
 
         if sem_sheet in existing_sheets:
-            df_existing = existing_sheets[sem_sheet].set_index(
-                "student_usn", drop=False
-            )
+            df_existing = existing_sheets[sem_sheet].set_index("student_usn", drop=False)
             df_existing.update(df_new)
             df_combined = pd.concat(
                 [df_existing, df_new[~df_new.index.isin(df_existing.index)]]
