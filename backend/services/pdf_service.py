@@ -149,60 +149,84 @@ async def process_archive(job_id: str, archive_path: str, batch_year: int):
 
         parse_start_time = time.time()
 
-        excel_url = await loop.run_in_executor(
+        result = await loop.run_in_executor(
             None,
             process_pdfs,
             excel_filename,
             flat_pdf_dir,
             supabase_folder,
             progress_callback,
+            True,  # parse_only=True
         )
 
-        parse_duration = time.time() - parse_start_time
+        parsed_rows = []
+        if isinstance(result, tuple):
+            if len(result) == 3:
+                excel_url, parse_duration, parsed_rows = result
+            elif len(result) == 2:
+                excel_url, parse_duration = result
+        else:
+            excel_url = result
+            parse_duration = time.time() - parse_start_time
+
         logger.info(
             f"🎉 PDF-to-Excel parser completed in {parse_duration:.2f} seconds ({parse_duration / 60:.2f} minutes) for all PDFs!"
         )
 
         # --- RESILIENT DB SYNC & FALLBACK ---
-        # Proactively load the parsed data from local Excel into PostgreSQL directly
-        if local_temp_path.exists():
+        # Proactively load the parsed data directly from memory into PostgreSQL
+        ingestion_duration = 0.0
+        if parsed_rows:
             try:
-                from services.data_prep import convert_excel_to_postgres
+                from services.data_prep import convert_in_memory_rows_to_postgres
 
                 logger.info(
-                    "🔄 Resilient DB Sync: Proactively importing parsed results to Postgres..."
+                    "🔄 Resilient DB Sync: Proactively importing parsed results to Postgres (In-Memory)..."
                 )
+                ingest_start = time.perf_counter()
                 await loop.run_in_executor(
-                    None, convert_excel_to_postgres, str(local_temp_path), batch_year
+                    None, convert_in_memory_rows_to_postgres, parsed_rows, batch_year
                 )
+                ingestion_duration = time.perf_counter() - ingest_start
                 logger.info(
                     "✅ Resilient DB Sync: Postgres database updated successfully!"
                 )
             except Exception as db_err:
                 logger.error(f"❌ Resilient DB Sync failed: {db_err}", exc_info=True)
+        else:
+            logger.warning("⚠️ No parsed rows found for database synchronization.")
 
-        if not excel_url:
-            if local_temp_path.exists():
-                logger.warning(
-                    "⚠️ Excel upload to Supabase failed, but local copy exists. Proceeding with local fallback URL."
-                )
-                excel_url = f"local_fallback://{excel_filename}"
-            else:
-                raise RuntimeError(
-                    "PDF processing completed but failed to generate Excel."
-                )
-
-        # 5. Success
+        # 5. Success - mark Job as done in Postgres immediately so student gets their grades instantly!
         async with bm.session_scope(batch_year) as session:
-            result = await session.execute(select(Job).where(Job.id == job_id))
-            job = result.scalars().first()
+            result_job = await session.execute(select(Job).where(Job.id == job_id))
+            job = result_job.scalars().first()
             if job:
                 job.status = "done"
                 job.progress = 100
-                job.excel_url = excel_url
+                job.meta = {
+                    "parse_duration": parse_duration,
+                    "ingestion_duration": ingestion_duration,
+                }
                 await session.commit()
 
-        logger.info(f"Job {job_id} completed successfully! Excel URL: {excel_url}")
+        logger.info(f"Job {job_id} database sync completed successfully!")
+
+        # 6. Launch out-of-band Excel compilation and Supabase upload
+        asyncio.create_task(
+            build_excel_and_upload_async(
+                excel_filename,
+                temp_dir,
+                flat_pdf_dir,
+                supabase_folder,
+                batch_year,
+                job_id,
+                archive_path,
+                parsed_rows,
+            )
+        )
+        # Release semaphore early as main workload is finished
+        _pdf_processing_semaphore.release()
+        return
 
     except Exception as e:
         logger.error(f"Error processing archive for job {job_id}: {e}", exc_info=True)
@@ -213,13 +237,66 @@ async def process_archive(job_id: str, archive_path: str, batch_year: int):
                 job.status = "failed"
                 job.error = str(e)
                 await session.commit()
-
-    finally:
+        # Clean up temp files immediately on failure
         _pdf_processing_semaphore.release()
-        # Clean up temporary directory and uploaded zip file
         try:
             shutil.rmtree(temp_dir)
             if os.path.exists(archive_path):
                 os.remove(archive_path)
         except Exception as err:
-            logger.warning(f"Failed to clean up temp files: {err}")
+            logger.warning(f"Failed to clean up temp files on job failure: {err}")
+
+
+async def build_excel_and_upload_async(
+    excel_filename,
+    temp_dir,
+    flat_pdf_dir,
+    supabase_folder,
+    batch_year,
+    job_id,
+    archive_path,
+    parsed_rows,
+):
+    try:
+        logger.info(f"📁 Starting out-of-band Excel compilation for Job {job_id}...")
+        loop = asyncio.get_running_loop()
+        # Call process_pdfs with parse_only=False to compile and upload Excel
+        result = await loop.run_in_executor(
+            None,
+            process_pdfs,
+            excel_filename,
+            flat_pdf_dir,
+            supabase_folder,
+            None,
+            False,  # parse_only=False
+            parsed_rows,
+        )
+        excel_url = result[0] if isinstance(result, tuple) else result
+
+        # Save excel_url to the completed job record
+        if excel_url:
+            async with bm.session_scope(batch_year) as session:
+                result_job = await session.execute(
+                    select(Job).where(Job.id == job_id)
+                )
+                job = result_job.scalars().first()
+                if job:
+                    job.excel_url = excel_url
+                    await session.commit()
+            logger.info(
+                f"✅ Out-of-band Excel compilation completed successfully for Job {job_id}! URL: {excel_url}"
+            )
+    except Exception as e:
+        logger.error(
+            f"❌ Out-of-band Excel compilation failed for Job {job_id}: {e}",
+            exc_info=True,
+        )
+    finally:
+        # Clean up temporary directory and uploaded zip file after Excel compilation is done
+        try:
+            shutil.rmtree(temp_dir)
+            if os.path.exists(archive_path):
+                os.remove(archive_path)
+            logger.debug(f"🧹 Temporary files cleaned up for Job {job_id}.")
+        except Exception as err:
+            logger.warning(f"Failed to clean up temp files for Job {job_id}: {err}")

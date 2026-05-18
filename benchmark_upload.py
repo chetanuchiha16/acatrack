@@ -174,6 +174,35 @@ def main():
         if db_polling_conn:
             db_polling_conn.close()
 
+    # Fetch job metas for the processed background tasks
+    job_metas = []
+    try:
+        clean_db_url = DATABASE_URL.split("?")[0]
+        parsed = urlparse(clean_db_url)
+        telemetry_conn = psycopg2.connect(
+            dbname=parsed.path.lstrip("/"),
+            user=parsed.username,
+            password=parsed.password,
+            host=parsed.hostname or "localhost",
+            port=parsed.port or 5432,
+        )
+        with telemetry_conn.cursor() as cur:
+            cur.execute("SELECT meta FROM jobs WHERE status = 'done' ORDER BY created_at DESC LIMIT 4;")
+            job_metas = [row[0] for row in cur.fetchall() if row[0]]
+        telemetry_conn.close()
+    except Exception as telemetry_err:
+        print(f"⚠️ Failed to fetch job telemetry from Postgres: {telemetry_err}")
+
+    avg_parse_time = 0.0
+    avg_ingestion_time = 0.0
+    if job_metas:
+        parse_times = [m.get("parse_duration", 0.0) for m in job_metas if isinstance(m, dict)]
+        ingest_times = [m.get("ingestion_duration", 0.0) for m in job_metas if isinstance(m, dict)]
+        if parse_times:
+            avg_parse_time = sum(parse_times) / len(parse_times)
+        if ingest_times:
+            avg_ingestion_time = sum(ingest_times) / len(ingest_times)
+
     # Stop resource monitor after background jobs finish (captures true peak memory during parsing!)
     global keep_running
     keep_running = False
@@ -235,6 +264,10 @@ def main():
 - **Total Upload Requests**: {http_reqs.get("count", 0)}
 - **Throughput Rate**: {http_reqs.get("rate", 0):.2f} reqs/sec
 - **Failure Rate**: {http_req_failed.get("value", 0) * 100:.2f}%
+
+## ⚡ Core Pipeline Metrics (Background Tasks)
+- **Average Raw Rust Engine PDF Parsing Duration**: {avg_parse_time:.2f} seconds (~{avg_parse_time/pdf_count if pdf_count else 0:.4f} seconds per PDF)
+- **Average PostgreSQL Database Ingestion Duration**: {avg_ingestion_time:.2f} seconds
 
 ## ⚡ Latency Metrics (Upload Route)
 - **p(95) Response Time**: {p95_latency:.2f} ms (~{p95_latency/1000:.2f} seconds)
