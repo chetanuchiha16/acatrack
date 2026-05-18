@@ -195,8 +195,9 @@ const InfrastructureStep: React.FC<{ secret: string; onDone: () => void; onBatch
       setMsg({ ok: true, text: `Batch ${batch} initialized with sections: ${sections}` });
       onBatchCreated?.();  // refresh sidebar dropdown
       onDone();
-    } catch (err: any) {
-      setMsg({ ok: false, text: err.body?.error || err.message || "Failed" });
+    } catch (err) {
+      const error = err as { body?: { error?: string }; message?: string };
+      setMsg({ ok: false, text: error.body?.error || error.message || "Failed" });
     } finally {
       setLoading(false);
     }
@@ -353,8 +354,9 @@ const AllocationStep: React.FC<{
       });
       setMsg({ ok: true, text: "Subject assigned successfully." });
       onDone();
-    } catch (err: any) {
-      setMsg({ ok: false, text: err.body?.error || err.message || "Failed" });
+    } catch (err) {
+      const error = err as { body?: { error?: string }; message?: string };
+      setMsg({ ok: false, text: error.body?.error || error.message || "Failed" });
     } finally {
       setLoading(false);
     }

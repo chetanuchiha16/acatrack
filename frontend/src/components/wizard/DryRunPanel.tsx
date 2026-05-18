@@ -1,4 +1,6 @@
+import React from "react";
 import { CheckCircle, AlertCircle, XCircle, Loader2 } from "lucide-react";
+
 import type { DryRunPhase, StudentDryRunPreview, SubjectDryRunPreview, CommitResult } from "../../hooks/useDryRunUpload";
 
 interface StudentPanelProps {

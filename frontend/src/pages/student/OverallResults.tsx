@@ -281,14 +281,22 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
     );
 };
 
-const DetailCard = ({ title, icon, items, subjects, color }: any) => (
+interface DetailCardProps {
+    title: string;
+    icon: React.ReactNode;
+    items: (string | number)[];
+    subjects: string[];
+    color: string;
+}
+
+const DetailCard = ({ title, icon, items, subjects, color }: DetailCardProps) => (
     <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700/50 shadow-sm">
         <div className="flex items-center gap-2 mb-3">
             <div className={`p-1.5 bg-${color}-500/10 text-${color}-500 rounded-lg`}>{icon}</div>
             <h4 className="text-xs font-black uppercase tracking-wider text-gray-900 dark:text-white">{title}</h4>
         </div>
         <div className="space-y-1.5">
-            {(items || []).map((val: any, i: number) => (
+            {(items || []).map((val, i: number) => (
                 <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-gray-50 dark:border-gray-700 last:border-0">
                     <span className="text-gray-500 font-medium truncate pr-4">{(subjects || [])[i] || `Subject ${i + 1}`}</span>
                     <span className={`font-bold ${val === 'Fail' ? 'text-rose-500' : 'text-gray-900 dark:text-gray-200'}`}>{val}</span>
@@ -299,3 +307,4 @@ const DetailCard = ({ title, icon, items, subjects, color }: any) => (
 );
 
 export default OverallResults;
+
