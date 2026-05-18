@@ -9,7 +9,7 @@ import sys
 
 from database import AsyncSessionLocal
 from logger_config import get_logger
-from models.schema import StudentAuth, Section
+from models.schema import Section
 from sqlalchemy import select, distinct
 
 # Ensure the backend directory is in the path so imports work

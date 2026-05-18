@@ -6,18 +6,18 @@ from models.schema import (
     StudentAuth,
     ParentAuth,
     SubjectAssignment,
-    Mentor,
     Teacher,
     BatchLifecycle,
     BatchStatus,
 )
 from security import hash_password
 from logger_config import get_logger
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 from repositories.academic_repository import AcademicRepository
 
 logger = get_logger(__name__)
+
 
 class AcademicService:
     @staticmethod
@@ -31,7 +31,9 @@ class AcademicService:
         return await repo.get_sections_by_batch(batch_year)
 
     @staticmethod
-    async def bulk_upsert_subjects(session: AsyncSession, semester: str, subjects_data: List[Dict]):
+    async def bulk_upsert_subjects(
+        session: AsyncSession, semester: str, subjects_data: List[Dict]
+    ):
         repo = AcademicRepository(session)
         inserted = 0
         updated = 0
@@ -40,20 +42,30 @@ class AcademicService:
                 code=sub["code"],
                 name=sub["name"],
                 semester=semester,
-                credits=sub["credits"]
+                credits=sub["credits"],
             )
-            if ins: inserted += 1
-            if upd: updated += 1
+            if ins:
+                inserted += 1
+            if upd:
+                updated += 1
         await session.commit()
         return inserted, updated
 
     @staticmethod
-    async def bulk_upsert_students(session: AsyncSession, batch_year: int, section_name: str, students_data: List[Dict], hash_pw_fn):
+    async def bulk_upsert_students(
+        session: AsyncSession,
+        batch_year: int,
+        section_name: str,
+        students_data: List[Dict],
+        hash_pw_fn,
+    ):
         repo = AcademicRepository(session)
         section = await repo.get_section_by_name_and_batch(section_name, batch_year)
         if not section:
-            raise ValueError(f"Section {section_name} for batch {batch_year} not found. Initialize batch first.")
-            
+            raise ValueError(
+                f"Section {section_name} for batch {batch_year} not found. Initialize batch first."
+            )
+
         inserted = 0
         updated = 0
         for student in students_data:
@@ -64,17 +76,24 @@ class AcademicService:
                 phone=student["phone"],
                 batch_year=batch_year,
                 section_id=section.id,
-                hash_pw_fn=hash_pw_fn
+                hash_pw_fn=hash_pw_fn,
             )
-            if ins: inserted += 1
-            if upd: updated += 1
+            if ins:
+                inserted += 1
+            if upd:
+                updated += 1
         await session.commit()
         return inserted, updated
+
     @staticmethod
-    async def initialize_batch(session: AsyncSession, batch_year: int, sections: List[str]):
+    async def initialize_batch(
+        session: AsyncSession, batch_year: int, sections: List[str]
+    ):
         """Creates sections for a given batch year if they don't already exist."""
         for section_name in sections:
-            stmt = select(Section).where(Section.name == section_name, Section.batch_year == batch_year)
+            stmt = select(Section).where(
+                Section.name == section_name, Section.batch_year == batch_year
+            )
             result = await session.execute(stmt)
             if not result.scalar_one_or_none():
                 new_section = Section(name=section_name, batch_year=batch_year)
@@ -83,93 +102,110 @@ class AcademicService:
         await session.commit()
 
     @staticmethod
-    async def register_subjects(session: AsyncSession, semester: str, subjects: List[Dict]):
+    async def register_subjects(
+        session: AsyncSession, semester: str, subjects: List[Dict]
+    ):
         """
         Registers or updates subjects for a specific semester.
         subjects: [{'code': 'CS101', 'name': 'Intro to CS', 'credits': 4}, ...]
         """
         for sub_data in subjects:
-            code = sub_data['code'].strip().upper()
+            code = sub_data["code"].strip().upper()
             stmt = select(Subject).where(Subject.subject_code == code)
             result = await session.execute(stmt)
             existing = result.scalar_one_or_none()
-            
+
             if existing:
-                existing.subject_name = sub_data['name']
-                existing.credits = sub_data['credits']
+                existing.subject_name = sub_data["name"]
+                existing.credits = sub_data["credits"]
                 existing.semester = semester.lower().strip()
                 logger.debug(f"Updated subject {code}")
             else:
                 new_sub = Subject(
                     subject_code=code,
-                    subject_name=sub_data['name'],
+                    subject_name=sub_data["name"],
                     semester=semester.lower().strip(),
-                    credits=sub_data['credits']
+                    credits=sub_data["credits"],
                 )
                 session.add(new_sub)
                 logger.info(f"Registered new subject {code}")
         await session.commit()
 
     @staticmethod
-    async def enroll_students(session: AsyncSession, batch_year: int, section_name: str, students: List[Dict]):
+    async def enroll_students(
+        session: AsyncSession, batch_year: int, section_name: str, students: List[Dict]
+    ):
         """
         Enrolls a list of students into a specific batch and section.
         Creates parent account shells automatically.
         students: [{'usn': '...', 'name': '...', 'email': '...', 'phone': '...'}, ...]
         """
-        stmt = select(Section).where(Section.name == section_name, Section.batch_year == batch_year)
+        stmt = select(Section).where(
+            Section.name == section_name, Section.batch_year == batch_year
+        )
         section = (await session.execute(stmt)).scalar_one_or_none()
         if not section:
-            raise ValueError(f"Section {section_name} for batch {batch_year} not found. Initialize batch first.")
+            raise ValueError(
+                f"Section {section_name} for batch {batch_year} not found. Initialize batch first."
+            )
 
         for s_data in students:
-            usn = s_data['usn'].strip().upper()
+            usn = s_data["usn"].strip().upper()
             stmt = select(StudentAuth).where(StudentAuth.usn == usn)
             student = (await session.execute(stmt)).scalar_one_or_none()
-            
+
             if student:
-                student.name = s_data['name']
+                student.name = s_data["name"]
                 student.section_id = section.id
                 student.batch_year = batch_year
                 logger.debug(f"Updated student {usn}")
             else:
                 student = StudentAuth(
                     usn=usn,
-                    name=s_data['name'],
+                    name=s_data["name"],
                     batch_year=batch_year,
                     section_id=section.id,
-                    student_email=s_data.get('email'),
-                    student_phno=s_data.get('phone')
+                    student_email=s_data.get("email"),
+                    student_phno=s_data.get("phone"),
                 )
                 session.add(student)
                 await session.flush()
-                
+
                 # Create Parent shell
                 parent_username = f"{usn}_parent"
                 # Check if parent already exists (unlikely but safe)
-                p_stmt = select(ParentAuth).where(ParentAuth.username == parent_username)
+                p_stmt = select(ParentAuth).where(
+                    ParentAuth.username == parent_username
+                )
                 if not (await session.execute(p_stmt)).scalar_one_or_none():
                     parent = ParentAuth(
                         username=parent_username,
                         password=hash_password("default123"),
                         name=f"Parent of {s_data['name']}",
-                        student_id=student.id
+                        student_id=student.id,
                     )
                     session.add(parent)
                 logger.info(f"Enrolled student {usn} and created parent shell")
         await session.commit()
 
     @staticmethod
-    async def assign_subject_to_teacher(session: AsyncSession, teacher_username: str, subject_code: str, section_id: int, semester: str, batch_year: int):
+    async def assign_subject_to_teacher(
+        session: AsyncSession,
+        teacher_username: str,
+        subject_code: str,
+        section_id: int,
+        semester: str,
+        batch_year: int,
+    ):
         """Maps a teacher to a specific subject and section for a semester."""
         subject_code = subject_code.strip().upper()
         semester = semester.lower().strip()
-        
+
         # Verify entities exist
         t_stmt = select(Teacher).where(Teacher.username == teacher_username)
         s_stmt = select(Subject).where(Subject.subject_code == subject_code)
         sec_stmt = select(Section).where(Section.id == section_id)
-        
+
         if not (await session.execute(t_stmt)).scalar_one_or_none():
             raise ValueError(f"Teacher {teacher_username} not found")
         if not (await session.execute(s_stmt)).scalar_one_or_none():
@@ -182,27 +218,30 @@ class AcademicService:
             SubjectAssignment.teacher_username == teacher_username,
             SubjectAssignment.subject_code == subject_code,
             SubjectAssignment.section_id == section_id,
-            SubjectAssignment.semester == semester
+            SubjectAssignment.semester == semester,
         )
         existing = (await session.execute(stmt)).scalar_one_or_none()
-        
+
         if not existing:
             assignment = SubjectAssignment(
                 teacher_username=teacher_username,
                 subject_code=subject_code,
                 section_id=section_id,
                 semester=semester,
-                batch_year=batch_year
+                batch_year=batch_year,
             )
             session.add(assignment)
-            logger.info(f"Assigned {teacher_username} to {subject_code} in section {section_id}")
-        
+            logger.info(
+                f"Assigned {teacher_username} to {subject_code} in section {section_id}"
+            )
+
         await session.commit()
 
 
 # ============================================================
 # Batch Lifecycle Service
 # ============================================================
+
 
 class BatchLifecycleService:
     """
@@ -229,7 +268,9 @@ class BatchLifecycleService:
         return lifecycle
 
     @staticmethod
-    async def refresh_counts_and_status(db: AsyncSession, batch_year: int) -> BatchLifecycle:
+    async def refresh_counts_and_status(
+        db: AsyncSession, batch_year: int
+    ) -> BatchLifecycle:
         """
         Recalculate counts from the DB and auto-promote status:
           - Has sections                              → IN_SETUP
@@ -240,24 +281,30 @@ class BatchLifecycleService:
         lifecycle = await BatchLifecycleService.get_or_create(db, batch_year)
 
         # Count sections for this batch
-        sec_count = (await db.execute(
-            select(func.count()).where(Section.batch_year == batch_year)
-        )).scalar_one()
+        sec_count = (
+            await db.execute(
+                select(func.count()).where(Section.batch_year == batch_year)
+            )
+        ).scalar_one()
 
         # Count subjects (global — not batch-scoped)
-        sub_count = (await db.execute(
-            select(func.count()).select_from(Subject)
-        )).scalar_one()
+        sub_count = (
+            await db.execute(select(func.count()).select_from(Subject))
+        ).scalar_one()
 
         # Count students for this batch
-        stu_count = (await db.execute(
-            select(func.count()).where(StudentAuth.batch_year == batch_year)
-        )).scalar_one()
+        stu_count = (
+            await db.execute(
+                select(func.count()).where(StudentAuth.batch_year == batch_year)
+            )
+        ).scalar_one()
 
         # Count assignments for this batch
-        asgn_count = (await db.execute(
-            select(func.count()).where(SubjectAssignment.batch_year == batch_year)
-        )).scalar_one()
+        asgn_count = (
+            await db.execute(
+                select(func.count()).where(SubjectAssignment.batch_year == batch_year)
+            )
+        ).scalar_one()
 
         lifecycle.section_count = sec_count
         lifecycle.subject_count = sub_count
@@ -281,7 +328,9 @@ class BatchLifecycleService:
         return lifecycle
 
     @staticmethod
-    async def set_status(db: AsyncSession, batch_year: int, new_status: BatchStatus) -> BatchLifecycle:
+    async def set_status(
+        db: AsyncSession, batch_year: int, new_status: BatchStatus
+    ) -> BatchLifecycle:
         """Manually set the batch status (for ACTIVE / ARCHIVED transitions)."""
         lifecycle = await BatchLifecycleService.get_or_create(db, batch_year)
         lifecycle.status = new_status
@@ -344,14 +393,22 @@ class BatchLifecycleService:
 
             # Duplicate in the file itself
             if usn in seen_usns_in_file:
-                duplicates.append({"usn": usn, "name": name, "reason": "Duplicate in file"})
+                duplicates.append(
+                    {"usn": usn, "name": name, "reason": "Duplicate in file"}
+                )
                 continue
 
             seen_usns_in_file.add(usn)
 
             # Already exists in DB for this batch (will be updated, not blocked)
             if usn in existing_usns:
-                duplicates.append({"usn": usn, "name": name, "reason": "Already enrolled — will update"})
+                duplicates.append(
+                    {
+                        "usn": usn,
+                        "name": name,
+                        "reason": "Already enrolled — will update",
+                    }
+                )
             else:
                 valid.append({"usn": usn, "name": name, "email": email, "phone": phone})
 
@@ -362,7 +419,9 @@ class BatchLifecycleService:
             "total_in_file": len(rows),
             "will_insert": len(valid),
             "will_update": len([d for d in duplicates if "update" in d["reason"]]),
-            "will_skip": len([d for d in duplicates if "Duplicate in file" in d["reason"]]),
+            "will_skip": len(
+                [d for d in duplicates if "Duplicate in file" in d["reason"]]
+            ),
         }
 
     @staticmethod
@@ -393,7 +452,9 @@ class BatchLifecycleService:
                 if credits < 0 or credits > 10:
                     raise ValueError
             except (ValueError, TypeError):
-                errors.append(f"Row {i}: Invalid credits value '{credits_raw}' for {code}")
+                errors.append(
+                    f"Row {i}: Invalid credits value '{credits_raw}' for {code}"
+                )
                 continue
 
             if code in seen_codes:
@@ -409,4 +470,3 @@ class BatchLifecycleService:
             "total_in_file": len(rows),
             "will_upsert": len(valid),
         }
-

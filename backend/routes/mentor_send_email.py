@@ -1,7 +1,7 @@
 from firebase_admin import messaging
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import JSONResponse
-from models import Mentor, MentorMessage, StudentMessageStatus
+from models import Mentor, MentorMessage, StudentMessageStatus, StudentAuth
 from services.batch_manager import bm
 from utils.helpers import get_batch_year_from_request
 from repositories.mentor_repository import MentorRepository
@@ -130,9 +130,9 @@ async def get_mentor_students(
         for s in students_list:
             if str(s.batch_year) != str(by):
                 continue
-            
+
             parent = s.parent_account[0] if s.parent_account else None
-            
+
             students.append(
                 {
                     "usn": s.usn,
@@ -181,7 +181,6 @@ async def send_email_student(
 ):
     by = batch_year or get_batch_year_from_request(request)
     async with bm.session_scope(by) as session:
-        student_repo = StudentRepository(session)
         mentor_repo = MentorRepository(session)
 
         student = await session.execute(
@@ -190,7 +189,7 @@ async def send_email_student(
             .where(StudentAuth.usn == body.usn)
         )
         student = student.scalars().first()
-        
+
         if not student:
             return JSONResponse(content={"error": "Student not found"}, status_code=404)
 

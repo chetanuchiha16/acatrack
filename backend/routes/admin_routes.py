@@ -12,17 +12,17 @@ import hashlib
 from cryptography.fernet import Fernet
 
 from typing import List, Dict
-from fastapi import APIRouter, UploadFile, File, Header, Query, Body, Depends, Request, Cookie
+from fastapi import APIRouter, UploadFile, File, Header, Query, Body, Depends, Cookie
 from utils.helpers import decode_jwt
 from fastapi.responses import JSONResponse, StreamingResponse
 from logger_config import get_logger
 from models import Mentor, ParentAuth, StudentAuth, Teacher
 from models.schema import ExportCache, BatchStatus
 from services.admin_service import (
-    process_email_upload_file, 
-    get_all_staff, 
-    register_staff_single, 
-    process_staff_bulk_upload
+    process_email_upload_file,
+    get_all_staff,
+    register_staff_single,
+    process_staff_bulk_upload,
 )
 from services.batch_manager import bm
 from services.academic_service import AcademicService, BatchLifecycleService
@@ -166,36 +166,37 @@ async def list_staff(x_admin_secret: str | None = Header(None)):
 async def register_staff(
     name: str = Query(...),
     email: str = Query(...),
-    x_admin_secret: str | None = Header(None)
+    x_admin_secret: str | None = Header(None),
 ):
     if not _check_secret(x_admin_secret):
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
     from security import hash_password as _hp
+
     result, code = register_staff_single(name, email, _hp)
     return JSONResponse(content=result, status_code=code)
 
 
 @router.post("/upload-staff-list")
 async def upload_staff_list(
-    file: UploadFile = File(...),
-    x_admin_secret: str | None = Header(None)
+    file: UploadFile = File(...), x_admin_secret: str | None = Header(None)
 ):
     if not _check_secret(x_admin_secret):
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
-    
+
     filename = file.filename or ""
     if not filename.endswith(".xlsx"):
         return JSONResponse(content={"error": "Only .xlsx allowed"}, status_code=400)
-    
+
     with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmpfile:
         content = await file.read()
         tmpfile.write(content)
         tmpfile.flush()
         temp_path = tmpfile.name
-    
+
     try:
         import asyncio
         from security import hash_password as _hp
+
         result, code = await asyncio.get_event_loop().run_in_executor(
             None, process_staff_bulk_upload, temp_path, _hp
         )
@@ -248,8 +249,8 @@ async def upload_mentors(
             Mentor,
             Teacher,
             StudentAuth,
-            None, # _unique_teacher_username no longer used
-            None, # _safe_seed no longer used
+            None,  # _unique_teacher_username no longer used
+            None,  # _safe_seed no longer used
             upload_excel_to_supabase,
         )
         os.remove(temp_path)
@@ -338,17 +339,18 @@ async def refresh_batch(body: BatchRequest, x_admin_secret: str | None = Header(
         return JSONResponse(
             content={"error": "Failed to refresh batch data."}, status_code=500
         )
+
+
 @router.get("/my-assignments")
 async def get_my_assignments(
-    batch_year: int = Query(...),
-    access_token: str | None = Cookie(None)
+    batch_year: int = Query(...), access_token: str | None = Cookie(None)
 ):
     from models.schema import SubjectAssignment
     from sqlalchemy.orm import selectinload
 
     if not access_token:
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
-    
+
     payload = decode_jwt(access_token)
     if not payload or payload.get("who") != "Staff":
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
@@ -380,34 +382,41 @@ async def get_my_assignments(
             ]
         }
 
+
 # --- Academic Setup Workspace Endpoints ---
+
 
 @router.post("/init-batch")
 async def init_batch(
     batch_year: int = Query(...),
     sections: List[str] = Query(...),
     x_admin_secret: str | None = Header(None),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     if not _check_secret(x_admin_secret):
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
-    
+
     await AcademicService.initialize_batch(db, batch_year, sections)
     await BatchLifecycleService.refresh_counts_and_status(db, batch_year)
-    return {"status": "success", "message": f"Batch {batch_year} initialized with sections {sections}"}
+    return {
+        "status": "success",
+        "message": f"Batch {batch_year} initialized with sections {sections}",
+    }
+
 
 @router.post("/register-subjects")
 async def register_subjects(
     semester: str = Query(...),
     subjects: List[Dict] = Body(...),
     x_admin_secret: str | None = Header(None),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     if not _check_secret(x_admin_secret):
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
-    
+
     await AcademicService.register_subjects(db, semester, subjects)
     return {"status": "success", "message": f"Subjects registered for {semester}"}
+
 
 @router.post("/enroll-students")
 async def enroll_students(
@@ -415,14 +424,17 @@ async def enroll_students(
     section_name: str = Query(...),
     students: List[Dict] = Body(...),
     x_admin_secret: str | None = Header(None),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     if not _check_secret(x_admin_secret):
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
-    
+
     try:
         await AcademicService.enroll_students(db, batch_year, section_name, students)
-        return {"status": "success", "message": f"Enrolled {len(students)} students in {section_name}"}
+        return {
+            "status": "success",
+            "message": f"Enrolled {len(students)} students in {section_name}",
+        }
     except ValueError as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
@@ -432,7 +444,7 @@ async def upload_subjects_excel(
     file: UploadFile = File(...),
     semester: str = Query(...),
     x_admin_secret: str | None = Header(None),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     if not _check_secret(x_admin_secret):
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
@@ -441,7 +453,10 @@ async def upload_subjects_excel(
     if not filename.endswith(".xlsx"):
         return JSONResponse(content={"error": "Only .xlsx allowed"}, status_code=400)
 
-    import tempfile, os, asyncio
+    import tempfile
+    import os
+    import asyncio
+
     with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmpfile:
         content = await file.read()
         tmpfile.write(content)
@@ -449,6 +464,7 @@ async def upload_subjects_excel(
         temp_upload_path = tmpfile.name
 
     from services.admin_service import process_subject_upload_file
+
     try:
         results, status_code = await asyncio.get_event_loop().run_in_executor(
             None,
@@ -456,9 +472,16 @@ async def upload_subjects_excel(
             temp_upload_path,
         )
         if status_code == 200:
-            inserted, updated = await AcademicService.bulk_upsert_subjects(db, semester, results)
-            await BatchLifecycleService.refresh_counts_and_status(db, 0)  # subjects are global; refresh all known batches via a no-op (subject_count updated on next batch-status call)
-            return JSONResponse(content={"status": "success", "inserted": inserted, "updated": updated}, status_code=200)
+            inserted, updated = await AcademicService.bulk_upsert_subjects(
+                db, semester, results
+            )
+            await BatchLifecycleService.refresh_counts_and_status(
+                db, 0
+            )  # subjects are global; refresh all known batches via a no-op (subject_count updated on next batch-status call)
+            return JSONResponse(
+                content={"status": "success", "inserted": inserted, "updated": updated},
+                status_code=200,
+            )
         else:
             return JSONResponse(content=results, status_code=status_code)
     except Exception as e:
@@ -475,7 +498,7 @@ async def upload_students_excel(
     batch_year: int = Query(...),
     section_name: str = Query(...),
     x_admin_secret: str | None = Header(None),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     if not _check_secret(x_admin_secret):
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
@@ -484,8 +507,11 @@ async def upload_students_excel(
     if not filename.endswith(".xlsx"):
         return JSONResponse(content={"error": "Only .xlsx allowed"}, status_code=400)
 
-    import tempfile, os, asyncio
+    import tempfile
+    import os
+    import asyncio
     from security import hash_password as _hp
+
     with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmpfile:
         content = await file.read()
         tmpfile.write(content)
@@ -493,6 +519,7 @@ async def upload_students_excel(
         temp_upload_path = tmpfile.name
 
     from services.admin_service import process_student_enrollment_upload_file
+
     try:
         results, status_code = await asyncio.get_event_loop().run_in_executor(
             None,
@@ -500,9 +527,14 @@ async def upload_students_excel(
             temp_upload_path,
         )
         if status_code == 200:
-            inserted, updated = await AcademicService.bulk_upsert_students(db, batch_year, section_name, results, _hp)
+            inserted, updated = await AcademicService.bulk_upsert_students(
+                db, batch_year, section_name, results, _hp
+            )
             await BatchLifecycleService.refresh_counts_and_status(db, batch_year)
-            return JSONResponse(content={"status": "success", "inserted": inserted, "updated": updated}, status_code=200)
+            return JSONResponse(
+                content={"status": "success", "inserted": inserted, "updated": updated},
+                status_code=200,
+            )
         else:
             return JSONResponse(content=results, status_code=status_code)
     except Exception as e:
@@ -512,6 +544,7 @@ async def upload_students_excel(
         if os.path.exists(temp_upload_path):
             os.remove(temp_upload_path)
 
+
 @router.post("/assign-subjects")
 async def assign_subjects(
     teacher_username: str = Query(...),
@@ -520,62 +553,59 @@ async def assign_subjects(
     semester: str = Query(...),
     batch_year: int = Query(...),
     x_admin_secret: str | None = Header(None),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     if not _check_secret(x_admin_secret):
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
-    
+
     try:
-        await AcademicService.assign_subject_to_teacher(db, teacher_username, subject_code, section_id, semester, batch_year)
+        await AcademicService.assign_subject_to_teacher(
+            db, teacher_username, subject_code, section_id, semester, batch_year
+        )
         await BatchLifecycleService.refresh_counts_and_status(db, batch_year)
         return {"status": "success", "message": "Subject assigned to teacher"}
     except ValueError as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
+
 @router.get("/list-subjects")
 async def list_subjects(
-    x_admin_secret: str | None = Header(None),
-    db: AsyncSession = Depends(get_db)
+    x_admin_secret: str | None = Header(None), db: AsyncSession = Depends(get_db)
 ):
     if not _check_secret(x_admin_secret):
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
-    
+
     subjects = await AcademicService.get_all_subjects(db)
-    
+
     return [
         {
             "subject_code": s.subject_code,
             "subject_name": s.subject_name,
             "semester": s.semester,
-            "credits": s.credits
+            "credits": s.credits,
         }
         for s in subjects
     ]
+
 
 @router.get("/list-sections")
 async def list_sections(
     batch_year: int = Query(...),
     x_admin_secret: str | None = Header(None),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     if not _check_secret(x_admin_secret):
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
-    
+
     sections = await AcademicService.get_sections_by_batch(db, batch_year)
-    
-    return [
-        {
-            "id": s.id,
-            "name": s.name,
-            "batch_year": s.batch_year
-        }
-        for s in sections
-    ]
+
+    return [{"id": s.id, "name": s.name, "batch_year": s.batch_year} for s in sections]
 
 
 # ============================================================
 # Batch Lifecycle Endpoints
 # ============================================================
+
 
 @router.get("/batch-status")
 async def get_batch_status(
@@ -595,7 +625,9 @@ async def get_batch_status(
         "subject_count": lifecycle.subject_count,
         "student_count": lifecycle.student_count,
         "assignment_count": lifecycle.assignment_count,
-        "updated_at": lifecycle.updated_at.isoformat() if lifecycle.updated_at else None,
+        "updated_at": lifecycle.updated_at.isoformat()
+        if lifecycle.updated_at
+        else None,
     }
 
 
@@ -614,7 +646,9 @@ async def update_batch_status(
         new_status = BatchStatus(status.upper())
     except ValueError:
         return JSONResponse(
-            content={"error": f"Invalid status '{status}'. Valid: IN_SETUP, READY, ACTIVE, ARCHIVED"},
+            content={
+                "error": f"Invalid status '{status}'. Valid: IN_SETUP, READY, ACTIVE, ARCHIVED"
+            },
             status_code=400,
         )
 
@@ -625,6 +659,7 @@ async def update_batch_status(
 # ============================================================
 # Dry-Run (Two-Phase Commit) Endpoints
 # ============================================================
+
 
 @router.post("/validate-students-excel")
 async def validate_students_excel(
@@ -660,7 +695,9 @@ async def validate_students_excel(
         if status_code != 200:
             return JSONResponse(content=rows, status_code=status_code)
 
-        preview = await BatchLifecycleService.validate_students_excel(db, batch_year, rows)
+        preview = await BatchLifecycleService.validate_students_excel(
+            db, batch_year, rows
+        )
         return JSONResponse(content=preview, status_code=200)
     except Exception as e:
         logger.error(str(e), exc_info=True)
@@ -798,7 +835,9 @@ async def commit_subjects_excel(
         if status_code != 200:
             return JSONResponse(content=rows, status_code=status_code)
 
-        inserted, updated = await AcademicService.bulk_upsert_subjects(db, semester, rows)
+        inserted, updated = await AcademicService.bulk_upsert_subjects(
+            db, semester, rows
+        )
         return JSONResponse(
             content={"status": "committed", "inserted": inserted, "updated": updated},
             status_code=200,

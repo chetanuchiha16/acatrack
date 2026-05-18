@@ -1,10 +1,9 @@
-from fastapi import APIRouter, Request, Query, Cookie
+from fastapi import APIRouter, Query, Cookie
 from fastapi.responses import JSONResponse, Response
 from cache_config import cache
 from services.university_service import University
 from visuals import create_toppers_list_pdf, create_university_report_async
 from logger_config import get_logger
-from utils.helpers import get_batch_year_from_request
 from database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
@@ -30,12 +29,15 @@ async def get_academic_performance(
     by = batch_year
     if not by and access_token:
         from utils.helpers import decode_jwt
+
         payload = decode_jwt(access_token)
         by = payload.get("batch_year") if payload else None
 
     try:
         university = University(session=db, batch_year=by)
-        result = await university.calculate_academic_performance_async(db, semester, section)
+        result = await university.calculate_academic_performance_async(
+            db, semester, section
+        )
 
         if show_toppers:
             toppers = sorted(result, key=lambda x: x["percentage"], reverse=True)[:10]
@@ -54,7 +56,9 @@ async def get_academic_performance(
             return toppers
 
         elif show_failed:
-            failed_students = await university.find_failed_students_async(db, semester, section_name=section)
+            failed_students = await university.find_failed_students_async(
+                db, semester, section_name=section
+            )
             return failed_students
         else:
             return result
@@ -78,11 +82,14 @@ async def get_report(
     by = batch_year
     if not by and access_token:
         from utils.helpers import decode_jwt
+
         payload = decode_jwt(access_token)
         by = payload.get("batch_year") if payload else None
 
     university = University(session=db, batch_year=by)
-    pdf_bytes = await create_university_report_async(university, semester, db, section_name=section)
+    pdf_bytes = await create_university_report_async(
+        university, semester, db, section_name=section
+    )
 
     return Response(
         content=pdf_bytes,

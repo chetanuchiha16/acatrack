@@ -12,7 +12,9 @@ class AcademicRepository:
         result = await self.db.execute(select(Subject))
         return result.scalars().all()
 
-    async def upsert_subject(self, code: str, name: str, semester: str, credits: int) -> tuple[bool, bool]:
+    async def upsert_subject(
+        self, code: str, name: str, semester: str, credits: int
+    ) -> tuple[bool, bool]:
         """Returns (inserted, updated)"""
         stmt = select(Subject).where(Subject.subject_code == code)
         existing = (await self.db.execute(stmt)).scalar_one_or_none()
@@ -23,37 +25,50 @@ class AcademicRepository:
             return False, True
         else:
             new_sub = Subject(
-                subject_code=code,
-                subject_name=name,
-                semester=semester,
-                credits=credits
+                subject_code=code, subject_name=name, semester=semester, credits=credits
             )
             self.db.add(new_sub)
             return True, False
 
-    async def get_section_by_name_and_batch(self, section_name: str, batch_year: int) -> Section | None:
-        stmt = select(Section).where(Section.name == section_name, Section.batch_year == batch_year)
+    async def get_section_by_name_and_batch(
+        self, section_name: str, batch_year: int
+    ) -> Section | None:
+        stmt = select(Section).where(
+            Section.name == section_name, Section.batch_year == batch_year
+        )
         return (await self.db.execute(stmt)).scalar_one_or_none()
 
     async def get_sections_by_batch(self, batch_year: int) -> List[Section]:
-        stmt = select(Section).where(Section.batch_year == batch_year).order_by(Section.name)
+        stmt = (
+            select(Section)
+            .where(Section.batch_year == batch_year)
+            .order_by(Section.name)
+        )
         result = await self.db.execute(stmt)
         return result.scalars().all()
 
     async def upsert_student_enrollment(
-        self, usn: str, name: str, email: str, phone: str, 
-        batch_year: int, section_id: int, hash_pw_fn
+        self,
+        usn: str,
+        name: str,
+        email: str,
+        phone: str,
+        batch_year: int,
+        section_id: int,
+        hash_pw_fn,
     ) -> tuple[bool, bool]:
         """Returns (inserted, updated)"""
         stmt = select(StudentAuth).where(StudentAuth.usn == usn)
         existing = (await self.db.execute(stmt)).scalar_one_or_none()
-        
+
         if existing:
             existing.name = name
             existing.section_id = section_id
             existing.batch_year = batch_year
-            if email and email.lower() != 'nan': existing.student_email = email
-            if phone and phone.lower() != 'nan': existing.student_phno = phone
+            if email and email.lower() != "nan":
+                existing.student_email = email
+            if phone and phone.lower() != "nan":
+                existing.student_phno = phone
             return False, True
         else:
             student = StudentAuth(
@@ -61,12 +76,12 @@ class AcademicRepository:
                 name=name,
                 batch_year=batch_year,
                 section_id=section_id,
-                student_email=email if email and email.lower() != 'nan' else None,
-                student_phno=phone if phone and phone.lower() != 'nan' else None
+                student_email=email if email and email.lower() != "nan" else None,
+                student_phno=phone if phone and phone.lower() != "nan" else None,
             )
             self.db.add(student)
             await self.db.flush()
-            
+
             parent_username = f"{usn}_parent"
             p_stmt = select(ParentAuth).where(ParentAuth.username == parent_username)
             existing_p = (await self.db.execute(p_stmt)).scalar_one_or_none()
@@ -75,7 +90,7 @@ class AcademicRepository:
                     username=parent_username,
                     password=hash_pw_fn("default123"),
                     name=f"Parent of {name}",
-                    student_id=student.id
+                    student_id=student.id,
                 )
                 self.db.add(parent)
             return True, False
@@ -143,7 +158,9 @@ class AcademicRepository:
         )
 
         if section_name and section_name != "ALL":
-            query = query.join(Section, StudentAuth.section_id == Section.id).where(Section.name == section_name)
+            query = query.join(Section, StudentAuth.section_id == Section.id).where(
+                Section.name == section_name
+            )
 
         query = query.group_by(Subject.subject_code, Subject.subject_name)
 
@@ -209,9 +226,13 @@ class AcademicRepository:
         )
 
         if section_name and section_name != "ALL":
-            topper_query = topper_query.join(Section, StudentAuth.section_id == Section.id).where(Section.name == section_name)
+            topper_query = topper_query.join(
+                Section, StudentAuth.section_id == Section.id
+            ).where(Section.name == section_name)
 
-        topper_query = topper_query.group_by(StudentAuth.id, StudentAuth.usn, StudentAuth.name)
+        topper_query = topper_query.group_by(
+            StudentAuth.id, StudentAuth.usn, StudentAuth.name
+        )
 
         result = await self.db.execute(topper_query)
         toppers = []
@@ -273,7 +294,9 @@ class AcademicRepository:
         )
 
         if section_name and section_name != "ALL":
-            subq = subq.join(Section, StudentAuth.section_id == Section.id).where(Section.name == section_name)
+            subq = subq.join(Section, StudentAuth.section_id == Section.id).where(
+                Section.name == section_name
+            )
 
         subq = subq.group_by(StudentAuth.id).subquery()
 

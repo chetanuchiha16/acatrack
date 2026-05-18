@@ -21,11 +21,12 @@ async def upload_archive(
     background_tasks: BackgroundTasks = None,
 ):
     filename = file.filename or ""
-    
+
     if not batch_year:
         batch_year = get_batch_year_from_request(request)
     if not batch_year:
         import re
+
         match = re.search(r"\b(20\d{2})\b", filename)
         if match:
             batch_year = int(match.group(1))

@@ -22,6 +22,7 @@ from PIL import Image
 # ── Rust high-performance PDF engine (falls back gracefully if not compiled) ──
 try:
     import acatrack_rust
+
     RUST_ENGINE_AVAILABLE = True
 except ImportError:
     RUST_ENGINE_AVAILABLE = False
@@ -195,7 +196,9 @@ def extract_from_pdf(pdf_path, subject_codes, columns):
 
 
 # ---------------- PROCESS PDFs ----------------
-def process_pdfs(excel_filename, pdf_folder, supabase_folder=None, progress_callback=None):
+def process_pdfs(
+    excel_filename, pdf_folder, supabase_folder=None, progress_callback=None
+):
     subject_codes = scan_subject_codes(pdf_folder)
     excel_path = Path(tempfile.gettempdir()) / f"{excel_filename}"  # temp path
 
@@ -218,8 +221,10 @@ def process_pdfs(excel_filename, pdf_folder, supabase_folder=None, progress_call
         raw_rows = acatrack_rust.parse_pdfs_parallel(pdf_paths, subject_codes)
 
         elapsed = time.perf_counter() - t_start
-        logger.info(f"🎉 Rust engine parsed {total_pdfs} PDFs in {elapsed:.3f}s "
-                    f"({elapsed / total_pdfs:.4f}s per PDF)")
+        logger.info(
+            f"🎉 Rust engine parsed {total_pdfs} PDFs in {elapsed:.3f}s "
+            f"({elapsed / total_pdfs:.4f}s per PDF)"
+        )
 
         rows = [r for r in raw_rows if r is not None]
 
@@ -272,7 +277,9 @@ def process_pdfs(excel_filename, pdf_folder, supabase_folder=None, progress_call
         )
 
         if sem_sheet in existing_sheets:
-            df_existing = existing_sheets[sem_sheet].set_index("student_usn", drop=False)
+            df_existing = existing_sheets[sem_sheet].set_index(
+                "student_usn", drop=False
+            )
             df_existing.update(df_new)
             df_combined = pd.concat(
                 [df_existing, df_new[~df_new.index.isin(df_existing.index)]]
