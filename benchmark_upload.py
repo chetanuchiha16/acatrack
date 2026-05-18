@@ -100,6 +100,15 @@ def main():
     summary_path = os.path.join(output_dir, "upload_k6_summary.json")
     report_path = os.path.join(output_dir, "upload_benchmark_report.md")
 
+    # Auto-detect which engine is active and use distinct output filenames
+    try:
+        import acatrack_rust  # noqa: F401
+        engine_label = "rust"
+    except ImportError:
+        engine_label = "py"
+    summary_path = os.path.join(output_dir, f"upload_k6_summary_{engine_label}.json")
+    report_path  = os.path.join(output_dir, f"upload_benchmark_report_{engine_label}.md")
+
     # Measure RAM baseline before starting
     ram_baseline = get_current_ram()
     print("=" * 60)

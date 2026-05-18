@@ -56,6 +56,7 @@ AcaTrack has undergone a significant architectural transformation to reach its c
     *   **Strict Type Safety**: Migrated the entire frontend to **TypeScript** with strict null checks and centralized interface definitions.
     *   **State-Driven Authentication**: Refactored staff login to utilize a dynamic batch filter in the dashboard, replacing static legacy selections.
     *   **Performance Engineering**: Integrated **Redis caching**, resolved N+1 query issues, and switched to **uv** for lightning-fast package resolution.
+    *   **High-Performance Rust Core**: Replaced the sequential, CPU-bound Python PDF parsing bottleneck with a native parallel **Rust engine (PyO3 + Rayon)**, slashing background queue durations by **8.06x** (21.78 min → 2.70 min).
     *   **UI/UX Modernization**: Transitioned to a **Bento-box dashboard layout**, implemented **code-splitting** (React.lazy), and redesigned result views with Lucide icons.
     *   **Containerization**: Implemented **Docker** and **Docker Compose** for standardized deployment across all environments.
 
@@ -90,7 +91,7 @@ AcaTrack integrates advanced AI capabilities to move beyond simple data storage:
 The system features robust tools for handling complex academic data:
 
 *   **Automated Web Scraping**: Integrated Selenium-based scrapers to fetch the latest university results and data directly from official portals.
-*   **PDF to Data Conversion**: Advanced parsing tools using `PyMuPDF` to convert structured PDF result sheets into clean, manageable Excel or Database records.
+*   **PDF to Data Conversion**: Blazing-fast parallel extraction using a custom compiled **Rust engine (pdf-extract + Rayon)**, delivering an **8.06x** performance boost over legacy Python parsers.
 *   **Excel Ingestion**: Bulk upload capabilities for student records, staff lists, and subject mappings with automated validation.
 
 ---
@@ -106,6 +107,7 @@ The system features robust tools for handling complex academic data:
 
 #### **Backend**
 *   **Framework**: `FastAPI` — High-performance Python web framework.
+*   **High-Performance Core**: `Rust` bridged via `PyO3` & `Rayon` for multi-threaded parallel PDF parsing.
 *   **Package Manager**: `uv` — Ultra-fast Python package installer and resolver.
 *   **Server**: `Uvicorn` with `uvloop` and `httptools`.
 *   **ORM**: `SQLAlchemy 2.0` with `Alembic` for migrations.
@@ -191,6 +193,16 @@ The following metrics were captured using **k6** across comparable high-concurre
 | **Avg. Response Time** | 2,840 ms | **158.79 ms** | **~18x Faster** |
 | **Success Rate** | 96.77% | **100.00%** | **Perfect Reliability** |
 | **Avg. DB Connections** | 42 | **5** | **8.4x More Efficient** |
+
+#### **Benchmarking: Sequential Python Parser vs. Parallel Rust Core**
+The following metrics show the dramatic performance boost after migrating the CPU-bound VTU result PDF scraping pipeline to a parallel Rust core bridged via PyO3 (benchmarked over 1,308 PDFs across 4 ZIP upload requests):
+
+| Metric | Sequential Python (pdfplumber) | **Parallel Rust Core (PyO3 + Rayon)** | **Improvement** |
+| :--- | :--- | :--- | :--- |
+| **Total Parsing Duration** | 21.78 minutes | **2.70 minutes** | **8.06x Faster** 🚀 |
+| **Speed per PDF** | 0.9992 seconds | **0.1240 seconds** | **8.06x Faster** 🚀 |
+| **Upload p(95) Latency** | 10,598 ms | **4,667 ms** | **2.27x Faster** ⚡ |
+| **Net RAM Impact** | +268.48 MB | **+174.90 MB** | **35% Lower Memory** 📉 |
 
 *   **Optimized Execution**: Migrated to **FastAPI** with **Uvloop** and **Httptools**, delivering significantly higher throughput compared to the legacy Flask implementation.
 *   **Advanced Caching**: Implemented **Redis-based caching** for expensive academic result computations and university data fetching.
