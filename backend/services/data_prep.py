@@ -254,3 +254,173 @@ def prepare_data(batch_year: int):
 
     # Notice we no longer need the raw postgres_url, SQLAlchemy handles the connection!
     convert_excel_to_postgres(local_excel_path, batch_year)
+
+
+def convert_in_memory_rows_to_postgres(rows: list[dict], batch_year: int):
+    """
+    Directly insert or update parsed PDF results into PostgreSQL database in-memory.
+    Bypasses Excel writing/reading completely.
+    """
+    if not rows:
+        logger.warning("No rows provided for in-memory Postgres sync.")
+        return
+
+    # Group rows by semester
+    sem_groups = {}
+    for row in rows:
+        sem_val = row.get("SEMESTER")
+        if not sem_val:
+            continue
+        semester_name = f"sem{sem_val}"
+        if semester_name not in sem_groups:
+            sem_groups[semester_name] = []
+        sem_groups[semester_name].append(row)
+
+    for semester_name, sem_rows in sem_groups.items():
+        logger.debug(f"In-Memory Processing: {semester_name} with {len(sem_rows)} rows")
+
+        # 1. Identify all unique keys across all rows in this semester group to map subject codes
+        all_keys = set()
+        for r in sem_rows:
+            all_keys.update(r.keys())
+
+        # Map subject codes: '21CS51' -> { 'ia': '21CS51_INTERNALS', 'see': '21CS51_EXTERNALS', 'credits': '21CS51_CREDITS' }
+        subject_cols = {}
+        for col in all_keys:
+            if col in ["student_usn", "student_name", "SEMESTER"]:
+                continue
+
+            parts = col.rsplit("_", 1)
+            if len(parts) == 2:
+                subj_code = parts[0].strip().strip("_").strip()
+                metric = parts[1].strip().upper()
+
+                if not subj_code or len(subj_code) > 20:
+                    continue
+
+                if subj_code not in subject_cols:
+                    subject_cols[subj_code] = {}
+
+                if "INTERNALS" in metric:
+                    subject_cols[subj_code]["ia"] = col
+                elif "EXTERNALS" in metric:
+                    subject_cols[subj_code]["see"] = col
+                elif "TOTAL" in metric:
+                    subject_cols[subj_code]["total"] = col
+                elif "CREDITS" in metric:
+                    subject_cols[subj_code]["credits"] = col
+
+        # 2. Pre-fetch students, subjects, and results to avoid N+1 queries
+        usns_in_group = {str(r.get("student_usn")).strip() for r in sem_rows if r.get("student_usn")}
+        usns_in_group.discard("None")
+        usns_in_group.discard("nan")
+
+        student_repo = StudentRepository(db.session)
+        existing_students = student_repo.get_auths_by_usns_sync(list(usns_in_group))
+        student_map = {s.usn: s for s in existing_students}
+
+        subject_codes = list(subject_cols.keys())
+        existing_subjects = student_repo.get_subjects_by_codes_sync(subject_codes)
+        subject_map = {s.subject_code: s for s in existing_subjects}
+
+        student_ids = [s.id for s in existing_students]
+        if student_ids and subject_codes:
+            existing_results = student_repo.get_results_by_student_ids_and_subjects_sync(
+                student_ids, subject_codes
+            )
+        else:
+            existing_results = []
+        result_map = {(r.student_id, r.subject_code): r for r in existing_results}
+
+        # 3. Process each row in memory
+        for r in sem_rows:
+            usn_val = str(r.get("student_usn")).strip()
+            if not usn_val or usn_val.lower() in ["none", "nan"]:
+                continue
+
+            name_val = str(r.get("student_name", "Unknown")).strip() or "Unknown"
+
+            # Get or Create Student
+            student = student_map.get(usn_val)
+            if not student:
+                student = StudentAuth(usn=usn_val, name=name_val, batch_year=batch_year)
+                db.session.add(student)
+                db.session.flush()
+                student_map[usn_val] = student
+
+            # Process subjects and academic results
+            for subj_code, metrics in subject_cols.items():
+                real_subject_name = sem_subjects.get(semester_name, {}).get(subj_code, subj_code)
+
+                # Get or Create Subject
+                subject = subject_map.get(subj_code)
+                if not subject:
+                    subject = Subject(
+                        subject_code=subj_code,
+                        subject_name=real_subject_name,
+                        semester=semester_name,
+                        credits=0
+                    )
+                    db.session.add(subject)
+                    db.session.flush()
+                    subject_map[subj_code] = subject
+                else:
+                    if subject.subject_name == subj_code and real_subject_name != subj_code:
+                        subject.subject_name = real_subject_name
+
+                # Extract Credits
+                credits_col = metrics.get("credits")
+                if credits_col and r.get(credits_col) is not None:
+                    try:
+                        credit_val = int(float(r[credits_col]))
+                        if credit_val > 0:
+                            subject.credits = credit_val
+                    except (ValueError, TypeError):
+                        pass
+
+                # Extract Marks
+                ia_col = metrics.get("ia")
+                see_col = metrics.get("see")
+                total_col = metrics.get("total")
+
+                if not (ia_col or see_col or total_col):
+                    continue
+
+                try:
+                    ia_marks = int(float(r[ia_col])) if ia_col and r.get(ia_col) is not None else 0
+                except (ValueError, TypeError):
+                    ia_marks = 0
+
+                try:
+                    see_marks = int(float(r[see_col])) if see_col and r.get(see_col) is not None else 0
+                except (ValueError, TypeError):
+                    see_marks = 0
+
+                try:
+                    total_marks = int(float(r[total_col])) if total_col and r.get(total_col) is not None else (ia_marks + see_marks)
+                except (ValueError, TypeError):
+                    total_marks = ia_marks + see_marks
+
+                if ia_marks == 0 and see_marks == 0 and total_marks == 0:
+                    continue
+
+                # Get or Create Academic Result
+                result = result_map.get((student.id, subj_code))
+                if not result:
+                    result = AcademicResult(
+                        student_id=student.id,
+                        subject_code=subj_code,
+                        batch_year=batch_year,
+                        ia_marks=ia_marks,
+                        see_marks=see_marks,
+                        total_marks=total_marks
+                    )
+                    db.session.add(result)
+                    result_map[(student.id, subj_code)] = result
+                else:
+                    result.ia_marks = ia_marks
+                    result.see_marks = see_marks
+                    result.total_marks = total_marks
+
+        db.session.commit()
+        logger.debug(f"Saved in-memory semester group '{semester_name}' to normalized tables.")

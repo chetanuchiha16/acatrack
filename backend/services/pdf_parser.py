@@ -197,64 +197,78 @@ def extract_from_pdf(pdf_path, subject_codes, columns):
 
 # ---------------- PROCESS PDFs ----------------
 def process_pdfs(
-    excel_filename, pdf_folder, supabase_folder=None, progress_callback=None
+    excel_filename,
+    pdf_folder,
+    supabase_folder=None,
+    progress_callback=None,
+    parse_only=False,
+    parsed_rows=None,
 ):
-    subject_codes = scan_subject_codes(pdf_folder)
+    t_start = time.perf_counter()
     excel_path = Path(tempfile.gettempdir()) / f"{excel_filename}"  # temp path
 
     # load existing Excel if present
     existing_sheets = {}
-    if os.path.exists(excel_path):
+    if not parse_only and os.path.exists(excel_path):
         existing_excel = pd.ExcelFile(excel_path)
         for sheet in existing_excel.sheet_names:
             existing_sheets[sheet] = pd.read_excel(excel_path, sheet_name=sheet)
 
-    pdf_files = [f for f in os.listdir(pdf_folder) if f.endswith(".pdf")]
-    total_pdfs = len(pdf_files)
-    pdf_paths = [os.path.join(pdf_folder, f) for f in pdf_files]
-
-    # ── Fast path: Rust parallel engine ───────────────────────────────────────
-    if RUST_ENGINE_AVAILABLE:
-        logger.info(f"🦀 Using Rust parallel engine for {total_pdfs} PDFs...")
-        t_start = time.perf_counter()
-
-        raw_rows = acatrack_rust.parse_pdfs_parallel(pdf_paths, subject_codes)
-
-        elapsed = time.perf_counter() - t_start
-        logger.info(
-            f"🎉 Rust engine parsed {total_pdfs} PDFs in {elapsed:.3f}s "
-            f"({elapsed / total_pdfs:.4f}s per PDF)"
-        )
-
-        rows = [r for r in raw_rows if r is not None]
-
-        # Signal 100% progress immediately after Rust finishes
-        if progress_callback:
-            try:
-                progress_callback(total_pdfs, total_pdfs)
-            except Exception as cb_err:
-                logger.warning(f"Progress callback failed: {cb_err}")
-
-    # ── Slow path: legacy Python sequential engine (fallback) ─────────────────
+    if parsed_rows is not None:
+        rows = parsed_rows
+        subject_codes = scan_subject_codes(pdf_folder)
     else:
-        logger.warning("⚠️ Rust engine not available — falling back to Python parser")
-        columns = ["student_usn", "student_name"]
-        for code in subject_codes:
-            columns += [f"{code}_INTERNALS", f"{code}_EXTERNALS", f"{code}_CREDITS"]
+        subject_codes = scan_subject_codes(pdf_folder)
+        pdf_files = [f for f in os.listdir(pdf_folder) if f.endswith(".pdf")]
+        total_pdfs = len(pdf_files)
+        pdf_paths = [os.path.join(pdf_folder, f) for f in pdf_files]
 
-        rows = []
-        for idx, (file, pdf_path) in enumerate(zip(pdf_files, pdf_paths)):
-            try:
-                row = extract_from_pdf(pdf_path, subject_codes, columns)
-                rows.append(row)
-            except Exception as parse_err:
-                logger.error(f"❌ Failed to parse PDF '{file}': {parse_err}")
+        # ── Fast path: Rust parallel engine ───────────────────────────────────────
+        if RUST_ENGINE_AVAILABLE:
+            logger.info(f"🦀 Using Rust parallel engine for {total_pdfs} PDFs...")
+            t_rust_start = time.perf_counter()
 
+            raw_rows = acatrack_rust.parse_pdfs_parallel(pdf_paths, subject_codes)
+
+            elapsed = time.perf_counter() - t_rust_start
+            logger.info(
+                f"🎉 Rust engine parsed {total_pdfs} PDFs in {elapsed:.3f}s "
+                f"({elapsed / total_pdfs:.4f}s per PDF)"
+            )
+
+            rows = [r for r in raw_rows if r is not None]
+
+            # Signal 100% progress immediately after Rust finishes
             if progress_callback:
                 try:
-                    progress_callback(idx + 1, total_pdfs)
+                    progress_callback(total_pdfs, total_pdfs)
                 except Exception as cb_err:
                     logger.warning(f"Progress callback failed: {cb_err}")
+
+        # ── Slow path: legacy Python sequential engine (fallback) ─────────────────
+        else:
+            logger.warning("⚠️ Rust engine not available — falling back to Python parser")
+            columns = ["student_usn", "student_name"]
+            for code in subject_codes:
+                columns += [f"{code}_INTERNALS", f"{code}_EXTERNALS", f"{code}_CREDITS"]
+
+            rows = []
+            for idx, (file, pdf_path) in enumerate(zip(pdf_files, pdf_paths)):
+                try:
+                    row = extract_from_pdf(pdf_path, subject_codes, columns)
+                    rows.append(row)
+                except Exception as parse_err:
+                    logger.error(f"❌ Failed to parse PDF '{file}': {parse_err}")
+
+                if progress_callback:
+                    try:
+                        progress_callback(idx + 1, total_pdfs)
+                    except Exception as cb_err:
+                        logger.warning(f"Progress callback failed: {cb_err}")
+
+    if parse_only:
+        parse_duration = time.perf_counter() - t_start
+        return None, parse_duration, rows
 
     # ── Shared: merge all rows into per-semester Excel sheets ─────────────────
     for row in rows:
@@ -294,6 +308,8 @@ def process_pdfs(
         for sheet_name, df in existing_sheets.items():
             df.to_excel(writer, sheet_name=sheet_name, index=False)
 
+    parse_duration = time.perf_counter() - t_start
+
     # Upload result to Supabase and return public URL
     if not supabase_folder:
         supabase_folder = (
@@ -304,10 +320,10 @@ def process_pdfs(
             str(excel_path), excel_filename, supabase_folder
         )
         logger.debug(f"Excel uploaded to Supabase: {excel_url}")
-        return excel_url
+        return excel_url, parse_duration, rows
     except Exception as e:
         logger.error(f"Excel upload failed: {e}")
-        return None
+        return None, parse_duration, rows
 
 
 def process_single_pdf(pdf_path, excel_path):

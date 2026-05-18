@@ -298,6 +298,7 @@ class Job(Base):
     error = Column(String)
     progress = Column(Integer)
     created_at = Column(DateTime, default=datetime.now)
+    meta = Column(JSON, default={})
 
 
 class ExportCache(Base):
