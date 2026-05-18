@@ -13,7 +13,7 @@ const zipFileBin = open('/home/chetan/Documents/Projects/dep/2023_SEM5.zip', 'b'
 
 export const options = {
   vus: 1,
-  iterations: 1,
+  iterations: 4,  // Match Python benchmark: 4 requests × 327 PDFs = 1,308 PDFs total
   thresholds: {
     http_req_duration: ['p(95)<30000'], // Expect 95% of requests to finish under 30s for large files
     http_req_failed: ['rate<0.05'],     // Assert error rate is under 5%
