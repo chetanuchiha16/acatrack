@@ -1,0 +1,125 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  width: 100vw;
+  max-height: 100vh;
+  color-scheme: light dark;
+  color: #1f2937; /* modern neutral dark text */
+  background-color: #f9fafb; /* soft light background */
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Modern theme colors */
+  --primary: #4f46e5; /* indigo */
+  --primary-hover: #4338ca;
+  --text-light: #f3f4f6;
+  --text-dark: #1f2937;
+  --bg-light: #f9fafb;
+  --bg-dark: #18181b;
+  --border-light: #e5e7eb;
+  --border-dark: #3f3f46;
+
+  /* Dropdown variables */
+  --dropdown-bg: #ffffff;
+  --dropdown-border: #d1d5db;
+  --dropdown-text: #1f2937;
+  --dropdown-focus-ring: var(--primary);
+  --dropdown-shadow: rgba(0, 0, 0, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: var(--text-light);
+    background-color: var(--bg-dark);
+
+    --dropdown-bg: #1f1f23;
+    --dropdown-border: var(--border-dark);
+    --dropdown-text: var(--text-light);
+    --dropdown-focus-ring: #818cf8;
+    --dropdown-shadow: rgba(0, 0, 0, 0.5);
+  }
+}
+
+a {
+  font-weight: 500;
+  text-decoration: inherit;
+  transition: color 0.2s ease;
+}
+a:hover {
+  scale: 101%;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  background-image: url("/jss-1.jpeg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+/* h1 {
+  font-size: 3.2em;
+  line-height: 1.1; */
+/* } */
+
+button {
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  transition: border-color 0.25s, background-color 0.25s;
+}
+button:hover {
+  border-color: var(--primary-hover);
+  background-color: var(--primary-hover);
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: var(--text-dark);
+    background-color: var(--bg-light);
+  }
+  button {
+    background-color: var(--primary);
+    color: #fff;
+  }
+}
+
+/* Dropdown Styling */
+select {
+  width: 100%;
+  max-width: 280px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--dropdown-text);
+  background-color: var(--dropdown-bg);
+  border: 1.5px solid var(--dropdown-border);
+  border-radius: 0.375rem; /* same as original */
+  box-shadow: 0 1px 4px var(--dropdown-shadow);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  appearance: none;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--dropdown-focus-ring);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.45);
+}
+

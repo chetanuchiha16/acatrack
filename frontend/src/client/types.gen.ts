@@ -99,6 +99,26 @@ export type BatchesResponse = {
 };
 
 /**
+ * Body_commit_students_excel_admin_commit_students_excel_post
+ */
+export type BodyCommitStudentsExcelAdminCommitStudentsExcelPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
+ * Body_commit_subjects_excel_admin_commit_subjects_excel_post
+ */
+export type BodyCommitSubjectsExcelAdminCommitSubjectsExcelPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
  * Body_excel_excel_post
  */
 export type BodyExcelExcelPost = {
@@ -150,6 +170,56 @@ export type BodyUploadNoteAuthStaffUploadNotesPost = {
      * Path
      */
     path?: string;
+};
+
+/**
+ * Body_upload_staff_list_admin_upload_staff_list_post
+ */
+export type BodyUploadStaffListAdminUploadStaffListPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
+ * Body_upload_students_excel_admin_upload_students_excel_post
+ */
+export type BodyUploadStudentsExcelAdminUploadStudentsExcelPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
+ * Body_upload_subjects_excel_admin_upload_subjects_excel_post
+ */
+export type BodyUploadSubjectsExcelAdminUploadSubjectsExcelPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
+ * Body_validate_students_excel_admin_validate_students_excel_post
+ */
+export type BodyValidateStudentsExcelAdminValidateStudentsExcelPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
+ * Body_validate_subjects_excel_admin_validate_subjects_excel_post
+ */
+export type BodyValidateSubjectsExcelAdminValidateSubjectsExcelPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
 };
 
 /**
@@ -910,6 +980,102 @@ export type UploadEmailsAdminUploadEmailsPostResponses = {
     200: unknown;
 };
 
+export type ListStaffAdminListStaffGetData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/list-staff';
+};
+
+export type ListStaffAdminListStaffGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListStaffAdminListStaffGetError = ListStaffAdminListStaffGetErrors[keyof ListStaffAdminListStaffGetErrors];
+
+export type ListStaffAdminListStaffGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type RegisterStaffAdminRegisterStaffPostData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Email
+         */
+        email: string;
+    };
+    url: '/admin/register-staff';
+};
+
+export type RegisterStaffAdminRegisterStaffPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RegisterStaffAdminRegisterStaffPostError = RegisterStaffAdminRegisterStaffPostErrors[keyof RegisterStaffAdminRegisterStaffPostErrors];
+
+export type RegisterStaffAdminRegisterStaffPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UploadStaffListAdminUploadStaffListPostData = {
+    body: BodyUploadStaffListAdminUploadStaffListPost;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/upload-staff-list';
+};
+
+export type UploadStaffListAdminUploadStaffListPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UploadStaffListAdminUploadStaffListPostError = UploadStaffListAdminUploadStaffListPostErrors[keyof UploadStaffListAdminUploadStaffListPostErrors];
+
+export type UploadStaffListAdminUploadStaffListPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type UploadMentorsAdminUploadMentorsPostData = {
     body: BodyUploadMentorsAdminUploadMentorsPost;
     headers?: {
@@ -1030,6 +1196,546 @@ export type RefreshBatchAdminRefreshBatchPostErrors = {
 export type RefreshBatchAdminRefreshBatchPostError = RefreshBatchAdminRefreshBatchPostErrors[keyof RefreshBatchAdminRefreshBatchPostErrors];
 
 export type RefreshBatchAdminRefreshBatchPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetMyAssignmentsAdminMyAssignmentsGetData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+    };
+    url: '/admin/my-assignments';
+};
+
+export type GetMyAssignmentsAdminMyAssignmentsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetMyAssignmentsAdminMyAssignmentsGetError = GetMyAssignmentsAdminMyAssignmentsGetErrors[keyof GetMyAssignmentsAdminMyAssignmentsGetErrors];
+
+export type GetMyAssignmentsAdminMyAssignmentsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type InitBatchAdminInitBatchPostData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+        /**
+         * Sections
+         */
+        sections: Array<string>;
+    };
+    url: '/admin/init-batch';
+};
+
+export type InitBatchAdminInitBatchPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type InitBatchAdminInitBatchPostError = InitBatchAdminInitBatchPostErrors[keyof InitBatchAdminInitBatchPostErrors];
+
+export type InitBatchAdminInitBatchPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type RegisterSubjectsAdminRegisterSubjectsPostData = {
+    /**
+     * Subjects
+     */
+    body: Array<{
+        [key: string]: unknown;
+    }>;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Semester
+         */
+        semester: string;
+    };
+    url: '/admin/register-subjects';
+};
+
+export type RegisterSubjectsAdminRegisterSubjectsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RegisterSubjectsAdminRegisterSubjectsPostError = RegisterSubjectsAdminRegisterSubjectsPostErrors[keyof RegisterSubjectsAdminRegisterSubjectsPostErrors];
+
+export type RegisterSubjectsAdminRegisterSubjectsPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type EnrollStudentsAdminEnrollStudentsPostData = {
+    /**
+     * Students
+     */
+    body: Array<{
+        [key: string]: unknown;
+    }>;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+        /**
+         * Section Name
+         */
+        section_name: string;
+    };
+    url: '/admin/enroll-students';
+};
+
+export type EnrollStudentsAdminEnrollStudentsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type EnrollStudentsAdminEnrollStudentsPostError = EnrollStudentsAdminEnrollStudentsPostErrors[keyof EnrollStudentsAdminEnrollStudentsPostErrors];
+
+export type EnrollStudentsAdminEnrollStudentsPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UploadSubjectsExcelAdminUploadSubjectsExcelPostData = {
+    body: BodyUploadSubjectsExcelAdminUploadSubjectsExcelPost;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Semester
+         */
+        semester: string;
+    };
+    url: '/admin/upload-subjects-excel';
+};
+
+export type UploadSubjectsExcelAdminUploadSubjectsExcelPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UploadSubjectsExcelAdminUploadSubjectsExcelPostError = UploadSubjectsExcelAdminUploadSubjectsExcelPostErrors[keyof UploadSubjectsExcelAdminUploadSubjectsExcelPostErrors];
+
+export type UploadSubjectsExcelAdminUploadSubjectsExcelPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UploadStudentsExcelAdminUploadStudentsExcelPostData = {
+    body: BodyUploadStudentsExcelAdminUploadStudentsExcelPost;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+        /**
+         * Section Name
+         */
+        section_name: string;
+    };
+    url: '/admin/upload-students-excel';
+};
+
+export type UploadStudentsExcelAdminUploadStudentsExcelPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UploadStudentsExcelAdminUploadStudentsExcelPostError = UploadStudentsExcelAdminUploadStudentsExcelPostErrors[keyof UploadStudentsExcelAdminUploadStudentsExcelPostErrors];
+
+export type UploadStudentsExcelAdminUploadStudentsExcelPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type AssignSubjectsAdminAssignSubjectsPostData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Teacher Username
+         */
+        teacher_username: string;
+        /**
+         * Subject Code
+         */
+        subject_code: string;
+        /**
+         * Section Id
+         */
+        section_id: number;
+        /**
+         * Semester
+         */
+        semester: string;
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+    };
+    url: '/admin/assign-subjects';
+};
+
+export type AssignSubjectsAdminAssignSubjectsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AssignSubjectsAdminAssignSubjectsPostError = AssignSubjectsAdminAssignSubjectsPostErrors[keyof AssignSubjectsAdminAssignSubjectsPostErrors];
+
+export type AssignSubjectsAdminAssignSubjectsPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListSubjectsAdminListSubjectsGetData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/list-subjects';
+};
+
+export type ListSubjectsAdminListSubjectsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListSubjectsAdminListSubjectsGetError = ListSubjectsAdminListSubjectsGetErrors[keyof ListSubjectsAdminListSubjectsGetErrors];
+
+export type ListSubjectsAdminListSubjectsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListSectionsAdminListSectionsGetData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+    };
+    url: '/admin/list-sections';
+};
+
+export type ListSectionsAdminListSectionsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListSectionsAdminListSectionsGetError = ListSectionsAdminListSectionsGetErrors[keyof ListSectionsAdminListSectionsGetErrors];
+
+export type ListSectionsAdminListSectionsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetBatchStatusAdminBatchStatusGetData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+    };
+    url: '/admin/batch-status';
+};
+
+export type GetBatchStatusAdminBatchStatusGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetBatchStatusAdminBatchStatusGetError = GetBatchStatusAdminBatchStatusGetErrors[keyof GetBatchStatusAdminBatchStatusGetErrors];
+
+export type GetBatchStatusAdminBatchStatusGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UpdateBatchStatusAdminUpdateBatchStatusPostData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+        /**
+         * Status
+         */
+        status: string;
+    };
+    url: '/admin/update-batch-status';
+};
+
+export type UpdateBatchStatusAdminUpdateBatchStatusPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateBatchStatusAdminUpdateBatchStatusPostError = UpdateBatchStatusAdminUpdateBatchStatusPostErrors[keyof UpdateBatchStatusAdminUpdateBatchStatusPostErrors];
+
+export type UpdateBatchStatusAdminUpdateBatchStatusPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ValidateStudentsExcelAdminValidateStudentsExcelPostData = {
+    body: BodyValidateStudentsExcelAdminValidateStudentsExcelPost;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+    };
+    url: '/admin/validate-students-excel';
+};
+
+export type ValidateStudentsExcelAdminValidateStudentsExcelPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ValidateStudentsExcelAdminValidateStudentsExcelPostError = ValidateStudentsExcelAdminValidateStudentsExcelPostErrors[keyof ValidateStudentsExcelAdminValidateStudentsExcelPostErrors];
+
+export type ValidateStudentsExcelAdminValidateStudentsExcelPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ValidateSubjectsExcelAdminValidateSubjectsExcelPostData = {
+    body: BodyValidateSubjectsExcelAdminValidateSubjectsExcelPost;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/validate-subjects-excel';
+};
+
+export type ValidateSubjectsExcelAdminValidateSubjectsExcelPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ValidateSubjectsExcelAdminValidateSubjectsExcelPostError = ValidateSubjectsExcelAdminValidateSubjectsExcelPostErrors[keyof ValidateSubjectsExcelAdminValidateSubjectsExcelPostErrors];
+
+export type ValidateSubjectsExcelAdminValidateSubjectsExcelPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type CommitStudentsExcelAdminCommitStudentsExcelPostData = {
+    body: BodyCommitStudentsExcelAdminCommitStudentsExcelPost;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+        /**
+         * Section Name
+         */
+        section_name: string;
+    };
+    url: '/admin/commit-students-excel';
+};
+
+export type CommitStudentsExcelAdminCommitStudentsExcelPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CommitStudentsExcelAdminCommitStudentsExcelPostError = CommitStudentsExcelAdminCommitStudentsExcelPostErrors[keyof CommitStudentsExcelAdminCommitStudentsExcelPostErrors];
+
+export type CommitStudentsExcelAdminCommitStudentsExcelPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type CommitSubjectsExcelAdminCommitSubjectsExcelPostData = {
+    body: BodyCommitSubjectsExcelAdminCommitSubjectsExcelPost;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Semester
+         */
+        semester: string;
+    };
+    url: '/admin/commit-subjects-excel';
+};
+
+export type CommitSubjectsExcelAdminCommitSubjectsExcelPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CommitSubjectsExcelAdminCommitSubjectsExcelPostError = CommitSubjectsExcelAdminCommitSubjectsExcelPostErrors[keyof CommitSubjectsExcelAdminCommitSubjectsExcelPostErrors];
+
+export type CommitSubjectsExcelAdminCommitSubjectsExcelPostResponses = {
     /**
      * Successful Response
      */
@@ -1815,7 +2521,12 @@ export type GetStudentDetailsParentStudentDetailsGetResponses = {
 export type UploadArchivePdftoexcelUploadPostData = {
     body: BodyUploadArchivePdftoexcelUploadPost;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Batch Year
+         */
+        batch_year?: number | null;
+    };
     url: '/pdftoexcel/upload';
 };
 
@@ -1843,7 +2554,12 @@ export type GetStatusPdftoexcelStatusJobIdGetData = {
          */
         job_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Batch Year
+         */
+        batch_year?: number | null;
+    };
     url: '/pdftoexcel/status/{job_id}';
 };
 
@@ -2009,6 +2725,10 @@ export type GetSemesterResultsAuthStaffSemResGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        /**
+         * Section
+         */
+        section?: string;
     };
     url: '/auth/Staff/sem_res';
 };
@@ -2174,6 +2894,10 @@ export type GetSubjectResultsAuthStaffSubResGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        /**
+         * Section
+         */
+        section?: string;
     };
     url: '/auth/Staff/sub_res';
 };
@@ -2210,6 +2934,10 @@ export type GetSubjectReportPdfAuthStaffSubResReportGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        /**
+         * Section
+         */
+        section?: string;
     };
     url: '/auth/Staff/sub_res/report';
 };
@@ -2237,7 +2965,7 @@ export type GetAcademicPerformanceAuthStaffOverallResGetData = {
         /**
          * Semester
          */
-        semester?: string;
+        semester?: string | null;
         /**
          * Show Toppers
          */
@@ -2254,6 +2982,10 @@ export type GetAcademicPerformanceAuthStaffOverallResGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        /**
+         * Section
+         */
+        section?: string | null;
     };
     url: '/auth/Staff/overall_res';
 };
@@ -2287,6 +3019,10 @@ export type GetReportAuthStaffReportSemesterGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        /**
+         * Section
+         */
+        section?: string | null;
     };
     url: '/auth/Staff/report/{semester}';
 };

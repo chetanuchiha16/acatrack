@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddMeetingAuthStaffMentorMeetingMentorIdPostData, AddMeetingAuthStaffMentorMeetingMentorIdPostErrors, AddMeetingAuthStaffMentorMeetingMentorIdPostResponses, AiPredictCgpaAiPredictCgpaGetData, AiPredictCgpaAiPredictCgpaGetErrors, AiPredictCgpaAiPredictCgpaGetResponses, AiProfileAiProfileGetData, AiProfileAiProfileGetErrors, AiProfileAiProfileGetResponses, AiSummaryAiSummaryGetData, AiSummaryAiSummaryGetErrors, AiSummaryAiSummaryGetResponses, AiTrendAiTrendGetData, AiTrendAiTrendGetErrors, AiTrendAiTrendGetResponses, AuthAuthPostData, AuthAuthPostErrors, AuthAuthPostResponses, AuthStatusAuthStatusGetData, AuthStatusAuthStatusGetResponses, CreateBatchAdminCreateBatchPostData, CreateBatchAdminCreateBatchPostErrors, CreateBatchAdminCreateBatchPostResponses, DeleteMeetingAuthStaffMentorMeetingDeleteMeetingIdDeleteData, DeleteMeetingAuthStaffMentorMeetingDeleteMeetingIdDeleteErrors, DeleteMeetingAuthStaffMentorMeetingDeleteMeetingIdDeleteResponses, DeleteMessageMentorMentorIdMessagesMsgIdDeleteData, DeleteMessageMentorMentorIdMessagesMsgIdDeleteErrors, DeleteMessageMentorMentorIdMessagesMsgIdDeleteResponses, DeleteMessageMessagesMsgIdDeleteData, DeleteMessageMessagesMsgIdDeleteErrors, DeleteMessageMessagesMsgIdDeleteResponses, DownloadMenteeDownloadFilenameGetData, DownloadMenteeDownloadFilenameGetErrors, DownloadMenteeDownloadFilenameGetResponses, DownloadMenteePdfMenteeMentorMentorIdDownloadUsnGetData, DownloadMenteePdfMenteeMentorMentorIdDownloadUsnGetErrors, DownloadMenteePdfMenteeMentorMentorIdDownloadUsnGetResponses, DownloadMenteeReportAuthStaffMentorReportFilenameGetData, DownloadMenteeReportAuthStaffMentorReportFilenameGetErrors, DownloadMenteeReportAuthStaffMentorReportFilenameGetResponses, DownloadReportAuthStudentReportFilenameGetData, DownloadReportAuthStudentReportFilenameGetErrors, DownloadReportAuthStudentReportFilenameGetResponses, DownloadSemesterReportAuthStaffSemResReportSemesterGetData, DownloadSemesterReportAuthStaffSemResReportSemesterGetErrors, DownloadSemesterReportAuthStaffSemResReportSemesterGetResponses, DownloadTeachersCsvAdminDownloadTeachersCsvGetData, DownloadTeachersCsvAdminDownloadTeachersCsvGetErrors, DownloadTeachersCsvAdminDownloadTeachersCsvGetResponses, ExcelExcelPostData, ExcelExcelPostErrors, ExcelExcelPostResponses, FetchResultsRouteWebscrapeFetchResultsPostData, FetchResultsRouteWebscrapeFetchResultsPostErrors, FetchResultsRouteWebscrapeFetchResultsPostResponses, FilesMenteeFilesGetData, FilesMenteeFilesGetResponses, GenerateAccountsAdminGenerateAccountsPostData, GenerateAccountsAdminGenerateAccountsPostErrors, GenerateAccountsAdminGenerateAccountsPostResponses, GetAcademicPerformanceAuthStaffOverallResGetData, GetAcademicPerformanceAuthStaffOverallResGetErrors, GetAcademicPerformanceAuthStaffOverallResGetResponses, GetMeetingsAuthStaffMentorMeetingMentorIdGetData, GetMeetingsAuthStaffMentorMeetingMentorIdGetErrors, GetMeetingsAuthStaffMentorMeetingMentorIdGetResponses, GetMenteeChartAuthStaffMentorChartGetData, GetMenteeChartAuthStaffMentorChartGetErrors, GetMenteeChartAuthStaffMentorChartGetResponses, GetMenteeMeetingsAuthStudentMenteeMeetingStudentUsnGetData, GetMenteeMeetingsAuthStudentMenteeMeetingStudentUsnGetErrors, GetMenteeMeetingsAuthStudentMenteeMeetingStudentUsnGetResponses, GetMentorStudentsAuthStaffMentorResultGetData, GetMentorStudentsAuthStaffMentorResultGetErrors, GetMentorStudentsAuthStaffMentorResultGetResponses, GetMentorStudentsMentorMentorIdStudentsGetData, GetMentorStudentsMentorMentorIdStudentsGetErrors, GetMentorStudentsMentorMentorIdStudentsGetResponses, GetMessagesMentorMentorIdMessagesGetData, GetMessagesMentorMentorIdMessagesGetErrors, GetMessagesMentorMentorIdMessagesGetResponses, GetMessagesMessagesGetData, GetMessagesMessagesGetResponses, GetNoteAuthStudentNotesFilePathGetData, GetNoteAuthStudentNotesFilePathGetErrors, GetNoteAuthStudentNotesFilePathGetResponses, GetReportAuthStaffReportSemesterGetData, GetReportAuthStaffReportSemesterGetErrors, GetReportAuthStaffReportSemesterGetResponses, GetSemesterResultsAuthStaffSemResGetData, GetSemesterResultsAuthStaffSemResGetErrors, GetSemesterResultsAuthStaffSemResGetResponses, GetStatusPdftoexcelStatusJobIdGetData, GetStatusPdftoexcelStatusJobIdGetErrors, GetStatusPdftoexcelStatusJobIdGetResponses, GetStudentAnalysisAuthStudentAnalysisGetData, GetStudentAnalysisAuthStudentAnalysisGetErrors, GetStudentAnalysisAuthStudentAnalysisGetResponses, GetStudentChartAuthStudentChartGetData, GetStudentChartAuthStudentChartGetErrors, GetStudentChartAuthStudentChartGetResponses, GetStudentDetailsParentStudentDetailsGetData, GetStudentDetailsParentStudentDetailsGetResponses, GetStudentInfoAuthStudentResultGetData, GetStudentInfoAuthStudentResultGetErrors, GetStudentInfoAuthStudentResultGetResponses, GetStudentMessageDetailStudentUsnMessagesMsgIdGetData, GetStudentMessageDetailStudentUsnMessagesMsgIdGetErrors, GetStudentMessageDetailStudentUsnMessagesMsgIdGetResponses, GetStudentMessagesStudentUsnMessagesGetData, GetStudentMessagesStudentUsnMessagesGetErrors, GetStudentMessagesStudentUsnMessagesGetResponses, GetSubjectReportPdfAuthStaffSubResReportGetData, GetSubjectReportPdfAuthStaffSubResReportGetErrors, GetSubjectReportPdfAuthStaffSubResReportGetResponses, GetSubjectResultsAuthStaffSubResGetData, GetSubjectResultsAuthStaffSubResGetErrors, GetSubjectResultsAuthStaffSubResGetResponses, GetTemplateExcelTemplateXlsxGetData, GetTemplateExcelTemplateXlsxGetResponses, HealthAdminHealthGetData, HealthAdminHealthGetErrors, HealthAdminHealthGetResponses, HealthHealthGetData, HealthHealthGetResponses, ListBatchesAdminListBatchesGetData, ListBatchesAdminListBatchesGetErrors, ListBatchesAdminListBatchesGetResponses, ListBatchesBatchesGetData, ListBatchesBatchesGetResponses, ListMentorPdfsMenteeMentorMentorIdPdfsGetData, ListMentorPdfsMenteeMentorMentorIdPdfsGetErrors, ListMentorPdfsMenteeMentorMentorIdPdfsGetResponses, ListNotesAuthStaffUploadNotesGetData, ListNotesAuthStaffUploadNotesGetErrors, ListNotesAuthStaffUploadNotesGetResponses, ListNotesAuthStudentNotesGetData, ListNotesAuthStudentNotesGetErrors, ListNotesAuthStudentNotesGetResponses, LogoutLogoutPostData, LogoutLogoutPostResponses, MarkMessageReadStudentUsnMessagesMsgIdReadPostData, MarkMessageReadStudentUsnMessagesMsgIdReadPostErrors, MarkMessageReadStudentUsnMessagesMsgIdReadPostResponses, RefreshBatchAdminRefreshBatchPostData, RefreshBatchAdminRefreshBatchPostErrors, RefreshBatchAdminRefreshBatchPostResponses, RequestResetAuthForgotRequestPostData, RequestResetAuthForgotRequestPostErrors, RequestResetAuthForgotRequestPostResponses, ResetPasswordAuthForgotResetTokenPostData, ResetPasswordAuthForgotResetTokenPostErrors, ResetPasswordAuthForgotResetTokenPostResponses, SaveFcmTokenStudentUsnFcmTokenPostData, SaveFcmTokenStudentUsnFcmTokenPostErrors, SaveFcmTokenStudentUsnFcmTokenPostResponses, SaveMessageMessagesPostData, SaveMessageMessagesPostErrors, SaveMessageMessagesPostResponses, SendEmailAllMentorMentorIdSendEmailAllPostData, SendEmailAllMentorMentorIdSendEmailAllPostErrors, SendEmailAllMentorMentorIdSendEmailAllPostResponses, SendEmailStudentMentorMentorIdSendEmailStudentPostData, SendEmailStudentMentorMentorIdSendEmailStudentPostErrors, SendEmailStudentMentorMentorIdSendEmailStudentPostResponses, SendEmailToAllSendEmailAllPostData, SendEmailToAllSendEmailAllPostErrors, SendEmailToAllSendEmailAllPostResponses, SendEmailToStudentSendEmailStudentPostData, SendEmailToStudentSendEmailStudentPostErrors, SendEmailToStudentSendEmailStudentPostResponses, SendMentorMessageMentorMentorIdMessagesPostData, SendMentorMessageMentorMentorIdMessagesPostErrors, SendMentorMessageMentorMentorIdMessagesPostResponses, UploadArchivePdftoexcelUploadPostData, UploadArchivePdftoexcelUploadPostErrors, UploadArchivePdftoexcelUploadPostResponses, UploadEmailsAdminUploadEmailsPostData, UploadEmailsAdminUploadEmailsPostErrors, UploadEmailsAdminUploadEmailsPostResponses, UploadFormMenteeUploadFormPostData, UploadFormMenteeUploadFormPostErrors, UploadFormMenteeUploadFormPostResponses, UploadMentorsAdminUploadMentorsPostData, UploadMentorsAdminUploadMentorsPostErrors, UploadMentorsAdminUploadMentorsPostResponses, UploadNoteAuthStaffUploadNotesPostData, UploadNoteAuthStaffUploadNotesPostErrors, UploadNoteAuthStaffUploadNotesPostResponses } from './types.gen';
+import type { AddMeetingAuthStaffMentorMeetingMentorIdPostData, AddMeetingAuthStaffMentorMeetingMentorIdPostErrors, AddMeetingAuthStaffMentorMeetingMentorIdPostResponses, AiPredictCgpaAiPredictCgpaGetData, AiPredictCgpaAiPredictCgpaGetErrors, AiPredictCgpaAiPredictCgpaGetResponses, AiProfileAiProfileGetData, AiProfileAiProfileGetErrors, AiProfileAiProfileGetResponses, AiSummaryAiSummaryGetData, AiSummaryAiSummaryGetErrors, AiSummaryAiSummaryGetResponses, AiTrendAiTrendGetData, AiTrendAiTrendGetErrors, AiTrendAiTrendGetResponses, AssignSubjectsAdminAssignSubjectsPostData, AssignSubjectsAdminAssignSubjectsPostErrors, AssignSubjectsAdminAssignSubjectsPostResponses, AuthAuthPostData, AuthAuthPostErrors, AuthAuthPostResponses, AuthStatusAuthStatusGetData, AuthStatusAuthStatusGetResponses, CommitStudentsExcelAdminCommitStudentsExcelPostData, CommitStudentsExcelAdminCommitStudentsExcelPostErrors, CommitStudentsExcelAdminCommitStudentsExcelPostResponses, CommitSubjectsExcelAdminCommitSubjectsExcelPostData, CommitSubjectsExcelAdminCommitSubjectsExcelPostErrors, CommitSubjectsExcelAdminCommitSubjectsExcelPostResponses, CreateBatchAdminCreateBatchPostData, CreateBatchAdminCreateBatchPostErrors, CreateBatchAdminCreateBatchPostResponses, DeleteMeetingAuthStaffMentorMeetingDeleteMeetingIdDeleteData, DeleteMeetingAuthStaffMentorMeetingDeleteMeetingIdDeleteErrors, DeleteMeetingAuthStaffMentorMeetingDeleteMeetingIdDeleteResponses, DeleteMessageMentorMentorIdMessagesMsgIdDeleteData, DeleteMessageMentorMentorIdMessagesMsgIdDeleteErrors, DeleteMessageMentorMentorIdMessagesMsgIdDeleteResponses, DeleteMessageMessagesMsgIdDeleteData, DeleteMessageMessagesMsgIdDeleteErrors, DeleteMessageMessagesMsgIdDeleteResponses, DownloadMenteeDownloadFilenameGetData, DownloadMenteeDownloadFilenameGetErrors, DownloadMenteeDownloadFilenameGetResponses, DownloadMenteePdfMenteeMentorMentorIdDownloadUsnGetData, DownloadMenteePdfMenteeMentorMentorIdDownloadUsnGetErrors, DownloadMenteePdfMenteeMentorMentorIdDownloadUsnGetResponses, DownloadMenteeReportAuthStaffMentorReportFilenameGetData, DownloadMenteeReportAuthStaffMentorReportFilenameGetErrors, DownloadMenteeReportAuthStaffMentorReportFilenameGetResponses, DownloadReportAuthStudentReportFilenameGetData, DownloadReportAuthStudentReportFilenameGetErrors, DownloadReportAuthStudentReportFilenameGetResponses, DownloadSemesterReportAuthStaffSemResReportSemesterGetData, DownloadSemesterReportAuthStaffSemResReportSemesterGetErrors, DownloadSemesterReportAuthStaffSemResReportSemesterGetResponses, DownloadTeachersCsvAdminDownloadTeachersCsvGetData, DownloadTeachersCsvAdminDownloadTeachersCsvGetErrors, DownloadTeachersCsvAdminDownloadTeachersCsvGetResponses, EnrollStudentsAdminEnrollStudentsPostData, EnrollStudentsAdminEnrollStudentsPostErrors, EnrollStudentsAdminEnrollStudentsPostResponses, ExcelExcelPostData, ExcelExcelPostErrors, ExcelExcelPostResponses, FetchResultsRouteWebscrapeFetchResultsPostData, FetchResultsRouteWebscrapeFetchResultsPostErrors, FetchResultsRouteWebscrapeFetchResultsPostResponses, FilesMenteeFilesGetData, FilesMenteeFilesGetResponses, GenerateAccountsAdminGenerateAccountsPostData, GenerateAccountsAdminGenerateAccountsPostErrors, GenerateAccountsAdminGenerateAccountsPostResponses, GetAcademicPerformanceAuthStaffOverallResGetData, GetAcademicPerformanceAuthStaffOverallResGetErrors, GetAcademicPerformanceAuthStaffOverallResGetResponses, GetBatchStatusAdminBatchStatusGetData, GetBatchStatusAdminBatchStatusGetErrors, GetBatchStatusAdminBatchStatusGetResponses, GetMeetingsAuthStaffMentorMeetingMentorIdGetData, GetMeetingsAuthStaffMentorMeetingMentorIdGetErrors, GetMeetingsAuthStaffMentorMeetingMentorIdGetResponses, GetMenteeChartAuthStaffMentorChartGetData, GetMenteeChartAuthStaffMentorChartGetErrors, GetMenteeChartAuthStaffMentorChartGetResponses, GetMenteeMeetingsAuthStudentMenteeMeetingStudentUsnGetData, GetMenteeMeetingsAuthStudentMenteeMeetingStudentUsnGetErrors, GetMenteeMeetingsAuthStudentMenteeMeetingStudentUsnGetResponses, GetMentorStudentsAuthStaffMentorResultGetData, GetMentorStudentsAuthStaffMentorResultGetErrors, GetMentorStudentsAuthStaffMentorResultGetResponses, GetMentorStudentsMentorMentorIdStudentsGetData, GetMentorStudentsMentorMentorIdStudentsGetErrors, GetMentorStudentsMentorMentorIdStudentsGetResponses, GetMessagesMentorMentorIdMessagesGetData, GetMessagesMentorMentorIdMessagesGetErrors, GetMessagesMentorMentorIdMessagesGetResponses, GetMessagesMessagesGetData, GetMessagesMessagesGetResponses, GetMyAssignmentsAdminMyAssignmentsGetData, GetMyAssignmentsAdminMyAssignmentsGetErrors, GetMyAssignmentsAdminMyAssignmentsGetResponses, GetNoteAuthStudentNotesFilePathGetData, GetNoteAuthStudentNotesFilePathGetErrors, GetNoteAuthStudentNotesFilePathGetResponses, GetReportAuthStaffReportSemesterGetData, GetReportAuthStaffReportSemesterGetErrors, GetReportAuthStaffReportSemesterGetResponses, GetSemesterResultsAuthStaffSemResGetData, GetSemesterResultsAuthStaffSemResGetErrors, GetSemesterResultsAuthStaffSemResGetResponses, GetStatusPdftoexcelStatusJobIdGetData, GetStatusPdftoexcelStatusJobIdGetErrors, GetStatusPdftoexcelStatusJobIdGetResponses, GetStudentAnalysisAuthStudentAnalysisGetData, GetStudentAnalysisAuthStudentAnalysisGetErrors, GetStudentAnalysisAuthStudentAnalysisGetResponses, GetStudentChartAuthStudentChartGetData, GetStudentChartAuthStudentChartGetErrors, GetStudentChartAuthStudentChartGetResponses, GetStudentDetailsParentStudentDetailsGetData, GetStudentDetailsParentStudentDetailsGetResponses, GetStudentInfoAuthStudentResultGetData, GetStudentInfoAuthStudentResultGetErrors, GetStudentInfoAuthStudentResultGetResponses, GetStudentMessageDetailStudentUsnMessagesMsgIdGetData, GetStudentMessageDetailStudentUsnMessagesMsgIdGetErrors, GetStudentMessageDetailStudentUsnMessagesMsgIdGetResponses, GetStudentMessagesStudentUsnMessagesGetData, GetStudentMessagesStudentUsnMessagesGetErrors, GetStudentMessagesStudentUsnMessagesGetResponses, GetSubjectReportPdfAuthStaffSubResReportGetData, GetSubjectReportPdfAuthStaffSubResReportGetErrors, GetSubjectReportPdfAuthStaffSubResReportGetResponses, GetSubjectResultsAuthStaffSubResGetData, GetSubjectResultsAuthStaffSubResGetErrors, GetSubjectResultsAuthStaffSubResGetResponses, GetTemplateExcelTemplateXlsxGetData, GetTemplateExcelTemplateXlsxGetResponses, HealthAdminHealthGetData, HealthAdminHealthGetErrors, HealthAdminHealthGetResponses, HealthHealthGetData, HealthHealthGetResponses, InitBatchAdminInitBatchPostData, InitBatchAdminInitBatchPostErrors, InitBatchAdminInitBatchPostResponses, ListBatchesAdminListBatchesGetData, ListBatchesAdminListBatchesGetErrors, ListBatchesAdminListBatchesGetResponses, ListBatchesBatchesGetData, ListBatchesBatchesGetResponses, ListMentorPdfsMenteeMentorMentorIdPdfsGetData, ListMentorPdfsMenteeMentorMentorIdPdfsGetErrors, ListMentorPdfsMenteeMentorMentorIdPdfsGetResponses, ListNotesAuthStaffUploadNotesGetData, ListNotesAuthStaffUploadNotesGetErrors, ListNotesAuthStaffUploadNotesGetResponses, ListNotesAuthStudentNotesGetData, ListNotesAuthStudentNotesGetErrors, ListNotesAuthStudentNotesGetResponses, ListSectionsAdminListSectionsGetData, ListSectionsAdminListSectionsGetErrors, ListSectionsAdminListSectionsGetResponses, ListStaffAdminListStaffGetData, ListStaffAdminListStaffGetErrors, ListStaffAdminListStaffGetResponses, ListSubjectsAdminListSubjectsGetData, ListSubjectsAdminListSubjectsGetErrors, ListSubjectsAdminListSubjectsGetResponses, LogoutLogoutPostData, LogoutLogoutPostResponses, MarkMessageReadStudentUsnMessagesMsgIdReadPostData, MarkMessageReadStudentUsnMessagesMsgIdReadPostErrors, MarkMessageReadStudentUsnMessagesMsgIdReadPostResponses, RefreshBatchAdminRefreshBatchPostData, RefreshBatchAdminRefreshBatchPostErrors, RefreshBatchAdminRefreshBatchPostResponses, RegisterStaffAdminRegisterStaffPostData, RegisterStaffAdminRegisterStaffPostErrors, RegisterStaffAdminRegisterStaffPostResponses, RegisterSubjectsAdminRegisterSubjectsPostData, RegisterSubjectsAdminRegisterSubjectsPostErrors, RegisterSubjectsAdminRegisterSubjectsPostResponses, RequestResetAuthForgotRequestPostData, RequestResetAuthForgotRequestPostErrors, RequestResetAuthForgotRequestPostResponses, ResetPasswordAuthForgotResetTokenPostData, ResetPasswordAuthForgotResetTokenPostErrors, ResetPasswordAuthForgotResetTokenPostResponses, SaveFcmTokenStudentUsnFcmTokenPostData, SaveFcmTokenStudentUsnFcmTokenPostErrors, SaveFcmTokenStudentUsnFcmTokenPostResponses, SaveMessageMessagesPostData, SaveMessageMessagesPostErrors, SaveMessageMessagesPostResponses, SendEmailAllMentorMentorIdSendEmailAllPostData, SendEmailAllMentorMentorIdSendEmailAllPostErrors, SendEmailAllMentorMentorIdSendEmailAllPostResponses, SendEmailStudentMentorMentorIdSendEmailStudentPostData, SendEmailStudentMentorMentorIdSendEmailStudentPostErrors, SendEmailStudentMentorMentorIdSendEmailStudentPostResponses, SendEmailToAllSendEmailAllPostData, SendEmailToAllSendEmailAllPostErrors, SendEmailToAllSendEmailAllPostResponses, SendEmailToStudentSendEmailStudentPostData, SendEmailToStudentSendEmailStudentPostErrors, SendEmailToStudentSendEmailStudentPostResponses, SendMentorMessageMentorMentorIdMessagesPostData, SendMentorMessageMentorMentorIdMessagesPostErrors, SendMentorMessageMentorMentorIdMessagesPostResponses, UpdateBatchStatusAdminUpdateBatchStatusPostData, UpdateBatchStatusAdminUpdateBatchStatusPostErrors, UpdateBatchStatusAdminUpdateBatchStatusPostResponses, UploadArchivePdftoexcelUploadPostData, UploadArchivePdftoexcelUploadPostErrors, UploadArchivePdftoexcelUploadPostResponses, UploadEmailsAdminUploadEmailsPostData, UploadEmailsAdminUploadEmailsPostErrors, UploadEmailsAdminUploadEmailsPostResponses, UploadFormMenteeUploadFormPostData, UploadFormMenteeUploadFormPostErrors, UploadFormMenteeUploadFormPostResponses, UploadMentorsAdminUploadMentorsPostData, UploadMentorsAdminUploadMentorsPostErrors, UploadMentorsAdminUploadMentorsPostResponses, UploadNoteAuthStaffUploadNotesPostData, UploadNoteAuthStaffUploadNotesPostErrors, UploadNoteAuthStaffUploadNotesPostResponses, UploadStaffListAdminUploadStaffListPostData, UploadStaffListAdminUploadStaffListPostErrors, UploadStaffListAdminUploadStaffListPostResponses, UploadStudentsExcelAdminUploadStudentsExcelPostData, UploadStudentsExcelAdminUploadStudentsExcelPostErrors, UploadStudentsExcelAdminUploadStudentsExcelPostResponses, UploadSubjectsExcelAdminUploadSubjectsExcelPostData, UploadSubjectsExcelAdminUploadSubjectsExcelPostErrors, UploadSubjectsExcelAdminUploadSubjectsExcelPostResponses, ValidateStudentsExcelAdminValidateStudentsExcelPostData, ValidateStudentsExcelAdminValidateStudentsExcelPostErrors, ValidateStudentsExcelAdminValidateStudentsExcelPostResponses, ValidateSubjectsExcelAdminValidateSubjectsExcelPostData, ValidateSubjectsExcelAdminValidateSubjectsExcelPostErrors, ValidateSubjectsExcelAdminValidateSubjectsExcelPostResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -113,6 +113,38 @@ export const uploadEmailsAdminUploadEmailsPost = <ThrowOnError extends boolean =
 });
 
 /**
+ * List Staff
+ */
+export const listStaffAdminListStaffGet = <ThrowOnError extends boolean = false>(options?: Options<ListStaffAdminListStaffGetData, ThrowOnError>) => (options?.client ?? client).get<ListStaffAdminListStaffGetResponses, ListStaffAdminListStaffGetErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/admin/list-staff',
+    ...options
+});
+
+/**
+ * Register Staff
+ */
+export const registerStaffAdminRegisterStaffPost = <ThrowOnError extends boolean = false>(options: Options<RegisterStaffAdminRegisterStaffPostData, ThrowOnError>) => (options.client ?? client).post<RegisterStaffAdminRegisterStaffPostResponses, RegisterStaffAdminRegisterStaffPostErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/admin/register-staff',
+    ...options
+});
+
+/**
+ * Upload Staff List
+ */
+export const uploadStaffListAdminUploadStaffListPost = <ThrowOnError extends boolean = false>(options: Options<UploadStaffListAdminUploadStaffListPostData, ThrowOnError>) => (options.client ?? client).post<UploadStaffListAdminUploadStaffListPostResponses, UploadStaffListAdminUploadStaffListPostErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    responseType: 'json',
+    url: '/admin/upload-staff-list',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
  * Upload Mentors
  */
 export const uploadMentorsAdminUploadMentorsPost = <ThrowOnError extends boolean = false>(options: Options<UploadMentorsAdminUploadMentorsPostData, ThrowOnError>) => (options.client ?? client).post<UploadMentorsAdminUploadMentorsPostResponses, UploadMentorsAdminUploadMentorsPostErrors, ThrowOnError>({
@@ -157,6 +189,193 @@ export const refreshBatchAdminRefreshBatchPost = <ThrowOnError extends boolean =
     ...options,
     headers: {
         'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get My Assignments
+ */
+export const getMyAssignmentsAdminMyAssignmentsGet = <ThrowOnError extends boolean = false>(options: Options<GetMyAssignmentsAdminMyAssignmentsGetData, ThrowOnError>) => (options.client ?? client).get<GetMyAssignmentsAdminMyAssignmentsGetResponses, GetMyAssignmentsAdminMyAssignmentsGetErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/admin/my-assignments',
+    ...options
+});
+
+/**
+ * Init Batch
+ */
+export const initBatchAdminInitBatchPost = <ThrowOnError extends boolean = false>(options: Options<InitBatchAdminInitBatchPostData, ThrowOnError>) => (options.client ?? client).post<InitBatchAdminInitBatchPostResponses, InitBatchAdminInitBatchPostErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/admin/init-batch',
+    ...options
+});
+
+/**
+ * Register Subjects
+ */
+export const registerSubjectsAdminRegisterSubjectsPost = <ThrowOnError extends boolean = false>(options: Options<RegisterSubjectsAdminRegisterSubjectsPostData, ThrowOnError>) => (options.client ?? client).post<RegisterSubjectsAdminRegisterSubjectsPostResponses, RegisterSubjectsAdminRegisterSubjectsPostErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/admin/register-subjects',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Enroll Students
+ */
+export const enrollStudentsAdminEnrollStudentsPost = <ThrowOnError extends boolean = false>(options: Options<EnrollStudentsAdminEnrollStudentsPostData, ThrowOnError>) => (options.client ?? client).post<EnrollStudentsAdminEnrollStudentsPostResponses, EnrollStudentsAdminEnrollStudentsPostErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/admin/enroll-students',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Upload Subjects Excel
+ */
+export const uploadSubjectsExcelAdminUploadSubjectsExcelPost = <ThrowOnError extends boolean = false>(options: Options<UploadSubjectsExcelAdminUploadSubjectsExcelPostData, ThrowOnError>) => (options.client ?? client).post<UploadSubjectsExcelAdminUploadSubjectsExcelPostResponses, UploadSubjectsExcelAdminUploadSubjectsExcelPostErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    responseType: 'json',
+    url: '/admin/upload-subjects-excel',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Upload Students Excel
+ */
+export const uploadStudentsExcelAdminUploadStudentsExcelPost = <ThrowOnError extends boolean = false>(options: Options<UploadStudentsExcelAdminUploadStudentsExcelPostData, ThrowOnError>) => (options.client ?? client).post<UploadStudentsExcelAdminUploadStudentsExcelPostResponses, UploadStudentsExcelAdminUploadStudentsExcelPostErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    responseType: 'json',
+    url: '/admin/upload-students-excel',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Assign Subjects
+ */
+export const assignSubjectsAdminAssignSubjectsPost = <ThrowOnError extends boolean = false>(options: Options<AssignSubjectsAdminAssignSubjectsPostData, ThrowOnError>) => (options.client ?? client).post<AssignSubjectsAdminAssignSubjectsPostResponses, AssignSubjectsAdminAssignSubjectsPostErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/admin/assign-subjects',
+    ...options
+});
+
+/**
+ * List Subjects
+ */
+export const listSubjectsAdminListSubjectsGet = <ThrowOnError extends boolean = false>(options?: Options<ListSubjectsAdminListSubjectsGetData, ThrowOnError>) => (options?.client ?? client).get<ListSubjectsAdminListSubjectsGetResponses, ListSubjectsAdminListSubjectsGetErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/admin/list-subjects',
+    ...options
+});
+
+/**
+ * List Sections
+ */
+export const listSectionsAdminListSectionsGet = <ThrowOnError extends boolean = false>(options: Options<ListSectionsAdminListSectionsGetData, ThrowOnError>) => (options.client ?? client).get<ListSectionsAdminListSectionsGetResponses, ListSectionsAdminListSectionsGetErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/admin/list-sections',
+    ...options
+});
+
+/**
+ * Get Batch Status
+ *
+ * Returns the lifecycle status and entity counts for a batch.
+ */
+export const getBatchStatusAdminBatchStatusGet = <ThrowOnError extends boolean = false>(options: Options<GetBatchStatusAdminBatchStatusGetData, ThrowOnError>) => (options.client ?? client).get<GetBatchStatusAdminBatchStatusGetResponses, GetBatchStatusAdminBatchStatusGetErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/admin/batch-status',
+    ...options
+});
+
+/**
+ * Update Batch Status
+ *
+ * Manually promote/demote batch status (e.g., ACTIVE, ARCHIVED).
+ */
+export const updateBatchStatusAdminUpdateBatchStatusPost = <ThrowOnError extends boolean = false>(options: Options<UpdateBatchStatusAdminUpdateBatchStatusPostData, ThrowOnError>) => (options.client ?? client).post<UpdateBatchStatusAdminUpdateBatchStatusPostResponses, UpdateBatchStatusAdminUpdateBatchStatusPostErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/admin/update-batch-status',
+    ...options
+});
+
+/**
+ * Validate Students Excel
+ *
+ * Stage 1 (Dry-Run): Parse student Excel and return a validation preview.
+ * Does NOT persist anything to the database.
+ */
+export const validateStudentsExcelAdminValidateStudentsExcelPost = <ThrowOnError extends boolean = false>(options: Options<ValidateStudentsExcelAdminValidateStudentsExcelPostData, ThrowOnError>) => (options.client ?? client).post<ValidateStudentsExcelAdminValidateStudentsExcelPostResponses, ValidateStudentsExcelAdminValidateStudentsExcelPostErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    responseType: 'json',
+    url: '/admin/validate-students-excel',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Validate Subjects Excel
+ *
+ * Stage 1 (Dry-Run): Parse subject Excel and return a validation preview.
+ * Does NOT persist anything to the database.
+ */
+export const validateSubjectsExcelAdminValidateSubjectsExcelPost = <ThrowOnError extends boolean = false>(options: Options<ValidateSubjectsExcelAdminValidateSubjectsExcelPostData, ThrowOnError>) => (options.client ?? client).post<ValidateSubjectsExcelAdminValidateSubjectsExcelPostResponses, ValidateSubjectsExcelAdminValidateSubjectsExcelPostErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    responseType: 'json',
+    url: '/admin/validate-subjects-excel',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Commit Students Excel
+ *
+ * Stage 2 (Commit): Persist validated students. Called after the admin reviews the dry-run preview.
+ */
+export const commitStudentsExcelAdminCommitStudentsExcelPost = <ThrowOnError extends boolean = false>(options: Options<CommitStudentsExcelAdminCommitStudentsExcelPostData, ThrowOnError>) => (options.client ?? client).post<CommitStudentsExcelAdminCommitStudentsExcelPostResponses, CommitStudentsExcelAdminCommitStudentsExcelPostErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    responseType: 'json',
+    url: '/admin/commit-students-excel',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Commit Subjects Excel
+ *
+ * Stage 2 (Commit): Persist validated subjects. Called after the admin reviews the dry-run preview.
+ */
+export const commitSubjectsExcelAdminCommitSubjectsExcelPost = <ThrowOnError extends boolean = false>(options: Options<CommitSubjectsExcelAdminCommitSubjectsExcelPostData, ThrowOnError>) => (options.client ?? client).post<CommitSubjectsExcelAdminCommitSubjectsExcelPostResponses, CommitSubjectsExcelAdminCommitSubjectsExcelPostErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    responseType: 'json',
+    url: '/admin/commit-subjects-excel',
+    ...options,
+    headers: {
+        'Content-Type': null,
         ...options.headers
     }
 });

@@ -7,7 +7,9 @@ logger = get_logger(__name__)
 
 # SubjectResult class
 class SubjectResult:
-    def __init__(self, subject_code, semester, university, students=None):
+    def __init__(
+        self, subject_code, semester, university, students=None, section_name=None
+    ):
         self.subject_name = sem_subjects[semester].get(subject_code, "Unknown subject")
         self.subject_code = subject_code
         logger.debug(self.subject_code)
@@ -16,7 +18,7 @@ class SubjectResult:
         self.students = (
             students
             if students is not None
-            else university.get_students_for_semester(semester)
+            else university.get_students_for_semester(semester, section_name)
         )
 
         self.students_data = self.fetch_students_data()

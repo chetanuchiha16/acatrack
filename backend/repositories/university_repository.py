@@ -1,6 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from models.schema import AcademicResult, Subject, StudentAuth
+from models.schema import AcademicResult, Subject, StudentAuth, Section
 
 from typing import Union
 from sqlalchemy.orm import Session
@@ -22,9 +22,9 @@ class UniversityRepository:
         return [row[0] for row in result.all() if row[0]]
 
     async def get_student_usns_by_semester(
-        self, semester: str, batch_year: int
+        self, semester: str, batch_year: int, section_name: str = None
     ) -> list[str]:
-        """Fetch all unique USNs for a given semester and batch."""
+        """Fetch all unique USNs for a given semester and batch, optionally filtered by section."""
         query = (
             select(StudentAuth.usn)
             .join(AcademicResult, AcademicResult.student_id == StudentAuth.id)
@@ -33,8 +33,14 @@ class UniversityRepository:
                 AcademicResult.batch_year == batch_year,
                 Subject.semester == semester,
             )
-            .distinct()
         )
+
+        if section_name and section_name != "ALL":
+            query = query.join(Section, StudentAuth.section_id == Section.id).where(
+                Section.name == section_name
+            )
+
+        query = query.distinct()
         result = await self.db.execute(query)
         return [row[0] for row in result.all()]
 
@@ -50,7 +56,7 @@ class UniversityRepository:
         return [row[0] for row in result.all() if row[0]]
 
     def get_student_usns_by_semester_sync(
-        self, semester: str, batch_year: int
+        self, semester: str, batch_year: int, section_name: str = None
     ) -> list[str]:
         """Sync version — for use inside run_in_executor/legacy sync paths."""
         query = (
@@ -61,7 +67,13 @@ class UniversityRepository:
                 AcademicResult.batch_year == batch_year,
                 Subject.semester == semester,
             )
-            .distinct()
         )
+
+        if section_name and section_name != "ALL":
+            query = query.join(Section, StudentAuth.section_id == Section.id).where(
+                Section.name == section_name
+            )
+
+        query = query.distinct()
         result = self.db.execute(query)
         return [row[0] for row in result.all()]

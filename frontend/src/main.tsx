@@ -1,35 +1,11 @@
-import React, { StrictMode, Suspense, type ReactNode } from "react";
+import React, { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "./index.css";
-import App from "./App";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Auth from "./Auth";
-import ErrorPage from "./Error";
-import HiddenShortcut from "./HiddenShortcut";
-import LoadingSpinner from "./LoadingSpinner";
+import "./styles/index.css";
+import { RouterProvider } from "react-router-dom";
+import { route } from "./router";
 import API_BASE from "./config";
 import { client } from "./client/client.gen";
 import { getToken, clearToken } from "./utils/storage";
-
-// ─── Lazy-loaded page components (code-split per route) ──────────────────────
-const StudentLayout = React.lazy(() => import("./StudentLayout"));
-const StudentOverview = React.lazy(() => import("./StudentOverview"));
-const StudentResultWrapper = React.lazy(() => import("./StudentResultWrapper"));
-const Classroom = React.lazy(() => import("./Classroom"));
-const Staff = React.lazy(() => import("./Staff"));
-const StaffResults = React.lazy(() => import("./StaffResults"));
-const ExcelViewer = React.lazy(() => import("./ExcelViewer"));
-const TeacherNotesUploader = React.lazy(() => import("./TeacherNotesUploader"));
-const SemesterResults = React.lazy(() => import("./SemesterResults"));
-const SendEmails = React.lazy(() => import("./SendEmails"));
-const AdminLogin = React.lazy(() => import("./AdminLogin"));
-const AdminPanel = React.lazy(() => import("./AdminPanel"));
-const MentorResults = React.lazy(() => import("./MentorResults"));
-const MentorDashboard = React.lazy(() => import("./MentorDashboard"));
-const ParentDashboard = React.lazy(() => import("./ParentDashboard"));
-const ParentResult = React.lazy(() => import("./ParentResult"));
-const ResetPassword = React.lazy(() => import("./ResetPassword"));
-
 
 // 🚀 Bridge SDK with configured Axios instance
 client.setConfig({
@@ -65,50 +41,6 @@ client.instance.interceptors.response.use(
         return Promise.reject(error);
     }
 );
-
-const withHiddenShortcut = (children: ReactNode) => (
-  <>
-    <HiddenShortcut />
-    <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={true} />}>
-      {children}
-    </Suspense>
-  </>
-);
-
-// Lazy-load the route wrappers too
-const MenteeEmailsWrapper = React.lazy(() => import("./StudentRouteWrappers").then(m => ({ default: m.MenteeEmailsWrapper })));
-const MenteeRecordWrapper = React.lazy(() => import("./StudentRouteWrappers").then(m => ({ default: m.MenteeRecordWrapper })));
-
-const route = createBrowserRouter([
-  { path: "/auth/Parent/:id/ParentResult", element: withHiddenShortcut(<ParentResult />) },
-  { path: "/auth/Parent/:id", element: withHiddenShortcut(<ParentDashboard />) },
-  { path: "/auth/Staff/:id/MentorDashboard", element: withHiddenShortcut(<MentorDashboard />) },
-  { path: "/auth/Staff/:id/MentorResults", element: withHiddenShortcut(<MentorResults batchYear="" />) },
-  { path: "/auth/Staff/:id/SendEmails", element: withHiddenShortcut(<SendEmails />) },
-  { path: "/auth/Staff/:id/UploadResults", element: withHiddenShortcut(<ExcelViewer excel_route={`${API_BASE}/excel/template.xlsx`} />) },
-  { path: "/auth/Staff/:id/StaffClassroom", element: withHiddenShortcut(<TeacherNotesUploader />) },
-  { path: "/auth/Staff/:id/StaffResults", element: withHiddenShortcut(<StaffResults />) },
-  { path: "/auth/Staff/:id", element: withHiddenShortcut(<Staff />) },
-  { 
-    path: "/auth/Student/:id", 
-    element: withHiddenShortcut(<StudentLayout />),
-    children: [
-      { index: true, element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><StudentOverview /></Suspense> },
-      { path: "results", element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><StudentResultWrapper /></Suspense> },
-      { path: "classroom", element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><Classroom /></Suspense> },
-      { path: "mentee", element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><MenteeEmailsWrapper /></Suspense> },
-      { path: "record", element: <Suspense fallback={<LoadingSpinner message="Loading..." fullScreen={false} />}><MenteeRecordWrapper /></Suspense> },
-    ]
-  },
-  { path: "/auth/:who", element: withHiddenShortcut(<Auth />) },
-  { path: "/reset-password/:token", element: withHiddenShortcut(<ResetPassword />) },
-  { path: "/auth/", element: withHiddenShortcut(<Auth />) },
-  { path: "/auth", element: withHiddenShortcut(<Auth />) },
-  { path: "/admin/panel", element: withHiddenShortcut(<AdminPanel />) },
-  { path: "/admin", element: withHiddenShortcut(<AdminLogin />) },
-  { path: "/", element: withHiddenShortcut(<App />) },
-  { path: "*", element: withHiddenShortcut(<ErrorPage />) },
-]);
 
 // 🔥 Register Firebase Messaging Service Worker
 if ("serviceWorker" in navigator) {

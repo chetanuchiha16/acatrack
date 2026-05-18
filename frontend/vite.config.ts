@@ -14,7 +14,6 @@ export default defineConfig({
                         if (id.includes("react-dom") || id.includes("/react/")) return "vendor-react";
                         if (id.includes("react-router")) return "vendor-router";
                         if (id.includes("firebase") || id.includes("@firebase")) return "vendor-firebase";
-                        if (id.includes("@mlc-ai/web-llm")) return "vendor-webllm";
                         if (id.includes("exceljs")) return "vendor-exceljs";
                         if (id.includes("lucide-react") || id.includes("react-icons")) return "vendor-icons";
                     }

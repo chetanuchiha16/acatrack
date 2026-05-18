@@ -1,0 +1,148 @@
+{
+    "metrics": {
+        "http_req_failed": {
+            "fails": 3,
+            "passes": 1,
+            "thresholds": {
+                "rate<0.05": true
+            },
+            "value": 0.25
+        },
+        "http_req_connecting": {
+            "min": 0,
+            "med": 0.1214545,
+            "max": 0.37484,
+            "p(90)": 0.3352607,
+            "p(95)": 0.35505034999999996,
+            "avg": 0.15443725
+        },
+        "iterations": {
+            "count": 4,
+            "rate": 0.06377715529675528
+        },
+        "http_req_duration{expected_response:true}": {
+            "min": 771.607397,
+            "med": 1610.011399,
+            "max": 25172.400591,
+            "p(90)": 20459.922752600003,
+            "p(95)": 22816.1616718,
+            "avg": 9184.673129
+        },
+        "iteration_duration": {
+            "p(90)": 29802.9400719,
+            "p(95)": 30574.059708449997,
+            "avg": 15679.4706845,
+            "min": 1905.93706,
+            "med": 14733.3831665,
+            "max": 31345.179345
+        },
+        "http_req_duration": {
+            "avg": 6888.50484675,
+            "min": 0,
+            "med": 1190.8093979999999,
+            "max": 25172.400591,
+            "p(90)": 18103.683833400006,
+            "p(95)": 21638.04221219999,
+            "thresholds": {
+                "p(95)<30000": false
+            }
+        },
+        "vus": {
+            "value": 1,
+            "min": 1,
+            "max": 1
+        },
+        "http_req_sending": {
+            "p(90)": 17489.133593900002,
+            "p(95)": 21014.77600744999,
+            "avg": 6495.0250235,
+            "min": 0,
+            "med": 719.8408365,
+            "max": 24540.418421
+        },
+        "data_received": {
+            "count": 576,
+            "rate": 9.18391036273276
+        },
+        "http_req_tls_handshaking": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0
+        },
+        "data_sent": {
+            "count": 376242678,
+            "rate": 5998921.9260182725
+        },
+        "vus_max": {
+            "value": 1,
+            "min": 1,
+            "max": 1
+        },
+        "http_reqs": {
+            "count": 4,
+            "rate": 0.06377715529675528
+        },
+        "http_req_waiting": {
+            "avg": 393.3406635,
+            "min": 0,
+            "med": 470.769233,
+            "max": 631.824188,
+            "p(90)": 614.3682878000001,
+            "p(95)": 623.0962379
+        },
+        "http_req_receiving": {
+            "p(95)": 0.22631524999999997,
+            "avg": 0.13915975,
+            "min": 0,
+            "med": 0.159379,
+            "max": 0.237881,
+            "p(90)": 0.21474950000000004
+        },
+        "http_req_blocked": {
+            "p(95)": 0.6977609499999999,
+            "avg": 0.32369899999999996,
+            "min": 0.014946,
+            "med": 0.276713,
+            "max": 0.726424,
+            "p(90)": 0.6690979
+        },
+        "checks": {
+            "passes": 6,
+            "fails": 2,
+            "value": 0.75
+        },
+        "route_upload_api": {
+            "max": 25172.400591,
+            "p(90)": 18103.683833400006,
+            "p(95)": 21638.04221219999,
+            "avg": 6888.50484675,
+            "min": 0,
+            "med": 1190.8093979999999
+        }
+    },
+    "root_group": {
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "upload status is 200": {
+                    "passes": 3,
+                    "fails": 1,
+                    "name": "upload status is 200",
+                    "path": "::upload status is 200",
+                    "id": "3054e567c26b92f513f84de6ec0cecf6"
+                },
+                "job_id is returned": {
+                    "fails": 1,
+                    "name": "job_id is returned",
+                    "path": "::job_id is returned",
+                    "id": "185f744a42c15bd6e1bf2d9cf155cff2",
+                    "passes": 3
+                }
+            },
+        "name": ""
+    }
+}

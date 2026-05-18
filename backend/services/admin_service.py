@@ -24,6 +24,78 @@ def _get_encryption_cipher():
     return Fernet(key)
 
 
+def _get_sync_session_maker():
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    _raw_url = settings.database_url
+    if _raw_url.startswith("postgresql+asyncpg://"):
+        sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+    else:
+        sync_url = _raw_url
+    sync_engine = create_engine(sync_url)
+    return sessionmaker(bind=sync_engine), sync_engine
+
+
+def get_all_staff():
+    SyncSession, engine = _get_sync_session_maker()
+    from sqlalchemy import select as sa_select
+    from models.schema import Teacher as T
+
+    try:
+        with SyncSession() as session:
+            result = session.execute(sa_select(T))
+            teachers = result.scalars().all()
+            return [
+                {"username": t.username, "name": t.name, "email": t.email}
+                for t in teachers
+            ]
+    finally:
+        engine.dispose()
+
+
+def register_staff_single(name, email, hash_pw_fn):
+    SyncSession, engine = _get_sync_session_maker()
+    from models.schema import Teacher as T, Mentor as M
+    from sqlalchemy import select as sa_select
+
+    username = email.split("@")[0]
+    try:
+        with SyncSession() as session:
+            # Check if exists
+            existing = (
+                session.execute(sa_select(T).where(T.username == username))
+                .scalars()
+                .first()
+            )
+            if existing:
+                return {"error": f"Staff with username {username} already exists"}, 400
+
+            mentor = M(name=name)
+            session.add(mentor)
+            session.flush()
+
+            plain_pw = f"staff_{username}"
+            pw_hash = hash_pw_fn(plain_pw)
+
+            teacher = T(
+                username=username,
+                name=name,
+                email=email,
+                password=pw_hash,
+                mentor_id=mentor.id,
+            )
+            session.add(teacher)
+            session.commit()
+            return {
+                "status": "success",
+                "username": username,
+                "plain_password": plain_pw,
+            }, 200
+    finally:
+        engine.dispose()
+
+
 def process_mentor_upload_file(
     file_path,
     batch_year,
@@ -52,14 +124,14 @@ def process_mentor_upload_file(
         logger.error(f"Mentor Excel upload to Supabase failed: {e}")
         mentor_excel_url = None
 
-    required_cols = ["Mentor_Name", "student_usn"]
+    required_cols = ["Mentor_Username", "student_usn"]
     missing = [c for c in required_cols if c not in df.columns]
     if missing:
-        return {"error": f"Missing columns: {missing}"}, 400
+        return {
+            "error": f"Missing required columns: {missing}. Note: We now use Mentor_Username."
+        }, 400
 
-    count_mentors = 0
     count_mappings = 0
-    mentor_cache = {}
     out = io.StringIO()
     out.write("username,name,plain_password,password_hash,role,linked_student\n")
 
@@ -87,7 +159,7 @@ def process_mentor_upload_file(
 
         # Note: using sync queries directly since this runs in an executor
         from sqlalchemy import select as sa_select
-        from models.schema import StudentAuth as SA, Mentor as M, Teacher as T
+        from models.schema import StudentAuth as SA, Teacher as T
 
         usns_in_df = [str(usn).strip() for usn in df["student_usn"] if str(usn).strip()]
         existing_students = (
@@ -95,64 +167,31 @@ def process_mentor_upload_file(
         )
         student_map = {s.usn: s for s in existing_students}
 
-        mentor_names_in_df = list(
-            set([str(name).strip() for name in df["Mentor_Name"] if str(name).strip()])
+        usernames_in_df = list(
+            set([str(u).strip() for u in df["Mentor_Username"] if str(u).strip()])
         )
-        existing_mentors = (
-            session.execute(sa_select(M).where(M.name.in_(mentor_names_in_df)))
-            .scalars()
-            .all()
-        )
-        mentor_cache = {m.name: m for m in existing_mentors}
-
         existing_teachers = (
-            session.execute(sa_select(T).where(T.name.in_(mentor_names_in_df)))
+            session.execute(sa_select(T).where(T.username.in_(usernames_in_df)))
             .scalars()
             .all()
         )
-        teacher_cache = {t.name: t for t in existing_teachers}
+        teacher_cache = {t.username: t for t in existing_teachers}
 
         for _, row in df.iterrows():
-            mentor_name = str(row["Mentor_Name"]).strip()
+            m_username = str(row["Mentor_Username"]).strip()
             student_usn = str(row["student_usn"]).strip()
-            if not student_usn:
+            if not student_usn or not m_username:
                 continue
 
-            mentor = mentor_cache.get(mentor_name)
-            if mentor is None:
-                mentor = Mentor(name=mentor_name)
-                session.add(mentor)
-                session.flush()
-                count_mentors += 1
-
-                teacher = teacher_cache.get(mentor_name)
-                if not teacher:
-                    username = _unique_teacher_username_fn(session)
-                    plain_pw = (
-                        f"{_safe_seed_fn(mentor_name.split(' ', 1)[-1])}{username[-3:]}"
-                    )
-                    pw_hash = hash_pw_fn(plain_pw)
-                    teacher = Teacher(
-                        username=username,
-                        name=mentor_name,
-                        password=pw_hash,
-                        mentor_id=mentor.id,
-                    )
-                    session.add(teacher)
-                    teacher_cache[mentor_name] = teacher
-                    out.write(
-                        f"{username},{mentor_name},{plain_pw},{pw_hash},teacher,\n"
-                    )
-                mentor_cache[mentor_name] = mentor
+            teacher = teacher_cache.get(m_username)
+            if not teacher:
+                # Strictly fail if teacher doesn't exist
+                continue
 
             student = student_map.get(student_usn)
             if student:
-                student.mentor_id = mentor.id
+                student.mentor_id = teacher.mentor_id
                 count_mappings += 1
-
-            teacher = teacher_cache.get(mentor_name)
-            if teacher and teacher.mentor_id is None:
-                teacher.mentor_id = mentor.id
 
         session.commit()
 
@@ -182,11 +221,10 @@ def process_mentor_upload_file(
 
     response = {
         "status": "success",
-        "mentors_inserted": count_mentors,
         "mappings_inserted": count_mappings,
         "batch_year": batch_year,
-        "csv_download_url": f"/admin/download-teachers-csv?batch_year={batch_year}",
     }
+
     if mentor_excel_url:
         response["mentor_excel_url"] = mentor_excel_url
 
@@ -314,7 +352,68 @@ def process_email_upload_file(
     }, 200
 
 
+def process_staff_bulk_upload(file_path, hash_pw_fn):
+    SyncSession, engine = _get_sync_session_maker()
+    from models.schema import Teacher as T, Mentor as M
+    from sqlalchemy import select as sa_select
+
+    try:
+        df = pd.read_excel(file_path)
+    except Exception as e:
+        return {"error": f"Failed to read file: {e}"}, 400
+
+    required = ["Name", "Email"]
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        return {"error": f"Missing columns: {missing}"}, 400
+
+    results = []
+    try:
+        with SyncSession() as session:
+            for _, row in df.iterrows():
+                name = str(row["Name"]).strip()
+                email = str(row["Email"]).strip()
+                if not name or not email:
+                    continue
+
+                username = email.split("@")[0]
+
+                # Check if exists
+                existing = (
+                    session.execute(sa_select(T).where(T.username == username))
+                    .scalars()
+                    .first()
+                )
+                if existing:
+                    continue
+
+                mentor = M(name=name)
+                session.add(mentor)
+                session.flush()
+
+                plain_pw = f"staff_{username}"
+                pw_hash = hash_pw_fn(plain_pw)
+
+                teacher = T(
+                    username=username,
+                    name=name,
+                    email=email,
+                    password=pw_hash,
+                    mentor_id=mentor.id,
+                )
+                session.add(teacher)
+                results.append(
+                    {"username": username, "name": name, "plain_password": plain_pw}
+                )
+
+            session.commit()
+            return {"status": "success", "registered": results}, 200
+    finally:
+        engine.dispose()
+
+
 def _safe_seed(text: str | None) -> str:
+
     base = (text or "user").strip()
     return base[:4] if len(base) >= 4 else base.ljust(4, "0")
 
@@ -488,3 +587,61 @@ def generate_accounts_csv(mode: str, batch_year: int) -> tuple[io.BytesIO, str]:
 
     sync_engine.dispose()
     return result
+
+
+def process_subject_upload_file(
+    temp_upload_path: str,
+) -> tuple[list[dict], int]:
+    try:
+        df = pd.read_excel(temp_upload_path)
+    except Exception as e:
+        return {"error": f"Failed to read file: {e}"}, 400
+
+    required_cols = ["code", "name", "credits"]
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        return {"error": f"Missing required columns: {', '.join(missing)}"}, 400
+
+    results = []
+    for _, row in df.iterrows():
+        code = str(row["code"]).strip().upper()
+        name = str(row["name"]).strip()
+        try:
+            credits = int(row["credits"])
+        except ValueError:
+            credits = 0
+
+        if not code or not name or code == "NAN" or name == "NAN":
+            continue
+
+        results.append({"code": code, "name": name, "credits": credits})
+
+    return results, 200
+
+
+def process_student_enrollment_upload_file(
+    temp_upload_path: str,
+) -> tuple[list[dict], int]:
+    try:
+        df = pd.read_excel(temp_upload_path)
+    except Exception as e:
+        return {"error": f"Failed to read file: {e}"}, 400
+
+    required_cols = ["usn", "name", "email", "phone"]
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        return {"error": f"Missing required columns: {', '.join(missing)}"}, 400
+
+    results = []
+    for _, row in df.iterrows():
+        usn = str(row["usn"]).strip().upper()
+        name = str(row["name"]).strip()
+        email = str(row.get("email", "")).strip()
+        phone = str(row.get("phone", "")).strip()
+
+        if not usn or not name or usn == "NAN" or name == "NAN":
+            continue
+
+        results.append({"usn": usn, "name": name, "email": email, "phone": phone})
+
+    return results, 200

@@ -7,6 +7,7 @@ import shutil
 import tempfile
 import time
 from pathlib import Path
+from functools import lru_cache
 
 import fitz  # PyMuPDF
 import pandas as pd
@@ -17,6 +18,14 @@ from logger_config import get_logger
 # Import your supabase upload helper
 from utils.cloud import upload_excel_to_supabase
 from PIL import Image
+
+# ── Rust high-performance PDF engine (falls back gracefully if not compiled) ──
+try:
+    import acatrack_rust
+
+    RUST_ENGINE_AVAILABLE = True
+except ImportError:
+    RUST_ENGINE_AVAILABLE = False
 
 logger = get_logger(__name__)
 
@@ -111,6 +120,7 @@ def extract_text_with_ocr(pdf_path):
     return text
 
 
+@lru_cache(maxsize=256)
 def get_pdf_text(pdf_path):
     with pdfplumber.open(pdf_path) as pdf:
         text = "\n".join(page.extract_text() or "" for page in pdf.pages)
@@ -124,14 +134,15 @@ def get_pdf_text(pdf_path):
 def scan_subject_codes(pdf_folder):
     subject_codes = set()
     all_valid_codes = {code for sem in sem_credits.values() for code in sem.keys()}
-    for file in os.listdir(pdf_folder):
-        if file.endswith(".pdf"):
-            pdf_path = os.path.join(pdf_folder, file)
-            text = get_pdf_text(pdf_path)
-            for line in text.splitlines():
-                parts = line.split()
-                if parts and parts[0] in all_valid_codes:
-                    subject_codes.add(parts[0])
+    pdf_files = [f for f in os.listdir(pdf_folder) if f.endswith(".pdf")]
+    # Every student in a batch has the exact same subjects, so scanning 3 PDFs is more than enough
+    for file in pdf_files[:3]:
+        pdf_path = os.path.join(pdf_folder, file)
+        text = get_pdf_text(pdf_path)
+        for line in text.splitlines():
+            parts = line.split()
+            if parts and parts[0] in all_valid_codes:
+                subject_codes.add(parts[0])
     return sorted(subject_codes)
 
 
@@ -185,12 +196,11 @@ def extract_from_pdf(pdf_path, subject_codes, columns):
 
 
 # ---------------- PROCESS PDFs ----------------
-def process_pdfs(excel_filename, pdf_folder):
+def process_pdfs(
+    excel_filename, pdf_folder, supabase_folder=None, progress_callback=None
+):
     subject_codes = scan_subject_codes(pdf_folder)
     excel_path = Path(tempfile.gettempdir()) / f"{excel_filename}"  # temp path
-    columns = ["student_usn", "student_name"]
-    for code in subject_codes:
-        columns += [f"{code}_INTERNALS", f"{code}_EXTERNALS", f"{code}_CREDITS"]
 
     # load existing Excel if present
     existing_sheets = {}
@@ -199,21 +209,69 @@ def process_pdfs(excel_filename, pdf_folder):
         for sheet in existing_excel.sheet_names:
             existing_sheets[sheet] = pd.read_excel(excel_path, sheet_name=sheet)
 
-    for file in os.listdir(pdf_folder):
-        if not file.endswith(".pdf"):
-            continue
-        pdf_path = os.path.join(pdf_folder, file)
-        row = extract_from_pdf(pdf_path, subject_codes, columns)
+    pdf_files = [f for f in os.listdir(pdf_folder) if f.endswith(".pdf")]
+    total_pdfs = len(pdf_files)
+    pdf_paths = [os.path.join(pdf_folder, f) for f in pdf_files]
 
-        if not row["student_usn"]:
-            logger.debug(f"⚠️ Skipping PDF '{file}' because USN was not found")
+    # ── Fast path: Rust parallel engine ───────────────────────────────────────
+    if RUST_ENGINE_AVAILABLE:
+        logger.info(f"🦀 Using Rust parallel engine for {total_pdfs} PDFs...")
+        t_start = time.perf_counter()
+
+        raw_rows = acatrack_rust.parse_pdfs_parallel(pdf_paths, subject_codes)
+
+        elapsed = time.perf_counter() - t_start
+        logger.info(
+            f"🎉 Rust engine parsed {total_pdfs} PDFs in {elapsed:.3f}s "
+            f"({elapsed / total_pdfs:.4f}s per PDF)"
+        )
+
+        rows = [r for r in raw_rows if r is not None]
+
+        # Signal 100% progress immediately after Rust finishes
+        if progress_callback:
+            try:
+                progress_callback(total_pdfs, total_pdfs)
+            except Exception as cb_err:
+                logger.warning(f"Progress callback failed: {cb_err}")
+
+    # ── Slow path: legacy Python sequential engine (fallback) ─────────────────
+    else:
+        logger.warning("⚠️ Rust engine not available — falling back to Python parser")
+        columns = ["student_usn", "student_name"]
+        for code in subject_codes:
+            columns += [f"{code}_INTERNALS", f"{code}_EXTERNALS", f"{code}_CREDITS"]
+
+        rows = []
+        for idx, (file, pdf_path) in enumerate(zip(pdf_files, pdf_paths)):
+            try:
+                row = extract_from_pdf(pdf_path, subject_codes, columns)
+                rows.append(row)
+            except Exception as parse_err:
+                logger.error(f"❌ Failed to parse PDF '{file}': {parse_err}")
+
+            if progress_callback:
+                try:
+                    progress_callback(idx + 1, total_pdfs)
+                except Exception as cb_err:
+                    logger.warning(f"Progress callback failed: {cb_err}")
+
+    # ── Shared: merge all rows into per-semester Excel sheets ─────────────────
+    for row in rows:
+        if not row.get("student_usn"):
             continue
 
         sem_sheet = f"sem{row.get('SEMESTER', 'Unknown')}"
-        row.pop("SEMESTER", None)
+        row_clean = {k: v for k, v in row.items() if k != "SEMESTER"}
+
+        # Inject credits column from the sem_credits lookup table
+        semester_key = f"sem{row.get('SEMESTER', '')}"
+        for code in subject_codes:
+            credit_val = sem_credits.get(semester_key, {}).get(code, 0)
+            row_clean[f"{code}_CREDITS"] = credit_val
 
         df_new = (
-            pd.DataFrame([row])
+            pd.DataFrame([row_clean])
             .dropna(axis=1, how="all")
             .set_index("student_usn", drop=False)
         )
@@ -237,9 +295,10 @@ def process_pdfs(excel_filename, pdf_folder):
             df.to_excel(writer, sheet_name=sheet_name, index=False)
 
     # Upload result to Supabase and return public URL
-    supabase_folder = (
-        Path(pdf_folder).name if hasattr(pdf_folder, "name") else str(pdf_folder)
-    )
+    if not supabase_folder:
+        supabase_folder = (
+            Path(pdf_folder).name if hasattr(pdf_folder, "name") else str(pdf_folder)
+        )
     try:
         excel_url = upload_excel_to_supabase(
             str(excel_path), excel_filename, supabase_folder

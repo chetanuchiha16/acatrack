@@ -1,3 +1,4 @@
+import enum
 from datetime import datetime, timezone
 
 from database import Base
@@ -7,6 +8,7 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
+    Enum,
     ForeignKey,
     Integer,
     String,
@@ -15,6 +17,13 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import relationship
+
+
+class BatchStatus(str, enum.Enum):
+    IN_SETUP = "IN_SETUP"
+    READY = "READY"
+    ACTIVE = "ACTIVE"
+    ARCHIVED = "ARCHIVED"
 
 
 def default_email():
@@ -28,6 +37,28 @@ def default_number():
 # ==========================================
 # ACADEMIC MODELS (Normalized)
 # ==========================================
+
+
+class BatchLifecycle(Base):
+    """Tracks the setup status and entity counts for each academic batch year."""
+
+    __tablename__ = "batch_lifecycle"
+
+    batch_year = Column(Integer, primary_key=True)
+    status = Column(
+        Enum(BatchStatus, name="batchstatus"),
+        default=BatchStatus.IN_SETUP,
+        nullable=False,
+    )
+    section_count = Column(Integer, default=0, nullable=False)
+    subject_count = Column(Integer, default=0, nullable=False)
+    student_count = Column(Integer, default=0, nullable=False)
+    assignment_count = Column(Integer, default=0, nullable=False)
+    updated_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
 
 
 class Subject(Base):
@@ -79,6 +110,15 @@ class Mentor(Base):
     name = Column(String(100), unique=True, nullable=False)
 
 
+class Section(Base):
+    __tablename__ = "sections"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), nullable=False)  # e.g., 'A', 'B'
+    batch_year = Column(Integer, nullable=False, index=True)
+
+    __table_args__ = (UniqueConstraint("name", "batch_year", name="uq_section_batch"),)
+
+
 class StudentAuth(Base):
     __tablename__ = "students"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -95,9 +135,13 @@ class StudentAuth(Base):
     mentor_id = Column(
         Integer, ForeignKey("mentors.id", ondelete="SET NULL"), nullable=True
     )
+    section_id = Column(
+        Integer, ForeignKey("sections.id", ondelete="SET NULL"), nullable=True
+    )
 
     # Relationships
     mentor = relationship("Mentor", backref="students")
+    section = relationship("Section", backref="students")
     results = relationship(
         "AcademicResult", backref="student", cascade="all, delete", lazy="selectin"
     )
@@ -137,6 +181,38 @@ class Teacher(Base):
     password = Column(String(128), nullable=True)
     email = Column(String(100), nullable=True, default=default_email)
     phone = Column(String(20), nullable=True, default=default_number)
+
+
+class SubjectAssignment(Base):
+    __tablename__ = "subject_assignments"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    teacher_username = Column(
+        String(20), ForeignKey("teachers.username", ondelete="CASCADE"), nullable=False
+    )
+    subject_code = Column(
+        String(20),
+        ForeignKey("subjects.subject_code", ondelete="CASCADE"),
+        nullable=False,
+    )
+    section_id = Column(
+        Integer, ForeignKey("sections.id", ondelete="CASCADE"), nullable=False
+    )
+    semester = Column(String(10), nullable=False)  # e.g., 'sem1'
+    batch_year = Column(Integer, nullable=False, index=True)
+
+    teacher = relationship("Teacher", backref="assignments")
+    subject = relationship("Subject", backref="assignments")
+    section = relationship("Section", backref="assignments")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "teacher_username",
+            "subject_code",
+            "section_id",
+            "semester",
+            name="uq_teacher_subject_section",
+        ),
+    )
 
 
 class Meeting(Base):
