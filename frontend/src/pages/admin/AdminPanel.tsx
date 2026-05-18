@@ -114,7 +114,7 @@ const AdminPanel = () => {
             const res = await listStaffAdminListStaffGet({
                 headers: { "X-Admin-Secret": secret }
             });
-            if (res.data) setStaffList(res.data as any);
+            if (res.data) setStaffList(res.data as unknown as Array<{username: string, name: string, email: string}>);
         } catch (err) {
             console.error("Failed to fetch staff:", err);
         }
@@ -250,7 +250,7 @@ const AdminPanel = () => {
             });
             if (res.error) throw new Error("Bulk upload failed");
             
-            const data = res.data as { registered?: any[] };
+            const data = res.data as { registered?: unknown[] };
             const count = data.registered?.length || 0;
             setStatus(`✅ Bulk upload successful! Registered ${count} new staff members. All passwords follow the 'staff_username' pattern.`);
             fetchStaff();

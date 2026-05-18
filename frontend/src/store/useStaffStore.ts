@@ -2,17 +2,26 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { listBatchesBatchesGet } from "../client/sdk.gen";
 
+interface StaffAssignment {
+    teacher_username?: string;
+    subject_code?: string;
+    subject_name?: string;
+    section_id?: number;
+    semester?: string;
+    batch_year?: number;
+}
+
 interface StaffState {
     batchYear: string;
     availableBatches: string[];
     semester: string;
     section: string;
-    assignments: any[];
+    assignments: StaffAssignment[];
     loadingBatches: boolean;
     setBatchYear: (year: string) => void;
     setSemester: (sem: string) => void;
     setSection: (sec: string) => void;
-    setAssignments: (assignments: any[]) => void;
+    setAssignments: (assignments: StaffAssignment[]) => void;
     fetchBatches: () => Promise<void>;
 }
 
@@ -29,7 +38,7 @@ const useStaffStore = create<StaffState>()(
             setBatchYear: (year: string) => set({ batchYear: year }),
             setSemester: (sem: string) => set({ semester: sem }),
             setSection: (sec: string) => set({ section: sec }),
-            setAssignments: (assignments: any[]) => set({ assignments }),
+            setAssignments: (assignments: StaffAssignment[]) => set({ assignments }),
 
             fetchBatches: async () => {
                 if (get().availableBatches.length > 0 && get().batchYear) return;
@@ -37,7 +46,8 @@ const useStaffStore = create<StaffState>()(
                 set({ loadingBatches: true });
                 try {
                     const res = await listBatchesBatchesGet();
-                    const fetchedBatches = (res.data as any)?.batches?.map(String) || [];
+                    const rawData = res.data as { batches?: number[] } | undefined;
+                    const fetchedBatches = rawData?.batches?.map(String) || [];
                     set({ 
                         availableBatches: fetchedBatches, 
                         loadingBatches: false 
@@ -65,3 +75,4 @@ const useStaffStore = create<StaffState>()(
 );
 
 export default useStaffStore;
+
