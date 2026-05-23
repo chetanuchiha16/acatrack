@@ -116,7 +116,6 @@ The system features robust tools for handling complex academic data:
 
 #### **Infrastructure & Services**
 *   **Database**: `PostgreSQL` (hosted via **Supabase**).
-*   **Auth**: **Supabase Auth** & **Firebase**.
 *   **Reporting**: `Matplotlib` (visuals) and `ReportLab`/`PyMuPDF` (PDF generation).
 *   **DevOps**: `Docker` & `Docker Compose`.
 
