@@ -48,7 +48,7 @@ graph TD
 
 AcaTrack has undergone a significant architectural transformation to reach its current state:
 
-*   **Phase 1 (Collaborative)**: Initial MVP build focused on core functionality with the original team.
+*   **Phase 1 (Collaborative)**: Full-stack academic management system built with the original team — [Group-Projects](https://github.com/chetanuchiha16/Group-Projects)
 *   **Phase 2 (Solo Refactor)**: Active evolution focused on professional-grade integrity:
     *   **FastAPI Migration**: Replaced the legacy Flask core with **FastAPI** for asynchronous performance and automatic OpenAPI documentation.
     *   **Database Normalization**: Decoupling `students`, `subjects`, and `results` from fixed semester tables for dynamic, multi-year scalability.
