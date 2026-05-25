@@ -318,7 +318,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
     };
 
     return (
-        <div className="w-full space-y-8 mt-6">
+        <div className="w-full space-y-4">
             {/* Segmented Control Navigation */}
             <div className="flex justify-center">
                 <div className="bg-gray-100/80 dark:bg-gray-900 p-1.5 rounded-full inline-flex border border-gray-200/60 dark:border-gray-800 shadow-sm backdrop-blur-md">
@@ -352,7 +352,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
 
             {/* AI Insights View */}
             {viewMode === "ai" && (
-                <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="w-full max-w-6xl mx-auto space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {loadingAI ? (
                         <div className="flex justify-center items-center py-20 text-purple-500">
                             <Sparkles className="animate-spin mr-3" size={24} />
@@ -361,9 +361,9 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                     ) : aiData ? (
                         <>
                             {/* Top Row: Hero Prediction & Trend */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                 {/* Hero Card */}
-                                <div className="lg:col-span-2 relative overflow-hidden bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 rounded-3xl p-8 text-white shadow-xl flex flex-col justify-between group border border-purple-500/30">
+                                <div className="lg:col-span-2 relative overflow-hidden bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 rounded-2xl p-5 text-white shadow-xl flex flex-col justify-between group border border-purple-500/30">
                                     <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
                                     <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/20 to-transparent"></div>
                                     <div className="relative z-10 flex justify-between items-start">
@@ -371,7 +371,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                             <h3 className="text-purple-100 font-medium tracking-wider uppercase text-xs sm:text-sm mb-1 flex items-center gap-2">
                                                 <Sparkles size={16} /> AI Prediction Model
                                             </h3>
-                                            <p className="text-sm text-purple-200/80 mb-6 max-w-sm">Based on your historical performance and current trajectory.</p>
+                                            <p className="text-xs text-purple-200/80 mb-3 max-w-sm">Based on your historical performance and current trajectory.</p>
                                         </div>
                                         <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl text-xs font-bold border border-white/20 uppercase tracking-wider">
                                             {aiData.ai_summary.semester}
@@ -379,9 +379,9 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                     </div>
                                     <div className="relative z-10 mt-auto">
                                         <p className="text-xs text-purple-200 uppercase tracking-widest font-semibold mb-2">Predicted Final CGPA</p>
-                                        <div className="text-6xl sm:text-7xl font-black tracking-tight">{aiData.cgpa_prediction.predicted_final_cgpa || "N/A"}</div>
+                                        <div className="text-4xl sm:text-5xl font-black tracking-tight">{aiData.cgpa_prediction.predicted_final_cgpa || "N/A"}</div>
                                         
-                                        <div className="mt-8 inline-flex flex-col sm:flex-row items-start sm:items-center bg-black/20 backdrop-blur-md rounded-2xl p-4 border border-white/10 gap-4">
+                                        <div className="mt-4 inline-flex flex-col sm:flex-row items-start sm:items-center bg-black/20 backdrop-blur-md rounded-xl p-3 border border-white/10 gap-3">
                                             <div className="flex items-center gap-3 pr-6 sm:border-r border-white/10">
                                                 <div className="bg-white/10 p-2 rounded-lg">
                                                     <Target className="text-purple-300" size={24} />
@@ -405,17 +405,17 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                 </div>
 
                                 {/* Trend Timeline */}
-                                <div className="bg-white dark:bg-gray-800/80 rounded-3xl p-6 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col relative overflow-hidden backdrop-blur-sm">
+                                <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col relative overflow-hidden backdrop-blur-sm">
                                     <div className="absolute top-0 right-0 p-6 opacity-5 dark:opacity-10 pointer-events-none">
                                         <TrendingUp size={120} />
                                     </div>
-                                    <h4 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-                                        <BarChart3 size={16} /> SGPA History
+                                    <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                        <BarChart3 size={14} /> SGPA History
                                     </h4>
                                     
                                     <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                                         {aiData.trend.history ? (
-                                            <div className="relative border-l-2 border-gray-100 dark:border-gray-700 ml-3 space-y-6 py-2">
+                                            <div className="relative border-l-2 border-gray-100 dark:border-gray-700 ml-3 space-y-3 py-1">
                                                 {Object.entries(aiData.trend.history)
                                                     .sort(([a], [b]) => parseInt(a.replace("sem", "")) - parseInt(b.replace("sem", "")))
                                                     .map(([sem, sgpa], idx, arr) => {
@@ -429,7 +429,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                                                 <div className={`absolute -left-[9px] top-1 h-4 w-4 rounded-full border-2 border-white dark:border-gray-800 ${
                                                                     isGood ? "bg-green-500" : isMid ? "bg-amber-500" : "bg-red-500"
                                                                 } ${isLast ? "animate-pulse ring-4 ring-purple-500/20" : ""}`}></div>
-                                                                <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3 border border-gray-100 dark:border-gray-800">
+                                                                <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-900/50 rounded-lg p-2 border border-gray-100 dark:border-gray-800">
                                                                     <span className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">{sem}</span>
                                                                     <span className="font-black text-gray-900 dark:text-white">{val.toFixed(2)}</span>
                                                                 </div>
@@ -442,7 +442,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                         )}
                                     </div>
 
-                                    <div className="mt-6 pt-5 border-t border-gray-100 dark:border-gray-700/50 flex justify-between items-center">
+                                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/50 flex justify-between items-center">
                                         <div>
                                             <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Average</p>
                                             <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{aiData.trend.avg_sgpa || "N/A"}</p>
@@ -461,14 +461,14 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                             </div>
 
                             {/* Middle Row: Backlogs & Tags */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 {/* Strengths & Weaknesses Card */}
-                                <div className="bg-white dark:bg-gray-800/80 rounded-3xl p-6 shadow-md border border-gray-100 dark:border-gray-700 backdrop-blur-sm">
-                                    <h4 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-                                        <Target size={16} /> Performance Breakdown
+                                <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 shadow-md border border-gray-100 dark:border-gray-700 backdrop-blur-sm">
+                                    <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        <Target size={14} /> Performance Breakdown
                                     </h4>
                                     
-                                    <div className="space-y-6">
+                                    <div className="space-y-4">
                                         <div>
                                             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 pl-1">Strong Areas</p>
                                             <div className="flex flex-wrap gap-2">
@@ -499,7 +499,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                 <div className="space-y-6">
                                     {/* Backlogs Notice */}
                                     {Object.keys(aiData.ai_profile.backlogs || {}).length > 0 && (
-                                        <div className="bg-red-50 dark:bg-red-900/10 rounded-3xl p-6 border border-red-200 dark:border-red-900/30">
+                                        <div className="bg-red-50 dark:bg-red-900/10 rounded-2xl p-4 border border-red-200 dark:border-red-900/30">
                                             <h4 className="text-sm font-bold text-red-800 dark:text-red-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                                                 <AlertTriangle size={16} /> Active Backlogs
                                             </h4>
@@ -520,7 +520,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
 
                                     {/* Learning Plan */}
                                     {aiData.ai_profile.learning_plan && aiData.ai_profile.learning_plan.length > 0 && (
-                                        <div className="bg-blue-50 dark:bg-blue-900/10 rounded-3xl p-6 border border-blue-100 dark:border-blue-900/30 flex-1">
+                                        <div className="bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-4 border border-blue-100 dark:border-blue-900/30 flex-1">
                                             <h4 className="text-sm font-bold text-blue-800 dark:text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                                                 <BookOpen size={16} /> Suggested Learning Plan
                                             </h4>
@@ -539,8 +539,8 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                             
                             {/* Bottom Row: Placement Advice */}
                             {aiData.ai_profile.placement_advice && aiData.ai_profile.placement_advice.length > 0 && (
-                                <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/80 dark:to-gray-900/80 rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-200 dark:border-gray-700">
-                                    <div className="flex items-center gap-3 mb-6">
+                                <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/80 dark:to-gray-900/80 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+                                    <div className="flex items-center gap-3 mb-3">
                                         <div className="bg-amber-100 dark:bg-amber-900/30 p-2.5 rounded-xl text-amber-600 dark:text-amber-400">
                                             <Lightbulb size={24} />
                                         </div>
@@ -549,9 +549,9 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Tailored recommendations based on your academic profile</p>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                         {aiData.ai_profile.placement_advice.map((advice, i) => (
-                                            <div key={i} className="bg-white dark:bg-black/20 p-4 rounded-2xl border border-gray-100 dark:border-gray-800/50 flex items-start gap-3">
+                                            <div key={i} className="bg-white dark:bg-black/20 p-3 rounded-xl border border-gray-100 dark:border-gray-800/50 flex items-start gap-2">
                                                 <ArrowRight className="text-amber-500 mt-0.5 shrink-0" size={16} />
                                                 <span className="text-sm text-gray-700 dark:text-gray-300 font-medium leading-relaxed">{advice}</span>
                                             </div>
@@ -566,7 +566,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
 
             {/* Performance Dashboard View */}
             {viewMode === "perf" && (
-                <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="w-full max-w-6xl mx-auto space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {loadingPerf ? (
                         <div className="flex justify-center items-center py-20 text-blue-500">
                             <BarChart3 className="animate-spin mr-3" size={24} />
@@ -575,30 +575,30 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                     ) : performanceData ? (
                         <>
                             {/* Metrics Ribbon */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                <div className="bg-white dark:bg-gray-800 rounded-xl p-3.5 shadow-sm border border-gray-100 dark:border-gray-700">
                                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold mb-1">Semester SGPA</p>
-                                    <p className="text-3xl font-black text-gray-900 dark:text-white">{(performanceData.sgpa ?? 0).toFixed(2)}</p>
+                                    <p className="text-2xl font-black text-gray-900 dark:text-white">{(performanceData.sgpa ?? 0).toFixed(2)}</p>
                                 </div>
-                                <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+                                <div className="bg-white dark:bg-gray-800 rounded-xl p-3.5 shadow-sm border border-gray-100 dark:border-gray-700">
                                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold mb-1">Percentage</p>
-                                    <p className="text-3xl font-black text-blue-600 dark:text-blue-400">{(performanceData.percentage ?? 0).toFixed(1)}%</p>
+                                    <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{(performanceData.percentage ?? 0).toFixed(1)}%</p>
                                 </div>
-                                <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+                                <div className="bg-white dark:bg-gray-800 rounded-xl p-3.5 shadow-sm border border-gray-100 dark:border-gray-700">
                                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold mb-1">Cumulative CGPA</p>
-                                    <p className="text-3xl font-black text-gray-900 dark:text-white">{(performanceData.cgpa ?? 0).toFixed(2)}</p>
+                                    <p className="text-2xl font-black text-gray-900 dark:text-white">{(performanceData.cgpa ?? 0).toFixed(2)}</p>
                                 </div>
-                                <div className="bg-purple-50 dark:bg-purple-900/10 rounded-2xl p-5 shadow-sm border border-purple-100 dark:border-purple-900/20">
+                                <div className="bg-purple-50 dark:bg-purple-900/10 rounded-xl p-3.5 shadow-sm border border-purple-100 dark:border-purple-900/20">
                                     <p className="text-[10px] text-purple-600 dark:text-purple-400 uppercase tracking-widest font-semibold mb-1">Target Next SGPA</p>
-                                    <p className="text-3xl font-black text-purple-700 dark:text-purple-300">{(performanceData.predicted_next_sgpa ?? 0).toFixed(2)}</p>
+                                    <p className="text-2xl font-black text-purple-700 dark:text-purple-300">{(performanceData.predicted_next_sgpa ?? 0).toFixed(2)}</p>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                 {/* Subjects Table (Takes 2 columns on large screens) */}
-                                <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider mb-6 flex items-center gap-2">
-                                        <BookOpen size={16} className="text-blue-500" /> Subject Breakdown
+                                <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                                    <h4 className="text-xs font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                        <BookOpen size={14} className="text-blue-500" /> Subject Breakdown
                                     </h4>
                                     
                                     <div className="overflow-x-auto">
@@ -615,15 +615,15 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                             <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
                                                 {performanceData.subject_analysis.map((sub, idx) => (
                                                     <tr key={idx} className={`group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${getSubjectColor(sub)}`}>
-                                                        <td className="py-4 pr-4">
-                                                            <div className="font-semibold text-gray-900 dark:text-gray-100">{sub.subject_name}</div>
-                                                            <div className="text-xs text-gray-500 mt-1 opacity-80">{sub.code}</div>
+                                                        <td className="py-2.5 pr-4">
+                                                            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{sub.subject_name}</div>
+                                                            <div className="text-[10px] text-gray-500 opacity-80">{sub.code}</div>
                                                             {sub.advice && <div className="text-xs mt-2 text-gray-600 dark:text-gray-400 max-w-sm hidden sm:block">{sub.advice}</div>}
                                                         </td>
-                                                        <td className="py-4 text-center font-medium opacity-90">{sub.ia}</td>
-                                                        <td className="py-4 text-center font-medium opacity-90">{sub.see}</td>
-                                                        <td className="py-4 text-center font-bold">{sub.total}</td>
-                                                        <td className="py-4 text-center">
+                                                        <td className="py-2.5 text-center text-sm font-medium opacity-90">{sub.ia}</td>
+                                                        <td className="py-2.5 text-center text-sm font-medium opacity-90">{sub.see}</td>
+                                                        <td className="py-2.5 text-center text-sm font-bold">{sub.total}</td>
+                                                        <td className="py-2.5 text-center">
                                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                                                                 sub.status === "Pass" ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" : "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
                                                             }`}>
@@ -638,9 +638,9 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                 </div>
 
                                 {/* Right Column: Chart & Advice */}
-                                <div className="space-y-6">
+                                <div className="space-y-4">
                                     {performanceData.subject_analysis && performanceData.subject_analysis.length > 0 && (
-                                        <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+                                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
                                             <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider mb-4 flex items-center gap-2">
                                                 <BarChart3 size={16} className="text-indigo-500" /> Interactive Performance Chart
                                             </h4>
@@ -648,7 +648,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                         </div>
                                     )}
 
-                                    <div className="bg-blue-50 dark:bg-blue-900/10 rounded-3xl p-6 border border-blue-100 dark:border-blue-900/20">
+                                    <div className="bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-4 border border-blue-100 dark:border-blue-900/20">
                                         <h4 className="text-sm font-bold text-blue-800 dark:text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                                             <Lightbulb size={16} /> Action Items
                                         </h4>
