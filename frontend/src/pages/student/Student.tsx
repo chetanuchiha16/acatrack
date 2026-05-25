@@ -216,7 +216,7 @@ const Student: React.FC = () => {
                                 <div className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#0b1220] p-1.5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                                     <button
                                         onClick={() => setView("cards")}
-                                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${view === "cards"
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${view === "cards"
                                             ? "bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-100 dark:border-gray-700"
                                             : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-800/30"
                                             }`}
@@ -226,7 +226,7 @@ const Student: React.FC = () => {
                                     </button>
                                     <button
                                         onClick={() => setView("table")}
-                                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${view === "table"
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${view === "table"
                                             ? "bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-gray-100 dark:border-gray-700"
                                             : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-800/30"
                                             }`}
@@ -236,7 +236,7 @@ const Student: React.FC = () => {
                                     </button>
                                     <button
                                         onClick={() => setView("ai")}
-                                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${view === "ai"
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${view === "ai"
                                             ? "bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 shadow-sm border border-gray-100 dark:border-gray-700"
                                             : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-800/30"
                                             }`}

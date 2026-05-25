@@ -3,7 +3,7 @@ import Result from "./Result";
 import type { Semester } from "../../types";
 import useProtectedPage from "../../hooks/useProtectedPage";
 import LoadingSpinner from "../../components/LoadingSpinner";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { ChevronDown, LayoutGrid, Table, Brain } from "lucide-react";
 
 type ResultViewMode = "table" | "cards" | "ai";
 type StudentSemester = Semester | "";
@@ -50,32 +50,34 @@ const StudentResultWrapper: React.FC = () => {
                         <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                     </div>
 
-                    {/* Cards / Table / AI toggle — matches staff's pattern */}
-                    <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
+                    {/* Cards / Table / AI toggle — matches dashboard pattern */}
+                    <div className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#0b1220] p-1.5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                         <button
                             onClick={() => setView("cards")}
-                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                view === "cards" ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm" : "text-gray-500"
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${
+                                view === "cards" ? "bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-100 dark:border-gray-700" : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-800/30"
                             }`}
                         >
-                            Cards
+                            <LayoutGrid size={15} />
+                            <span>Cards</span>
                         </button>
                         <button
                             onClick={() => setView("table")}
-                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                view === "table" ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm" : "text-gray-500"
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${
+                                view === "table" ? "bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-gray-100 dark:border-gray-700" : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-800/30"
                             }`}
                         >
-                            Table
+                            <Table size={15} />
+                            <span>Table</span>
                         </button>
                         <button
                             onClick={() => setView("ai")}
-                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                                view === "ai" ? "bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm" : "text-gray-500"
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${
+                                view === "ai" ? "bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 shadow-sm border border-gray-100 dark:border-gray-700" : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-800/30"
                             }`}
                         >
-                            <Sparkles size={12} />
-                            AI Insights
+                            <Brain size={15} />
+                            <span>AI Insights</span>
                         </button>
                     </div>
                 </div>
