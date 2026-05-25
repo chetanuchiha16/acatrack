@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown, FileText, Search } from "lucide-react";
-import { semesterOptions, subjectMapping } from "../../config";
+import { subjectMapping } from "../../config";
 import { 
     getSubjectResultsAuthStaffSubResGet,
     getSubjectReportPdfAuthStaffSubResReportGet
@@ -35,7 +35,7 @@ interface SubjectData {
 import useStaffStore from "../../store/useStaffStore";
 
 const SubjectResults: React.FC<SubjectResultsProps> = ({ batchYear }) => {
-    const { semester, section, assignments } = useStaffStore();
+    const { semester, assignments } = useStaffStore();
     const [subject, setSubject] = useState<string>("");
     const [data, setData] = useState<SubjectData | null>(null);
 

@@ -3,9 +3,13 @@ import Result from "./Result";
 import type { Semester } from "../../types";
 import useProtectedPage from "../../hooks/useProtectedPage";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { ChevronDown, LayoutGrid, Table, Brain } from "lucide-react";
 
 type ResultViewMode = "table" | "cards" | "ai";
 type StudentSemester = Semester | "";
+
+const sems: Semester[] = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"];
+const isSemester = (v: string): v is Semester => sems.includes(v as Semester);
 
 const StudentResultWrapper: React.FC = () => {
     const { user, loading } = useProtectedPage("Student");
@@ -13,59 +17,73 @@ const StudentResultWrapper: React.FC = () => {
     const [currentSem, setCurrentSem] = useState<StudentSemester>("sem1");
 
     if (loading) return <LoadingSpinner message="Authenticating Dashboard..." fullScreen={true} />;
-    
     if (!user) return null;
 
     const finalUsn = user.id || "";
 
-    const sems: Semester[] = ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"];
-    const isSemester = (value: string): value is Semester => sems.includes(value as Semester);
-
     return (
         <div className="space-y-6">
+            {/* ── Controls ─────────────────────────────────────────────────── */}
             <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                     <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Semester Results</h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Select a semester to view your academic performance.</p>
                 </div>
+
                 <div className="flex items-center gap-3">
-                    <label className="relative block w-40">
-                        <span className="sr-only">Select semester</span>
+                    {/* Semester picker */}
+                    <div className="relative">
                         <select
                             aria-label="Select semester"
                             value={currentSem}
-                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                const nextSem = e.target.value;
-                                if (nextSem === "" || isSemester(nextSem)) {
-                                    setCurrentSem(nextSem);
-                                }
+                            onChange={e => {
+                                const v = e.target.value;
+                                if (v === "" || isSemester(v)) setCurrentSem(v);
                             }}
-                            className="appearance-none w-full px-3 py-2 rounded-md bg-white dark:bg-[#0f1720] text-sm text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="appearance-none w-40 px-3 py-2 rounded-md bg-white dark:bg-[#0f1720] text-sm text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="">Select Semester</option>
-                            {sems.map((sem) => (
-                                <option key={sem} value={sem}>{sem}</option>
+                            {sems.map(s => (
+                                <option key={s} value={s}>{s}</option>
                             ))}
                         </select>
-                    </label>
+                        <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    </div>
 
-                    <div className="overflow-hidden rounded-full border border-gray-200/60 dark:border-gray-800 shadow-sm hidden sm:inline-flex bg-gray-100/80 dark:bg-gray-900 p-1 backdrop-blur-md">
+                    {/* Cards / Table / AI toggle — matches dashboard pattern */}
+                    <div className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#0b1220] p-1.5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                         <button
                             onClick={() => setView("cards")}
-                            className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 ${view !== "ai" ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm border border-gray-200/50 dark:border-gray-700" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${
+                                view === "cards" ? "bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-100 dark:border-gray-700" : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-800/30"
+                            }`}
                         >
-                            📄 Official Scorecard
+                            <LayoutGrid size={15} />
+                            <span>Cards</span>
+                        </button>
+                        <button
+                            onClick={() => setView("table")}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${
+                                view === "table" ? "bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-gray-100 dark:border-gray-700" : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-800/30"
+                            }`}
+                        >
+                            <Table size={15} />
+                            <span>Table</span>
                         </button>
                         <button
                             onClick={() => setView("ai")}
-                            className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 ${view === "ai" ? "bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 shadow-sm border border-gray-200/50 dark:border-gray-700" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${
+                                view === "ai" ? "bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 shadow-sm border border-gray-100 dark:border-gray-700" : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-800/30"
+                            }`}
                         >
-                            ✨ AI Insights
+                            <Brain size={15} />
+                            <span>AI Insights</span>
                         </button>
                     </div>
                 </div>
             </section>
-            
+
+            {/* ── Content ──────────────────────────────────────────────────── */}
             <section>
                 {currentSem !== "" ? (
                     <Result usn={finalUsn} semester={currentSem} view={view} />

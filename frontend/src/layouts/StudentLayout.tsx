@@ -115,8 +115,8 @@ const StudentLayout: React.FC = () => {
                 </header>
 
                 {/* Main Content Scrollable Area */}
-                <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 lg:p-8">
-                    <div className="max-w-7xl mx-auto w-full">
+                <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 lg:p-8 flex flex-col">
+                    <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col">
                         <Outlet />
                     </div>
                 </main>
