@@ -53,7 +53,7 @@ export default function Result({ usn, semester, view }: ResultProps) {
                     </div>
                     <div>
                         <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-none">Student Report</h2>
-                        <p className="text-xs text-gray-500 mt-1">Subject-wise academic performance</p>
+                        <p className="text-sm text-gray-500 mt-1">Subject-wise academic performance</p>
                     </div>
                 </div>
 
@@ -63,7 +63,7 @@ export default function Result({ usn, semester, view }: ResultProps) {
                         <a
                             href={data.pdf_url}
                             download
-                            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-base font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
                         >
                             <Download size={18} />
                             Report
@@ -97,16 +97,16 @@ export default function Result({ usn, semester, view }: ResultProps) {
                 {data && !loading && (
                     <section>
                         {/* Student info bar */}
-                        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                             <div>
-                                <div className="text-sm text-slate-500">{data.name} · {data.usn}</div>
-                                <h2 className="text-lg font-semibold">{semester.replace("sem", "Semester ")} — {subjects.length} subjects</h2>
+                                <div className="text-base font-bold text-slate-500">{data.name} · {data.usn}</div>
+                                <h2 className="text-xl font-extrabold mt-1">{semester.replace("sem", "Semester ")} — {subjects.length} subjects</h2>
                             </div>
-                            <div className="flex gap-4 text-sm">
-                                <span className="text-slate-400">SGPA <span className="font-bold text-blue-600 dark:text-blue-400 ml-1">{data.sgpa?.toFixed(2)}</span></span>
-                                <span className="text-slate-400">CGPA <span className="font-bold text-indigo-600 dark:text-indigo-400 ml-1">{data.cgpa?.toFixed(2)}</span></span>
-                                <span className="text-slate-400">Percentage <span className="font-bold text-violet-600 dark:text-violet-400 ml-1">{data.percentage?.toFixed(1)}%</span></span>
-                                <span className={`font-bold ${data.status === "Pass" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                            <div className="flex flex-wrap gap-4 text-base font-medium">
+                                <span className="text-slate-400">SGPA <span className="font-extrabold text-blue-600 dark:text-blue-400 ml-1">{data.sgpa?.toFixed(2)}</span></span>
+                                <span className="text-slate-400">CGPA <span className="font-extrabold text-indigo-600 dark:text-indigo-400 ml-1">{data.cgpa?.toFixed(2)}</span></span>
+                                <span className="text-slate-400">Percentage <span className="font-extrabold text-violet-600 dark:text-violet-400 ml-1">{data.percentage?.toFixed(1)}%</span></span>
+                                <span className={`font-extrabold ${data.status === "Pass" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                                     {data.status}
                                 </span>
                             </div>
@@ -133,48 +133,48 @@ export default function Result({ usn, semester, view }: ResultProps) {
                                                 <div className="flex items-start justify-between mb-4">
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-2 mb-2">
-                                                            <span className="inline-block px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                                                            <span className="inline-block px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold uppercase tracking-wider">
                                                                 {sub.code}
                                                             </span>
-                                                            <span className="text-[10px] font-bold text-gray-400">{sub.credit} cr</span>
+                                                            <span className="text-xs font-bold text-gray-400">{sub.credit} cr</span>
                                                         </div>
-                                                        <h3 className="font-bold text-gray-900 dark:text-white truncate" title={sub.subject_name}>
+                                                        <h3 className="text-base font-bold text-gray-900 dark:text-white truncate" title={sub.subject_name}>
                                                             {sub.subject_name}
                                                         </h3>
                                                     </div>
                                                     <div className="flex flex-col items-end">
-                                                        <div className="text-2xl font-black text-blue-600 dark:text-blue-400 leading-none">
+                                                        <div className="text-3xl font-black text-blue-600 dark:text-blue-400 leading-none">
                                                             {sub.total}
                                                         </div>
-                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mt-1">Total</span>
+                                                        <span className="text-xs text-gray-400 font-bold uppercase tracking-tighter mt-1">Total</span>
                                                     </div>
                                                 </div>
 
                                                 {/* Stats grid */}
                                                 <div className="grid grid-cols-3 gap-3">
                                                     <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3 border border-gray-100 dark:border-gray-800/50">
-                                                        <div className="text-[10px] text-gray-400 font-bold uppercase mb-1">IA</div>
-                                                        <div className="text-sm font-bold text-gray-900 dark:text-white">{sub.ia}</div>
+                                                        <div className="text-xs text-gray-400 font-bold uppercase mb-1">IA</div>
+                                                        <div className="text-base font-bold text-gray-900 dark:text-white">{sub.ia}</div>
                                                     </div>
                                                     <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3 border border-gray-100 dark:border-gray-800/50">
-                                                        <div className="text-[10px] text-gray-400 font-bold uppercase mb-1">SEE</div>
-                                                        <div className="text-sm font-bold text-gray-900 dark:text-white">{sub.see}</div>
+                                                        <div className="text-xs text-gray-400 font-bold uppercase mb-1">SEE</div>
+                                                        <div className="text-base font-bold text-gray-900 dark:text-white">{sub.see}</div>
                                                     </div>
                                                     <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3 border border-gray-100 dark:border-gray-800/50">
-                                                        <div className="text-[10px] text-gray-400 font-bold uppercase mb-1">Status</div>
-                                                        <div className={`text-sm font-bold ${isSubPass ? "text-emerald-600" : "text-rose-500"}`}>
+                                                        <div className="text-xs text-gray-400 font-bold uppercase mb-1">Status</div>
+                                                        <div className={`text-base font-bold ${isSubPass ? "text-emerald-600" : "text-rose-500"}`}>
                                                             {sub.status}
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 {/* Footer */}
-                                                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between text-[10px] font-bold text-gray-400">
+                                                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between text-xs font-bold text-gray-400">
                                                     <div className="flex gap-4">
                                                         <span>Credits <span className="text-gray-900 dark:text-gray-300 ml-1">{sub.credit}</span></span>
                                                         <span>Total <span className="text-gray-900 dark:text-gray-300 ml-1">{sub.total}</span></span>
                                                     </div>
-                                                    <span className={isSubPass ? "text-emerald-500" : "text-rose-500"}>
+                                                    <span className={isSubPass ? "text-emerald-500 animate-pulse" : "text-rose-500 animate-bounce"}>
                                                         {isSubPass ? "✓ Passed" : "✗ Failed"}
                                                     </span>
                                                 </div>
@@ -186,17 +186,17 @@ export default function Result({ usn, semester, view }: ResultProps) {
                         ) : (
                             /* ── Table View (matches SemesterResults table design) ── */
                             <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 table-auto text-sm">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 table-auto text-base">
                                     <thead className="bg-gray-50 dark:bg-gray-800">
                                         <tr>
-                                            <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">#</th>
-                                            <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Subject</th>
-                                            <th className="px-4 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Code</th>
-                                            <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">IA</th>
-                                            <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">SEE</th>
-                                            <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Total</th>
-                                            <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Credits</th>
-                                            <th className="px-4 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Status</th>
+                                            <th className="px-4 py-3 text-left font-bold text-gray-500 dark:text-gray-400">#</th>
+                                            <th className="px-4 py-3 text-left font-bold text-gray-500 dark:text-gray-400">Subject</th>
+                                            <th className="px-4 py-3 text-center font-bold text-gray-500 dark:text-gray-400">Code</th>
+                                            <th className="px-4 py-3 text-right font-bold text-gray-500 dark:text-gray-400">IA</th>
+                                            <th className="px-4 py-3 text-right font-bold text-gray-500 dark:text-gray-400">SEE</th>
+                                            <th className="px-4 py-3 text-right font-bold text-gray-500 dark:text-gray-400">Total</th>
+                                            <th className="px-4 py-3 text-right font-bold text-gray-500 dark:text-gray-400">Credits</th>
+                                            <th className="px-4 py-3 text-center font-bold text-gray-500 dark:text-gray-400">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -223,7 +223,7 @@ export default function Result({ usn, semester, view }: ResultProps) {
 
                         {/* Summary footer */}
                         <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <div className="flex gap-6 text-sm font-bold text-gray-400">
+                            <div className="flex flex-wrap gap-6 text-base font-bold text-gray-400">
                                 <span>Total Marks <span className="text-gray-900 dark:text-gray-300 ml-1">{data.total_marks}</span></span>
                                 <span>Credits <span className="text-gray-900 dark:text-gray-300 ml-1">{data.credits}</span></span>
                                 <span>Passed <span className="text-emerald-500 ml-1">{passCount}</span></span>
@@ -234,7 +234,7 @@ export default function Result({ usn, semester, view }: ResultProps) {
                                 <a
                                     href={data.pdf_url}
                                     download
-                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95"
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-base font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95"
                                 >
                                     <Download size={16} />
                                     Download Scorecard
