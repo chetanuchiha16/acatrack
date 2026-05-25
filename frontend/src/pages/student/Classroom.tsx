@@ -37,7 +37,7 @@ function FileItem({ name, isFolder, onClick, selected }: FileItemProps) {
             <div className={`text-4xl mb-3 transition-transform duration-300 group-hover:scale-110 ${isFolder ? "text-amber-400" : "text-red-500"}`}>
                 {isFolder ? <Folder size={48} fill="currentColor" fillOpacity={0.2} /> : <FileText size={48} fill="currentColor" fillOpacity={0.1} />}
             </div>
-            <div className="text-xs font-bold text-center break-words dark:text-gray-200 text-gray-700 line-clamp-2 px-1">
+            <div className="text-sm font-bold text-center break-words dark:text-gray-200 text-gray-700 line-clamp-2 px-1">
                 {name}
             </div>
 

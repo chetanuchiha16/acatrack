@@ -123,15 +123,15 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
                     {/* Inline stats */}
                     <div className="hidden sm:flex items-center gap-4 text-sm">
                         <div className="flex items-center gap-1.5">
-                            <BellDot size={14} className="text-blue-500" />
+                            <BellDot size={15} className="text-blue-500" />
                             <span className="font-bold text-gray-900 dark:text-white">{unreadCount}</span>
-                            <span className="text-xs text-gray-400">unread</span>
+                            <span className="text-sm text-gray-400">unread</span>
                         </div>
                         <div className="w-px h-4 bg-gray-200 dark:bg-gray-700" />
                         <div className="flex items-center gap-1.5">
-                            <Calendar size={14} className="text-indigo-500" />
+                            <Calendar size={15} className="text-indigo-500" />
                             <span className="font-bold text-gray-900 dark:text-white">{meetings.length}</span>
-                            <span className="text-xs text-gray-400">meetings</span>
+                            <span className="text-sm text-gray-400">meetings</span>
                         </div>
                     </div>
 
@@ -139,8 +139,8 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
                     <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
                         <button
                             onClick={() => { setActiveTab("messages"); setSelectedMessage(null); }}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 ${
-                                activeTab === "messages" ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm" : "text-gray-500"
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 ${
+                                activeTab === "messages" ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm" : "text-gray-500 hover:bg-white/50 dark:hover:bg-gray-800/50"
                             }`}
                         >
                             <Mail size={14} /> Messages
@@ -148,8 +148,8 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
                         </button>
                         <button
                             onClick={() => { setActiveTab("meetings"); setSelectedMessage(null); }}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 ${
-                                activeTab === "meetings" ? "bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm" : "text-gray-500"
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 ${
+                                activeTab === "meetings" ? "bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm" : "text-gray-500 hover:bg-white/50 dark:hover:bg-gray-800/50"
                             }`}
                         >
                             <Calendar size={14} /> Meetings
