@@ -3,8 +3,9 @@ import { getStudentInfoAuthStudentResultGet } from "../../client/sdk.gen";
 import type { StudentResultResponse as StudentResult } from "../../client/types.gen";
 import type { Semester } from "../../types";
 import StudentAIInsights from "./StudentAIInsights";
+import ResultGlossary from "./ResultGlossary";
 import { parseApiError } from "../../utils/errorHandler";
-import { Download, Award, BookOpen, Hash, Loader2, FileText } from "lucide-react";
+import { Download, Loader2, GraduationCap } from "lucide-react";
 
 interface ResultProps {
     usn: string;
@@ -38,181 +39,211 @@ export default function Result({ usn, semester, view }: ResultProps) {
         return <StudentAIInsights usn={data.usn} semester={semester} />;
     }
 
-    if (loading) {
-        return (
-            <div className="flex-1 flex items-center justify-center">
-                <div className="flex items-center gap-3 text-blue-500">
-                    <Loader2 size={22} className="animate-spin" />
-                    <span className="text-base font-semibold">Loading results…</span>
-                </div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="flex-1 flex items-center justify-center">
-                <p className="text-base font-semibold text-red-500">{error}</p>
-            </div>
-        );
-    }
-
-    if (!data) return null;
-
-    const subjects = Array.isArray(data.subjects) ? data.subjects : [];
+    const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
     const passCount = subjects.filter(s => s.status === "Pass").length;
     const failCount = subjects.length - passCount;
-    const isPass = data.status === "Pass";
 
     return (
-        <div className="flex flex-col gap-4 h-full animate-in fade-in duration-300">
-
-            {/* ── Row 1: Identity + Key Scores ─────────────────────────────── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {/* Name + USN — spans 2 cols on large */}
-                <div className="col-span-2 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 px-5 py-4 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-lg shrink-0">
-                        {(data.name ?? "?")[0]}
+        <div className="w-full">
+            {/* ── Header ───────────────────────────────────────────────────── */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-500/10 rounded-2xl">
+                        <GraduationCap className="w-6 h-6 text-blue-500" />
                     </div>
-                    <div className="min-w-0">
-                        <p className="text-lg font-black text-gray-900 dark:text-white truncate">{data.name}</p>
-                        <p className="text-sm font-semibold text-gray-400 mt-0.5">{data.usn}</p>
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-none">Student Report</h2>
+                        <p className="text-xs text-gray-500 mt-1">Subject-wise academic performance</p>
                     </div>
                 </div>
 
-                {/* SGPA */}
-                <ScoreCard label="SGPA" value={data.sgpa?.toFixed(2) ?? "—"} sub="Semester GPA" accent="blue" />
-                {/* CGPA */}
-                <ScoreCard label="CGPA" value={data.cgpa?.toFixed(2) ?? "—"} sub="Cumulative GPA" accent="indigo" />
+                <div className="flex items-center gap-3">
+                    <ResultGlossary />
+                    {data?.pdf_url && (
+                        <a
+                            href={data.pdf_url}
+                            download
+                            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                        >
+                            <Download size={18} />
+                            Report
+                        </a>
+                    )}
+                </div>
             </div>
 
-            {/* ── Row 2: Secondary stats ───────────────────────────────────── */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <MiniStat icon={<FileText size={16} />} label="Percentage" value={`${data.percentage?.toFixed(1) ?? 0}%`} />
-                <MiniStat icon={<Award size={16} />} label="Total Marks" value={data.total_marks ?? "—"} />
-                <MiniStat icon={<BookOpen size={16} className="text-emerald-500" />} label="Passed" value={`${passCount} / ${subjects.length}`} color="emerald" />
-                <MiniStat
-                    icon={<Hash size={16} className={failCount > 0 ? "text-rose-500" : "text-gray-400"} />}
-                    label={failCount > 0 ? "Backlogs" : "Status"}
-                    value={failCount > 0 ? failCount : (data.status ?? "—")}
-                    color={failCount > 0 ? "rose" : isPass ? "emerald" : "rose"}
-                />
-            </div>
+            {/* ── States ───────────────────────────────────────────────────── */}
+            <main>
+                <div className="mb-4">
+                    {loading && (
+                        <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-700 p-6 text-center">
+                            <div className="flex items-center justify-center gap-3">
+                                <Loader2 size={18} className="animate-spin text-blue-500" />
+                                <div className="font-medium">Loading results…</div>
+                            </div>
+                            <div className="text-sm text-slate-500 mt-1">
+                                Fetching data for <strong>{semester}</strong>
+                            </div>
+                        </div>
+                    )}
 
-            {/* ── Subjects table ───────────────────────────────────────────── */}
-            <div className="flex-1 min-h-0 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm flex flex-col overflow-hidden">
-                {/* Column headers */}
-                <div className="grid grid-cols-[2rem_1fr_6rem_3.5rem_3.5rem_4rem_5rem] items-center gap-3 px-6 py-3.5 bg-gray-50 dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800 shrink-0">
-                    <span className="text-xs font-black uppercase tracking-widest text-gray-400 text-center">#</span>
-                    <span className="text-xs font-black uppercase tracking-widest text-gray-400">Subject</span>
-                    <span className="text-xs font-black uppercase tracking-widest text-gray-400 text-center hidden sm:block">Code</span>
-                    <span className="text-xs font-black uppercase tracking-widest text-gray-400 text-center">IA</span>
-                    <span className="text-xs font-black uppercase tracking-widest text-gray-400 text-center">SEE</span>
-                    <span className="text-xs font-black uppercase tracking-widest text-gray-400 text-center">Total</span>
-                    <span className="text-xs font-black uppercase tracking-widest text-gray-400 text-center">Status</span>
+                    {error && !loading && (
+                        <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-4 text-red-700 dark:text-red-400 text-sm">
+                            {error}
+                        </div>
+                    )}
                 </div>
 
-                {/* Rows */}
-                {subjects.length === 0 ? (
-                    <div className="flex-1 flex items-center justify-center text-sm text-gray-400">
-                        No subjects found for this semester.
-                    </div>
-                ) : (
-                    <div className="flex-1 overflow-y-auto divide-y divide-gray-50 dark:divide-gray-800/60">
-                        {subjects.map((sub, idx) => {
-                            const isSubPass = sub.status === "Pass";
-                            return (
-                                <div
-                                    key={idx}
-                                    className="grid grid-cols-[2rem_1fr_6rem_3.5rem_3.5rem_4rem_5rem] items-center gap-3 px-6 py-4 hover:bg-gray-50/70 dark:hover:bg-gray-800/30 transition-colors group"
+                {data && !loading && (
+                    <section>
+                        {/* Student info bar */}
+                        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div>
+                                <div className="text-sm text-slate-500">{data.name} · {data.usn}</div>
+                                <h2 className="text-lg font-semibold">{semester.replace("sem", "Semester ")} — {subjects.length} subjects</h2>
+                            </div>
+                            <div className="flex gap-4 text-sm">
+                                <span className="text-slate-400">SGPA <span className="font-bold text-blue-600 dark:text-blue-400 ml-1">{data.sgpa?.toFixed(2)}</span></span>
+                                <span className="text-slate-400">CGPA <span className="font-bold text-indigo-600 dark:text-indigo-400 ml-1">{data.cgpa?.toFixed(2)}</span></span>
+                                <span className="text-slate-400">Percentage <span className="font-bold text-violet-600 dark:text-violet-400 ml-1">{data.percentage?.toFixed(1)}%</span></span>
+                                <span className={`font-bold ${data.status === "Pass" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                                    {data.status}
+                                </span>
+                            </div>
+                        </div>
+
+                        {view !== "table" ? (
+                            /* ── Card View (matches SemesterResults card design) ── */
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
+                                {subjects.map((sub, idx) => {
+                                    const isSubPass = sub.status === "Pass";
+                                    return (
+                                        <article
+                                            key={idx}
+                                            className={`group relative bg-white dark:bg-gray-800/40 rounded-3xl p-5 border transition-all duration-300 hover:shadow-2xl overflow-hidden
+                                                ${isSubPass
+                                                    ? "border-gray-100 dark:border-gray-700/50 hover:border-emerald-500/30 dark:hover:border-emerald-400/30 hover:shadow-emerald-500/5"
+                                                    : "border-rose-200 dark:border-rose-800/50 shadow-lg shadow-rose-500/5"
+                                                }`}
+                                        >
+                                            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150 duration-700"></div>
+
+                                            <div className="relative z-10">
+                                                {/* Top: code + status */}
+                                                <div className="flex items-start justify-between mb-4">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <span className="inline-block px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                                                                {sub.code}
+                                                            </span>
+                                                            <span className="text-[10px] font-bold text-gray-400">{sub.credit} cr</span>
+                                                        </div>
+                                                        <h3 className="font-bold text-gray-900 dark:text-white truncate" title={sub.subject_name}>
+                                                            {sub.subject_name}
+                                                        </h3>
+                                                    </div>
+                                                    <div className="flex flex-col items-end">
+                                                        <div className="text-2xl font-black text-blue-600 dark:text-blue-400 leading-none">
+                                                            {sub.total}
+                                                        </div>
+                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mt-1">Total</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Stats grid */}
+                                                <div className="grid grid-cols-3 gap-3">
+                                                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3 border border-gray-100 dark:border-gray-800/50">
+                                                        <div className="text-[10px] text-gray-400 font-bold uppercase mb-1">IA</div>
+                                                        <div className="text-sm font-bold text-gray-900 dark:text-white">{sub.ia}</div>
+                                                    </div>
+                                                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3 border border-gray-100 dark:border-gray-800/50">
+                                                        <div className="text-[10px] text-gray-400 font-bold uppercase mb-1">SEE</div>
+                                                        <div className="text-sm font-bold text-gray-900 dark:text-white">{sub.see}</div>
+                                                    </div>
+                                                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3 border border-gray-100 dark:border-gray-800/50">
+                                                        <div className="text-[10px] text-gray-400 font-bold uppercase mb-1">Status</div>
+                                                        <div className={`text-sm font-bold ${isSubPass ? "text-emerald-600" : "text-rose-500"}`}>
+                                                            {sub.status}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Footer */}
+                                                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between text-[10px] font-bold text-gray-400">
+                                                    <div className="flex gap-4">
+                                                        <span>Credits <span className="text-gray-900 dark:text-gray-300 ml-1">{sub.credit}</span></span>
+                                                        <span>Total <span className="text-gray-900 dark:text-gray-300 ml-1">{sub.total}</span></span>
+                                                    </div>
+                                                    <span className={isSubPass ? "text-emerald-500" : "text-rose-500"}>
+                                                        {isSubPass ? "✓ Passed" : "✗ Failed"}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            /* ── Table View (matches SemesterResults table design) ── */
+                            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 table-auto text-sm">
+                                    <thead className="bg-gray-50 dark:bg-gray-800">
+                                        <tr>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">#</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Subject</th>
+                                            <th className="px-4 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Code</th>
+                                            <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">IA</th>
+                                            <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">SEE</th>
+                                            <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Total</th>
+                                            <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Credits</th>
+                                            <th className="px-4 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                        {subjects.map((sub, idx) => (
+                                            <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                                <td className="px-4 py-3 text-gray-400">{idx + 1}</td>
+                                                <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{sub.subject_name}</td>
+                                                <td className="px-4 py-3 text-center text-gray-500 dark:text-gray-400">{sub.code}</td>
+                                                <td className="px-4 py-3 text-right font-semibold">{sub.ia}</td>
+                                                <td className="px-4 py-3 text-right font-semibold">{sub.see}</td>
+                                                <td className="px-4 py-3 text-right font-bold">{sub.total}</td>
+                                                <td className="px-4 py-3 text-right">{sub.credit}</td>
+                                                <td className="px-4 py-3 text-center">
+                                                    <span className={sub.status === "Pass" ? "text-emerald-600 font-semibold" : "text-rose-600 font-semibold"}>
+                                                        {sub.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+
+                        {/* Summary footer */}
+                        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="flex gap-6 text-sm font-bold text-gray-400">
+                                <span>Total Marks <span className="text-gray-900 dark:text-gray-300 ml-1">{data.total_marks}</span></span>
+                                <span>Credits <span className="text-gray-900 dark:text-gray-300 ml-1">{data.credits}</span></span>
+                                <span>Passed <span className="text-emerald-500 ml-1">{passCount}</span></span>
+                                {failCount > 0 && <span>Failed <span className="text-rose-500 ml-1">{failCount}</span></span>}
+                            </div>
+
+                            {data.pdf_url && (
+                                <a
+                                    href={data.pdf_url}
+                                    download
+                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95"
                                 >
-                                    <span className="text-sm text-gray-400 font-bold text-center">{idx + 1}</span>
-
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate group-hover:text-blue-500 transition-colors leading-snug">
-                                            {sub.subject_name}
-                                        </p>
-                                        <p className="text-xs text-gray-400 mt-0.5 sm:hidden">{sub.code} · {sub.credit} cr</p>
-                                    </div>
-
-                                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 text-center hidden sm:block">
-                                        {sub.code}
-                                    </span>
-
-                                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200 text-center">{sub.ia}</span>
-                                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200 text-center">{sub.see}</span>
-                                    <span className="text-base font-black text-gray-900 dark:text-white text-center">{sub.total}</span>
-
-                                    <div className="flex justify-center">
-                                        <span className={`text-xs font-black uppercase tracking-wide px-3 py-1 rounded-full ${
-                                            isSubPass
-                                                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
-                                                : "bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400"
-                                        }`}>
-                                            {sub.status}
-                                        </span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                    <Download size={16} />
+                                    Download Scorecard
+                                </a>
+                            )}
+                        </div>
+                    </section>
                 )}
-            </div>
-
-            {/* ── Footer ───────────────────────────────────────────────────── */}
-            <div className="flex justify-end shrink-0">
-                {data.pdf_url ? (
-                    <a
-                        href={data.pdf_url}
-                        download
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95"
-                    >
-                        <Download size={16} />
-                        Download Scorecard
-                    </a>
-                ) : (
-                    <span className="text-sm text-gray-400">No downloadable report available</span>
-                )}
-            </div>
-        </div>
-    );
-}
-
-// ── Micro-components ───────────────────────────────────────────────────────────
-
-function ScoreCard({ label, value, sub, accent }: {
-    label: string;
-    value: string;
-    sub: string;
-    accent: "blue" | "indigo";
-}) {
-    const color = accent === "blue"
-        ? "text-blue-600 dark:text-blue-400"
-        : "text-indigo-600 dark:text-indigo-400";
-    return (
-        <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 px-5 py-4 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">{label}</p>
-            <p className={`text-3xl font-black leading-none ${color}`}>{value}</p>
-            <p className="text-xs text-gray-400 mt-1.5">{sub}</p>
-        </div>
-    );
-}
-
-function MiniStat({ icon, label, value, color }: {
-    icon: React.ReactNode;
-    label: string;
-    value: string | number;
-    color?: "emerald" | "rose";
-}) {
-    const iconColor = color === "emerald" ? "text-emerald-500" : color === "rose" ? "text-rose-500" : "text-gray-400";
-    const valColor = color === "emerald" ? "text-emerald-600 dark:text-emerald-400" : color === "rose" ? "text-rose-600 dark:text-rose-400" : "text-gray-900 dark:text-white";
-    return (
-        <div className="flex items-center gap-3 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 px-4 py-3.5 shadow-sm">
-            <span className={iconColor}>{icon}</span>
-            <div className="min-w-0">
-                <p className="text-xs font-black uppercase tracking-widest text-gray-400 leading-none">{label}</p>
-                <p className={`text-base font-black leading-tight mt-1 ${valColor}`}>{value}</p>
-            </div>
+            </main>
         </div>
     );
 }
