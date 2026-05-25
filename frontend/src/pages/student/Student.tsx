@@ -11,6 +11,7 @@ import useProtectedPage from "../../hooks/useProtectedPage";
 import MenteeRecordFilling from "./MenteeRecordFilling";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import type { Semester } from "../../types";
+import { LayoutGrid, Table, Brain } from "lucide-react";
 
 type StudentTab = "result" | "classroom" | "mentee" | "record";
 type ResultViewMode = "table" | "cards" | "ai";
@@ -74,7 +75,7 @@ const Student: React.FC = () => {
                         />
                     </div>
 
-                    <div className="text-[24px] sm:mt-0 sm:text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center">
+                    <div className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white text-center">
                         Student Dashboard
                     </div>
 
@@ -92,37 +93,37 @@ const Student: React.FC = () => {
                 <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-5 shadow-xl">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6 items-center">
                         <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-300">
+                            <p className="text-sm font-bold text-gray-400 dark:text-gray-300 uppercase tracking-wider">
                                 Name
                             </p>
-                            <p className="text-sm sm:text-base font-medium text-gray-800 dark:text-gray-100 truncate">
+                            <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate mt-1">
                                 {finalName}
                             </p>
                         </div>
 
                         <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-300">
+                            <p className="text-sm font-bold text-gray-400 dark:text-gray-300 uppercase tracking-wider">
                                 USN
                             </p>
-                            <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                            <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate mt-1">
                                 {finalUsn}
                             </p>
                         </div>
 
                         <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-300">
+                            <p className="text-sm font-bold text-gray-400 dark:text-gray-300 uppercase tracking-wider">
                                 Branch
                             </p>
-                            <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                            <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate mt-1">
                                 {finalBranch}
                             </p>
                         </div>
                     </div>
 
-                    <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                    <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
                         Choose a tab below to access results, classroom, or
                         mentee emails. Semester selector appears after you click{" "}
-                        <span className="font-medium">Result</span>.
+                        <span className="font-semibold text-indigo-600 dark:text-indigo-400">Result</span>.
                     </p>
                 </section>
 
@@ -138,8 +139,8 @@ const Student: React.FC = () => {
                             <button
                                 aria-pressed={selectedTab === "result"}
                                 onClick={() => setSelectedTab("result")}
-                                className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "result"
-                                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
+                                className={`px-4 py-2.5 text-sm sm:text-base font-bold transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "result"
+                                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                     : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                                     }`}
                             >
@@ -149,8 +150,8 @@ const Student: React.FC = () => {
                             <button
                                 aria-pressed={selectedTab === "classroom"}
                                 onClick={() => setSelectedTab("classroom")}
-                                className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "classroom"
-                                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
+                                className={`px-4 py-2.5 text-sm sm:text-base font-bold transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "classroom"
+                                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                     : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                                     }`}
                             >
@@ -160,8 +161,8 @@ const Student: React.FC = () => {
                             <button
                                 aria-pressed={selectedTab === "mentee"}
                                 onClick={() => setSelectedTab("mentee")}
-                                className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "mentee"
-                                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
+                                className={`px-4 py-2.5 text-sm sm:text-base font-bold transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "mentee"
+                                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                     : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                                     }`}
                             >
@@ -171,8 +172,8 @@ const Student: React.FC = () => {
                             <button
                                 aria-pressed={selectedTab === "record"}
                                 onClick={() => setSelectedTab("record")}
-                                className={`px-3 py-2 text-xs sm:text-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "record"
-                                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-semibold"
+                                className={`px-4 py-2.5 text-sm sm:text-base font-bold transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 ${selectedTab === "record"
+                                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                     : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                                     }`}
                             >
@@ -198,7 +199,7 @@ const Student: React.FC = () => {
                                                 setCurrentSem(nextSem);
                                             }
                                         }}
-                                        className="appearance-none w-full px-3 py-2 rounded-md bg-white dark:bg-[#0f1720] text-sm text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="appearance-none w-full px-4 py-2.5 rounded-lg bg-white dark:bg-[#0f1720] text-sm sm:text-base font-semibold text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
                                         <option value="">
                                             Select Semester
@@ -212,40 +213,43 @@ const Student: React.FC = () => {
                                 </label>
 
                                 {/* Cards / Table Toggle */}
-                                <div className=" overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 shadow-sm hidden sm:inline-flex">
+                                <div className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#0b1220] p-1.5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                                     <button
                                         onClick={() => setView("cards")}
-                                        className={`px-3 py-2 text-xs sm:text-sm transition ${view === "cards"
-                                            ? "bg-slate-900 text-white"
-                                            : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${view === "cards"
+                                            ? "bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-100 dark:border-gray-700"
+                                            : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-800/30"
                                             }`}
                                     >
-                                        Cards
+                                        <LayoutGrid size={15} />
+                                        <span>Cards</span>
                                     </button>
                                     <button
                                         onClick={() => setView("table")}
-                                        className={`px-3 py-2 text-xs sm:text-sm transition ${view === "table"
-                                            ? "bg-slate-900 text-white"
-                                            : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${view === "table"
+                                            ? "bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-gray-100 dark:border-gray-700"
+                                            : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-800/30"
                                             }`}
                                     >
-                                        Table
+                                        <Table size={15} />
+                                        <span>Table</span>
                                     </button>
                                     <button
                                         onClick={() => setView("ai")}
-                                        className={`px-3 py-2 text-xs sm:text-sm transition ${view === "ai"
-                                            ? "bg-slate-900 text-white"
-                                            : "text-slate-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 ${view === "ai"
+                                            ? "bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 shadow-sm border border-gray-100 dark:border-gray-700"
+                                            : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-800/30"
                                             }`}
                                     >
-                                        {"AI"}
+                                        <Brain size={15} />
+                                        <span>AI Insights</span>
                                     </button>
                                 </div>
                             </>
                         ) : (
-                            <div className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
+                            <div className="text-sm sm:text-base text-gray-500 dark:text-gray-400 text-center sm:text-left">
                                 Click{" "}
-                                <span className="font-medium text-gray-700 dark:text-gray-200">
+                                <span className="font-semibold text-gray-750 dark:text-gray-150">
                                     Result
                                 </span>{" "}
                                 to pick a semester.
