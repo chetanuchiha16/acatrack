@@ -566,7 +566,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
 
             {/* Performance Dashboard View */}
             {viewMode === "perf" && (
-                <div className="w-full max-w-6xl mx-auto space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {loadingPerf ? (
                         <div className="flex justify-center items-center py-20 text-blue-500">
                             <BarChart3 className="animate-spin mr-3" size={24} />
@@ -594,9 +594,9 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                {/* Subjects Table (Takes 2 columns on large screens) */}
-                                <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                {/* Subjects Table */}
+                                <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                                     <h4 className="text-xs font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider mb-3 flex items-center gap-2">
                                         <BookOpen size={14} className="text-blue-500" /> Subject Breakdown
                                     </h4>
@@ -637,37 +637,34 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                     </div>
                                 </div>
 
-                                {/* Right Column: Chart & Advice */}
-                                <div className="space-y-4">
-                                    {performanceData.subject_analysis && performanceData.subject_analysis.length > 0 && (
-                                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
-                                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                                <BarChart3 size={16} className="text-indigo-500" /> Interactive Performance Chart
-                                            </h4>
-                                            <AcademicSVGChart subjects={performanceData.subject_analysis} />
-                                        </div>
-                                    )}
-
-                                    <div className="bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-4 border border-blue-100 dark:border-blue-900/20">
-                                        <h4 className="text-sm font-bold text-blue-800 dark:text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                            <Lightbulb size={16} /> Action Items
+                                {/* Right Column: Chart */}
+                                {performanceData.subject_analysis && performanceData.subject_analysis.length > 0 && (
+                                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+                                        <h4 className="text-xs font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                            <BarChart3 size={14} className="text-indigo-500" /> Interactive Performance Chart
                                         </h4>
-                                        <div className="space-y-4">
-                                            {performanceData.study_summary && (
-                                                <p className="text-sm font-medium text-blue-900 dark:text-blue-200 bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-blue-100 dark:border-blue-800/30">
-                                                    {performanceData.study_summary}
-                                                </p>
-                                            )}
-                                            <ul className="space-y-3">
-                                                {performanceData.improvement_advice.map((advice, i) => (
-                                                    <li key={i} className="flex items-start gap-3">
-                                                        <ArrowRight className="text-blue-500 mt-0.5 shrink-0" size={14} />
-                                                        <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{advice}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
+                                        <AcademicSVGChart subjects={performanceData.subject_analysis} />
                                     </div>
+                                )}
+                            </div>
+
+                            {/* Action Items — full width below grid */}
+                            <div className="bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-4 border border-blue-100 dark:border-blue-900/20">
+                                <h4 className="text-xs font-bold text-blue-800 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <Lightbulb size={14} /> Action Items
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    {performanceData.study_summary && (
+                                        <p className="text-sm font-medium text-blue-900 dark:text-blue-200 bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-blue-100 dark:border-blue-800/30 md:col-span-2">
+                                            {performanceData.study_summary}
+                                        </p>
+                                    )}
+                                    {performanceData.improvement_advice.map((advice, i) => (
+                                        <div key={i} className="flex items-start gap-2 bg-white/50 dark:bg-black/10 p-2.5 rounded-lg">
+                                            <ArrowRight className="text-blue-500 mt-0.5 shrink-0" size={13} />
+                                            <span className="text-sm text-gray-700 dark:text-gray-300 leading-snug">{advice}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </>
