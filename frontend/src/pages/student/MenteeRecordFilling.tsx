@@ -86,11 +86,11 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-500/10 rounded-xl"><FileText className="w-5 h-5 text-blue-500" /></div>
                     <div>
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-none">Mentee Record Form</h2>
-                        <p className="text-xs text-gray-500 mt-0.5">Fill out your academic and personal details</p>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-none">Mentee Record Form</h2>
+                        <p className="text-sm text-gray-500 mt-0.5">Fill out your academic and personal details</p>
                     </div>
                 </div>
-                <div className="text-xs text-gray-400">Step {step + 1} of {STEPS.length}</div>
+                <div className="text-sm text-gray-400">Step {step + 1} of {STEPS.length}</div>
             </div>
 
             {/* Progress bar */}
@@ -101,13 +101,13 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                     const active = i === step;
                     return (
                         <button key={i} type="button" onClick={() => setStep(i)}
-                            className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
+                            className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-bold transition-all border ${
                                 active ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
                                 : done ? "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400"
                                 : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400"
                             }`}
                         >
-                            {done ? <CheckCircle size={14} /> : <Icon size={14} />}
+                            {done ? <CheckCircle size={16} /> : <Icon size={16} />}
                             <span className="hidden sm:inline">{s.label}</span>
                         </button>
                     );
@@ -116,15 +116,15 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
 
             {/* Form card */}
             <form onSubmit={handleSubmit}>
-                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-5">
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
 
                     {/* Step 0: Personal */}
                     {step === 0 && (
                         <div className="space-y-4 animate-in fade-in duration-200">
-                            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
-                                <User size={14} className="text-blue-500" /> Personal Information
+                            <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
+                                <User size={16} className="text-blue-500" /> Personal Information
                             </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <Field label="Full Name" value={formData.name} locked />
                                 <Field label="USN" value={formData.usn} locked />
                                 <Field label="Mentor Name" name="mentor_name" value={formData.mentor_name} onChange={handleChange} />
@@ -132,7 +132,7 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                                 <Field label="Phone Number" name="phone_number" value={formData.phone_number} onChange={handleChange} />
                                 <Field label="Email Address" name="email" value={formData.email} onChange={handleChange} type="email" />
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <FieldArea label="Temporary Address" name="temporary_address" value={formData.temporary_address} onChange={handleChange} />
                                 <FieldArea label="Permanent Address" name="permanent_address" value={formData.permanent_address} onChange={handleChange} />
                             </div>
@@ -142,18 +142,18 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                     {/* Step 1: Parents */}
                     {step === 1 && (
                         <div className="space-y-4 animate-in fade-in duration-200">
-                            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
-                                <Users size={14} className="text-blue-500" /> Parent / Guardian Details
+                            <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
+                                <Users size={16} className="text-blue-500" /> Parent / Guardian Details
                             </h3>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-4 space-y-3">
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Father</p>
+                                    <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Father</p>
                                     <Field label="Name" name="father_name" value={formData.father_name} onChange={handleChange} />
                                     <Field label="Contact Number" name="Contact" value={formData.Contact} onChange={handleChange} />
                                     <Field label="Occupation" name="Occupation" value={formData.Occupation} onChange={handleChange} />
                                 </div>
                                 <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-4 space-y-3">
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Mother</p>
+                                    <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Mother</p>
                                     <Field label="Name" name="mother_name" value={formData.mother_name} onChange={handleChange} />
                                     <Field label="Contact Number" name="Contact_Mother" value={formData.Contact_Mother} onChange={handleChange} />
                                     <Field label="Occupation" name="Occupation_Mother" value={formData.Occupation_Mother} onChange={handleChange} />
@@ -165,18 +165,18 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                     {/* Step 2: Academics */}
                     {step === 2 && (
                         <div className="space-y-4 animate-in fade-in duration-200">
-                            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
-                                <GraduationCap size={14} className="text-blue-500" /> Semester-wise SGPA
+                            <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
+                                <GraduationCap size={16} className="text-blue-500" /> Semester-wise SGPA
                             </h3>
-                            <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                            <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
                                 {formData.sgpa.map((val, i) => (
                                     <div key={i} className="flex flex-col items-center gap-1">
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase">Sem {i + 1}</span>
+                                        <span className="text-xs font-bold text-gray-400 uppercase">Sem {i + 1}</span>
                                         <input
                                             value={val}
                                             onChange={e => handleArrayChange(i, e.target.value, "sgpa")}
                                             placeholder="0.00"
-                                            className="w-full text-center text-sm font-bold border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400"
+                                            className="w-full text-center text-base font-bold border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400"
                                         />
                                     </div>
                                 ))}
@@ -187,31 +187,31 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                     {/* Step 3: Projects & Internships */}
                     {step === 3 && (
                         <div className="space-y-5 animate-in fade-in duration-200">
-                            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
-                                <Briefcase size={14} className="text-blue-500" /> Projects & Internships
+                            <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
+                                <Briefcase size={16} className="text-blue-500" /> Projects & Internships
                             </h3>
 
                             {/* Projects */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Projects ({formData.projects.length})</p>
+                                    <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Projects ({formData.projects.length})</p>
                                     <button type="button" onClick={() => addRow("projects")}
-                                        className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors">
-                                        <Plus size={13} /> Add
+                                        className="flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">
+                                        <Plus size={15} /> Add
                                     </button>
                                 </div>
-                                {formData.projects.length === 0 && <p className="text-xs text-gray-400 py-3 text-center border border-dashed border-gray-200 dark:border-gray-700 rounded-lg">No projects added yet</p>}
+                                {formData.projects.length === 0 && <p className="text-sm text-gray-400 py-4 text-center border border-dashed border-gray-200 dark:border-gray-700 rounded-lg">No projects added yet</p>}
                                 <div className="space-y-2">
                                     {formData.projects.map((proj, i) => (
                                         <div key={i} className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 items-start">
                                             {["company", "address", "duration", "stipend"].map(f => (
                                                 <input key={f} placeholder={f.charAt(0).toUpperCase() + f.slice(1)} value={proj[f] || ""}
                                                     onChange={e => handleObjectArrayChange("projects", i, f, e.target.value)}
-                                                    className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400" />
+                                                    className="w-full text-base border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400" />
                                             ))}
                                             <button type="button" onClick={() => removeRow("projects", i)}
                                                 className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors">
-                                                <Trash2 size={14} />
+                                                <Trash2 size={16} />
                                             </button>
                                         </div>
                                     ))}
@@ -221,20 +221,20 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                             {/* Internships */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Internships ({formData.internships.length})</p>
+                                    <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Internships ({formData.internships.length})</p>
                                     <button type="button" onClick={() => addRow("internships")}
-                                        className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors">
-                                        <Plus size={13} /> Add
+                                        className="flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">
+                                        <Plus size={15} /> Add
                                     </button>
                                 </div>
-                                {formData.internships.length === 0 && <p className="text-xs text-gray-400 py-3 text-center border border-dashed border-gray-200 dark:border-gray-700 rounded-lg">No internships added yet</p>}
+                                {formData.internships.length === 0 && <p className="text-sm text-gray-400 py-4 text-center border border-dashed border-gray-200 dark:border-gray-700 rounded-lg">No internships added yet</p>}
                                 <div className="space-y-2">
                                     {formData.internships.map((intern, i) => (
                                         <div key={i} className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 items-start">
                                             {["company", "address", "duration", "stipend"].map(f => (
                                                 <input key={f} placeholder={f.charAt(0).toUpperCase() + f.slice(1)} value={intern[f] || ""}
                                                     onChange={e => handleObjectArrayChange("internships", i, f, e.target.value)}
-                                                    className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400" />
+                                                    className="w-full text-base border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400" />
                                             ))}
                                             <button type="button" onClick={() => removeRow("internships", i)}
                                                 className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors">
@@ -250,27 +250,27 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                     {/* Step 4: Activities & Summary */}
                     {step === 4 && (
                         <div className="space-y-5 animate-in fade-in duration-200">
-                            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
-                                <Trophy size={14} className="text-blue-500" /> Activities & Achievements
+                            <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
+                                <Trophy size={16} className="text-blue-500" /> Activities & Achievements
                             </h3>
 
                             {/* Activities */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Activities ({formData.activities.length})</p>
+                                    <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Activities ({formData.activities.length})</p>
                                     <button type="button" onClick={() => addRow("activities")}
-                                        className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors">
-                                        <Plus size={13} /> Add
+                                        className="flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">
+                                        <Plus size={15} /> Add
                                     </button>
                                 </div>
-                                {formData.activities.length === 0 && <p className="text-xs text-gray-400 py-3 text-center border border-dashed border-gray-200 dark:border-gray-700 rounded-lg">No activities added yet</p>}
+                                {formData.activities.length === 0 && <p className="text-sm text-gray-400 py-4 text-center border border-dashed border-gray-200 dark:border-gray-700 rounded-lg">No activities added yet</p>}
                                 <div className="space-y-2">
                                     {formData.activities.map((act, i) => (
                                         <div key={i} className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 items-start">
                                             {[{k:"Sports",l:"Sports"},{k:"conference_details",l:"Conference"},{k:"papers_published",l:"Papers"},{k:"certifications_from_MOOC",l:"MOOC Certs"}].map(({k,l}) => (
                                                 <input key={k} placeholder={l} value={act[k] || ""}
                                                     onChange={e => handleObjectArrayChange("activities", i, k, e.target.value)}
-                                                    className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400" />
+                                                    className="w-full text-base border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400" />
                                             ))}
                                             <button type="button" onClick={() => removeRow("activities", i)}
                                                 className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors">
@@ -283,8 +283,8 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
 
                             {/* Summary */}
                             <div>
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Summary</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Summary</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {([
                                         ["cultural_activities", "Cultural Activities"],
                                         ["co_curricular_activities", "Co-curricular Activities"],
@@ -293,12 +293,12 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                                         ["other_achievements", "Other Achievements"],
                                     ] as [string, string][]).map(([key, label]) => (
                                         <div key={key}>
-                                            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">{label}</label>
+                                            <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block">{label}</label>
                                             <textarea
                                                 value={formData.summary[key]}
                                                 onChange={e => setFormData(prev => ({ ...prev, summary: { ...prev.summary, [key]: e.target.value } }))}
                                                 rows={2}
-                                                className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400"
+                                                className="w-full text-base border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400"
                                             />
                                         </div>
                                     ))}
@@ -311,18 +311,18 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                 {/* Navigation + Submit */}
                 <div className="flex items-center justify-between mt-4">
                     <button type="button" onClick={back} disabled={step === 0}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                        className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-base font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
                         <ChevronLeft size={16} /> Back
                     </button>
 
                     {step < STEPS.length - 1 ? (
                         <button type="button" onClick={next}
-                            className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all active:scale-95">
+                            className="flex items-center gap-1.5 px-6 py-2.5 rounded-lg text-base font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all active:scale-95">
                             Next <ChevronRight size={16} />
                         </button>
                     ) : (
                         <button type="submit" disabled={submitting}
-                            className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-50">
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-base font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-50">
                             <FileText size={16} /> {submitting ? "Generating…" : "Submit & Generate PDF"}
                         </button>
                     )}
@@ -345,11 +345,11 @@ function Field({ label, name, value, onChange, locked, type = "text" }: {
 }) {
     return (
         <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
-                {locked && <Lock size={10} className="text-gray-400" />} {label}
+            <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-1.5 flex items-center gap-1.5">
+                {locked && <Lock size={12} className="text-gray-400" />} {label}
             </label>
             <input type={type} name={name} value={value} onChange={onChange} readOnly={locked}
-                className={`w-full text-sm border rounded-lg p-2.5 focus:outline-none transition-all ${
+                className={`w-full text-base border rounded-lg p-3 focus:outline-none transition-all ${
                     locked
                         ? "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                         : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400"
@@ -364,9 +364,9 @@ function FieldArea({ label, name, value, onChange }: {
 }) {
     return (
         <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">{label}</label>
+            <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block">{label}</label>
             <textarea name={name} value={value} onChange={onChange} rows={3}
-                className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400"
+                className="w-full text-base border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400"
             />
         </div>
     );

@@ -114,8 +114,8 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
                         <Inbox className="w-5 h-5 text-blue-500" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-none">Mentorship Inbox</h2>
-                        <p className="text-xs text-gray-500 mt-0.5">Messages and meetings from your mentor</p>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-none">Mentorship Inbox</h2>
+                        <p className="text-sm text-gray-500 mt-0.5">Messages and meetings from your mentor</p>
                     </div>
                 </div>
 
@@ -139,20 +139,20 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
                     <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
                         <button
                             onClick={() => { setActiveTab("messages"); setSelectedMessage(null); }}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 ${
                                 activeTab === "messages" ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm" : "text-gray-500"
                             }`}
                         >
-                            <Mail size={13} /> Messages
-                            {unreadCount > 0 && <span className="bg-blue-500 text-white text-[9px] font-black rounded-full px-1.5 py-0.5 leading-none">{unreadCount}</span>}
+                            <Mail size={14} /> Messages
+                            {unreadCount > 0 && <span className="bg-blue-500 text-white text-[10px] font-black rounded-full px-1.5 py-0.5 leading-none">{unreadCount}</span>}
                         </button>
                         <button
                             onClick={() => { setActiveTab("meetings"); setSelectedMessage(null); }}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 ${
                                 activeTab === "meetings" ? "bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm" : "text-gray-500"
                             }`}
                         >
-                            <Calendar size={13} /> Meetings
+                            <Calendar size={14} /> Meetings
                         </button>
                     </div>
                 </div>
@@ -172,7 +172,7 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
                                 placeholder={activeTab === "messages" ? "Search messages…" : "Search meetings…"}
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
-                                className="w-full pl-9 pr-3 py-2 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-200 outline-none border border-gray-200 dark:border-gray-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
+                                className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-white dark:bg-gray-800 text-base text-gray-700 dark:text-gray-200 outline-none border border-gray-200 dark:border-gray-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
                             />
                         </div>
                     </div>
@@ -207,16 +207,16 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
                                                         <div className="flex items-center justify-between gap-2">
                                                             <div className="flex items-center gap-1.5 min-w-0">
                                                                 {isUnread && <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0" />}
-                                                                <p className={`text-sm truncate ${isUnread ? "font-bold text-gray-900 dark:text-white" : "font-medium text-gray-600 dark:text-gray-300"}`}>
+                                                                <p className={`text-base truncate ${isUnread ? "font-bold text-gray-900 dark:text-white" : "font-medium text-gray-600 dark:text-gray-300"}`}>
                                                                     {msg.subject || "No Subject"}
                                                                 </p>
                                                             </div>
-                                                            <span className="text-xs text-gray-400 shrink-0">
+                                                            <span className="text-sm text-gray-400 shrink-0">
                                                                 {new Date(msg.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
                                                             </span>
                                                         </div>
-                                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{msg.mentor_name || "Advisor"}</p>
-                                                        <p className="text-xs text-gray-400 line-clamp-1 mt-0.5">{msg.message || "—"}</p>
+                                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{msg.mentor_name || "Advisor"}</p>
+                                                        <p className="text-sm text-gray-400 line-clamp-1 mt-0.5">{msg.message || "—"}</p>
                                                     </div>
                                                 </div>
                                             </li>
@@ -237,16 +237,16 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
                                                 <span className="text-[9px] font-black text-indigo-400 uppercase leading-none">
                                                     {new Date(m.date).toLocaleString("en-IN", { month: "short" })}
                                                 </span>
-                                                <span className="text-base font-black text-indigo-600 dark:text-indigo-300 leading-none">
+                                                <span className="text-lg font-black text-indigo-600 dark:text-indigo-300 leading-none">
                                                     {new Date(m.date).getDate()}
                                                 </span>
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-indigo-500 transition-colors">
+                                                <p className="text-base font-bold text-gray-900 dark:text-white truncate group-hover:text-indigo-500 transition-colors">
                                                     {m.title}
                                                 </p>
-                                                <p className="text-xs text-gray-400 mt-0.5">{fmtDate(m.date)}</p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{m.agenda || "No agenda"}</p>
+                                                <p className="text-sm text-gray-400 mt-0.5">{fmtDate(m.date)}</p>
+                                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{m.agenda || "No agenda"}</p>
                                             </div>
                                         </li>
                                     ))}
@@ -262,20 +262,20 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
                         <div className="flex flex-col h-full animate-in fade-in duration-200">
                             {/* Detail header */}
                             <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3 bg-gray-50/50 dark:bg-gray-900/40">
-                                <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${getAvatarGradient(selectedMessage.mentor_name)} flex items-center justify-center text-white text-sm font-black shadow-sm shrink-0`}>
+                                <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${getAvatarGradient(selectedMessage.mentor_name)} flex items-center justify-center text-white text-sm font-black shadow-sm shrink-0`}>
                                     {getInitials(selectedMessage.mentor_name)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                                    <p className="text-base font-bold text-gray-900 dark:text-white truncate">
                                         {selectedMessage.mentor_name || "Academic Advisor"}
                                     </p>
-                                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                                    <div className="flex items-center gap-1.5 text-sm text-gray-400">
                                         <Clock size={11} />
                                         <span>{fmtTime(selectedMessage.created_at)}</span>
                                     </div>
                                 </div>
                                 {selectedMessage.read && (
-                                    <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 rounded-full">
+                                    <span className="flex items-center gap-1 text-sm font-bold uppercase tracking-wide text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 rounded-full">
                                         <CheckCircle2 size={12} /> Read
                                     </span>
                                 )}
@@ -283,15 +283,15 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
 
                             {/* Subject */}
                             <div className="px-6 py-3 border-b border-gray-100 dark:border-gray-700">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-1">Subject</p>
-                                <h2 className="text-base font-bold text-gray-900 dark:text-white leading-snug">
+                                <p className="text-xs font-black uppercase tracking-widest text-blue-500 mb-1">Subject</p>
+                                <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-snug">
                                     {selectedMessage.subject || "No Subject"}
                                 </h2>
                             </div>
 
                             {/* Body */}
                             <div className="flex-1 overflow-y-auto px-6 py-5">
-                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                                <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
                                     {selectedMessage.message}
                                 </p>
                             </div>
@@ -304,39 +304,39 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
                                 <div className="rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 p-4">
                                     <div className="flex items-center gap-2 mb-2">
                                         <BellDot size={16} className="text-blue-500" />
-                                        <span className="text-xs font-bold uppercase tracking-wider text-blue-500">Unread</span>
+                                        <span className="text-sm font-bold uppercase tracking-wider text-blue-500">Unread</span>
                                     </div>
-                                    <p className="text-3xl font-black text-blue-700 dark:text-blue-300 leading-none">{unreadCount}</p>
-                                    <p className="text-xs text-blue-500/70 mt-1">announcements</p>
+                                    <p className="text-4xl font-black text-blue-700 dark:text-blue-300 leading-none">{unreadCount}</p>
+                                    <p className="text-sm text-blue-500/70 mt-1">announcements</p>
                                 </div>
                                 <div className="rounded-xl bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/30 p-4">
                                     <div className="flex items-center gap-2 mb-2">
                                         <Calendar size={16} className="text-indigo-500" />
-                                        <span className="text-xs font-bold uppercase tracking-wider text-indigo-500">Meetings</span>
+                                        <span className="text-sm font-bold uppercase tracking-wider text-indigo-500">Meetings</span>
                                     </div>
-                                    <p className="text-3xl font-black text-indigo-700 dark:text-indigo-300 leading-none">{meetings.length}</p>
-                                    <p className="text-xs text-indigo-500/70 mt-1">scheduled total</p>
+                                    <p className="text-4xl font-black text-indigo-700 dark:text-indigo-300 leading-none">{meetings.length}</p>
+                                    <p className="text-sm text-indigo-500/70 mt-1">scheduled total</p>
                                 </div>
                             </div>
 
                             {/* Next meeting */}
                             {nextMeeting && (
                                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-                                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Next Scheduled Meeting</p>
+                                    <p className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-3">Next Scheduled Meeting</p>
                                     <div className="flex items-start gap-3">
                                         <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 shrink-0">
                                             <span className="text-[9px] font-black text-indigo-400 uppercase leading-none">
                                                 {new Date(nextMeeting.date).toLocaleString("en-IN", { month: "short" })}
                                             </span>
-                                            <span className="text-lg font-black text-indigo-600 dark:text-indigo-300 leading-none">
+                                            <span className="text-xl font-black text-indigo-600 dark:text-indigo-300 leading-none">
                                                 {new Date(nextMeeting.date).getDate()}
                                             </span>
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{nextMeeting.title}</p>
-                                            <p className="text-xs text-gray-400 mt-0.5">{fmtDate(nextMeeting.date)}</p>
+                                            <p className="text-base font-bold text-gray-900 dark:text-white truncate">{nextMeeting.title}</p>
+                                            <p className="text-sm text-gray-400 mt-0.5">{fmtDate(nextMeeting.date)}</p>
                                             {nextMeeting.agenda && (
-                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">{nextMeeting.agenda}</p>
+                                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">{nextMeeting.agenda}</p>
                                             )}
                                         </div>
                                     </div>
@@ -346,7 +346,7 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
                             {/* Unread messages preview */}
                             {unreadCount > 0 && (
                                 <div className="flex-1 min-h-0 flex flex-col">
-                                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Unread Announcements</p>
+                                    <p className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-2">Unread Announcements</p>
                                     <ul className="flex-1 overflow-y-auto space-y-2">
                                         {messages.filter(m => !m.read).slice(0, 5).map(msg => (
                                             <li
@@ -358,10 +358,10 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
                                                     {getInitials(msg.mentor_name)}
                                                 </div>
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-500 transition-colors">
+                                                    <p className="text-base font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-500 transition-colors">
                                                         {msg.subject || "No Subject"}
                                                     </p>
-                                                    <p className="text-xs text-gray-400 line-clamp-1">{msg.message}</p>
+                                                    <p className="text-sm text-gray-400 line-clamp-1">{msg.message}</p>
                                                 </div>
                                                 <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse mt-2 shrink-0" />
                                             </li>
@@ -375,8 +375,8 @@ export default function MenteeRecieveEmails({ usn }: MenteeRecieveEmailsProps) {
                                     <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                                         <MailOpen size={24} className="text-gray-400" />
                                     </div>
-                                    <p className="text-sm font-bold text-gray-500 dark:text-gray-400">You're all caught up</p>
-                                    <p className="text-xs text-gray-400 max-w-[220px]">No unread messages or upcoming meetings</p>
+                                    <p className="text-base font-bold text-gray-500 dark:text-gray-400">You're all caught up</p>
+                                    <p className="text-sm text-gray-400 max-w-[220px]">No unread messages or upcoming meetings</p>
                                 </div>
                             )}
                         </div>
@@ -391,7 +391,7 @@ function LoadingState({ icon, label }: { icon: React.ReactNode; label: string })
     return (
         <div className="flex flex-col items-center justify-center gap-2 py-12 text-gray-400">
             <span className="animate-pulse">{icon}</span>
-            <p className="text-sm font-semibold animate-pulse">{label}</p>
+            <p className="text-base font-semibold animate-pulse">{label}</p>
         </div>
     );
 }
@@ -400,8 +400,8 @@ function EmptyList({ icon, label, sub }: { icon: React.ReactNode; label: string;
     return (
         <div className="flex flex-col items-center justify-center gap-1.5 py-12 text-gray-400">
             <span className="text-gray-300 dark:text-gray-600">{icon}</span>
-            <p className="text-sm font-bold">{label}</p>
-            <p className="text-xs text-gray-400">{sub}</p>
+            <p className="text-base font-bold">{label}</p>
+            <p className="text-sm text-gray-400">{sub}</p>
         </div>
     );
 }
