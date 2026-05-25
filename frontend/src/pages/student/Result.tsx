@@ -46,14 +46,14 @@ export default function Result({ usn, semester, view }: ResultProps) {
     return (
         <div className="w-full">
             {/* ── Header ───────────────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-500/10 rounded-2xl">
-                        <GraduationCap className="w-6 h-6 text-blue-500" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-blue-500/10 rounded-xl">
+                        <GraduationCap className="w-5 h-5 text-blue-500" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-none">Student Report</h2>
-                        <p className="text-sm text-gray-500 mt-1">Subject-wise academic performance</p>
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-none">Student Report</h2>
+                        <p className="text-xs text-gray-500 mt-1">Subject-wise performance</p>
                     </div>
                 </div>
 
@@ -97,12 +97,12 @@ export default function Result({ usn, semester, view }: ResultProps) {
                 {data && !loading && (
                     <section>
                         {/* Student info bar */}
-                        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                             <div>
-                                <div className="text-base font-bold text-slate-500">{data.name} · {data.usn}</div>
-                                <h2 className="text-xl font-extrabold mt-1">{semester.replace("sem", "Semester ")} — {subjects.length} subjects</h2>
+                                <div className="text-sm font-bold text-slate-500">{data.name} · {data.usn}</div>
+                                <h2 className="text-lg font-extrabold mt-0.5">{semester.replace("sem", "Semester ")} — {subjects.length} subjects</h2>
                             </div>
-                            <div className="flex flex-wrap gap-4 text-base font-medium">
+                            <div className="flex flex-wrap gap-3 text-sm font-medium">
                                 <span className="text-slate-400">SGPA <span className="font-extrabold text-blue-600 dark:text-blue-400 ml-1">{data.sgpa?.toFixed(2)}</span></span>
                                 <span className="text-slate-400">CGPA <span className="font-extrabold text-indigo-600 dark:text-indigo-400 ml-1">{data.cgpa?.toFixed(2)}</span></span>
                                 <span className="text-slate-400">Percentage <span className="font-extrabold text-violet-600 dark:text-violet-400 ml-1">{data.percentage?.toFixed(1)}%</span></span>
@@ -114,68 +114,67 @@ export default function Result({ usn, semester, view }: ResultProps) {
 
                         {view !== "table" ? (
                             /* ── Card View (matches SemesterResults card design) ── */
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                 {subjects.map((sub, idx) => {
                                     const isSubPass = sub.status === "Pass";
                                     return (
                                         <article
                                             key={idx}
-                                            className={`group relative bg-white dark:bg-gray-800/40 rounded-3xl p-5 border transition-all duration-300 hover:shadow-2xl overflow-hidden
+                                            className={`group relative bg-white dark:bg-gray-800/40 rounded-2xl p-4 border transition-all duration-300 hover:shadow-xl overflow-hidden
                                                 ${isSubPass
                                                     ? "border-gray-100 dark:border-gray-700/50 hover:border-emerald-500/30 dark:hover:border-emerald-400/30 hover:shadow-emerald-500/5"
-                                                    : "border-rose-200 dark:border-rose-800/50 shadow-lg shadow-rose-500/5"
+                                                    : "border-rose-200 dark:border-rose-800/50 shadow-sm shadow-rose-500/5"
                                                 }`}
                                         >
-                                            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150 duration-700"></div>
+                                            <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/5 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-150 duration-700"></div>
 
                                             <div className="relative z-10">
                                                 {/* Top: code + status */}
-                                                <div className="flex items-start justify-between mb-4">
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <span className="inline-block px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold uppercase tracking-wider">
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <div className="flex-1 min-w-0 pr-2">
+                                                        <div className="flex items-center gap-2 mb-1.5">
+                                                            <span className="inline-block px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md text-[10px] font-bold uppercase tracking-wider">
                                                                 {sub.code}
                                                             </span>
-                                                            <span className="text-xs font-bold text-gray-400">{sub.credit} cr</span>
                                                         </div>
-                                                        <h3 className="text-base font-bold text-gray-900 dark:text-white truncate" title={sub.subject_name}>
+                                                        <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate" title={sub.subject_name}>
                                                             {sub.subject_name}
                                                         </h3>
                                                     </div>
                                                     <div className="flex flex-col items-end">
-                                                        <div className="text-3xl font-black text-blue-600 dark:text-blue-400 leading-none">
+                                                        <div className="text-2xl font-black text-blue-600 dark:text-blue-400 leading-none">
                                                             {sub.total}
                                                         </div>
-                                                        <span className="text-xs text-gray-400 font-bold uppercase tracking-tighter mt-1">Total</span>
+                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mt-1">Total</span>
                                                     </div>
                                                 </div>
 
                                                 {/* Stats grid */}
-                                                <div className="grid grid-cols-3 gap-3">
-                                                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3 border border-gray-100 dark:border-gray-800/50">
-                                                        <div className="text-xs text-gray-400 font-bold uppercase mb-1">IA</div>
-                                                        <div className="text-base font-bold text-gray-900 dark:text-white">{sub.ia}</div>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-2 border border-gray-100 dark:border-gray-800/50">
+                                                        <div className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">IA</div>
+                                                        <div className="text-sm font-bold text-gray-900 dark:text-white">{sub.ia}</div>
                                                     </div>
-                                                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3 border border-gray-100 dark:border-gray-800/50">
-                                                        <div className="text-xs text-gray-400 font-bold uppercase mb-1">SEE</div>
-                                                        <div className="text-base font-bold text-gray-900 dark:text-white">{sub.see}</div>
+                                                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-2 border border-gray-100 dark:border-gray-800/50">
+                                                        <div className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">SEE</div>
+                                                        <div className="text-sm font-bold text-gray-900 dark:text-white">{sub.see}</div>
                                                     </div>
-                                                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3 border border-gray-100 dark:border-gray-800/50">
-                                                        <div className="text-xs text-gray-400 font-bold uppercase mb-1">Status</div>
-                                                        <div className={`text-base font-bold ${isSubPass ? "text-emerald-600" : "text-rose-500"}`}>
+                                                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-2 border border-gray-100 dark:border-gray-800/50">
+                                                        <div className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Status</div>
+                                                        <div className={`text-sm font-bold ${isSubPass ? "text-emerald-600" : "text-rose-500"}`}>
                                                             {sub.status}
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 {/* Footer */}
-                                                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between text-xs font-bold text-gray-400">
-                                                    <div className="flex gap-4">
-                                                        <span>Credits <span className="text-gray-900 dark:text-gray-300 ml-1">{sub.credit}</span></span>
-                                                        <span>Total <span className="text-gray-900 dark:text-gray-300 ml-1">{sub.total}</span></span>
+                                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between text-[10px] font-bold text-gray-400">
+                                                    <div className="flex gap-3">
+                                                        <span>Credits <span className="text-gray-900 dark:text-gray-300 ml-0.5">{sub.credit}</span></span>
+                                                        <span>Total <span className="text-gray-900 dark:text-gray-300 ml-0.5">{sub.total}</span></span>
                                                     </div>
-                                                    <span className={isSubPass ? "text-emerald-500 animate-pulse" : "text-rose-500 animate-bounce"}>
-                                                        {isSubPass ? "✓ Passed" : "✗ Failed"}
+                                                    <span className={isSubPass ? "text-emerald-500" : "text-rose-500"}>
+                                                        {isSubPass ? "Passed" : "Failed"}
                                                     </span>
                                                 </div>
                                             </div>
