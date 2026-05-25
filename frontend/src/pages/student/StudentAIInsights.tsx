@@ -574,97 +574,99 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                         </div>
                     ) : performanceData ? (
                         <>
-                            {/* Metrics Ribbon */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                <div className="bg-white dark:bg-gray-800 rounded-xl p-3.5 shadow-sm border border-gray-100 dark:border-gray-700">
-                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold mb-1">Semester SGPA</p>
-                                    <p className="text-2xl font-black text-gray-900 dark:text-white">{(performanceData.sgpa ?? 0).toFixed(2)}</p>
+                            {/* Inline stats bar — no cards, just a compact row */}
+                            <div className="flex flex-wrap items-center gap-x-6 gap-y-1 bg-white dark:bg-gray-800 rounded-xl px-4 py-2.5 border border-gray-100 dark:border-gray-700 shadow-sm">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">SGPA</span>
+                                    <span className="text-lg font-black text-gray-900 dark:text-white">{(performanceData.sgpa ?? 0).toFixed(2)}</span>
                                 </div>
-                                <div className="bg-white dark:bg-gray-800 rounded-xl p-3.5 shadow-sm border border-gray-100 dark:border-gray-700">
-                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold mb-1">Percentage</p>
-                                    <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{(performanceData.percentage ?? 0).toFixed(1)}%</p>
+                                <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">CGPA</span>
+                                    <span className="text-lg font-black text-gray-900 dark:text-white">{(performanceData.cgpa ?? 0).toFixed(2)}</span>
                                 </div>
-                                <div className="bg-white dark:bg-gray-800 rounded-xl p-3.5 shadow-sm border border-gray-100 dark:border-gray-700">
-                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold mb-1">Cumulative CGPA</p>
-                                    <p className="text-2xl font-black text-gray-900 dark:text-white">{(performanceData.cgpa ?? 0).toFixed(2)}</p>
+                                <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Percentage</span>
+                                    <span className="text-lg font-black text-blue-600 dark:text-blue-400">{(performanceData.percentage ?? 0).toFixed(1)}%</span>
                                 </div>
-                                <div className="bg-purple-50 dark:bg-purple-900/10 rounded-xl p-3.5 shadow-sm border border-purple-100 dark:border-purple-900/20">
-                                    <p className="text-[10px] text-purple-600 dark:text-purple-400 uppercase tracking-widest font-semibold mb-1">Target Next SGPA</p>
-                                    <p className="text-2xl font-black text-purple-700 dark:text-purple-300">{(performanceData.predicted_next_sgpa ?? 0).toFixed(2)}</p>
+                                <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-purple-500 uppercase tracking-widest font-bold">Target</span>
+                                    <span className="text-lg font-black text-purple-600 dark:text-purple-400">{(performanceData.predicted_next_sgpa ?? 0).toFixed(2)}</span>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {/* Main content: table left, chart + actions right */}
+                            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
                                 {/* Subjects Table */}
                                 <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                                    <h4 className="text-xs font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <h4 className="text-xs font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider mb-2 flex items-center gap-2">
                                         <BookOpen size={14} className="text-blue-500" /> Subject Breakdown
                                     </h4>
-                                    
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-sm text-left">
-                                            <thead>
-                                                <tr className="text-xs text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700">
-                                                    <th className="pb-3 font-semibold">Subject</th>
-                                                    <th className="pb-3 font-semibold text-center">IA</th>
-                                                    <th className="pb-3 font-semibold text-center">SEE</th>
-                                                    <th className="pb-3 font-semibold text-center">Total</th>
-                                                    <th className="pb-3 font-semibold text-center">Status</th>
+                                    <table className="w-full text-sm text-left">
+                                        <thead>
+                                            <tr className="text-[10px] text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700">
+                                                <th className="pb-2 font-semibold">Subject</th>
+                                                <th className="pb-2 font-semibold text-center">IA</th>
+                                                <th className="pb-2 font-semibold text-center">SEE</th>
+                                                <th className="pb-2 font-semibold text-center">Total</th>
+                                                <th className="pb-2 font-semibold text-center">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
+                                            {performanceData.subject_analysis.map((sub, idx) => (
+                                                <tr key={idx} className={`group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${getSubjectColor(sub)}`}>
+                                                    <td className="py-1.5 pr-3">
+                                                        <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-snug">{sub.subject_name}</div>
+                                                        <div className="text-[10px] text-gray-400">{sub.code}</div>
+                                                    </td>
+                                                    <td className="py-1.5 text-center text-sm font-medium opacity-90">{sub.ia}</td>
+                                                    <td className="py-1.5 text-center text-sm font-medium opacity-90">{sub.see}</td>
+                                                    <td className="py-1.5 text-center text-sm font-bold">{sub.total}</td>
+                                                    <td className="py-1.5 text-center">
+                                                        <span className={`text-[10px] font-bold uppercase ${
+                                                            sub.status === "Pass" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                                                        }`}>
+                                                            {sub.status}
+                                                        </span>
+                                                    </td>
                                                 </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
-                                                {performanceData.subject_analysis.map((sub, idx) => (
-                                                    <tr key={idx} className={`group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${getSubjectColor(sub)}`}>
-                                                        <td className="py-2.5 pr-4">
-                                                            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{sub.subject_name}</div>
-                                                            <div className="text-[10px] text-gray-500 opacity-80">{sub.code}</div>
-                                                            {sub.advice && <div className="text-xs mt-2 text-gray-600 dark:text-gray-400 max-w-sm hidden sm:block">{sub.advice}</div>}
-                                                        </td>
-                                                        <td className="py-2.5 text-center text-sm font-medium opacity-90">{sub.ia}</td>
-                                                        <td className="py-2.5 text-center text-sm font-medium opacity-90">{sub.see}</td>
-                                                        <td className="py-2.5 text-center text-sm font-bold">{sub.total}</td>
-                                                        <td className="py-2.5 text-center">
-                                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                                                                sub.status === "Pass" ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" : "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
-                                                            }`}>
-                                                                {sub.status}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
 
-                                {/* Right Column: Chart */}
-                                {performanceData.subject_analysis && performanceData.subject_analysis.length > 0 && (
-                                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
-                                        <h4 className="text-xs font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                            <BarChart3 size={14} className="text-indigo-500" /> Interactive Performance Chart
-                                        </h4>
-                                        <AcademicSVGChart subjects={performanceData.subject_analysis} />
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Action Items — full width below grid */}
-                            <div className="bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-4 border border-blue-100 dark:border-blue-900/20">
-                                <h4 className="text-xs font-bold text-blue-800 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                    <Lightbulb size={14} /> Action Items
-                                </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {performanceData.study_summary && (
-                                        <p className="text-sm font-medium text-blue-900 dark:text-blue-200 bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-blue-100 dark:border-blue-800/30 md:col-span-2">
-                                            {performanceData.study_summary}
-                                        </p>
-                                    )}
-                                    {performanceData.improvement_advice.map((advice, i) => (
-                                        <div key={i} className="flex items-start gap-2 bg-white/50 dark:bg-black/10 p-2.5 rounded-lg">
-                                            <ArrowRight className="text-blue-500 mt-0.5 shrink-0" size={13} />
-                                            <span className="text-sm text-gray-700 dark:text-gray-300 leading-snug">{advice}</span>
+                                {/* Right: chart + action items stacked */}
+                                <div className="flex flex-col gap-3 lg:w-[420px]">
+                                    {performanceData.subject_analysis?.length > 0 && (
+                                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-sm border border-gray-100 dark:border-gray-700">
+                                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                                <BarChart3 size={12} className="text-indigo-500" /> Performance Chart
+                                            </h4>
+                                            <AcademicSVGChart subjects={performanceData.subject_analysis} />
                                         </div>
-                                    ))}
+                                    )}
+
+                                    {/* Action Items — compact */}
+                                    <div className="bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-3 border border-blue-100 dark:border-blue-900/20">
+                                        <h4 className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                            <Lightbulb size={12} /> Action Items
+                                        </h4>
+                                        {performanceData.study_summary && (
+                                            <p className="text-xs font-medium text-blue-800 dark:text-blue-200 bg-white/50 dark:bg-black/20 p-2 rounded-lg border border-blue-100 dark:border-blue-800/30 mb-2 leading-snug">
+                                                {performanceData.study_summary}
+                                            </p>
+                                        )}
+                                        <ul className="space-y-1">
+                                            {performanceData.improvement_advice.map((advice, i) => (
+                                                <li key={i} className="flex items-start gap-1.5 text-xs text-gray-700 dark:text-gray-300 leading-snug">
+                                                    <ArrowRight className="text-blue-500 mt-0.5 shrink-0" size={11} />
+                                                    {advice}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </>
