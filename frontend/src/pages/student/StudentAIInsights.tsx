@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
     aiSummaryAiSummaryGet,
     aiProfileAiProfileGet,
@@ -150,7 +150,7 @@ const AcademicSVGChart: React.FC<{ subjects: SubjectAnalysis[] }> = ({ subjects 
           return (
             <g
               key={sub.code || index}
-              onMouseEnter={(e) => {
+              onMouseEnter={() => {
                 setHoveredIndex(index);
                 // Position tooltip above the bar
                 setTooltipPos({
