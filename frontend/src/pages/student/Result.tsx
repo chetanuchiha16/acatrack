@@ -229,16 +229,6 @@ export default function Result({ usn, semester, view }: ResultProps) {
                                 {failCount > 0 && <span>Failed <span className="text-rose-500 ml-1">{failCount}</span></span>}
                             </div>
 
-                            {data.pdf_url && (
-                                <a
-                                    href={data.pdf_url}
-                                    download
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-base font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95"
-                                >
-                                    <Download size={16} />
-                                    Download Scorecard
-                                </a>
-                            )}
                         </div>
                     </section>
                 )}
