@@ -1,13 +1,100 @@
-import React, { useEffect, useState } from "react";
-import { Folder, FileText, ChevronRight, ArrowLeft, FolderOpen, BookOpen } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import {
+    Folder,
+    FileText,
+    ChevronRight,
+    ArrowLeft,
+    MoreVertical,
+    FileUp,
+    Loader2
+} from "lucide-react";
 import { listNotesAuthStudentNotesGet } from "../../client/sdk.gen";
-import LoadingSpinner from "../../components/LoadingSpinner";
 
 export type FileTreeNode = string | FileTree;
 export interface FileTree { [key: string]: FileTreeNode; }
 
 function isFileTree(node: unknown): node is FileTree {
     return typeof node === "object" && node !== null && !Array.isArray(node);
+}
+
+interface FileItemProps {
+    name: string;
+    isFolder: boolean;
+    onClick: () => void;
+    selected: boolean;
+}
+
+function FileItem({ name, isFolder, onClick, selected }: FileItemProps) {
+    return (
+        <div
+            className={`group flex flex-col items-center w-32 m-3 p-4 rounded-2xl cursor-pointer transition-all duration-300 border
+            ${selected
+                ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 shadow-md scale-105"
+                : "bg-white dark:bg-gray-800/50 border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-lg hover:-translate-y-1"
+            }`}
+            onClick={onClick}
+        >
+            <div className={`text-4xl mb-3 transition-transform duration-300 group-hover:scale-110 ${isFolder ? "text-amber-400" : "text-red-500"}`}>
+                {isFolder ? <Folder size={48} fill="currentColor" fillOpacity={0.2} /> : <FileText size={48} fill="currentColor" fillOpacity={0.1} />}
+            </div>
+            <div className="text-xs font-bold text-center break-words dark:text-gray-200 text-gray-700 line-clamp-2 px-1">
+                {name}
+            </div>
+
+            <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                 <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400">
+                    <MoreVertical size={14} />
+                 </button>
+            </div>
+        </div>
+    );
+}
+
+interface FileGridProps {
+    tree: FileTree;
+    path?: string;
+    setPath: (path: string) => void;
+}
+
+function FileGrid({ tree, path = "", setPath }: FileGridProps) {
+    const [selected, setSelected] = useState<string | null>(null);
+    const entries = Object.entries(tree);
+
+    if (entries.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 text-gray-400 w-full">
+                <FileUp size={64} strokeWidth={1} className="mb-4 opacity-20" />
+                <p className="text-sm font-medium">This folder is empty</p>
+                <p className="text-xs opacity-60">No files or subdirectories uploaded here yet</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-wrap justify-center sm:justify-start w-full">
+            {entries.map(([name, value]) => {
+                const fullPath = `${path}/${name}`;
+                const isFolder = isFileTree(value);
+
+                return (
+                    <FileItem
+                        key={fullPath}
+                        name={name}
+                        isFolder={isFolder}
+                        selected={selected === fullPath}
+                        onClick={() => {
+                            setSelected(fullPath);
+                            if (isFolder) {
+                                setPath(fullPath);
+                            } else if (typeof value === "string") {
+                                window.open(value, "_blank");
+                            }
+                        }}
+                    />
+                );
+            })}
+        </div>
+    );
 }
 
 function getDirAtPath(tree: FileTree | null, path: string): FileTree | null {
@@ -30,136 +117,73 @@ const FileExplorer: React.FC = () => {
 
     useEffect(() => {
         listNotesAuthStudentNotesGet()
-            .then(res => { const data = res.data as unknown; setFileTree(isFileTree(data) ? data : {}); })
-            .catch(err => console.error("Failed to load notes:", err));
+            .then((res) => {
+                const data = res.data as unknown;
+                setFileTree(isFileTree(data) ? data : {});
+            })
+            .catch((err) => console.error("Failed to load notes:", err));
     }, []);
 
     const currentDir = fileTree ? getDirAtPath(fileTree, currentPath) : null;
-    const pathParts = currentPath.split("/").filter(Boolean);
 
     const goBack = () => {
-        const parts = pathParts.slice(0, -1);
-        setCurrentPath(parts.length ? "/" + parts.join("/") : "");
+        const parts = currentPath.split("/").filter(Boolean);
+        parts.pop();
+        setCurrentPath(parts.length > 0 ? "/" + parts.join("/") : "");
     };
 
-    const goToSegment = (index: number) => {
-        const parts = pathParts.slice(0, index + 1);
-        setCurrentPath("/" + parts.join("/"));
-    };
-
-    const entries = currentDir ? Object.entries(currentDir) : [];
-    const folders = entries.filter(([, v]) => isFileTree(v));
-    const files = entries.filter(([, v]) => !isFileTree(v));
+    const breadcrumbs = currentPath.split("/").filter(Boolean);
 
     return (
-        <div className="w-full">
-            {/* Header */}
-            <div className="flex items-center justify-between gap-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 shadow-sm mb-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-500/10 rounded-xl">
-                        <BookOpen className="w-5 h-5 text-indigo-500" />
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-none">Classroom</h2>
-                        <p className="text-xs text-gray-500 mt-0.5">Browse uploaded notes and materials</p>
-                    </div>
-                </div>
-
-                {/* Stats */}
-                <div className="hidden sm:flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-1.5">
-                        <Folder size={14} className="text-amber-500" />
-                        <span className="font-bold text-gray-900 dark:text-white">{folders.length}</span>
-                        <span className="text-xs text-gray-400">folders</span>
-                    </div>
-                    <div className="w-px h-4 bg-gray-200 dark:bg-gray-700" />
-                    <div className="flex items-center gap-1.5">
-                        <FileText size={14} className="text-rose-500" />
-                        <span className="font-bold text-gray-900 dark:text-white">{files.length}</span>
-                        <span className="text-xs text-gray-400">files</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Breadcrumb bar */}
-            <div className="flex items-center gap-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 shadow-sm mb-4 overflow-x-auto">
-                {currentPath && (
-                    <button onClick={goBack} className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors mr-1 shrink-0">
-                        <ArrowLeft size={16} />
-                    </button>
-                )}
-                <button onClick={() => setCurrentPath("")}
-                    className={`text-xs font-bold px-2 py-1 rounded-md transition-colors shrink-0 ${!currentPath ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400" : "text-gray-500 hover:text-indigo-600 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
-                    Root
+        <div className="w-full h-full max-h-[85vh] flex flex-col bg-white dark:bg-gray-800/80 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden backdrop-blur-sm">
+            {/* Explorer Header */}
+            <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 flex items-center gap-3 flex-shrink-0">
+                <button
+                    onClick={goBack}
+                    disabled={!currentPath}
+                    className={`p-2 rounded-xl transition-all ${
+                        !currentPath
+                        ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                        : "text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 shadow-sm active:scale-95"
+                    }`}
+                >
+                    <ArrowLeft size={20} />
                 </button>
-                {pathParts.map((part, i) => (
-                    <React.Fragment key={i}>
-                        <ChevronRight size={12} className="text-gray-300 dark:text-gray-600 shrink-0" />
-                        <button onClick={() => goToSegment(i)}
-                            className={`text-xs font-bold px-2 py-1 rounded-md transition-colors shrink-0 ${i === pathParts.length - 1 ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400" : "text-gray-500 hover:text-indigo-600 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
-                            {part}
-                        </button>
-                    </React.Fragment>
-                ))}
+
+                {/* Breadcrumbs */}
+                <div className="flex items-center text-sm font-bold overflow-x-auto no-scrollbar whitespace-nowrap">
+                    <button
+                        onClick={() => setCurrentPath("")}
+                        className={`hover:text-blue-500 transition-colors ${!currentPath ? "text-gray-900 dark:text-white" : "text-gray-400"}`}
+                    >
+                        Root
+                    </button>
+                    {breadcrumbs.map((part, idx) => (
+                        <React.Fragment key={idx}>
+                            <ChevronRight size={14} className="mx-1 text-gray-300" />
+                            <button
+                                onClick={() => setCurrentPath("/" + breadcrumbs.slice(0, idx + 1).join("/"))}
+                                className={`hover:text-blue-500 transition-colors ${idx === breadcrumbs.length - 1 ? "text-gray-900 dark:text-white" : "text-gray-400"}`}
+                            >
+                                {part}
+                            </button>
+                        </React.Fragment>
+                    ))}
+                </div>
             </div>
 
-            {/* Content */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                {!currentDir ? (
-                    <LoadingSpinner message="Fetching classroom materials..." fullScreen={false} />
-                ) : entries.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                        <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
-                            <FolderOpen size={32} className="text-gray-400" />
-                        </div>
-                        <p className="text-sm font-bold text-gray-500 dark:text-gray-400">This folder is empty</p>
-                        <p className="text-xs text-gray-400 mt-1 max-w-xs">No files or subdirectories have been uploaded here yet.</p>
-                    </div>
+            {/* Explorer Content */}
+            <div className="flex-1 p-8 overflow-y-auto">
+                {currentDir ? (
+                    <FileGrid
+                        tree={currentDir}
+                        path={currentPath}
+                        setPath={setCurrentPath}
+                    />
                 ) : (
-                    <div>
-                        {/* Table header */}
-                        <div className="grid grid-cols-[1fr_auto] px-4 py-2 border-b border-gray-100 dark:border-gray-700 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                            <span>Name</span>
-                            <span>Type</span>
-                        </div>
-
-                        {/* Folders first, then files */}
-                        {folders.map(([name]) => {
-                            const fullPath = `${currentPath}/${name}`;
-                            const subTree = currentDir[name] as FileTree;
-                            const count = Object.keys(subTree).length;
-                            return (
-                                <div key={fullPath} onClick={() => setCurrentPath(fullPath)}
-                                    className="grid grid-cols-[1fr_auto] items-center px-4 py-2.5 border-b border-gray-50 dark:border-gray-700/50 cursor-pointer hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors group">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className="p-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-lg group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30 transition-colors">
-                                            <Folder size={16} className="text-amber-500" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{name}</p>
-                                            <p className="text-xs text-gray-400">{count} item{count !== 1 ? "s" : ""}</p>
-                                        </div>
-                                    </div>
-                                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full">Folder</span>
-                                </div>
-                            );
-                        })}
-
-                        {files.map(([name, value]) => {
-                            const fullPath = `${currentPath}/${name}`;
-                            return (
-                                <div key={fullPath} onClick={() => { if (typeof value === "string") window.open(value, "_blank"); }}
-                                    className="grid grid-cols-[1fr_auto] items-center px-4 py-2.5 border-b border-gray-50 dark:border-gray-700/50 cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition-colors group">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className="p-1.5 bg-rose-50 dark:bg-rose-900/20 rounded-lg group-hover:bg-rose-100 dark:group-hover:bg-rose-900/30 transition-colors">
-                                            <FileText size={16} className="text-rose-500" />
-                                        </div>
-                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">{name}</p>
-                                    </div>
-                                    <span className="text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 rounded-full">PDF</span>
-                                </div>
-                            );
-                        })}
+                    <div className="flex flex-col items-center justify-center py-20 w-full h-full">
+                        <Loader2 className="h-8 w-8 text-blue-500 animate-spin mb-4" />
+                        <p className="text-sm font-medium text-gray-500">Loading files...</p>
                     </div>
                 )}
             </div>
