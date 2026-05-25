@@ -55,8 +55,8 @@ const StudentOverview: React.FC = () => {
                         <GraduationCap size={24} />
                     </div>
                     <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">USN</p>
-                        <p className="font-semibold text-gray-900 dark:text-white truncate max-w-[120px]">{finalUsn}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">USN</p>
+                        <p className="font-extrabold text-base text-gray-900 dark:text-white truncate max-w-[120px]">{finalUsn}</p>
                     </div>
                 </div>
 
@@ -65,8 +65,8 @@ const StudentOverview: React.FC = () => {
                         <BookOpen size={24} />
                     </div>
                     <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Branch</p>
-                        <p className="font-semibold text-gray-900 dark:text-white truncate max-w-[150px]" title={finalBranch}>{finalBranch}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Branch</p>
+                        <p className="font-extrabold text-base text-gray-900 dark:text-white truncate max-w-[150px]" title={finalBranch}>{finalBranch}</p>
                     </div>
                 </div>
 
@@ -75,8 +75,8 @@ const StudentOverview: React.FC = () => {
                         <FileText size={24} />
                     </div>
                     <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Mentorship Record</p>
-                        <p className="font-semibold text-gray-900 dark:text-white">Active</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Mentorship Record</p>
+                        <p className="font-extrabold text-base text-emerald-600 dark:text-emerald-400">Active</p>
                     </div>
                 </div>
                 
@@ -85,8 +85,8 @@ const StudentOverview: React.FC = () => {
                         <Mail size={24} />
                     </div>
                     <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Emails</p>
-                        <p className="font-semibold text-gray-900 dark:text-white">Check Inbox</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Emails</p>
+                        <p className="font-extrabold text-base text-amber-600 dark:text-amber-400">Check Inbox</p>
                     </div>
                 </div>
             </div>
