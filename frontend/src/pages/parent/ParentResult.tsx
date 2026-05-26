@@ -10,6 +10,11 @@ import {
 } from "../../client/sdk.gen";
 import ResultGlossary from "../student/ResultGlossary";
 import type { StudentResult } from "../../types";
+import { 
+    ArrowLeft, Calendar, Award, Sparkles, Download, 
+    TrendingUp, Target, BookOpen, BookOpenCheck, Languages, 
+    ChevronRight, CheckCircle2, AlertCircle
+} from "lucide-react";
 
 interface AiSummary {
     backlog_status?: string;
@@ -117,15 +122,26 @@ export default function ParentResult() {
     };
 
     if (storeLoading) return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-            <div className="animate-pulse text-xl font-bold text-gray-500">Loading Dashboard...</div>
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0b0f19]">
+            <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="text-sm font-black text-slate-400 uppercase tracking-widest">Loading Analytics Dashboard...</div>
+            </div>
         </div>
     );
 
     if (!studentData) return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900">
-            <div className="text-xl text-gray-600 dark:text-gray-300 mb-4">{t("noData", "No data available")}</div>
-            <button onClick={goBack} className="px-4 py-2 bg-blue-600 text-white rounded shadow">⬅ Back</button>
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-[#0b0f19] px-4 text-center">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-950/20 text-red-500 rounded-full flex items-center justify-center mb-4">
+                <AlertCircle size={32} />
+            </div>
+            <div className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-6">{t("noData", "No academic records available.")}</div>
+            <button 
+                onClick={goBack} 
+                className="px-6 py-3 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-500/20 font-black text-sm hover:bg-indigo-700 transition-all flex items-center gap-2"
+            >
+                <ArrowLeft size={16} /> Return to Home
+            </button>
         </div>
     );
 
@@ -139,60 +155,87 @@ export default function ParentResult() {
     const totalMarks = semData?.total_marks ?? aiData?.summary?.total_marks ?? "-";
 
     return (
-        <main className="min-h-screen w-full bg-slate-50 dark:bg-slate-900 py-6 px-4">
-            
-            {/* --- HEADER --- */}
-            <div className="max-w-7xl 2xl:max-w-[95%] mx-auto w-full mb-6 bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <button onClick={goBack} className="p-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-full transition-colors flex-shrink-0" aria-label="Go Back">
-                        <svg className="w-5 h-5 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    </button>
-                    <img src={jssLogo} alt="Logo" className="h-10 w-auto object-contain" />
-                </div>
-                
-                <div className="flex-1 text-center w-full">
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">{t("resultTitle")}</h1>
-                </div>
-
-                <div className="flex-shrink-0 flex items-center gap-3">
-                    <select
-                        value={i18n.language}
-                        onChange={(e) => changeLanguage(e.target.value)}
-                        className="px-3 py-1.5 bg-gray-100 dark:bg-slate-700 border-none rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="en">English</option>
-                        <option value="hi">हिंदी</option>
-                        <option value="kan">ಕನ್ನಡ</option>
-                    </select>
-                </div>
+        <main className="min-h-screen w-full bg-[#f8fafc] dark:bg-[#0b0f19] text-slate-800 dark:text-slate-100 py-6 px-4 sm:px-6 relative overflow-hidden font-sans">
+            {/* Animated Mesh Background */}
+            <div className="absolute inset-0 z-0 pointer-events-none opacity-40 dark:opacity-20">
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-400 rounded-full blur-[130px] animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-400 rounded-full blur-[130px] animate-pulse delay-1000" />
             </div>
 
-            <div className="max-w-7xl 2xl:max-w-[95%] mx-auto w-full space-y-6">
+            <div className="relative z-10 max-w-7xl mx-auto w-full space-y-6 flex flex-col">
                 
+                {/* --- HEADER --- */}
+                <header className="w-full bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800/50 rounded-[2rem] p-4 sm:p-6 shadow-xl shadow-slate-100/50 dark:shadow-none flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <button 
+                            onClick={goBack} 
+                            className="p-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all flex items-center justify-center" 
+                            aria-label="Go Back"
+                        >
+                            <ArrowLeft size={18} />
+                        </button>
+                        <img src={jssLogo} alt="Logo" className="h-10 w-auto object-contain" />
+                        <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden md:block" />
+                        <div className="hidden md:block">
+                            <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider">Reports Workspace</span>
+                            <h2 className="text-sm font-bold text-slate-400">Ward Performance Analysis</h2>
+                        </div>
+                    </div>
+                    
+                    <div className="flex-1 text-center hidden sm:block">
+                        <h1 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{t("resultTitle", "Academic Performance Center")}</h1>
+                    </div>
+
+                    <div className="flex-shrink-0 flex items-center gap-3 w-full sm:w-auto justify-end">
+                        <div className="relative flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2 border border-slate-200/50 dark:border-slate-700/50">
+                            <Languages size={16} className="text-slate-400 dark:text-slate-500 mr-2" />
+                            <select
+                                value={i18n.language}
+                                onChange={(e) => changeLanguage(e.target.value)}
+                                className="bg-transparent text-xs font-black text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-4 uppercase"
+                            >
+                                <option value="en">English</option>
+                                <option value="hi">हिंदी</option>
+                                <option value="kan">ಕನ್ನಡ</option>
+                            </select>
+                        </div>
+                    </div>
+                </header>
+
                 {/* --- AI SUMMARY BANNER --- */}
-                <div className="bg-gradient-to-br from-indigo-50 to-blue-100 dark:from-indigo-900/40 dark:to-blue-900/20 rounded-2xl p-5 shadow-sm border border-indigo-100 dark:border-indigo-800/50">
-                    <h2 className="text-lg font-bold text-indigo-900 dark:text-indigo-300 mb-2 flex items-center gap-2">
-                        <span>✨</span> {t("progressSummary")}
+                <div className="bg-gradient-to-r from-indigo-500/10 via-blue-500/5 to-transparent backdrop-blur-md rounded-[2.5rem] p-6 sm:p-8 border border-white dark:border-slate-800/50 shadow-xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 blur-[60px] pointer-events-none" />
+                    
+                    <h2 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-wider mb-4 flex items-center gap-2.5">
+                        <span className="w-8 h-8 bg-indigo-500/15 rounded-xl flex items-center justify-center text-indigo-500 text-sm">✨</span>
+                        {t("progressSummary", "Smart Progress Overview")}
                     </h2>
                     
                     {aiLoading ? (
-                        <div className="animate-pulse h-12 bg-indigo-200/50 dark:bg-indigo-800/50 rounded mt-2"></div>
-                    ) : aiError ? (
-                        <p className="text-red-500 font-medium text-sm">{t("errorLoadingAI")}</p>
-                    ) : aiData?.summary ? (
-                        <div className="text-sm sm:text-base text-indigo-950 dark:text-indigo-200 leading-relaxed font-medium bg-white/60 dark:bg-slate-900/50 p-4 rounded-xl shadow-inner border border-white/40 dark:border-slate-700/50">
-                            {aiData.summary.backlog_status}
+                        <div className="animate-pulse space-y-3">
+                            <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4"></div>
+                            <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2"></div>
                         </div>
+                    ) : aiError ? (
+                        <p className="text-red-500 font-bold text-sm flex items-center gap-2">
+                            <AlertCircle size={16} /> {t("errorLoadingAI", "Error fetching dynamic diagnostic report.")}
+                        </p>
+                    ) : aiData?.summary ? (
+                        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-semibold bg-white/60 dark:bg-[#1e293b]/50 p-5 rounded-2xl border border-white dark:border-slate-800/50 shadow-inner">
+                            {aiData.summary.backlog_status}
+                        </p>
                     ) : null}
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <label className="text-gray-600 dark:text-gray-400 font-medium text-sm whitespace-nowrap">{t("semester")}:</label>
+                {/* --- CONTROL BAR --- */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/40 dark:bg-slate-900/30 backdrop-blur-md p-4 rounded-2xl border border-white/20 dark:border-slate-800/40">
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <Calendar size={18} className="text-indigo-500" />
+                        <label className="text-slate-500 dark:text-slate-400 font-black text-xs uppercase tracking-wider whitespace-nowrap">{t("semester", "Selected Cycle")}:</label>
                         <select
                             value={sem}
                             onChange={(e) => setSem(e.target.value)}
-                            className="w-full sm:w-40 px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium shadow-sm outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                            className="w-full sm:w-40 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
                         >
                             {semesterOptions.map((s) => (
                                 <option key={s} value={s}>{s}</option>
@@ -204,47 +247,79 @@ export default function ParentResult() {
                 </div>
 
                 {/* --- METRICS GRID --- */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                    <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col items-center justify-center text-center">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold mb-1">{t("percentage")}</span>
-                        <span className="text-2xl font-black text-blue-600 dark:text-blue-400">{percentage.toFixed(1)}%</span>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Percentage */}
+                    <div className="bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl p-6 rounded-3xl border border-white dark:border-slate-800/50 shadow-xl flex flex-col items-center justify-center text-center relative overflow-hidden group hover:border-blue-500/30 transition-all duration-300">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-black mb-1">{t("percentage", "Aggregate %")}</span>
+                        <span className="text-3xl sm:text-4xl font-black text-blue-600 dark:text-blue-400 tracking-tight group-hover:scale-105 transition-transform duration-300">
+                            {percentage.toFixed(1)}%
+                        </span>
                     </div>
-                    <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col items-center justify-center text-center">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold mb-1">{t("totalMarks")}</span>
-                        <span className="text-xl font-bold text-gray-800 dark:text-gray-100">{totalMarks}</span>
+                    {/* Total Marks */}
+                    <div className="bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl p-6 rounded-3xl border border-white dark:border-slate-800/50 shadow-xl flex flex-col items-center justify-center text-center relative overflow-hidden group hover:border-slate-500/30 transition-all duration-300">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-400 to-slate-600" />
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-black mb-1">{t("totalMarks", "Net Marks")}</span>
+                        <span className="text-2xl sm:text-3xl font-black text-slate-700 dark:text-slate-200 tracking-tight">
+                            {totalMarks}
+                        </span>
                     </div>
-                    <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col items-center justify-center text-center">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold mb-1">{t("sgpa")}</span>
-                        <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{sgpa.toFixed(2)}</span>
+                    {/* SGPA */}
+                    <div className="bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl p-6 rounded-3xl border border-white dark:border-slate-800/50 shadow-xl flex flex-col items-center justify-center text-center relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-black mb-1">{t("sgpa", "Term SGPA")}</span>
+                        <span className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight group-hover:scale-105 transition-transform duration-300">
+                            {sgpa.toFixed(2)}
+                        </span>
                     </div>
-                    <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col items-center justify-center text-center">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold mb-1">{t("cgpa")}</span>
-                        <span className="text-2xl font-black text-purple-600 dark:text-purple-400">{cgpa.toFixed(2)}</span>
+                    {/* CGPA */}
+                    <div className="bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl p-6 rounded-3xl border border-white dark:border-slate-800/50 shadow-xl flex flex-col items-center justify-center text-center relative overflow-hidden group hover:border-purple-500/30 transition-all duration-300">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-indigo-500" />
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-black mb-1">{t("cgpa", "Cumulative CGPA")}</span>
+                        <span className="text-3xl sm:text-4xl font-black text-purple-600 dark:text-purple-400 tracking-tight group-hover:scale-105 transition-transform duration-300">
+                            {cgpa.toFixed(2)}
+                        </span>
                     </div>
                 </div>
 
-                {/* --- SUBJECTS LIST (TRAFFIC LIGHTS) --- */}
-                <div className="space-y-3">
-                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mt-4 mb-2">{t("subjectPerformance")}</h3>
+                {/* --- SUBJECTS LIST (TRAFFIC LIGHTS GLOW) --- */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-indigo-500/10 text-indigo-500 rounded-xl flex items-center justify-center">
+                            <BookOpenCheck size={18} />
+                        </div>
+                        <h3 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-wider">{t("subjectPerformance", "Subject Breakdown")}</h3>
+                    </div>
                     
                     {subjects.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             {subjects.map((sub, idx) => {
                                 const isPass = sub.status === "Pass" || sub.status === "No Credits";
-                                const bgClass = isPass 
-                                    ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/40" 
-                                    : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/40";
-                                const textClass = isPass ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400";
-                                const badgeClass = isPass ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100" : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100";
+                                
+                                const glowCardClass = isPass 
+                                    ? "bg-white/70 dark:bg-[#1e293b]/60 border-emerald-500/20 hover:border-emerald-500/40 shadow-emerald-500/[0.02]" 
+                                    : "bg-white/70 dark:bg-[#1e293b]/60 border-red-500/20 hover:border-red-500/40 shadow-red-500/[0.02]";
+                                
+                                const textThemeClass = isPass ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400";
+                                const bgChipThemeClass = isPass 
+                                    ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200/30 dark:border-emerald-900/30" 
+                                    : "bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-200/30 dark:border-red-900/30";
 
                                 return (
-                                    <div key={idx} className={`rounded-xl border p-4 shadow-sm flex flex-col justify-between h-full ${bgClass}`}>
-                                        <div className="flex justify-between items-start gap-4 mb-3 border-b border-black/5 dark:border-white/5 pb-3">
+                                    <div 
+                                        key={idx} 
+                                        className={`rounded-2xl border p-5 shadow-lg backdrop-blur-md flex flex-col justify-between h-full transition-all duration-300 hover:scale-[1.01] ${glowCardClass}`}
+                                    >
+                                        <div className="flex justify-between items-start gap-4 mb-4 border-b border-slate-100 dark:border-slate-800/80 pb-3">
                                             <div>
-                                                <h4 className={`font-bold text-sm sm:text-base leading-tight mb-1 ${textClass}`}>{sub.subject_name}</h4>
-                                                <span className="text-xs font-medium opacity-70 border border-current rounded px-1.5 py-0.5">{sub.code}</span>
+                                                <h4 className="font-black text-slate-800 dark:text-white leading-snug tracking-tight text-sm mb-1.5 line-clamp-2">
+                                                    {sub.subject_name}
+                                                </h4>
+                                                <span className="text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800 px-2 py-0.5 rounded-lg uppercase">
+                                                    {sub.code}
+                                                </span>
                                             </div>
-                                            <span className={`text-xs font-black uppercase tracking-wider px-2 py-1 rounded shadow-sm flex-shrink-0 ${badgeClass}`}>
+                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-inner flex-shrink-0 ${bgChipThemeClass}`}>
                                                 {sub.status}
                                             </span>
                                         </div>
@@ -252,12 +327,12 @@ export default function ParentResult() {
                                         <div className="flex justify-between items-end">
                                             <div className="flex gap-4">
                                                 <div className="flex flex-col">
-                                                    <span className="text-[10px] uppercase font-bold opacity-60">{t("internal")}</span>
-                                                    <span className={`text-sm sm:text-base font-bold ${textClass}`}>{sub.ia}</span>
+                                                    <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">{t("internal", "Internal")}</span>
+                                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{sub.ia}</span>
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-[10px] uppercase font-bold opacity-60">{t("final")}</span>
-                                                    <span className={`text-sm sm:text-base font-bold ${textClass}`}>
+                                                    <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">{t("final", "SEE")}</span>
+                                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
                                                         {sub.see === 0 && (sub.ia === sub.total || /(mini project|scr|nss|social connect|physical education|internship|seminar)/i.test(sub.subject_name)) 
                                                             ? "N/A" 
                                                             : sub.see}
@@ -265,8 +340,10 @@ export default function ParentResult() {
                                                 </div>
                                             </div>
                                             <div className="flex flex-col text-right">
-                                                <span className="text-[10px] uppercase font-bold opacity-60">{t("total")}</span>
-                                                <span className={`text-lg sm:text-xl font-black ${textClass}`}>{sub.total}</span>
+                                                <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">{t("total", "Total")}</span>
+                                                <span className={`text-xl font-black ${textThemeClass} tracking-tight`}>
+                                                    {sub.total}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -274,85 +351,123 @@ export default function ParentResult() {
                             })}
                         </div>
                     ) : (
-                        <div className="text-center p-8 bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-gray-700 text-gray-500">
-                            {t("noSubjectsFound")} {sem}.
+                        <div className="text-center p-12 bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl rounded-3xl border border-white dark:border-slate-800/50 shadow-xl text-slate-500 font-bold italic">
+                            {t("noSubjectsFound", "No subjects found for Semester")} {sem}.
                         </div>
                     )}
                 </div>
 
                 {/* --- DEEP AI PROFILE INSIGHTS --- */}
                 {aiData?.profile && !aiLoading && (
-                    <div className="mt-8 space-y-6 animate-fade-in">
-                        <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-2">
-                            <span>🧠</span> {t("aiAnalysis", "Personalized AI Analysis")}
-                        </h3>
+                    <div className="space-y-6 pt-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-purple-500/10 text-purple-500 rounded-xl flex items-center justify-center">
+                                <Sparkles size={18} />
+                            </div>
+                            <h3 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-wider">
+                                {t("aiAnalysis", "Personalized AI Diagnostics")}
+                            </h3>
+                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Trend & Prediction */}
-                            <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-purple-100 dark:border-purple-900/40 shadow-sm flex flex-col justify-center">
-                                <h4 className="text-sm font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-3">📈 {t("performanceTrend", "Performance Trend")}</h4>
-                                <div className="flex items-center justify-between mb-4">
-                                    <span className="text-gray-600 dark:text-gray-300 font-medium">{t("currentTrajectory", "Current Trajectory")}:</span>
-                                    <span className={`px-3 py-1 rounded-full text-sm font-black ${aiData.profile.trend?.trend === "Improving" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"}`}>
-                                        {aiData.profile.trend?.trend || "N/A"}
-                                    </span>
-                                </div>
-                                {aiData.profile.cgpa_prediction?.predicted_next_sgpa && (
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-gray-600 dark:text-gray-300 font-medium">{t("predictedNextSem", "Predicted Next Sem")}:</span>
-                                        <span className="text-lg font-black text-gray-800 dark:text-gray-100">
-                                            {aiData.profile.cgpa_prediction.predicted_next_sgpa} {t("sgpa")}
-                                        </span>
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                            
+                            {/* Trajectory (5 Cols) */}
+                            <div className="lg:col-span-5 bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl rounded-[2rem] p-6 border border-white dark:border-slate-800/50 shadow-xl flex flex-col justify-between relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-[50px] pointer-events-none" />
+                                
+                                <div>
+                                    <h4 className="text-xs font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <TrendingUp size={14} /> Trajectory Trend
+                                    </h4>
+                                    
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-[#0b0f19]/30 border border-slate-100 dark:border-slate-800/80 rounded-2xl">
+                                            <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Current Slope</span>
+                                            <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${aiData.profile.trend?.trend === "Improving" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400" : "bg-orange-50 text-orange-700 dark:bg-orange-950/20 dark:text-orange-400"}`}>
+                                                {aiData.profile.trend?.trend || "Stable"}
+                                            </span>
+                                        </div>
+
+                                        {aiData.profile.cgpa_prediction?.predicted_next_sgpa && (
+                                            <div className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-[#0b0f19]/30 border border-slate-100 dark:border-slate-800/80 rounded-2xl">
+                                                <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Next Semester Target</span>
+                                                <span className="text-base font-black text-slate-800 dark:text-white flex items-center gap-1">
+                                                    <Award size={16} className="text-yellow-500" />
+                                                    {aiData.profile.cgpa_prediction.predicted_next_sgpa} {t("sgpa")}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+                                </div>
+                                
+                                <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-6 leading-relaxed bg-slate-50/20 dark:bg-slate-900/20 p-3 rounded-xl border border-slate-200/20 dark:border-slate-800/20">
+                                    Trajectory is generated dynamically using current SGPA trends mapped against department statistics.
+                                </div>
                             </div>
 
-                            {/* Placement Advice */}
+                            {/* Placement Advice (7 Cols) */}
                             {aiData?.profile?.placement_advice && aiData.profile.placement_advice.length > 0 && (
-                                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800 rounded-xl p-5 border border-blue-100 dark:border-blue-900/40 shadow-sm">
-                                    <h4 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3">🎯 {t("careerReadiness", "Career Readiness")}</h4>
-                                    <ul className="space-y-2">
-                                        {aiData.profile.placement_advice.slice(0, 2).map((advice, i) => (
-                                            <li key={i} className="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-2">
-                                                <span className="text-blue-500 mt-0.5">•</span>
-                                                <span className="leading-relaxed">{advice}</span>
+                                <div className="lg:col-span-7 bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl rounded-[2rem] p-6 border border-white dark:border-slate-800/50 shadow-xl relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[50px] pointer-events-none" />
+                                    
+                                    <h4 className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <Target size={14} /> Career & Placement Advice
+                                    </h4>
+                                    
+                                    <ul className="space-y-3">
+                                        {aiData.profile.placement_advice.slice(0, 3).map((advice, i) => (
+                                            <li key={i} className="text-sm text-slate-600 dark:text-slate-300 flex items-start gap-3 bg-slate-50/50 dark:bg-[#0b0f19]/30 border border-slate-100 dark:border-slate-800/80 p-3.5 rounded-2xl">
+                                                <span className="w-5 h-5 bg-blue-500/10 text-blue-500 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">
+                                                    {i + 1}
+                                                </span>
+                                                <span className="leading-relaxed font-semibold">{advice}</span>
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
                             )}
+
                         </div>
 
-                        {/* Learning Plan */}
+                        {/* Learning Plan (Full Width) */}
                         {aiData?.profile?.learning_plan && aiData.profile.learning_plan.length > 0 && (
-                            <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-amber-100 dark:border-amber-900/30 shadow-sm">
-                                <h4 className="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-3">📚 {t("recommendedActionPlan", "Recommended Action Plan")}</h4>
-                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl rounded-[2rem] p-6 border border-white dark:border-slate-800/50 shadow-xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/5 blur-[60px] pointer-events-none" />
+                                
+                                <h4 className="text-xs font-black text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                    <BookOpen size={14} /> Recommended Action & Study Plan
+                                </h4>
+                                
+                                <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {aiData.profile.learning_plan.map((plan, i) => (
-                                        <li key={i} className="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-2 bg-amber-50/50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-100 dark:border-amber-900/20">
-                                            <span className="text-amber-500">▶</span>
-                                            <span className="leading-relaxed">{plan}</span>
+                                        <li key={i} className="text-sm text-slate-600 dark:text-slate-300 flex items-start gap-3 bg-amber-500/[0.03] dark:bg-amber-950/10 p-4 rounded-2xl border border-amber-500/10 dark:border-amber-900/10 group/plan hover:border-amber-500/20 transition-all duration-300">
+                                            <div className="w-6 h-6 bg-amber-500/10 text-amber-600 dark:text-amber-500 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">
+                                                <ChevronRight size={14} className="group-hover/plan:translate-x-0.5 transition-transform" />
+                                            </div>
+                                            <span className="leading-relaxed font-semibold">{plan}</span>
                                         </li>
                                     ))}
                                 </ul>
                             </div>
                         )}
+
                     </div>
                 )}
 
                 {/* --- DOWNLOAD BUTTON --- */}
                 {semData?.pdf_url && (
-                    <div className="flex justify-center mt-6 pb-12">
+                    <div className="flex justify-center pt-8 pb-12">
                          <a
                             href={semData.pdf_url}
                             download
-                            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-600 text-white font-bold text-sm sm:text-base shadow-md hover:bg-blue-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all transform hover:-translate-y-0.5"
+                            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-black text-sm sm:text-base shadow-xl shadow-indigo-500/30 hover:scale-[1.03] active:scale-[0.97] transition-all transform duration-300"
                         >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                            {t("downloadReport")}
+                            <Download size={18} />
+                            {t("downloadReport", "Download Official PDF Transcript")}
                         </a>
                     </div>
                 )}
+
             </div>
         </main>
     );

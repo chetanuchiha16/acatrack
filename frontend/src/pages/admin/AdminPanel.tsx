@@ -439,15 +439,6 @@ const AdminPanel = () => {
                 </nav>
 
                 <div className="p-8">
-                    <div className="bg-slate-900/5 dark:bg-white/5 rounded-3xl p-6 mb-6">
-                        <div className="flex items-center gap-3 mb-2">
-                            <AlertCircle size={14} className="text-indigo-500" />
-                            <span className="text-[10px] font-black uppercase text-indigo-500 tracking-wider">Storage Health</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                            <div className="h-full w-[65%] bg-indigo-500 rounded-full" />
-                        </div>
-                    </div>
                     <button
                         onClick={() => {
                             clearToken();
