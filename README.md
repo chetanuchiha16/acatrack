@@ -5,12 +5,19 @@ AcaTrack is a comprehensive, full-stack academic management platform designed to
 > [!NOTE]
 > This repository serves as the **active solo continuation** and architectural refactor of the original project. It focuses on performance, scalability, and modern engineering practices.
 
+> [!IMPORTANT]
+> **Scraper Decoupling**: The legacy server-side Selenium-based scraper has been deprecated and completely migrated to our standalone, high-performance desktop application: **[VTU Result Scraper](https://github.com/chetanuchiha16/result-scraper)**. This eliminates CAPTCHA, browser rendering, and server-side CPU bottlenecks.
+
 ---
 
 ### 🏗️ System Architecture
 
 ```mermaid
 graph TD
+    subgraph Desktop ["Local Desktop client (Go + Wails)"]
+        Scraper["[result-scraper](https://github.com/chetanuchiha16/result-scraper)"]
+    end
+
     subgraph Client ["Frontend (React + Vite)"]
         UI[User Interface]
         Store[Zustand State]
@@ -30,16 +37,16 @@ graph TD
 
     subgraph External ["External Services"]
         Firebase[Firebase - Auth/Messaging]
-        UniScraper[Selenium Scraper]
     end
 
+    Scraper -- Exports PDF ZIP Bundle --> UI
+    UI -- Ingests ZIP Archive --> Router
     UI <--> Router
     Router <--> Service
     Service <--> DB
     Service <--> Cache
     Service <--> AI_Remote
     Service <--> Firebase
-    Service <--> UniScraper
 ```
 
 ---
@@ -90,8 +97,8 @@ AcaTrack integrates advanced AI capabilities to move beyond simple data storage:
 
 The system features robust tools for handling complex academic data:
 
-*   **Automated Web Scraping**: Integrated Selenium-based scrapers to fetch the latest university results and data directly from official portals.
-*   **PDF to Data Conversion**: Blazing-fast parallel extraction using a custom compiled **Rust engine (pdf-extract + Rayon)**, delivering an **8.06x** performance boost over legacy Python parsers.
+*   **Standalone Desktop Scraping**: Leverage our dedicated, native Go + Wails cross-platform **[VTU Result Scraper](https://github.com/chetanuchiha16/result-scraper)** for high-volume local scraping, effortless CAPTCHA resolution, and local PDF packaging.
+*   **PDF to Data Conversion**: Blazing-fast parallel extraction using our custom compiled, embedded **Rust engine (`acatrack-rust` via PyO3 & Rayon)**, delivering an **8.06x** performance boost over sequential Python engines.
 *   **Excel Ingestion**: Bulk upload capabilities for student records, staff lists, and subject mappings with automated validation.
 
 ---
