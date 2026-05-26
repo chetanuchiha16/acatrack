@@ -15,7 +15,6 @@ import {
     uploadMentorsAdminUploadMentorsPost,
     createBatchAdminCreateBatchPost,
     refreshBatchAdminRefreshBatchPost,
-    fetchResultsRouteWebscrapeFetchResultsPost,
     uploadArchivePdftoexcelUploadPost,
     getStatusPdftoexcelStatusJobIdGet,
     listStaffAdminListStaffGet,
@@ -60,12 +59,7 @@ const AdminPanel = () => {
     const [mentorFile, setMentorFile] = useState<File | null>(null);
     const [newBatchYear, setNewBatchYear] = useState<string>("");
 
-    // Webscrape states
-    const [usnPrefix, setUsnPrefix] = useState<string>("");
-    const [usnStart, setUsnStart] = useState<string>("");
-    const [usnEnd, setUsnEnd] = useState<string>("");
-    const [sem, setSem] = useState<string>("");
-    const [downloadDir, setDownloadDir] = useState<string>("");
+    // Payload upload states
     const [pdfZipFile, setPdfZipFile] = useState<File | null>(null);
     const [pdfExcelFilename, setPdfExcelFilename] = useState<string>(
         "result_list_YEAR.xlsx"
@@ -308,38 +302,6 @@ const AdminPanel = () => {
         }
     };
 
-    // New: Fetch VTU results
-    const fetchResults = async () => {
-        if (!secret) return alert("Admin secret missing");
-        if (!usnPrefix || !usnStart || !usnEnd || !sem)
-            return setStatus("Please fill all required fields.");
-
-        const logId = logAction(`Fetching VTU Results for ${usnPrefix}...`, 'loading');
-        setStatus("Starting result fetch...");
-
-        try {
-            const res = await fetchResultsRouteWebscrapeFetchResultsPost({
-                body: {
-                    usn_prefix: usnPrefix,
-                    usn_start: parseInt(usnStart, 10),
-                    usn_end: parseInt(usnEnd, 10),
-                    sem: parseInt(sem, 10),
-                    download_dir: downloadDir || undefined,
-                }
-            });
-            if (res.error) {
-                const errMsg = (res.error as { error?: string }).error || "Unknown error";
-                throw new Error(errMsg);
-            }
-            if (res.data) {
-                updateLog(logId, 'success', `Fetched ${usnPrefix} results.`);
-                setStatus(`✅ Fetch started.`);
-            }
-        } catch (err: unknown) {
-            updateLog(logId, 'error', `Fetch failed: ${getErrMsg(err)}`);
-            setStatus("❌ Error: " + getErrMsg(err));
-        }
-    };
 
     const uploadPdfZip = async () => {
         if (!batchYear)
@@ -541,81 +503,7 @@ const AdminPanel = () => {
                                         </div>
                                     )}
 
-                                    {/* VTU Scraper Card */}
-                                    <section className="bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800/50 transition-all hover:shadow-2xl hover:border-blue-500/30 relative overflow-hidden group">
-                                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[80px] -mr-32 -mt-32" />
-                                        
-                                        <div className="flex items-center justify-between mb-8">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center shadow-inner">
-                                                    <Globe size={24} />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">University Portal Link</h3>
-                                                    <p className="text-xs font-medium text-slate-500">Live scraping engine for VTU result archives</p>
-                                                </div>
-                                            </div>
-                                            <div className="px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-widest">
-                                                Active Stream
-                                            </div>
-                                        </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-
-                                            <div className="space-y-2 md:col-span-1">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">USN Pattern</label>
-                                                <div className="relative group">
-                                                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-                                                    <input
-                                                        type="text"
-                                                        value={usnPrefix}
-                                                        onChange={(e) => setUsnPrefix(e.target.value)}
-                                                        placeholder="1JS21CS"
-                                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50/50 dark:bg-[#0b0f19]/50 border-2 border-transparent focus:border-blue-500 outline-none transition-all font-mono text-sm shadow-inner"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2 md:col-span-1">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Semester Cycle</label>
-                                                <select
-                                                    value={sem}
-                                                    onChange={(e) => setSem(e.target.value)}
-                                                    className="w-full px-4 py-3 rounded-xl bg-slate-50/50 dark:bg-[#0b0f19]/50 border-2 border-transparent focus:border-blue-500 outline-none appearance-none font-bold text-sm text-slate-700 dark:text-slate-200 shadow-inner"
-                                                >
-                                                    <option value="">Sem</option>
-                                                    {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Sem {s}</option>)}
-                                                </select>
-                                            </div>
-                                            <div className="space-y-2 md:col-span-1">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Range Start</label>
-                                                <input
-                                                    type="number"
-                                                    value={usnStart}
-                                                    onChange={(e) => setUsnStart(e.target.value)}
-                                                    placeholder="001"
-                                                    className="w-full px-4 py-3 rounded-xl bg-slate-50/50 dark:bg-[#0b0f19]/50 border-2 border-transparent focus:border-blue-500 outline-none font-bold text-sm shadow-inner"
-                                                />
-                                            </div>
-                                            <div className="space-y-2 md:col-span-1">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Range End</label>
-                                                <input
-                                                    type="number"
-                                                    value={usnEnd}
-                                                    onChange={(e) => setUsnEnd(e.target.value)}
-                                                    placeholder="100"
-                                                    className="w-full px-4 py-3 rounded-xl bg-slate-50/50 dark:bg-[#0b0f19]/50 border-2 border-transparent focus:border-blue-500 outline-none font-bold text-sm shadow-inner"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            onClick={fetchResults}
-                                            className="mt-6 w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-black shadow-lg shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group"
-                                        >
-                                            <Globe size={18} className="group-hover:rotate-180 transition-transform duration-1000" />
-                                            TRIGGER DATA ACQUISITION
-                                        </button>
-                                    </section>
 
                                     {/* Conversion Card */}
                                     <section className="bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-xl rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800/50 group relative overflow-hidden transition-all hover:border-teal-500/30">
