@@ -7,6 +7,16 @@ resolution-markers = [
     "python_full_version < '3.13'",
 ]
 
+[manifest]
+members = [
+    "acatrack-rust",
+    "backend",
+]
+
+[[package]]
+name = "acatrack-rust"
+source = { editable = "acatrack_rust" }
+
 [[package]]
 name = "aiosqlite"
 version = "0.22.1"
@@ -116,6 +126,7 @@ name = "backend"
 version = "2.0.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "acatrack-rust" },
     { name = "aiosqlite" },
     { name = "alembic" },
     { name = "annotated-types" },
@@ -254,6 +265,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "acatrack-rust", editable = "acatrack_rust" },
     { name = "aiosqlite", specifier = ">=0.21.0" },
     { name = "alembic", specifier = "==1.17.0" },
     { name = "annotated-types", specifier = "==0.7.0" },

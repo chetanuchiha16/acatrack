@@ -130,11 +130,20 @@ dependencies = [
     "websockets==15.0.1",
     "wsproto==1.2.0",
     "yarl==1.22.0",
+    "acatrack-rust",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[tool.uv.workspace]
+members = [
+    "acatrack_rust",
+]
+
+[tool.uv.sources]
+acatrack-rust = { workspace = true, editable = true }
 
 [dependency-groups]
 dev = [
