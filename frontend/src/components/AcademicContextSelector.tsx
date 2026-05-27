@@ -14,16 +14,18 @@ const AcademicContextSelector: React.FC = () => {
     const semesters = ['sem1', 'sem2', 'sem3', 'sem4', 'sem5', 'sem6', 'sem7', 'sem8'];
     
     // Filter sections based on teacher's assignments for the active semester
-    const semAssignments = assignments.filter(
-        a => a.semester === semester && a.section_name
-    );
-    const assignedSections = Array.from(
-        new Set(semAssignments.map(a => a.section_name as string))
-    ).sort();
+    const sections = React.useMemo(() => {
+        const semAssignments = assignments.filter(
+            a => a.semester === semester && a.section_name
+        );
+        const assignedSections = Array.from(
+            new Set(semAssignments.map(a => a.section_name as string))
+        ).sort();
 
-    const sections = assignedSections.length > 0
-        ? assignedSections
-        : ['ALL', 'A', 'B', 'C', 'D'];
+        return assignedSections.length > 0
+            ? assignedSections
+            : ['ALL', 'A', 'B', 'C', 'D'];
+    }, [assignments, semester]);
 
     // Self-healing: auto-select the first allowed section if the current one is not allowed
     useEffect(() => {
