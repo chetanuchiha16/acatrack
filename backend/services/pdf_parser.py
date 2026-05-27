@@ -244,7 +244,7 @@ def process_pdfs(
                     continue
 
                 usn = raw_row.get("student_usn", "?")
-                
+
                 # Print Rust Engine trace logs
                 rust_logs = raw_row.get("logs", [])
                 if rust_logs:
@@ -252,8 +252,14 @@ def process_pdfs(
                     for log_line in rust_logs:
                         logger.info(f"      → {log_line}")
 
-                found = [c for c in subject_codes if raw_row.get(f"{c}_INTERNALS") is not None]
-                missed = [c for c in subject_codes if raw_row.get(f"{c}_INTERNALS") is None]
+                found = [
+                    c
+                    for c in subject_codes
+                    if raw_row.get(f"{c}_INTERNALS") is not None
+                ]
+                missed = [
+                    c for c in subject_codes if raw_row.get(f"{c}_INTERNALS") is None
+                ]
 
                 if not missed:
                     perfect += 1
@@ -277,7 +283,11 @@ def process_pdfs(
 
             logger.info(
                 f"📊 Rust summary: {perfect}/{total_pdfs} PDFs had perfect subject detection"
-                + (" ✅" if perfect == total_pdfs else " ⚠️  — check missed subjects above")
+                + (
+                    " ✅"
+                    if perfect == total_pdfs
+                    else " ⚠️  — check missed subjects above"
+                )
             )
 
             # Signal 100% progress
@@ -286,7 +296,6 @@ def process_pdfs(
                     progress_callback(total_pdfs, total_pdfs)
                 except Exception as cb_err:
                     logger.warning(f"Progress callback failed: {cb_err}")
-
 
         # ── Slow path: legacy Python sequential engine (fallback) ─────────────────
         else:
