@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, Cookie
+from fastapi import APIRouter, Query, Cookie, Request
 from fastapi.responses import JSONResponse, Response
 from cache_config import cache
 from services.university_service import University
@@ -17,6 +17,7 @@ router = APIRouter(tags=["university"])
 @router.get("/auth/Staff/overall_res")
 @cache(expire=3600)
 async def get_academic_performance(
+    request: Request,
     semester: str | None = Query(None),
     show_toppers: bool = Query(False),
     show_failed: bool = Query(False),
@@ -32,6 +33,9 @@ async def get_academic_performance(
 
         payload = decode_jwt(access_token)
         by = payload.get("batch_year") if payload else None
+
+    from utils.helpers import verify_teacher_section_access
+    await verify_teacher_section_access(db, request, section, by)
 
     try:
         university = University(session=db, batch_year=by)
@@ -74,6 +78,7 @@ async def get_academic_performance(
 @cache(expire=3600)
 async def get_report(
     semester: str,
+    request: Request,
     batch_year: int | None = Query(None),
     section: str | None = Query(None),
     access_token: str | None = Cookie(None),
@@ -85,6 +90,9 @@ async def get_report(
 
         payload = decode_jwt(access_token)
         by = payload.get("batch_year") if payload else None
+
+    from utils.helpers import verify_teacher_section_access
+    await verify_teacher_section_access(db, request, section, by)
 
     university = University(session=db, batch_year=by)
     pdf_bytes = await create_university_report_async(
@@ -98,3 +106,4 @@ async def get_report(
             "Content-Disposition": f'attachment; filename="{semester}_report.pdf"'
         },
     )
+
