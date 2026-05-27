@@ -1,6 +1,6 @@
 # Makefile for Student Result Project
 
-.PHONY: help install backend frontend run test benchmark load-test clean docker-build docker-up docker-down docker-logs docker-status
+.PHONY: help install backend frontend run test benchmark load-test clean docker-build docker-up docker-down docker-logs docker-status ci fix
 
 # Default target
 help:
@@ -10,6 +10,8 @@ help:
 	@echo "  make frontend     - Run the Vite frontend locally"
 	@echo "  make run          - Run both backend and frontend locally"
 	@echo "  make test         - Run backend tests"
+	@echo "  make ci           - Run all CI/CD quality gates locally (lint, typecheck, build, test)"
+	@echo "  make fix          - Automatically fix lint and format errors on both backend and frontend"
 	@echo "  make benchmark    - Run the python benchmark script"
 	@echo "  make load-test    - Run the javascript load test"
 	@echo "  make docker-build - Build docker images"
@@ -50,6 +52,31 @@ run:
 test:
 	@echo "Running backend tests..."
 	cd backend && uv run pytest
+
+# Run all local CI/CD gates consecutively
+ci:
+	@echo "=== [1/6] Running Backend Lint Checks (Ruff) ==="
+	cd backend && uv run ruff check .
+	@echo "=== [2/6] Running Backend Format Checks (Ruff) ==="
+	cd backend && uv run ruff format --check .
+	@echo "=== [3/6] Running Backend Tests (Pytest) ==="
+	cd backend && uv run pytest --tb=short -q
+	@echo "=== [4/6] Running Frontend Lint Checks (ESLint) ==="
+	cd frontend && npm run lint
+	@echo "=== [5/6] Running Frontend TypeScript Checks (tsc) ==="
+	cd frontend && npx tsc --noEmit
+	@echo "=== [6/6] Running Frontend Production Build (Vite) ==="
+	cd frontend && npm run build
+	@echo "🎉 All local CI/CD quality gates passed successfully! Safe to commit and open a PR. ✅"
+
+# Automatically fix linting and formatting issues
+fix:
+	@echo "=== Fixing Backend Linting & Formatting (Ruff) ==="
+	cd backend && uv run ruff check . --fix
+	cd backend && uv run ruff format .
+	@echo "=== Fixing Frontend Linting & Formatting (ESLint) ==="
+	cd frontend && npx eslint . --fix
+	@echo "🎉 All auto-fixable linting and formatting issues resolved! ✅"
 
 # Run benchmark
 benchmark:

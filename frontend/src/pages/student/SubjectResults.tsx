@@ -54,7 +54,11 @@ const SubjectResults: React.FC<SubjectResultsProps> = ({ batchYear }) => {
             const res = await getSubjectResultsAuthStaffSubResGet({
                 query: { semester, subject, batch_year: parseInt(batchYear, 10) }
             });
-            if (res.data) setData(res.data as unknown as SubjectData);
+            if (res.data) {
+                setData(res.data as unknown as SubjectData);
+            } else {
+                setData(null);
+            }
         } catch (error) {
             console.error("Failed to fetch subject data:", error);
             setData(null);

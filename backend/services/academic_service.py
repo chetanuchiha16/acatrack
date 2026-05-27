@@ -237,6 +237,34 @@ class AcademicService:
 
         await session.commit()
 
+    @staticmethod
+    async def get_assignments_by_batch(session: AsyncSession, batch_year: int):
+        """Retrieves all subject assignments for a given batch year, including subject, section, and teacher relationships."""
+        from sqlalchemy.orm import selectinload
+
+        stmt = (
+            select(SubjectAssignment)
+            .where(SubjectAssignment.batch_year == batch_year)
+            .options(
+                selectinload(SubjectAssignment.subject),
+                selectinload(SubjectAssignment.section),
+                selectinload(SubjectAssignment.teacher),
+            )
+        )
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
+    @staticmethod
+    async def delete_assignment(session: AsyncSession, assignment_id: int):
+        """Deletes a subject assignment by its primary key ID."""
+        stmt = select(SubjectAssignment).where(SubjectAssignment.id == assignment_id)
+        result = await session.execute(stmt)
+        assignment = result.scalar_one_or_none()
+        if not assignment:
+            raise ValueError(f"Assignment with ID {assignment_id} not found")
+        await session.delete(assignment)
+        await session.commit()
+
 
 # ============================================================
 # Batch Lifecycle Service
