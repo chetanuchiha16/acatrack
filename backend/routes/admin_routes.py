@@ -602,6 +602,51 @@ async def list_sections(
     return [{"id": s.id, "name": s.name, "batch_year": s.batch_year} for s in sections]
 
 
+@router.get("/list-assignments")
+async def list_assignments(
+    batch_year: int = Query(...),
+    x_admin_secret: str | None = Header(None),
+    db: AsyncSession = Depends(get_db),
+):
+    if not _check_secret(x_admin_secret):
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+
+    assignments = await AcademicService.get_assignments_by_batch(db, batch_year)
+    return [
+        {
+            "id": a.id,
+            "teacher_username": a.teacher_username,
+            "teacher_name": a.teacher.name if a.teacher else a.teacher_username,
+            "subject_code": a.subject_code,
+            "subject_name": a.subject.subject_name if a.subject else a.subject_code,
+            "section_id": a.section_id,
+            "section_name": a.section.name if a.section else f"ID: {a.section_id}",
+            "semester": a.semester,
+            "batch_year": a.batch_year,
+        }
+        for a in assignments
+    ]
+
+
+@router.delete("/unassign-subject/{assignment_id}")
+async def unassign_subject(
+    assignment_id: int,
+    batch_year: int = Query(...),
+    x_admin_secret: str | None = Header(None),
+    db: AsyncSession = Depends(get_db),
+):
+    if not _check_secret(x_admin_secret):
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+
+    try:
+        await AcademicService.delete_assignment(db, assignment_id)
+        await BatchLifecycleService.refresh_counts_and_status(db, batch_year)
+        return {"status": "success", "message": "Subject assignment deleted"}
+    except ValueError as e:
+        return JSONResponse(content={"error": str(e)}, status_code=404)
+
+
+
 # ============================================================
 # Batch Lifecycle Endpoints
 # ============================================================
