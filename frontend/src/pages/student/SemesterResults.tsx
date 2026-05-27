@@ -65,7 +65,11 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
         setData(null);
         try {
             const res = await getSemesterResultsAuthStaffSemResGet({
-                query: { semester: selected, batch_year: parseInt(batchYear, 10) }
+                query: { 
+                    semester: selected, 
+                    batch_year: parseInt(batchYear, 10),
+                    section: section || undefined
+                }
             });
             if (res.error) {
                 const errorData = res.error as { error?: string };
@@ -86,7 +90,10 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
         try {
             const res = await downloadSemesterReportAuthStaffSemResReportSemesterGet({
                 path: { semester },
-                query: { batch_year: parseInt(batchYear, 10) }
+                query: { 
+                    batch_year: parseInt(batchYear, 10),
+                    section: section || undefined
+                }
             });
             if (res.error) {
                 throw new Error("Failed to fetch PDF");

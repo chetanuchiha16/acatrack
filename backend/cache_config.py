@@ -36,6 +36,10 @@ def _make_key(prefix: str, args: tuple, kwargs: dict) -> str:
             continue  # Session
         if hasattr(a, "url"):
             key_parts.append(str(a.url))
+            if hasattr(a, "headers"):
+                auth = a.headers.get("Authorization")
+                if auth:
+                    key_parts.append(f"auth={auth}")
         else:
             key_parts.append(str(a))
     for k, v in sorted(kwargs.items()):
@@ -43,6 +47,10 @@ def _make_key(prefix: str, args: tuple, kwargs: dict) -> str:
             continue
         if hasattr(v, "url"):
             key_parts.append(f"{k}={v.url}")
+            if hasattr(v, "headers"):
+                auth = v.headers.get("Authorization")
+                if auth:
+                    key_parts.append(f"auth={auth}")
         else:
             key_parts.append(f"{k}={v}")
 

@@ -84,9 +84,6 @@ async def verify_teacher_section_access(
       in the database for the requested section and batch year.
     - Raises a FastAPI HTTP 403 Forbidden exception if unauthorized.
     """
-    if not requested_section_name:
-        return  # No specific section requested; global view allowed (e.g. university-wide calculations)
-
     payload = get_jwt_payload_from_request(request)
     if not payload:
         from fastapi import HTTPException, status
@@ -99,10 +96,16 @@ async def verify_teacher_section_access(
     if who == "Admin":
         return  # Admin bypass
 
-    if who == "Teacher":
+    if who in ("Teacher", "Staff"):
+        from fastapi import HTTPException, status
+        if not requested_section_name or requested_section_name.upper() == "ALL":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access Denied: You must specify a section that you are assigned to teach."
+            )
+
         from sqlalchemy.future import select
         from models.schema import SubjectAssignment, Section
-        from fastapi import HTTPException, status
 
         teacher_username = payload.get("id")
         batch_year = requested_batch_year or payload.get("batch_year")
@@ -141,4 +144,77 @@ async def verify_teacher_section_access(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Access Denied: You do not teach any classes in section '{requested_section_name}'."
             )
+
+
+async def verify_teacher_student_access(
+    db,
+    request: Request,
+    student_usn: str,
+    batch_year: int
+) -> None:
+    """
+    Verifies if a teacher has authorization to view a specific student's details.
+    - If the user is an Admin, access is globally permitted.
+    - If the user is a Teacher/Staff, they must EITHER:
+      a) Be the active Mentor for this student (matching mentor_id).
+      b) Teach at least one class in the student's assigned Section (via SubjectAssignment).
+    - Raises a FastAPI HTTP 403 Forbidden exception if unauthorized.
+    """
+    payload = get_jwt_payload_from_request(request)
+    if not payload:
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or not logged in"
+        )
+
+    who = payload.get("who")
+    if who == "Admin":
+        return  # Admin bypass
+
+    if who in ("Teacher", "Staff"):
+        from fastapi import HTTPException, status
+        from sqlalchemy.future import select
+        from models.schema import StudentAuth, SubjectAssignment, Section
+
+        teacher_username = payload.get("id")
+        teacher_mentor_id = payload.get("mentor_id")
+
+        # 1. Fetch the student's section_id and mentor_id
+        stmt = select(StudentAuth.section_id, StudentAuth.mentor_id).where(
+            StudentAuth.usn == student_usn,
+            StudentAuth.batch_year == batch_year
+        )
+        res = await db.execute(stmt)
+        student_info = res.first()
+
+        if not student_info:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Student with USN '{student_usn}' not found in batch {batch_year}."
+            )
+
+        section_id, student_mentor_id = student_info
+
+        # Check A: Is this the teacher's mentee?
+        if teacher_mentor_id is not None and student_mentor_id == teacher_mentor_id:
+            return  # Authorized as Mentor!
+
+        # Check B: Does the teacher teach a subject in the student's section?
+        if section_id is not None:
+            assign_stmt = select(SubjectAssignment.id).where(
+                SubjectAssignment.teacher_username == teacher_username,
+                SubjectAssignment.section_id == section_id,
+                SubjectAssignment.batch_year == batch_year
+            )
+            assign_res = await db.execute(assign_stmt)
+            has_assignment = assign_res.scalar_one_or_none() is not None
+            if has_assignment:
+                return  # Authorized as Subject Teacher!
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access Denied: You do not mentor this student nor teach their section."
+        )
+
 
