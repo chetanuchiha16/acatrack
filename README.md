@@ -63,7 +63,7 @@ AcaTrack has undergone a significant architectural transformation to reach its c
     *   **Strict Type Safety**: Migrated the entire frontend to **TypeScript** with strict null checks and centralized interface definitions.
     *   **State-Driven Authentication**: Refactored staff login to utilize a dynamic batch filter in the dashboard, replacing static legacy selections.
     *   **Performance Engineering**: Integrated **Redis caching**, resolved N+1 query issues, and switched to **uv** for lightning-fast package resolution.
-    *   **High-Performance Rust Core**: Replaced the sequential, CPU-bound Python PDF parsing bottleneck with a native parallel **Rust engine (PyO3 + Rayon)**, slashing background queue durations by **38.4x** (21.78 min → 34.06 seconds).
+    *   **High-Performance Standalone Rust Core**: Extracted, modularized, and published our native parallel **Rust PDF parsing engine ([acatrack-pdf-parser-rs](https://github.com/chetanuchiha16/acatrack-pdf-parser-rs))** directly to **PyPI**, delivering a **38.4x** ingestion speedup (from 21.78 min down to 34.06 seconds for 1,300+ documents) with zero local compiler toolchain dependencies.
     *   **UI/UX Modernization**: Transitioned to a **Bento-box dashboard layout**, implemented **code-splitting** (React.lazy), and redesigned result views with Lucide icons.
     *   **Containerization**: Implemented **Docker** and **Docker Compose** for standardized deployment across all environments.
 
@@ -98,7 +98,7 @@ AcaTrack integrates advanced AI capabilities to move beyond simple data storage:
 The system features robust tools for handling complex academic data:
 
 *   **Standalone Desktop Scraping**: Leverage our dedicated, native Go + Wails cross-platform **[VTU Result Scraper](https://github.com/chetanuchiha16/result-scraper)** for high-volume local scraping, effortless CAPTCHA resolution, and local PDF packaging.
-*   **PDF to Data Conversion**: Blazing-fast parallel extraction using our custom compiled, embedded **Rust engine (`acatrack-rust` via PyO3 & Rayon)**, delivering a **38.4x** performance boost over sequential Python engines.
+*   **PDF to Data Conversion**: Blazing-fast parallel extraction using our custom compiled, standalone **Rust engine ([acatrack-pdf-parser-rs](https://github.com/chetanuchiha16/acatrack-pdf-parser-rs) via PyO3 & Rayon)**, published directly to **PyPI** for zero-dependency high-speed ingestion.
 *   **Excel Ingestion**: Bulk upload capabilities for student records, staff lists, and subject mappings with automated validation.
 
 ---
