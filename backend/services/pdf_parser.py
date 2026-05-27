@@ -187,7 +187,7 @@ def extract_from_pdf(pdf_path, subject_codes, columns):
                 student_data[f"{code}_CREDITS"] = credit_val
 
                 total_marks += total
-                if result.lower() == "pass":
+                if result.lower() in ("pass", "p"):
                     total_credits += credit_val
                 else:
                     failed_subjects += 1
@@ -223,7 +223,7 @@ def process_pdfs(
         total_pdfs = len(pdf_files)
         pdf_paths = [os.path.join(pdf_folder, f) for f in pdf_files]
 
-        # ── Fast path: Rust parallel engine ───────────────────────────────────────
+        # ── Fast path: Rust parallel engine (pdfsink-rs table extraction + Rayon) ──
         if RUST_ENGINE_AVAILABLE:
             logger.info(f"🦀 Using Rust parallel engine for {total_pdfs} PDFs...")
             t_rust_start = time.perf_counter()
@@ -236,14 +236,57 @@ def process_pdfs(
                 f"({elapsed / total_pdfs:.4f}s per PDF)"
             )
 
-            rows = [r for r in raw_rows if r is not None]
+            rows = []
+            perfect = 0
+            for file, raw_row in zip(pdf_files, raw_rows):
+                if raw_row is None:
+                    logger.warning(f"   ⚠️  [{file}] Rust returned None — skipping")
+                    continue
 
-            # Signal 100% progress immediately after Rust finishes
+                usn = raw_row.get("student_usn", "?")
+                
+                # Print Rust Engine trace logs
+                rust_logs = raw_row.get("logs", [])
+                if rust_logs:
+                    logger.info(f"   📋 [Rust Engine logs for {usn}]:")
+                    for log_line in rust_logs:
+                        logger.info(f"      → {log_line}")
+
+                found = [c for c in subject_codes if raw_row.get(f"{c}_INTERNALS") is not None]
+                missed = [c for c in subject_codes if raw_row.get(f"{c}_INTERNALS") is None]
+
+                if not missed:
+                    perfect += 1
+                    logger.info(
+                        f"   ✅ [{usn}] Rust detected ALL {len(found)}/{len(subject_codes)} subjects"
+                    )
+                else:
+                    logger.warning(
+                        f"   ⚠️  [{usn}] Rust detected {len(found)}/{len(subject_codes)} subjects"
+                        f" — MISSED: {missed}"
+                    )
+
+                # Backfill credits
+                sem = raw_row.get("SEMESTER", "")
+                for code in subject_codes:
+                    cr_key = f"{code}_CREDITS"
+                    if cr_key not in raw_row or raw_row.get(cr_key) is None:
+                        raw_row[cr_key] = sem_credits.get(f"sem{sem}", {}).get(code, 0)
+
+                rows.append(raw_row)
+
+            logger.info(
+                f"📊 Rust summary: {perfect}/{total_pdfs} PDFs had perfect subject detection"
+                + (" ✅" if perfect == total_pdfs else " ⚠️  — check missed subjects above")
+            )
+
+            # Signal 100% progress
             if progress_callback:
                 try:
                     progress_callback(total_pdfs, total_pdfs)
                 except Exception as cb_err:
                     logger.warning(f"Progress callback failed: {cb_err}")
+
 
         # ── Slow path: legacy Python sequential engine (fallback) ─────────────────
         else:
