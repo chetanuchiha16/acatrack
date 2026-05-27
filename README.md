@@ -63,7 +63,7 @@ AcaTrack has undergone a significant architectural transformation to reach its c
     *   **Strict Type Safety**: Migrated the entire frontend to **TypeScript** with strict null checks and centralized interface definitions.
     *   **State-Driven Authentication**: Refactored staff login to utilize a dynamic batch filter in the dashboard, replacing static legacy selections.
     *   **Performance Engineering**: Integrated **Redis caching**, resolved N+1 query issues, and switched to **uv** for lightning-fast package resolution.
-    *   **High-Performance Rust Core**: Replaced the sequential, CPU-bound Python PDF parsing bottleneck with a native parallel **Rust engine (PyO3 + Rayon)**, slashing background queue durations by **8.06x** (21.78 min → 2.70 min).
+    *   **High-Performance Rust Core**: Replaced the sequential, CPU-bound Python PDF parsing bottleneck with a native parallel **Rust engine (PyO3 + Rayon)**, slashing background queue durations by **38.4x** (21.78 min → 34.06 seconds).
     *   **UI/UX Modernization**: Transitioned to a **Bento-box dashboard layout**, implemented **code-splitting** (React.lazy), and redesigned result views with Lucide icons.
     *   **Containerization**: Implemented **Docker** and **Docker Compose** for standardized deployment across all environments.
 
@@ -98,7 +98,7 @@ AcaTrack integrates advanced AI capabilities to move beyond simple data storage:
 The system features robust tools for handling complex academic data:
 
 *   **Standalone Desktop Scraping**: Leverage our dedicated, native Go + Wails cross-platform **[VTU Result Scraper](https://github.com/chetanuchiha16/result-scraper)** for high-volume local scraping, effortless CAPTCHA resolution, and local PDF packaging.
-*   **PDF to Data Conversion**: Blazing-fast parallel extraction using our custom compiled, embedded **Rust engine (`acatrack-rust` via PyO3 & Rayon)**, delivering an **8.06x** performance boost over sequential Python engines.
+*   **PDF to Data Conversion**: Blazing-fast parallel extraction using our custom compiled, embedded **Rust engine (`acatrack-rust` via PyO3 & Rayon)**, delivering a **38.4x** performance boost over sequential Python engines.
 *   **Excel Ingestion**: Bulk upload capabilities for student records, staff lists, and subject mappings with automated validation.
 
 ---
@@ -205,10 +205,10 @@ The following metrics show the dramatic performance boost after migrating the CP
 
 | Metric | Sequential Python (pdfplumber) | **Parallel Rust Core (PyO3 + Rayon)** | **Improvement** |
 | :--- | :--- | :--- | :--- |
-| **Total Parsing Duration** | 21.78 minutes | **2.70 minutes** | **8.06x Faster** 🚀 |
-| **Speed per PDF** | 0.9992 seconds | **0.1240 seconds** | **8.06x Faster** 🚀 |
-| **Upload p(95) Latency** | 10,598 ms | **4,667 ms** | **2.27x Faster** ⚡ |
-| **Net RAM Impact** | +268.48 MB | **+174.90 MB** | **35% Lower Memory** 📉 |
+| **Total Parsing Duration** | 21.78 minutes | **34.06 seconds (~0.57 min)** | **38.4x Faster** 🚀 |
+| **Speed per PDF** | 0.9992 seconds | **0.0260 seconds** | **38.4x Faster** 🚀 |
+| **Upload p(95) Latency** | 10,598 ms | **5,534 ms** | **1.91x Faster** ⚡ |
+| **Net RAM Impact** | +268.48 MB | **+76.43 MB** | **71.5% Lower Memory** 📉 |
 
 *   **Optimized Execution**: Migrated to **FastAPI** with **Uvloop** and **Httptools**, delivering significantly higher throughput compared to the legacy Flask implementation.
 *   **Advanced Caching**: Implemented **Redis-based caching** for expensive academic result computations and university data fetching.
