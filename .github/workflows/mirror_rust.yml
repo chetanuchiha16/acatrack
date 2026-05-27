@@ -1,0 +1,26 @@
+name: ⚡ Mirror Rust PDF Parser to Standalone Repo
+
+on:
+  push:
+    branches: [main, master, feat/misc] # Triggers when commits are pushed to these branches
+    paths:
+      - 'backend/acatrack_rust/**' # Triggers only when changes are made inside the Rust engine folder
+
+jobs:
+  mirror_rust_engine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Monorepo
+        uses: actions/checkout@v4
+
+      - name: 🚀 Push Rust Engine to Standalone Repo
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.MIRROR_SECRET }} # Secret token added in GitHub Repo Settings
+        with:
+          source-directory: 'backend/acatrack_rust'
+          destination-github-username: 'chetanuchiha16'
+          destination-repository-name: 'acatrack-pdf-parser-rs'
+          target-branch: 'main'
+          user-email: 'chetanuchiha16@gmail.com'
+          commit-message: 'sync: mirror latest rust engine updates from acatrack monorepo'
