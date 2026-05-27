@@ -75,7 +75,7 @@ async def verify_teacher_section_access(
     db,
     request: Request,
     requested_section_name: str | None,
-    requested_batch_year: int | None = None
+    requested_batch_year: int | None = None,
 ) -> None:
     """
     Enforces section-based authorization boundaries for staff/teacher queries.
@@ -87,9 +87,10 @@ async def verify_teacher_section_access(
     payload = get_jwt_payload_from_request(request)
     if not payload:
         from fastapi import HTTPException, status
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Session expired or not logged in"
+            detail="Session expired or not logged in",
         )
 
     who = payload.get("who")
@@ -98,10 +99,11 @@ async def verify_teacher_section_access(
 
     if who in ("Teacher", "Staff"):
         from fastapi import HTTPException, status
+
         if not requested_section_name or requested_section_name.upper() == "ALL":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access Denied: You must specify a section that you are assigned to teach."
+                detail="Access Denied: You must specify a section that you are assigned to teach.",
             )
 
         from sqlalchemy.future import select
@@ -113,13 +115,12 @@ async def verify_teacher_section_access(
         if not teacher_username or not batch_year:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid session metadata"
+                detail="Invalid session metadata",
             )
 
         # 1. Fetch the section ID matching name & batch year
         section_stmt = select(Section.id).where(
-            Section.name == requested_section_name,
-            Section.batch_year == batch_year
+            Section.name == requested_section_name, Section.batch_year == batch_year
         )
         section_res = await db.execute(section_stmt)
         section_id = section_res.scalar_one_or_none()
@@ -127,14 +128,14 @@ async def verify_teacher_section_access(
         if not section_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Section '{requested_section_name}' not found for batch {batch_year}"
+                detail=f"Section '{requested_section_name}' not found for batch {batch_year}",
             )
 
         # 2. Verify if the teacher has any class assignment in this section
         assign_stmt = select(SubjectAssignment.id).where(
             SubjectAssignment.teacher_username == teacher_username,
             SubjectAssignment.section_id == section_id,
-            SubjectAssignment.batch_year == batch_year
+            SubjectAssignment.batch_year == batch_year,
         )
         assign_res = await db.execute(assign_stmt)
         has_assignment = assign_res.scalar_one_or_none() is not None
@@ -142,15 +143,12 @@ async def verify_teacher_section_access(
         if not has_assignment:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access Denied: You do not teach any classes in section '{requested_section_name}'."
+                detail=f"Access Denied: You do not teach any classes in section '{requested_section_name}'.",
             )
 
 
 async def verify_teacher_student_access(
-    db,
-    request: Request,
-    student_usn: str,
-    batch_year: int
+    db, request: Request, student_usn: str, batch_year: int
 ) -> None:
     """
     Verifies if a teacher has authorization to view a specific student's details.
@@ -163,9 +161,10 @@ async def verify_teacher_student_access(
     payload = get_jwt_payload_from_request(request)
     if not payload:
         from fastapi import HTTPException, status
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Session expired or not logged in"
+            detail="Session expired or not logged in",
         )
 
     who = payload.get("who")
@@ -175,15 +174,14 @@ async def verify_teacher_student_access(
     if who in ("Teacher", "Staff"):
         from fastapi import HTTPException, status
         from sqlalchemy.future import select
-        from models.schema import StudentAuth, SubjectAssignment, Section
+        from models.schema import StudentAuth, SubjectAssignment
 
         teacher_username = payload.get("id")
         teacher_mentor_id = payload.get("mentor_id")
 
         # 1. Fetch the student's section_id and mentor_id
         stmt = select(StudentAuth.section_id, StudentAuth.mentor_id).where(
-            StudentAuth.usn == student_usn,
-            StudentAuth.batch_year == batch_year
+            StudentAuth.usn == student_usn, StudentAuth.batch_year == batch_year
         )
         res = await db.execute(stmt)
         student_info = res.first()
@@ -191,7 +189,7 @@ async def verify_teacher_student_access(
         if not student_info:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Student with USN '{student_usn}' not found in batch {batch_year}."
+                detail=f"Student with USN '{student_usn}' not found in batch {batch_year}.",
             )
 
         section_id, student_mentor_id = student_info
@@ -205,7 +203,7 @@ async def verify_teacher_student_access(
             assign_stmt = select(SubjectAssignment.id).where(
                 SubjectAssignment.teacher_username == teacher_username,
                 SubjectAssignment.section_id == section_id,
-                SubjectAssignment.batch_year == batch_year
+                SubjectAssignment.batch_year == batch_year,
             )
             assign_res = await db.execute(assign_stmt)
             has_assignment = assign_res.scalar_one_or_none() is not None
@@ -214,7 +212,5 @@ async def verify_teacher_student_access(
 
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access Denied: You do not mentor this student nor teach their section."
+            detail="Access Denied: You do not mentor this student nor teach their section.",
         )
-
-

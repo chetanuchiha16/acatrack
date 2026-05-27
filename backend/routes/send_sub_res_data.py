@@ -27,6 +27,7 @@ async def get_subject_results(
 ):
     by = batch_year or get_batch_year_from_request(request)
     from utils.helpers import verify_teacher_section_access
+
     await verify_teacher_section_access(db, request, section, by)
 
     if not semester or not subject:
@@ -57,6 +58,7 @@ async def get_subject_report_pdf(
 ):
     by = batch_year or get_batch_year_from_request(request)
     from utils.helpers import verify_teacher_section_access
+
     await verify_teacher_section_access(db, request, section, by)
 
     if not semester or not subject:
@@ -79,4 +81,3 @@ async def get_subject_report_pdf(
             "Content-Disposition": f'attachment; filename="subject_report_{semester}_{subject}.pdf"'
         },
     )
-

@@ -35,6 +35,7 @@ async def get_academic_performance(
         by = payload.get("batch_year") if payload else None
 
     from utils.helpers import verify_teacher_section_access
+
     await verify_teacher_section_access(db, request, section, by)
 
     try:
@@ -92,6 +93,7 @@ async def get_report(
         by = payload.get("batch_year") if payload else None
 
     from utils.helpers import verify_teacher_section_access
+
     await verify_teacher_section_access(db, request, section, by)
 
     university = University(session=db, batch_year=by)
@@ -106,4 +108,3 @@ async def get_report(
             "Content-Disposition": f'attachment; filename="{semester}_report.pdf"'
         },
     )
-
