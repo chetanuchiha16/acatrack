@@ -79,17 +79,19 @@ const Auth: React.FC = () => {
             const name = payload.name as string;
             const mentor_id = payload.mentor_id as string;
 
-            // 🔹 request FCM token
-            try {
-                const fcmToken = await requestForToken();
-                if (fcmToken) {
-                    await saveFcmTokenStudentUsnFcmTokenPost({
-                        path: { usn: id },
-                        body: { fcm_token: fcmToken }
-                    });
+            // 🔹 request FCM token (Only for Students)
+            if (who === "Student") {
+                try {
+                    const fcmToken = await requestForToken();
+                    if (fcmToken) {
+                        await saveFcmTokenStudentUsnFcmTokenPost({
+                            path: { usn: id },
+                            body: { fcm_token: fcmToken }
+                        });
+                    }
+                } catch (err) {
+                    console.warn("Failed to save FCM token:", err);
                 }
-            } catch (err) {
-                console.warn("Failed to save FCM token:", err);
             }
 
             void navigate(`/auth/${who}/${id}`, {

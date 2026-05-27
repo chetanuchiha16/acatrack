@@ -346,7 +346,7 @@ class AcademicRepository:
         }
 
     async def get_semester_failed_students(
-        self, semester: str, batch_year: int
+        self, semester: str, batch_year: int, section_name: str = None
     ) -> List[Dict[str, Any]]:
         """
         Fetches a list of students who failed at least one subject in the semester.
@@ -377,8 +377,14 @@ class AcademicRepository:
                 AcademicResult.batch_year == batch_year,
                 is_fail,
             )
-            .group_by(StudentAuth.usn)
         )
+
+        if section_name and section_name != "ALL":
+            query = query.join(Section, StudentAuth.section_id == Section.id).where(
+                Section.name == section_name
+            )
+
+        query = query.group_by(StudentAuth.usn)
 
         result = await self.db.execute(query)
         return [

@@ -1535,6 +1535,79 @@ export type ListSectionsAdminListSectionsGetResponses = {
     200: unknown;
 };
 
+export type ListAssignmentsAdminListAssignmentsGetData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+    };
+    url: '/admin/list-assignments';
+};
+
+export type ListAssignmentsAdminListAssignmentsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListAssignmentsAdminListAssignmentsGetError = ListAssignmentsAdminListAssignmentsGetErrors[keyof ListAssignmentsAdminListAssignmentsGetErrors];
+
+export type ListAssignmentsAdminListAssignmentsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UnassignSubjectAdminUnassignSubjectAssignmentIdDeleteData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Admin-Secret
+         */
+        'x-admin-secret'?: string | null;
+    };
+    path: {
+        /**
+         * Assignment Id
+         */
+        assignment_id: number;
+    };
+    query: {
+        /**
+         * Batch Year
+         */
+        batch_year: number;
+    };
+    url: '/admin/unassign-subject/{assignment_id}';
+};
+
+export type UnassignSubjectAdminUnassignSubjectAssignmentIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UnassignSubjectAdminUnassignSubjectAssignmentIdDeleteError = UnassignSubjectAdminUnassignSubjectAssignmentIdDeleteErrors[keyof UnassignSubjectAdminUnassignSubjectAssignmentIdDeleteErrors];
+
+export type UnassignSubjectAdminUnassignSubjectAssignmentIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type GetBatchStatusAdminBatchStatusGetData = {
     body?: never;
     headers?: {
@@ -2762,6 +2835,10 @@ export type DownloadSemesterReportAuthStaffSemResReportSemesterGetData = {
          * Batch Year
          */
         batch_year?: number | null;
+        /**
+         * Section
+         */
+        section?: string | null;
     };
     url: '/auth/Staff/sem_res/report/{semester}';
 };
@@ -2843,40 +2920,6 @@ export type DownloadReportAuthStudentReportFilenameGetResponses = {
      */
     200: unknown;
 };
-
-export type GetStudentChartAuthStudentChartGetData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Usn
-         */
-        usn?: string;
-        /**
-         * Semester
-         */
-        semester?: string;
-    };
-    url: '/auth/Student/chart';
-};
-
-export type GetStudentChartAuthStudentChartGetErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetStudentChartAuthStudentChartGetError = GetStudentChartAuthStudentChartGetErrors[keyof GetStudentChartAuthStudentChartGetErrors];
-
-export type GetStudentChartAuthStudentChartGetResponses = {
-    /**
-     * Successful Response
-     */
-    200: ChartResponse;
-};
-
-export type GetStudentChartAuthStudentChartGetResponse = GetStudentChartAuthStudentChartGetResponses[keyof GetStudentChartAuthStudentChartGetResponses];
 
 export type GetSubjectResultsAuthStaffSubResGetData = {
     body?: never;

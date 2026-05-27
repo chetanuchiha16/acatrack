@@ -5,6 +5,8 @@ import SubjectResults from "../student/SubjectResults";
 import OverallResults from "../student/OverallResults";
 import AcademicContextSelector from "../../components/AcademicContextSelector";
 import useStaffStore from "../../store/useStaffStore";
+import type { StaffAssignment } from "../../store/useStaffStore";
+import { getMyAssignmentsAdminMyAssignmentsGet } from "../../client/sdk.gen";
 
 const StaffResults: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("semester");
@@ -19,15 +21,11 @@ const StaffResults: React.FC = () => {
 
   const fetchAssignments = async () => {
     try {
-      // Use the internal client's request or standard fetch
-      const token = localStorage.getItem("token"); // Assuming token is here
-      const response = await fetch(`/api/admin/my-assignments?batch_year=${batchYear}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const res = await getMyAssignmentsAdminMyAssignmentsGet({
+        query: { batch_year: parseInt(batchYear, 10) }
       });
-      const data = await response.json();
-      if (data.assignments) {
+      const data = res.data as { assignments?: StaffAssignment[] } | undefined;
+      if (data && data.assignments) {
         setAssignments(data.assignments);
       }
     } catch (err) {
@@ -44,7 +42,7 @@ const StaffResults: React.FC = () => {
   return (
     <div className="w-full h-full flex flex-col">
       {/* Top Bar: Context Selector & Tabs */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 flex-shrink-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 flex-shrink-0 relative z-30">
         <AcademicContextSelector />
         
         {/* Modern Segmented Control for Tabs */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   Database, BookOpen, UserCheck, Link, CheckCircle,
   Lock, Loader2, RefreshCw, Users, FileText, ChevronRight, AlertCircle, XCircle,
+  Trash2, Search,
 } from "lucide-react";
 import {
   initBatchAdminInitBatchPost,
@@ -13,6 +14,8 @@ import {
 } from "../../hooks/useAcademicWorkspace";
 import { useStudentDryRun, useSubjectDryRun } from "../../hooks/useDryRunUpload";
 import { StudentDryRunPanel, SubjectDryRunPanel } from "../../components/wizard/DryRunPanel";
+import { client } from "../../client/client.gen";
+
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 interface Props { secret: string; batchYear: number | null; onBatchCreated?: () => void; }
@@ -334,6 +337,21 @@ const AllocationStep: React.FC<{
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
+interface AllocationAssignment {
+  id: number;
+  teacher_name: string;
+  teacher_username: string;
+  subject_name: string;
+  subject_code: string;
+  semester: string;
+  section_name: string;
+}
+
+  const [assignments, setAssignments] = useState<AllocationAssignment[]>([]);
+  const [fetching, setFetching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
+
   // Sync subject list based on selected semester
   const filteredSubjects = subjects.filter(s => s.semester === semester);
 
@@ -344,6 +362,28 @@ const AllocationStep: React.FC<{
     }
   }, [semester, filteredSubjects, subject]);
 
+  const fetchAssignments = async () => {
+    if (!batchYear) return;
+    setFetching(true);
+    try {
+      const res = await client.get({
+        url: "/admin/list-assignments",
+        headers: { "X-Admin-Secret": secret },
+        query: { batch_year: batchYear },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
+      setAssignments(res.data as AllocationAssignment[]);
+    } catch (err) {
+      console.error("Failed to fetch assignments", err);
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAssignments();
+  }, [batchYear, secret]);
+
   const handle = async () => {
     if (!teacher || !subject || !section) return;
     setLoading(true); setMsg(null);
@@ -353,6 +393,10 @@ const AllocationStep: React.FC<{
         query: { teacher_username: teacher, subject_code: subject, section_id: parseInt(section, 10), semester, batch_year: batchYear },
       });
       setMsg({ ok: true, text: "Subject assigned successfully." });
+      setTeacher("");
+      setSubject("");
+      setSection("");
+      fetchAssignments();
       onDone();
     } catch (err) {
       const error = err as { body?: { error?: string }; message?: string };
@@ -362,9 +406,43 @@ const AllocationStep: React.FC<{
     }
   };
 
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this assignment? This will immediately revoke the teacher's access to this section's marks.")) return;
+    setDeleteLoading(id);
+    try {
+      await client.delete({
+        url: `/admin/unassign-subject/${id}`,
+        headers: { "X-Admin-Secret": secret },
+        query: { batch_year: batchYear },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
+      setMsg({ ok: true, text: "Assignment removed successfully." });
+      fetchAssignments();
+      onDone();
+    } catch (err) {
+      const error = err as { response?: { data?: { error?: string } }; message?: string };
+      setMsg({ ok: false, text: error.response?.data?.error || error.message || "Failed to remove assignment" });
+
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
+  const filteredAssignments = assignments.filter(a => {
+    const q = searchQuery.toLowerCase();
+    return (
+      a.teacher_name.toLowerCase().includes(q) ||
+      a.teacher_username.toLowerCase().includes(q) ||
+      a.subject_name.toLowerCase().includes(q) ||
+      a.subject_code.toLowerCase().includes(q) ||
+      a.section_name.toLowerCase().includes(q) ||
+      a.semester.toLowerCase().includes(q)
+    );
+  });
+
   return (
-    <div className="space-y-6 max-w-2xl animate-fadeIn">
-      <div>
+    <div className="space-y-6 max-w-4xl animate-fadeIn">
+      <div className="max-w-2xl">
         <h3 className="text-xl font-black text-slate-800 dark:text-white mb-1">4. Faculty–Subject Allocation</h3>
         <p className="text-sm text-slate-500">Map a registered staff member to a subject, section, and semester.</p>
       </div>
@@ -377,39 +455,139 @@ const AllocationStep: React.FC<{
         />
       )}
 
-      <Field label="Staff Member">
-        <select value={teacher} onChange={e => setTeacher(e.target.value)} className={inputCls("purple")}>
-          <option value="">— Select Staff —</option>
-          {staff.map(s => <option key={s.username} value={s.username}>{s.name} ({s.username})</option>)}
-        </select>
-      </Field>
-      <div className="grid grid-cols-3 gap-4">
-        <Field label="Semester">
-          <select value={semester} onChange={e => setSemester(e.target.value)} className={inputCls("purple")}>
-            {Array.from({ length: 8 }, (_, i) => <option key={i} value={`sem${i + 1}`}>Sem {i + 1}</option>)}
+      <div className="max-w-2xl space-y-6">
+        <Field label="Staff Member">
+          <select value={teacher} onChange={e => setTeacher(e.target.value)} className={inputCls("purple")}>
+            <option value="">— Select Staff —</option>
+            {staff.map(s => <option key={s.username} value={s.username}>{s.name} ({s.username})</option>)}
           </select>
         </Field>
-        <Field label="Subject">
-          <select value={subject} onChange={e => setSubject(e.target.value)} className={inputCls("purple")}>
-            <option value="">— Select Subject —</option>
-            {filteredSubjects.map(s => <option key={s.subject_code} value={s.subject_code}>{s.subject_name} ({s.subject_code})</option>)}
-          </select>
-        </Field>
-        <Field label="Section">
-          <select value={section} onChange={e => setSection(e.target.value)} className={inputCls("purple")}>
-            <option value="">— Section —</option>
-            {sections.map(s => <option key={s.id} value={s.id}>Section {s.name}</option>)}
-          </select>
-        </Field>
+        <div className="grid grid-cols-3 gap-4">
+          <Field label="Semester">
+            <select value={semester} onChange={e => setSemester(e.target.value)} className={inputCls("purple")}>
+              {Array.from({ length: 8 }, (_, i) => <option key={i} value={`sem${i + 1}`}>Sem {i + 1}</option>)}
+            </select>
+          </Field>
+          <Field label="Subject">
+            <select value={subject} onChange={e => setSubject(e.target.value)} className={inputCls("purple")}>
+              <option value="">— Select Subject —</option>
+              {filteredSubjects.map(s => <option key={s.subject_code} value={s.subject_code}>{s.subject_name} ({s.subject_code})</option>)}
+            </select>
+          </Field>
+          <Field label="Section">
+            <select value={section} onChange={e => setSection(e.target.value)} className={inputCls("purple")}>
+              <option value="">— Section —</option>
+              {sections.map(s => <option key={s.id} value={s.id}>Section {s.name}</option>)}
+            </select>
+          </Field>
+        </div>
+        <button onClick={handle} disabled={loading || !teacher || !subject || !section}
+          className={primaryBtn("purple", loading || !teacher || !subject || !section)}>
+          {loading ? <Loader2 size={18} className="animate-spin" /> : <Link size={18} />}
+          Finalize Mapping
+        </button>
       </div>
-      <button onClick={handle} disabled={loading || !teacher || !subject || !section}
-        className={primaryBtn("purple", loading || !teacher || !subject || !section)}>
-        {loading ? <Loader2 size={18} className="animate-spin" /> : <Link size={18} />}
-        Finalize Mapping
-      </button>
+
+      <div className="border-t border-slate-200 dark:border-slate-800 my-8 pt-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h4 className="text-lg font-black text-slate-800 dark:text-white">Current Allocations</h4>
+            <p className="text-xs text-slate-400">View and manage mappings between teachers and classes for batch {batchYear}.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-black px-3 py-1.5 rounded-full">
+              {assignments.length} Mapped
+            </span>
+            <button onClick={fetchAssignments} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" title="Refresh list">
+              <RefreshCw size={16} className={fetching ? "animate-spin" : ""} />
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <div className="relative">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search allocations by teacher, subject, section, or semester..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className={`${inputCls("purple")} pl-12 text-sm`}
+            />
+          </div>
+        </div>
+
+        {fetching && assignments.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+            <Loader2 size={32} className="animate-spin mb-2 text-purple-500" />
+            <p className="text-sm font-semibold">Loading current allocations...</p>
+          </div>
+        ) : filteredAssignments.length === 0 ? (
+          <div className="text-center py-10 bg-slate-50 dark:bg-slate-800/10 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+            <p className="text-sm font-semibold text-slate-400 dark:text-slate-500">
+              {searchQuery ? "No allocations match your search filter." : "No faculty-subject assignments found for this batch."}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-hidden border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-[#1e293b] shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                    <th className="py-4 px-6">Faculty / Staff</th>
+                    <th className="py-4 px-6">Subject</th>
+                    <th className="py-4 px-6 text-center">Semester</th>
+                    <th className="py-4 px-6 text-center">Section</th>
+                    <th className="py-4 px-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  {filteredAssignments.map((a) => (
+                    <tr key={a.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
+                      <td className="py-4 px-6">
+                        <div className="font-bold text-slate-800 dark:text-white">{a.teacher_name}</div>
+                        <div className="text-xs text-slate-400 font-medium">@{a.teacher_username}</div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="font-bold text-slate-800 dark:text-white">{a.subject_name}</div>
+                        <div className="text-xs text-slate-400 font-medium">{a.subject_code}</div>
+                      </td>
+                      <td className="py-4 px-6 text-center">
+                        <span className="inline-block bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-xs px-2.5 py-1 rounded-full uppercase">
+                          {a.semester}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-center">
+                        <span className="inline-block bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs px-2.5 py-1 rounded-full">
+                          Section {a.section_name}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <button
+                          onClick={() => handleDelete(a.id)}
+                          disabled={deleteLoading === a.id}
+                          className="p-2 rounded-xl text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all inline-flex items-center justify-center cursor-pointer"
+                          title="Deallocate Faculty"
+                        >
+                          {deleteLoading === a.id ? (
+                            <Loader2 size={16} className="animate-spin text-rose-500" />
+                          ) : (
+                            <Trash2 size={16} />
+                          )}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
+
 
 // ─── Main Wizard Component ────────────────────────────────────────────────────
 const AcademicSetup: React.FC<Props> = ({ secret, batchYear, onBatchCreated }) => {
