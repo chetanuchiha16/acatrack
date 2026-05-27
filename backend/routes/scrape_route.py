@@ -13,7 +13,9 @@ async def fetch_results_route(body: FetchResultsRequest):
     Deprecated server-side scraping endpoint.
     All result scraping now runs on the local, high-performance Wails desktop application.
     """
-    logger.warning("Attempted to access deprecated server-side Selenium scraping route.")
+    logger.warning(
+        "Attempted to access deprecated server-side Selenium scraping route."
+    )
     return {
         "status": "deprecated",
         "message": (
