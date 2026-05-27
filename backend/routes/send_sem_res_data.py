@@ -67,12 +67,15 @@ async def download_semester_report(
     semester: str,
     request: Request,
     batch_year: int | None = Query(None),
+    section: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     by = batch_year or get_batch_year_from_request(request)
+    from utils.helpers import verify_teacher_section_access
+    await verify_teacher_section_access(db, request, section, by)
 
     university = University(session=db, batch_year=by)
-    pdf_bytes = await generate_sem_pdf_async(semester, university, db)
+    pdf_bytes = await generate_sem_pdf_async(semester, university, db, section_name=section)
 
     return Response(
         content=pdf_bytes,

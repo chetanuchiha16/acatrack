@@ -53,7 +53,11 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
                     show_failed: view === "failed" ? true : undefined
                 }
             });
-            if (res.data) setData(res.data as unknown as StudentResult[]);
+            if (res.data) {
+                setData(res.data as unknown as StudentResult[]);
+            } else {
+                setData([]);
+            }
         } catch (error) {
             console.error("Failed to fetch overall results:", error);
             setData([]);

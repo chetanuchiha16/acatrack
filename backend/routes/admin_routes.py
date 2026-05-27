@@ -12,7 +12,7 @@ import hashlib
 from cryptography.fernet import Fernet
 
 from typing import List, Dict
-from fastapi import APIRouter, UploadFile, File, Header, Query, Body, Depends, Cookie
+from fastapi import APIRouter, UploadFile, File, Header, Query, Body, Depends, Cookie, Request
 from utils.helpers import decode_jwt
 from fastapi.responses import JSONResponse, StreamingResponse
 from logger_config import get_logger
@@ -343,15 +343,18 @@ async def refresh_batch(body: BatchRequest, x_admin_secret: str | None = Header(
 
 @router.get("/my-assignments")
 async def get_my_assignments(
-    batch_year: int = Query(...), access_token: str | None = Cookie(None)
+    request: Request,
+    batch_year: int = Query(...),
+    access_token: str | None = Cookie(None)
 ):
     from models.schema import SubjectAssignment
     from sqlalchemy.orm import selectinload
+    from utils.helpers import get_jwt_payload_from_request
 
-    if not access_token:
-        return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
+    payload = get_jwt_payload_from_request(request)
+    if not payload and access_token:
+        payload = decode_jwt(access_token)
 
-    payload = decode_jwt(access_token)
     if not payload or payload.get("who") != "Staff":
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
 
@@ -364,7 +367,10 @@ async def get_my_assignments(
                 SubjectAssignment.teacher_username == username,
                 SubjectAssignment.batch_year == batch_year,
             )
-            .options(selectinload(SubjectAssignment.subject))
+            .options(
+                selectinload(SubjectAssignment.subject),
+                selectinload(SubjectAssignment.section)
+            )
         )
 
         result = await session.execute(stmt)
@@ -376,6 +382,7 @@ async def get_my_assignments(
                     "subject_code": a.subject_code,
                     "subject_name": a.subject.subject_name,
                     "section_id": a.section_id,
+                    "section_name": a.section.name if a.section else f"ID: {a.section_id}",
                     "semester": a.semester,
                 }
                 for a in assignments

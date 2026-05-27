@@ -2,11 +2,12 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { listBatchesBatchesGet } from "../client/sdk.gen";
 
-interface StaffAssignment {
+export interface StaffAssignment {
     teacher_username?: string;
     subject_code?: string;
     subject_name?: string;
     section_id?: number;
+    section_name?: string;
     semester?: string;
     batch_year?: number;
 }

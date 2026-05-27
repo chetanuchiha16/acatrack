@@ -1,12 +1,30 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Calendar, Layers, Hash, ChevronDown } from 'lucide-react';
 import useStaffStore from '../store/useStaffStore';
 
 const AcademicContextSelector: React.FC = () => {
-    const { batchYear, semester, section, setSemester, setSection } = useStaffStore();
+    const { batchYear, semester, section, setSemester, setSection, assignments } = useStaffStore();
     
     const semesters = ['sem1', 'sem2', 'sem3', 'sem4', 'sem5', 'sem6', 'sem7', 'sem8'];
-    const sections = ['ALL', 'A', 'B', 'C', 'D'];
+    
+    // Filter sections based on teacher's assignments for the active semester
+    const semAssignments = assignments.filter(
+        a => a.semester === semester && a.section_name
+    );
+    const assignedSections = Array.from(
+        new Set(semAssignments.map(a => a.section_name as string))
+    ).sort();
+
+    const sections = assignedSections.length > 0
+        ? assignedSections
+        : ['ALL', 'A', 'B', 'C', 'D'];
+
+    // Self-healing: auto-select the first allowed section if the current one is not allowed
+    useEffect(() => {
+        if (sections.length > 0 && !sections.includes(section)) {
+            setSection(sections[0]);
+        }
+    }, [sections, section, setSection]);
 
     return (
         <div className="flex flex-wrap items-center gap-3 p-1.5 bg-gray-100/50 dark:bg-gray-900/30 rounded-2xl border border-gray-200/50 dark:border-gray-800/50 backdrop-blur-sm shadow-inner">

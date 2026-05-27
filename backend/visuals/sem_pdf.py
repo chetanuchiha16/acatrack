@@ -19,7 +19,7 @@ styles = getSampleStyleSheet()
 normal_style = styles["Normal"]
 
 
-async def generate_sem_pdf_async(selected_semester, university, session):
+async def generate_sem_pdf_async(selected_semester, university, session, section_name=None):
     """
     Async version of semester PDF generation.
     FAANG-level optimization: Uses repository for SQL-level aggregations
@@ -32,24 +32,24 @@ async def generate_sem_pdf_async(selected_semester, university, session):
 
         # 1. Fetch Summary Stats for the table using ONE SQL QUERY
         subject_stats = await repo.get_semester_summary_stats(
-            selected_semester, university.batch_year
+            selected_semester, university.batch_year, section_name
         )
         if not subject_stats:
             return b""
 
         # 2. Fetch toppers using optimized SQL-level sort
         toppers = await repo.get_toppers_by_percentage(
-            selected_semester, university.batch_year
+            selected_semester, university.batch_year, section_name=section_name
         )
 
         # 3. Fetch cohort aggregate stats using SQL
         cohort_stats = await repo.get_semester_cohort_stats(
-            selected_semester, university.batch_year
+            selected_semester, university.batch_year, section_name
         )
 
         # 4. Fetch failed students list using optimized SQL query
         failed_students = await repo.get_semester_failed_students(
-            selected_semester, university.batch_year
+            selected_semester, university.batch_year, section_name=section_name
         )
 
         pdf_buffer = io.BytesIO()
