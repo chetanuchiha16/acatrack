@@ -41,7 +41,7 @@ const StaffResults: React.FC = () => {
   return (
     <div className="w-full h-full flex flex-col">
       {/* Top Bar: Context Selector & Tabs */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 flex-shrink-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 flex-shrink-0 relative z-30">
         <AcademicContextSelector />
         
         {/* Modern Segmented Control for Tabs */}
