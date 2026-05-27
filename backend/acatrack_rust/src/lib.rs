@@ -223,29 +223,26 @@ fn parse_pdf_to_record(pdf_path: &str, subject_codes: &[String]) -> StudentRecor
                         }
                     }
 
-                    let mut nums = Vec::new();
                     if let Some(code_idx) = found_idx {
+                        // Gather all tokens from columns after the target subject code
+                        let mut sub_tokens = Vec::new();
                         for cell in &v_row[code_idx + 1..] {
-                            let s = match cell.as_deref() {
-                                Some(s) => s.trim().to_uppercase(),
-                                None => continue,
-                            };
-                            if let Ok(n) = s.parse::<u32>() {
-                                nums.push(n);
-                            } else if s == "AB" || s == "ABS" || s == "ABSENT" {
-                                nums.push(0);
+                            if let Some(s) = cell.as_deref() {
+                                for word in s.split_whitespace() {
+                                    sub_tokens.push(word.to_string());
+                                }
                             }
                         }
-                    }
 
-                    if nums.len() >= 2 {
-                        let msg = format!("  [row-clean SUCCESS] {} → IA={} SEE={}", target_code, nums[0], nums[1]);
-                        eprintln!("[pdfsink DEBUG] {}", msg);
-                        record.logs.push(msg);
-                        record.marks.insert(target_code.to_string(), (nums[0], nums[1]));
-                        continue; // successfully processed this virtual row using column approach
-                    } else {
-                        record.logs.push(format!("  [row-clean FAILED] Clean column scan failed for {} (found index {:?}, parsed numbers: {:?})", target_code, found_idx, nums));
+                        if let Some((ia, see)) = extract_marks_from_tokens(&sub_tokens) {
+                            let msg = format!("  [row-clean SUCCESS] {} → IA={} SEE={}", target_code, ia, see);
+                            eprintln!("[pdfsink DEBUG] {}", msg);
+                            record.logs.push(msg);
+                            record.marks.insert(target_code.to_string(), (ia, see));
+                            continue; // successfully processed this virtual row using column approach
+                        } else {
+                            record.logs.push(format!("  [row-clean FAILED] Clean column scan failed for {} (found index {:?}, sub_tokens: {:?})", target_code, found_idx, sub_tokens));
+                        }
                     }
                 }
 
@@ -257,6 +254,70 @@ fn parse_pdf_to_record(pdf_path: &str, subject_codes: &[String]) -> StudentRecor
     }
 
     record
+}
+
+/// Unified, high-precision digit extraction and mathematical verification engine.
+/// Corrects layout fragmentation (where cells are split/shifted) and filters dates/noise.
+fn extract_marks_from_tokens(tokens: &[String]) -> Option<(u32, u32)> {
+    let mut num_tokens = Vec::new();
+    for t in tokens {
+        let clean = t.trim_matches(|c: char| !c.is_alphanumeric()).to_uppercase();
+        if clean.is_empty() {
+            continue;
+        }
+        // Filter out dates (e.g. "2024-03-05") or year numbers by ignoring tokens with len > 3
+        if clean.len() > 3 {
+            continue;
+        }
+        if clean.chars().all(|c| c.is_ascii_digit()) {
+            num_tokens.push(clean);
+        } else if clean == "AB" || clean == "ABS" || clean == "ABSENT" {
+            num_tokens.push("0".to_string());
+        }
+    }
+
+    if num_tokens.len() < 2 {
+        return None;
+    }
+
+    if num_tokens.len() == 2 {
+        let ia = num_tokens[0].parse::<u32>().ok()?;
+        let see = num_tokens[1].parse::<u32>().ok()?;
+        return Some((ia, see));
+    }
+
+    if num_tokens.len() == 3 {
+        // Check if it matches a split IA where Total is missing:
+        // E.g. ["4", "5", "26"] -> IA = 45, SEE = 26
+        if num_tokens[0].len() == 1 && num_tokens[1].len() == 1 && num_tokens[2].len() > 1 {
+            let ia = format!("{}{}", num_tokens[0], num_tokens[1]).parse::<u32>().ok()?;
+            let see = num_tokens[2].parse::<u32>().ok()?;
+            return Some((ia, see));
+        }
+
+        // Standard unsplit IA case: ["40", "36", "76"] -> IA = 40, SEE = 36, Total = 76
+        let ia = num_tokens[0].parse::<u32>().ok()?;
+        let see = num_tokens[1].parse::<u32>().ok()?;
+        return Some((ia, see));
+    }
+
+    // General case: len >= 4 (E.g. ["4", "5", "26", "71"] or ["40", "36", "76", "some_extra"])
+    let total_str = &num_tokens[num_tokens.len() - 1];
+    let see_str = &num_tokens[num_tokens.len() - 2];
+    let ia_parts = &num_tokens[0..num_tokens.len() - 2];
+    let ia_str = ia_parts.join("");
+
+    let ia = ia_str.parse::<u32>().ok()?;
+    let see = see_str.parse::<u32>().ok()?;
+
+    // Optional mathematical verification
+    if let Ok(total) = total_str.parse::<u32>() {
+        if ia + see == total {
+            return Some((ia, see));
+        }
+    }
+
+    Some((ia, see))
 }
 
 /// Global token scan: tokenize the ENTIRE text as one flat stream.
@@ -279,39 +340,38 @@ fn parse_text_lines(
         if code_set.contains(&upper) {
             // Found a subject code — collect numbers that follow
             let code = upper.clone();
-            let mut nums: Vec<u32> = Vec::new();
+            let mut sub_tokens = Vec::new();
             let mut skip_words = 0;
             let mut j = i + 1;
 
-            while j < n && nums.len() < 3 {
+            while j < n {
                 let t = tokens[j].trim_matches(|c: char| !c.is_alphanumeric()).to_uppercase();
-
-                if let Ok(v) = t.parse::<u32>() {
-                    nums.push(v);
-                    skip_words = 0; // reset word skip counter on each number found
-                } else if t == "AB" || t == "ABS" || t == "ABSENT" {
-                    nums.push(0);
-                    skip_words = 0;
-                } else if code_set.contains(&t) || RE_VTU_CODE.is_match(&t) {
+                if code_set.contains(&t) || RE_VTU_CODE.is_match(&t) {
                     // Hit the NEXT subject code — stop looking for this code's marks
                     break;
-                } else {
+                }
+                
+                let is_num_or_abs = t.chars().all(|c| c.is_ascii_digit()) || t == "AB" || t == "ABS" || t == "ABSENT";
+                if !is_num_or_abs {
                     skip_words += 1;
                     if skip_words > 25 {
-                        // Too many non-numeric tokens → likely no marks found, give up
                         break;
                     }
+                } else {
+                    skip_words = 0;
                 }
+
+                sub_tokens.push(t);
                 j += 1;
             }
 
-            if nums.len() >= 2 {
-                let msg = format!("    [text-scan SUCCESS] {} → IA={} SEE={}", code, nums[0], nums[1]);
+            if let Some((ia, see)) = extract_marks_from_tokens(&sub_tokens) {
+                let msg = format!("    [text-scan SUCCESS] {} → IA={} SEE={}", code, ia, see);
                 eprintln!("[pdfsink DEBUG] {}", msg);
                 record.logs.push(msg);
-                record.marks.insert(code, (nums[0], nums[1]));
+                record.marks.insert(code, (ia, see));
             } else {
-                let msg = format!("    [text-scan FAILED] {} failed to parse at least 2 numbers (parsed: {:?})", code, nums);
+                let msg = format!("    [text-scan FAILED] {} failed to parse marks from tokens {:?}", code, sub_tokens);
                 eprintln!("[pdfsink DEBUG] {}", msg);
                 record.logs.push(msg);
             }
