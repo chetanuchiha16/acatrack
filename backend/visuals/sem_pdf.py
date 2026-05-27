@@ -19,7 +19,9 @@ styles = getSampleStyleSheet()
 normal_style = styles["Normal"]
 
 
-async def generate_sem_pdf_async(selected_semester, university, session, section_name=None):
+async def generate_sem_pdf_async(
+    selected_semester, university, session, section_name=None
+):
     """
     Async version of semester PDF generation.
     FAANG-level optimization: Uses repository for SQL-level aggregations

@@ -241,6 +241,7 @@ class AcademicService:
     async def get_assignments_by_batch(session: AsyncSession, batch_year: int):
         """Retrieves all subject assignments for a given batch year, including subject, section, and teacher relationships."""
         from sqlalchemy.orm import selectinload
+
         stmt = (
             select(SubjectAssignment)
             .where(SubjectAssignment.batch_year == batch_year)
@@ -263,7 +264,6 @@ class AcademicService:
             raise ValueError(f"Assignment with ID {assignment_id} not found")
         await session.delete(assignment)
         await session.commit()
-
 
 
 # ============================================================

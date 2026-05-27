@@ -12,7 +12,17 @@ import hashlib
 from cryptography.fernet import Fernet
 
 from typing import List, Dict
-from fastapi import APIRouter, UploadFile, File, Header, Query, Body, Depends, Cookie, Request
+from fastapi import (
+    APIRouter,
+    UploadFile,
+    File,
+    Header,
+    Query,
+    Body,
+    Depends,
+    Cookie,
+    Request,
+)
 from utils.helpers import decode_jwt
 from fastapi.responses import JSONResponse, StreamingResponse
 from logger_config import get_logger
@@ -345,7 +355,7 @@ async def refresh_batch(body: BatchRequest, x_admin_secret: str | None = Header(
 async def get_my_assignments(
     request: Request,
     batch_year: int = Query(...),
-    access_token: str | None = Cookie(None)
+    access_token: str | None = Cookie(None),
 ):
     from models.schema import SubjectAssignment
     from sqlalchemy.orm import selectinload
@@ -369,7 +379,7 @@ async def get_my_assignments(
             )
             .options(
                 selectinload(SubjectAssignment.subject),
-                selectinload(SubjectAssignment.section)
+                selectinload(SubjectAssignment.section),
             )
         )
 
@@ -382,7 +392,9 @@ async def get_my_assignments(
                     "subject_code": a.subject_code,
                     "subject_name": a.subject.subject_name,
                     "section_id": a.section_id,
-                    "section_name": a.section.name if a.section else f"ID: {a.section_id}",
+                    "section_name": a.section.name
+                    if a.section
+                    else f"ID: {a.section_id}",
                     "semester": a.semester,
                 }
                 for a in assignments
@@ -651,7 +663,6 @@ async def unassign_subject(
         return {"status": "success", "message": "Subject assignment deleted"}
     except ValueError as e:
         return JSONResponse(content={"error": str(e)}, status_code=404)
-
 
 
 # ============================================================

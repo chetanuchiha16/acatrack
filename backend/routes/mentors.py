@@ -32,9 +32,12 @@ async def get_mentor_students(
     by = batch_year or get_batch_year_from_request(request)
 
     from utils.helpers import get_jwt_payload_from_request
+
     payload = get_jwt_payload_from_request(request)
     if not payload:
-        return JSONResponse(content={"error": "Session expired or not logged in"}, status_code=401)
+        return JSONResponse(
+            content={"error": "Session expired or not logged in"}, status_code=401
+        )
 
     who = payload.get("who")
     if who != "Admin":
@@ -42,7 +45,12 @@ async def get_mentor_students(
         if mentor_id is None:
             mentor_id = payload_mentor_id
         elif mentor_id != payload_mentor_id:
-            return JSONResponse(content={"error": "Access Denied: You cannot view results for another mentor."}, status_code=403)
+            return JSONResponse(
+                content={
+                    "error": "Access Denied: You cannot view results for another mentor."
+                },
+                status_code=403,
+            )
 
     async with bm.session_scope(by) as session:
         results, status_code, error_msg = await get_mentor_students_data(
@@ -76,6 +84,7 @@ async def get_mentee_chart(
     by = batch_year or get_batch_year_from_request(request)
 
     from utils.helpers import verify_teacher_student_access
+
     await verify_teacher_student_access(db, request, usn, by)
 
     async with bm.session_scope(by) as session:
