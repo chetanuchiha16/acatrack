@@ -337,7 +337,17 @@ const AllocationStep: React.FC<{
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const [assignments, setAssignments] = useState<any[]>([]);
+interface AllocationAssignment {
+  id: number;
+  teacher_name: string;
+  teacher_username: string;
+  subject_name: string;
+  subject_code: string;
+  semester: string;
+  section_name: string;
+}
+
+  const [assignments, setAssignments] = useState<AllocationAssignment[]>([]);
   const [fetching, setFetching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
@@ -360,8 +370,9 @@ const AllocationStep: React.FC<{
         url: "/admin/list-assignments",
         headers: { "X-Admin-Secret": secret },
         query: { batch_year: batchYear },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
-      setAssignments(res.data);
+      setAssignments(res.data as AllocationAssignment[]);
     } catch (err) {
       console.error("Failed to fetch assignments", err);
     } finally {
@@ -403,6 +414,7 @@ const AllocationStep: React.FC<{
         url: `/admin/unassign-subject/${id}`,
         headers: { "X-Admin-Secret": secret },
         query: { batch_year: batchYear },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
       setMsg({ ok: true, text: "Assignment removed successfully." });
       fetchAssignments();

@@ -4,7 +4,8 @@ import SemesterResults from "../student/SemesterResults";
 import SubjectResults from "../student/SubjectResults";
 import OverallResults from "../student/OverallResults";
 import AcademicContextSelector from "../../components/AcademicContextSelector";
-import useStaffStore, { StaffAssignment } from "../../store/useStaffStore";
+import useStaffStore from "../../store/useStaffStore";
+import type { StaffAssignment } from "../../store/useStaffStore";
 import { getMyAssignmentsAdminMyAssignmentsGet } from "../../client/sdk.gen";
 
 const StaffResults: React.FC = () => {
