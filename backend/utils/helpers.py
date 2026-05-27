@@ -69,3 +69,76 @@ def decode_jwt(token: str) -> dict | None:
         return payload
     except Exception:
         return None
+
+
+async def verify_teacher_section_access(
+    db,
+    request: Request,
+    requested_section_name: str | None,
+    requested_batch_year: int | None = None
+) -> None:
+    """
+    Enforces section-based authorization boundaries for staff/teacher queries.
+    - If the user is an Admin, access is globally permitted.
+    - If the user is a Teacher, they must have at least one active SubjectAssignment
+      in the database for the requested section and batch year.
+    - Raises a FastAPI HTTP 403 Forbidden exception if unauthorized.
+    """
+    if not requested_section_name:
+        return  # No specific section requested; global view allowed (e.g. university-wide calculations)
+
+    payload = get_jwt_payload_from_request(request)
+    if not payload:
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or not logged in"
+        )
+
+    who = payload.get("who")
+    if who == "Admin":
+        return  # Admin bypass
+
+    if who == "Teacher":
+        from sqlalchemy.future import select
+        from models.schema import SubjectAssignment, Section
+        from fastapi import HTTPException, status
+
+        teacher_username = payload.get("id")
+        batch_year = requested_batch_year or payload.get("batch_year")
+
+        if not teacher_username or not batch_year:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid session metadata"
+            )
+
+        # 1. Fetch the section ID matching name & batch year
+        section_stmt = select(Section.id).where(
+            Section.name == requested_section_name,
+            Section.batch_year == batch_year
+        )
+        section_res = await db.execute(section_stmt)
+        section_id = section_res.scalar_one_or_none()
+
+        if not section_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Section '{requested_section_name}' not found for batch {batch_year}"
+            )
+
+        # 2. Verify if the teacher has any class assignment in this section
+        assign_stmt = select(SubjectAssignment.id).where(
+            SubjectAssignment.teacher_username == teacher_username,
+            SubjectAssignment.section_id == section_id,
+            SubjectAssignment.batch_year == batch_year
+        )
+        assign_res = await db.execute(assign_stmt)
+        has_assignment = assign_res.scalar_one_or_none() is not None
+
+        if not has_assignment:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access Denied: You do not teach any classes in section '{requested_section_name}'."
+            )
+

@@ -24,6 +24,9 @@ async def get_semester_results(
     db: AsyncSession = Depends(get_db),
 ):
     by = batch_year or get_batch_year_from_request(request)
+    from utils.helpers import verify_teacher_section_access
+    await verify_teacher_section_access(db, request, section, by)
+
     if not semester:
         return JSONResponse(
             content={"error": "Missing semester parameter"}, status_code=400
