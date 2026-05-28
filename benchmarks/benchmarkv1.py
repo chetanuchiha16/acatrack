@@ -76,6 +76,11 @@ def monitor_resources():
 
 if __name__ == "__main__":
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    ROOT_DIR = os.path.dirname(BASE_DIR)
+    OUTPUT_DIR = os.path.join(ROOT_DIR, "test_outputs")
+
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
 
     print("🚀 Starting Resource Benchmark Monitor...")
     monitor_thread = threading.Thread(target=monitor_resources)
@@ -87,10 +92,12 @@ if __name__ == "__main__":
     print("\n🏃 Running k6 load test...\n")
     # Execute k6
     start_time = time.time()
+    load_test_file = os.path.join(ROOT_DIR, "load_tests", "load_testv1.js")
+    summary_path = os.path.join(OUTPUT_DIR, "summaryv1.json")
     try:
         subprocess.run(
-            ["k6", "run", "load_testv1.js", "--summary-export=summaryv1.json"],
-            cwd=BASE_DIR,
+            ["k6", "run", load_test_file, f"--summary-export={summary_path}"],
+            cwd=ROOT_DIR,
             check=True
         )
     except subprocess.CalledProcessError as e:
@@ -109,7 +116,6 @@ if __name__ == "__main__":
     
     # Read k6 summary
     summary_data = {}
-    summary_path = os.path.join(BASE_DIR, "summaryv1.json")
     try:
         with open(summary_path, "r") as f:
             summary_data = json.load(f)
@@ -150,7 +156,7 @@ if __name__ == "__main__":
 ---
 *Generated automatically by benchmarking monitor.*
 """
-    report_path = os.path.join(BASE_DIR, "load_test_reportv1.md")
+    report_path = os.path.join(OUTPUT_DIR, "load_test_reportv1.md")
     with open(report_path, "w") as f:
         f.write(md_content)
     
