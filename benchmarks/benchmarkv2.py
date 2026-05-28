@@ -171,7 +171,7 @@ def run_single_user_baseline(base_dir):
                 [
                     "k6",
                     "run",
-                    "load_testv2.js",
+                    os.path.join(base_dir, "load_tests", "load_testv2.js"),
                     "--vus",
                     "1",
                     "--iterations",
@@ -258,7 +258,8 @@ def parse_k6_metrics(summary_data):
 
 if __name__ == "__main__":
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    OUTPUT_DIR = os.path.join(BASE_DIR, "test_outputs")
+    ROOT_DIR = os.path.dirname(BASE_DIR)
+    OUTPUT_DIR = os.path.join(ROOT_DIR, "test_outputs")
 
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
@@ -270,7 +271,7 @@ if __name__ == "__main__":
     report_path = os.path.join(OUTPUT_DIR, report_filename)
 
     # 1. Baseline
-    baseline_data = run_single_user_baseline(BASE_DIR)
+    baseline_data = run_single_user_baseline(ROOT_DIR)
 
     # 2. Start Load Test Monitor
     print(f"🚀 Starting Resource Benchmark Monitor (Test #{next_test_num})...")
@@ -282,9 +283,10 @@ if __name__ == "__main__":
     print(f"\n🏃 Running k6 load test (Results: {summary_filename})...\n")
     start_time = time.time()
     try:
+        load_test_file = os.path.join(ROOT_DIR, "load_tests", "load_testv2.js")
         subprocess.run(
-            ["k6", "run", "load_testv2.js", f"--summary-export={summary_path}"],
-            cwd=BASE_DIR,
+            ["k6", "run", load_test_file, f"--summary-export={summary_path}"],
+            cwd=ROOT_DIR,
             # We don't check=True because thresholds might fail (expectedly)
         )
     except Exception as e:
