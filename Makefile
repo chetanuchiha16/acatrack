@@ -81,12 +81,12 @@ fix:
 # Run benchmark
 benchmark:
 	@echo "Running benchmark..."
-	uv run benchmarkv2.py
+	uv run benchmarks/benchmarkv2.py
 
 # Run load test
 load-test:
 	@echo "Running load test..."
-	k6 run load_testv2.js
+	k6 run load_tests/load_testv2.js
 
 # Clean up
 clean:

@@ -93,12 +93,10 @@ def monitor_resources():
 
 def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    output_dir = os.path.join(base_dir, "test_outputs")
+    ROOT_DIR = os.path.dirname(base_dir)
+    output_dir = os.path.join(ROOT_DIR, "test_outputs")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-
-    summary_path = os.path.join(output_dir, "upload_k6_summary.json")
-    report_path = os.path.join(output_dir, "upload_benchmark_report.md")
 
     # Auto-detect which engine is active and use distinct output filenames
     try:
@@ -125,9 +123,10 @@ def main():
     print("\n🏃 Executing k6 isolated load test...")
     start_time = time.time()
     try:
+        load_test_file = os.path.join(ROOT_DIR, "load_tests", "load_test_upload.js")
         subprocess.run(
-            ["k6", "run", "load_test_upload.js", f"--summary-export={summary_path}"],
-            cwd=base_dir,
+            ["k6", "run", load_test_file, f"--summary-export={summary_path}"],
+            cwd=ROOT_DIR,
             check=True
         )
     except Exception as e:
@@ -237,7 +236,7 @@ def main():
     pdf_count = 0
     total_pdfs_processed = 0
     try:
-        js_path = os.path.join(base_dir, "load_test_upload.js")
+        js_path = os.path.join(ROOT_DIR, "load_tests", "load_test_upload.js")
         if os.path.exists(js_path):
             with open(js_path, "r") as js_file:
                 js_content = js_file.read()
