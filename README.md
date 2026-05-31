@@ -8,6 +8,9 @@ AcaTrack is a comprehensive, full-stack academic management platform designed to
 > [!IMPORTANT]
 > **Scraper Decoupling**: The legacy server-side Selenium-based scraper has been deprecated and completely migrated to our standalone, high-performance desktop application: **[VTU Result Scraper](https://github.com/chetanuchiha16/result-scraper)**. This eliminates CAPTCHA, browser rendering, and server-side CPU bottlenecks.
 
+> [!TIP]
+> **Academic Validation**: The foundational architecture of this platform was presented under the title **"JSSTrack360: Student Performance at your fingertips"** at the **IEEE 1st International Conference on Intelligent Computing and Communication Systems (CICCS-25)** in September 2025.
+
 ---
 
 ### 🏗️ System Architecture
@@ -56,6 +59,7 @@ graph TD
 AcaTrack has undergone a significant architectural transformation to reach its current state:
 
 *   **Phase 1 (Collaborative)**: Full-stack academic management system built with the original team — [Group-Projects](https://github.com/chetanuchiha16/Group-Projects)
+    *   **IEEE Conference Presentation**: Presented the foundational architecture under the title **"JSSTrack360: Student Performance at your fingertips"** at the *1st International Conference on Intelligent Computing and Communication Systems (CICCS-25)*.
 *   **Phase 2 (Solo Refactor)**: Active evolution focused on professional-grade integrity:
     *   **FastAPI Migration**: Replaced the legacy Flask core with **FastAPI** for asynchronous performance and automatic OpenAPI documentation.
     *   **Database Normalization**: Decoupling `students`, `subjects`, and `results` from fixed semester tables for dynamic, multi-year scalability.
@@ -221,13 +225,14 @@ The following metrics show the dramatic performance boost after migrating the CP
 ### 📂 Project Structure
 
 ```text
-├── backend/            # FastAPI source code, models, services, and routes
-├── frontend/           # React + Vite source code and assets
-├── scripts/            # Database seeding and utility scripts
-├── docker-compose.yml  # Container orchestration
-├── Makefile            # Standardized task automation
-├── openapi.json        # Generated API documentation
-└── load_testv2.js      # Performance testing script
+├── backend/            # FastAPI backend source code (models, services, routes)
+├── frontend/           # React + Vite frontend source code and assets
+├── benchmarks/         # Performance benchmarking scripts (database, queries, and APIs)
+├── load_tests/         # Concurrency and load testing scripts (k6 integration)
+├── scratch/            # Temporary experimental scripts, test runs, and logs
+├── docker-compose.yml  # Containerized local environment orchestration
+├── Makefile            # Project automation task execution engine
+└── openapi.json        # Generated OpenAPI contract specification
 ```
 
 ---
