@@ -124,7 +124,9 @@ async def upload_form(body: MenteeUploadFormRequest):
 @router.get("/files")
 async def files():
     if not supabase:
-        pdf_names = [f for f in os.listdir(RECORD_UPLOAD_PATH) if f.lower().endswith(".pdf")]
+        pdf_names = [
+            f for f in os.listdir(RECORD_UPLOAD_PATH) if f.lower().endswith(".pdf")
+        ]
         return pdf_names
 
     def _list():
@@ -195,7 +197,9 @@ async def list_mentor_pdfs(
                     pass
             else:
                 local_pdfs = [
-                    f for f in os.listdir(RECORD_UPLOAD_PATH) if f.lower().endswith(".pdf")
+                    f
+                    for f in os.listdir(RECORD_UPLOAD_PATH)
+                    if f.lower().endswith(".pdf")
                 ]
                 if filename in local_pdfs:
                     files_list.append(
@@ -240,7 +244,9 @@ async def download_mentee_pdf(
                 content={"error": "Failed to check file"}, status_code=500
             )
     else:
-        pdf_names = [f for f in os.listdir(RECORD_UPLOAD_PATH) if f.lower().endswith(".pdf")]
+        pdf_names = [
+            f for f in os.listdir(RECORD_UPLOAD_PATH) if f.lower().endswith(".pdf")
+        ]
         if filename not in pdf_names:
             return JSONResponse(content={"error": "PDF not found"}, status_code=404)
         return {"file_url": f"/mentee/download/{filename}"}

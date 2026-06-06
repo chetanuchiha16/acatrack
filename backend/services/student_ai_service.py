@@ -322,7 +322,9 @@ def get_ai_profile_data(usn: str, lng: str, batch_year: int) -> tuple[dict, int]
     latest_sem = find_latest_active_semester(student_data)
     latest_scores = np.array(
         get_clean_marks_list(student_data["semesters"][latest_sem]["ia_marks"])
-    ) + np.array(get_clean_marks_list(student_data["semesters"][latest_sem]["see_marks"]))
+    ) + np.array(
+        get_clean_marks_list(student_data["semesters"][latest_sem]["see_marks"])
+    )
     subjects = student_data["semesters"][latest_sem]["subject_names"]
     latest_strong = [sub for sub, mark in zip(subjects, latest_scores) if mark >= 70]
     latest_mid = [sub for sub, mark in zip(subjects, latest_scores) if 40 <= mark < 70]
@@ -500,14 +502,9 @@ def extract_sgpa_history(student_record: dict) -> list[tuple[str, float]]:
     """
     semesters = student_record.get("semesters", {})
     sorted_sems = sorted(
-        semesters.items(),
-        key=lambda x: int(re.search(r"\d+", x[0]).group() or 0)
+        semesters.items(), key=lambda x: int(re.search(r"\d+", x[0]).group() or 0)
     )
-    return [
-        (k, float(d["sgpa"]))
-        for k, d in sorted_sems
-        if d.get("sgpa") is not None
-    ]
+    return [(k, float(d["sgpa"])) for k, d in sorted_sems if d.get("sgpa") is not None]
 
 
 def auto_assign_subject_tags(subject_name: str) -> list[str]:
@@ -568,7 +565,9 @@ def calculate_aggregate_skills(student_record: dict) -> tuple[dict, dict, dict]:
     return averages_map, dict(counts_map), resolved_tags
 
 
-def categorize_skill_strengths(skill_averages: dict) -> tuple[list[str], list[str], list[str]]:
+def categorize_skill_strengths(
+    skill_averages: dict,
+) -> tuple[list[str], list[str], list[str]]:
     """
     Divides skills into strong, moderate, and needs improvement brackets.
     """
