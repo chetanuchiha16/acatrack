@@ -13,12 +13,19 @@ import requests as http_requests
 import asyncio
 
 logger = get_logger(__name__)
-UPLOAD_FOLDER = pdf_dir
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+RECORD_UPLOAD_PATH = pdf_dir
+os.makedirs(RECORD_UPLOAD_PATH, exist_ok=True)
 
 router = APIRouter(prefix="/mentee", tags=["mentee_record"])
-
 TEMPLATE_PATH = str(base_dir / "Inputs" / "New_mentor_Record[final].pdf")
+
+
+def construct_mentee_pdf_name(mentee_info) -> str:
+    """
+    Builds a unique and safe PDF filename for a mentee.
+    """
+    sanitized_name = (mentee_info.name or "").replace(" ", "_")
+    return f"{mentee_info.usn}_{sanitized_name}_record.pdf"
 
 
 @router.post("/upload_form")
@@ -114,15 +121,10 @@ async def upload_form(body: MenteeUploadFormRequest):
     return {"status": "success", "file": file_url}
 
 
-def get_mentee_pdf_filename(mentee):
-    safe_name = mentee.name.replace(" ", "_")
-    return f"{mentee.usn}_{safe_name}_record.pdf"
-
-
 @router.get("/files")
 async def files():
     if not supabase:
-        pdf_names = [f for f in os.listdir(UPLOAD_FOLDER) if f.lower().endswith(".pdf")]
+        pdf_names = [f for f in os.listdir(RECORD_UPLOAD_PATH) if f.lower().endswith(".pdf")]
         return pdf_names
 
     def _list():
@@ -141,7 +143,7 @@ async def files():
 @router.get("/download/{filename}")
 async def download(filename: str):
     if not supabase:
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        filepath = os.path.join(RECORD_UPLOAD_PATH, filename)
         if not os.path.exists(filepath):
             return JSONResponse(content={"error": "File not found"}, status_code=404)
         return FileResponse(filepath, filename=filename)
@@ -180,7 +182,7 @@ async def list_mentor_pdfs(
 
         files_list = []
         for mentee in mentees:
-            filename = get_mentee_pdf_filename(mentee)
+            filename = construct_mentee_pdf_name(mentee)
             if supabase:
                 url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/pdfs/{filename}"
                 try:
@@ -193,7 +195,7 @@ async def list_mentor_pdfs(
                     pass
             else:
                 local_pdfs = [
-                    f for f in os.listdir(UPLOAD_FOLDER) if f.lower().endswith(".pdf")
+                    f for f in os.listdir(RECORD_UPLOAD_PATH) if f.lower().endswith(".pdf")
                 ]
                 if filename in local_pdfs:
                     files_list.append(
@@ -221,7 +223,7 @@ async def download_mentee_pdf(
             return JSONResponse(content={"error": "Student not found"}, status_code=404)
         if student.mentor_id != mentor_id:
             return JSONResponse(content={"error": "Access denied"}, status_code=403)
-        filename = get_mentee_pdf_filename(student)
+        filename = construct_mentee_pdf_name(student)
 
     if supabase:
         url = (
@@ -238,7 +240,7 @@ async def download_mentee_pdf(
                 content={"error": "Failed to check file"}, status_code=500
             )
     else:
-        pdf_names = [f for f in os.listdir(UPLOAD_FOLDER) if f.lower().endswith(".pdf")]
+        pdf_names = [f for f in os.listdir(RECORD_UPLOAD_PATH) if f.lower().endswith(".pdf")]
         if filename not in pdf_names:
             return JSONResponse(content={"error": "PDF not found"}, status_code=404)
         return {"file_url": f"/mentee/download/{filename}"}

@@ -5,7 +5,6 @@ from logger_config import get_logger
 logger = get_logger(__name__)
 
 
-# SubjectResult class
 class SubjectResult:
     def __init__(
         self, subject_code, semester, university, students=None, section_name=None
@@ -14,7 +13,7 @@ class SubjectResult:
         self.subject_code = subject_code
         logger.debug(self.subject_code)
         self.semester = semester
-        self.university = university  # Instance of the University class
+        self.university = university
         self.students = (
             students
             if students is not None
@@ -23,7 +22,6 @@ class SubjectResult:
 
         self.students_data = self.fetch_students_data()
 
-        # Total students is the number of students who actually registered for this specific subject
         self.total_students = len(
             [
                 s
@@ -33,121 +31,86 @@ class SubjectResult:
         )
         self.present_students = len(self.students_data)
         self.absent_students = self.total_students - self.present_students
-        self.pass_count, self.fail_count = self.fetch_subject_stats()
+        self.pass_count, self.fail_count = self.calculate_subject_stats()
         self.fcd_count, self.fc_count, self.sc_count = (
-            self.fetch_performance_categories()
+            self.calculate_performance_grades()
         )
         self.pass_percentage = self.calculate_pass_percentage()
 
     def fetch_students_data(self):
         """
-        Fetch student data for the specific subject and semester.
+        Retrieves clean dictionaries of students enrolled in this subject.
         """
-        students_data = []
-        # Filter from the pre-fetched local students list
-        filtered_students = [
+        records = []
+        semester_enrolled_students = [
             student for student in self.students if student.semester == self.semester
         ]
-        for student in filtered_students:
+        for student in semester_enrolled_students:
             if self.subject_code in student.subject_codes:
-                index = student.subject_codes.index(self.subject_code)
-                students_data.append(
+                idx = student.subject_codes.index(self.subject_code)
+                records.append(
                     {
                         "name": student.name,
                         "USN": student.usn,
-                        "ia": student.ia_marks[index],
-                        "see": student.see_marks[index],
-                        "Total_Marks": student.ia_marks[index]
-                        + student.see_marks[index],
-                        "Credits": student.credits[index],
+                        "ia": student.ia_marks[idx],
+                        "see": student.see_marks[idx],
+                        "Total_Marks": student.ia_marks[idx] + student.see_marks[idx],
+                        "Credits": student.credits[idx],
                     }
                 )
-        return students_data
+        return records
 
-    # def fetch_subject_stats(self):
-    #     """
-    #     Calculate pass and fail counts for the subject.
-    #     """
-    #     pass_count = sum(1 for student in self.students_data if (student["ia"]>=18 and student["see"]>=18))
-    #     fail_count = self.present_students - pass_count
-    # for student in self.students_data:
-    # if (student["ia"]<20 and student["see"]<18):
-    # logger.debug("failed students",student["name"])
-    # return pass_count, fail_count
-
-    # new logic
-
-    def fetch_subject_stats(self):
+    def calculate_subject_stats(self):
         """
-        Calculate pass and fail counts for the subject.
-        - If Credits == 0 and SEE == 0, use only IA marks to decide pass.
+        Determines the count of students passing and failing this subject.
         """
-        pass_count = 0
+        passing_total = 0
+        for student in self.students_data:
+            ia_score = student.get("ia", 0)
+            see_score = student.get("see", 0)
+
+            # If SEE is 0, pass-fail status relies solely on internal assessment
+            if see_score == 0:
+                if ia_score >= 18:
+                    passing_total += 1
+            else:
+                if ia_score >= 18 and see_score >= 18:
+                    passing_total += 1
+
+        failing_total = self.present_students - passing_total
+        return passing_total, failing_total
+
+    def calculate_performance_grades(self):
+        """
+        Splits passing students into grade levels.
+        """
+        fcd_total = 0
+        fc_total = 0
+        sc_total = 0
 
         for student in self.students_data:
-            if student.get("see", 0) == 0:
-                # Use only IA
-                if student.get("ia", 0) >= 18:
-                    pass_count += 1
-            else:
-                # Normal rule
-                if student.get("ia", 0) >= 18 and student.get("see", 0) >= 18:
-                    pass_count += 1
+            score_to_eval = (
+                student.get("ia", 0)
+                if student.get("see", 0) == 0
+                else student.get("Total_Marks", 0)
+            )
 
-        fail_count = self.present_students - pass_count
-        return pass_count, fail_count
+            if score_to_eval >= 70:
+                fcd_total += 1
+            elif 60 <= score_to_eval < 70:
+                fc_total += 1
+            elif 50 <= score_to_eval < 60:
+                sc_total += 1
 
-    # def fetch_performance_categories(self):
-    #     """
-    #     Calculate counts for performance categories (FCD, FC, SC).
-    #     """
-    #     fcd_count = sum(1 for student in self.students_data if student["Total_Marks"] >= 70)
-    #     fc_count = sum(1 for student in self.students_data if 60 <= student["Total_Marks"] < 70)
-    #     sc_count = sum(1 for student in self.students_data if 50 <= student["Total_Marks"] < 60)
-    #     return fcd_count, fc_count, sc_count
-
-    # new logic
-
-    def fetch_performance_categories(self):
-        """
-        Calculate counts for performance categories (FCD, FC, SC).
-        - If Credits == 0 and SEE == 0, use IA marks instead of Total_Marks.
-        """
-        fcd_count = 0
-        fc_count = 0
-        sc_count = 0
-
-        for student in self.students_data:
-            # Decide which marks to use
-            if student.get("see", 0) == 0:
-                marks = student.get("ia", 0)  # use IA
-            else:
-                marks = student.get("Total_Marks", 0)  # use Total_Marks
-
-            # Categorize
-            if marks >= 70:
-                fcd_count += 1
-            elif 60 <= marks < 70:
-                fc_count += 1
-            elif 50 <= marks < 60:
-                sc_count += 1
-
-        return fcd_count, fc_count, sc_count
+        return fcd_total, fc_total, sc_total
 
     def calculate_pass_percentage(self):
         """
-        Calculate the pass percentage for the subject.
+        Calculates pass percentage.
         """
-        return (
-            (self.pass_count / self.present_students * 100)
-            if self.present_students > 0
-            else 0
-        )
-
-    def display_subject_results(self, output_widget=None):
-        """
-        Display the results for the subject, either to the console or to a widget.
-        """
+        if self.present_students > 0:
+            return (self.pass_count / self.present_students) * 100
+        return 0.0
 
     def get_subject_results_dict(self):
         return {
@@ -167,12 +130,8 @@ class SubjectResult:
 
     def plot_performance_pie_chart(self):
         """
-        Plot a pie chart for performance distribution across categories.
+        Generates pie chart of grade categories.
         """
-        logger.debug("DEBUG: students_data =", self.students_data)
-        logger.debug(
-            "DEBUG: fcd, fc, sc =", self.fcd_count, self.fc_count, self.sc_count
-        )
         import matplotlib.pyplot as plt
 
         categories = ["FCD (>70%)", "FC (60-70%)", "SC (50-60%)"]
@@ -189,12 +148,12 @@ class SubjectResult:
         plt.title(f"Performance Distribution in {self.subject_code}")
         graph_path = f"{img_dir}/performance_pie_chart.png"
         plt.savefig(graph_path)
-        plt.close(fig)  # Prevent memory leak
+        plt.close(fig)
         return fig, graph_path
 
     def plot_attendance_pie_chart(self):
         """
-        Plot a pie chart for attendance distribution.
+        Generates pie chart of attendance rates.
         """
         import matplotlib.pyplot as plt
 
@@ -212,5 +171,5 @@ class SubjectResult:
         plt.title(f"Attendance Distribution in {self.subject_code}")
         graph_path = f"{img_dir}/attendance_pie_chart.png"
         plt.savefig(graph_path)
-        plt.close(fig)  # Prevent memory leak
+        plt.close(fig)
         return fig, graph_path
