@@ -8,7 +8,7 @@ base_dir = Path(__file__).resolve().parent.parent
 excel_path = str(base_dir / "Inputs/ExcelSheet/result list project.xlsx")
 email_excel_path = str(base_dir / "Inputs/ExcelSheet/Email.xlsx")
 mentor_excel_path = str(base_dir / "Inputs/ExcelSheet/Mentor.xlsx")
-logo_url = "https://hpavqkjevepfegkojisn.supabase.co/storage/v1/object/public/uploads/Inputs/Images/logo.png"
+logo_url = settings.logo_url
 
 _cached_logo_path = None
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import jssLogo from "../assets/jssLogo.png";
+import { brandingConfig } from "../config";
 import LogoutButton from "../components/LogoutButton";
 import useProtectedPage from "../hooks/useProtectedPage";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -51,7 +51,14 @@ const StudentLayout: React.FC = () => {
                 <div className="h-full flex flex-col">
                     {/* Sidebar Header */}
                     <div className="px-6 py-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                        <img src={jssLogo} alt="JSS Logo" className="w-32 h-auto cursor-pointer" onClick={() => navigate(`/auth/Student/${id}`)} />
+                        {brandingConfig.collegeLogo ? (
+                            <img src={brandingConfig.collegeLogo} alt="College Logo" className="w-32 h-auto cursor-pointer" onClick={() => navigate(`/auth/Student/${id}`)} />
+                        ) : (
+                            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate(`/auth/Student/${id}`)}>
+                                <GraduationCap className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                                <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">AcaTrack</span>
+                            </div>
+                        )}
                         <button 
                             className="lg:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                             onClick={() => setSidebarOpen(false)}
@@ -111,7 +118,14 @@ const StudentLayout: React.FC = () => {
                         </button>
                         <span className="font-semibold text-gray-800 dark:text-gray-100">Dashboard</span>
                     </div>
-                    <img src={jssLogo} alt="JSS Logo" className="w-20 h-auto sm:hidden" />
+                    {brandingConfig.collegeLogo ? (
+                        <img src={brandingConfig.collegeLogo} alt="College Logo" className="w-20 h-auto sm:hidden" />
+                    ) : (
+                        <div className="flex items-center gap-1.5 sm:hidden">
+                            <GraduationCap className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            <span className="text-base font-bold tracking-tight text-gray-900 dark:text-white">AcaTrack</span>
+                        </div>
+                    )}
                 </header>
 
                 {/* Main Content Scrollable Area */}

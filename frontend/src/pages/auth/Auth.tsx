@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import jssLogo from "../../assets/jssLogo.png";
+import { brandingConfig } from "../../config";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaUser, FaLock, FaEye, FaEyeSlash, FaGraduationCap } from "react-icons/fa";
 import ForgotPassword from "./ForgotPassword";
 import { requestForToken } from "../../firebase";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -22,7 +22,7 @@ const Auth: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
-        document.body.style.backgroundImage = "url('/jss-1.jpeg')";
+        document.body.style.backgroundImage = "url('/anime-classroom.jpeg')";
         document.body.style.backgroundSize = "cover";
         document.body.style.backgroundPosition = "center";
         document.body.style.backgroundAttachment = "fixed";
@@ -112,20 +112,24 @@ const Auth: React.FC = () => {
             <div className="absolute top-4 sm:top-6 w-full flex flex-col items-center">
                 {/* Logo pinned left */}
                 <div className="absolute left-1/2 xl:left-25 transform -translate-x-1/2">
-                    <img
-                        src={jssLogo}
-                        alt="JSS Logo"
-                        className="w-33 sm:w-33 md:w-37 lg:w-39 h-auto drop-shadow-lg"
-                    />
+                    {brandingConfig.collegeLogo ? (
+                        <img
+                            src={brandingConfig.collegeLogo}
+                            alt="College Logo"
+                            className="w-33 sm:w-33 md:w-37 lg:w-39 h-auto drop-shadow-lg"
+                        />
+                    ) : (
+                        <FaGraduationCap className="text-blue-500 w-16 h-16 drop-shadow-lg" />
+                    )}
                 </div>
 
                 {/* Title centered */}
                 <div className="text-center mt-10">
                     <div className="text-4xl mt-2.5 sm:text-4xl sm:mt-2.5 md:text-5xl md:mt-5 xl:-mt-11 lg:text-5xl lg:mt-5 font-bold text-red-700 drop-shadow-md">
-                        JSS Academy of Technical Education
+                        {brandingConfig.collegeName}
                     </div>
                     <p className="text-base sm:text-lg md:text-xl text-red-600">
-                        Bengaluru
+                        {brandingConfig.collegeTagline}
                     </p>
                 </div>
             </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import jssLogo from "../../assets/jssLogo.png";
+import { brandingConfig } from "../../config";
 import { useNavigate } from "react-router-dom";
 import LogoutButton from "../../components/LogoutButton";
 import { useTranslation } from "react-i18next";
@@ -39,11 +39,18 @@ const ParentDashboard: React.FC = () => {
                 {/* Header Glass Card */}
                 <header className="w-full bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800/50 rounded-[2rem] p-4 sm:p-6 shadow-xl shadow-slate-100/50 dark:shadow-none flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <img
-                            src={jssLogo}
-                            alt="JSS Logo"
-                            className="h-12 w-auto object-contain drop-shadow-md hover:scale-105 transition-transform"
-                        />
+                        {brandingConfig.collegeLogo ? (
+                            <img
+                                src={brandingConfig.collegeLogo}
+                                alt="College Logo"
+                                className="h-12 w-auto object-contain drop-shadow-md hover:scale-105 transition-transform"
+                            />
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <GraduationCap className="h-10 w-10 text-indigo-600 dark:text-indigo-400" />
+                                <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white hidden sm:inline">AcaTrack</span>
+                            </div>
+                        )}
                         <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
                         <div>
                             <div className="flex items-center gap-2">
@@ -137,7 +144,7 @@ const ParentDashboard: React.FC = () => {
                             <div className="mt-8 grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-6">
                                 <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-[#0b0f19]/30 border border-slate-100 dark:border-slate-800/80">
                                     <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">Affiliation</span>
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">JSS Academy of Technical Education</span>
+                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{brandingConfig.collegeName}</span>
                                 </div>
                                 <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-[#0b0f19]/30 border border-slate-100 dark:border-slate-800/80">
                                     <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">Academic Status</span>
