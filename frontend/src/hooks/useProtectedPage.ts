@@ -1,8 +1,6 @@
 // useProtectedPage.ts
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { authStatusAuthStatusGet } from "../client/sdk.gen";
-import { clearToken, getToken } from "../utils/storage";
 import useAuthStore from "../store/useAuthStore";
 import useStudentStore from "../store/useStudentStore";
 import type { AuthUser } from "../store/useAuthStore";

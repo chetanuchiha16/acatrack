@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Database, BookOpen, UserCheck, Link, CheckCircle,
   Lock, Loader2, RefreshCw, Users, FileText, ChevronRight, AlertCircle, XCircle,
@@ -362,7 +362,7 @@ interface AllocationAssignment {
     }
   }, [semester, filteredSubjects, subject]);
 
-  const fetchAssignments = async () => {
+  const fetchAssignments = useCallback(async () => {
     if (!batchYear) return;
     setFetching(true);
     try {
@@ -378,11 +378,11 @@ interface AllocationAssignment {
     } finally {
       setFetching(false);
     }
-  };
+  }, [batchYear, secret]);
 
   useEffect(() => {
-    fetchAssignments();
-  }, [batchYear, secret]);
+    void fetchAssignments();
+  }, [batchYear, secret, fetchAssignments]);
 
   const handle = async () => {
     if (!teacher || !subject || !section) return;
@@ -396,7 +396,7 @@ interface AllocationAssignment {
       setTeacher("");
       setSubject("");
       setSection("");
-      fetchAssignments();
+      await fetchAssignments();
       onDone();
     } catch (err) {
       const error = err as { body?: { error?: string }; message?: string };
@@ -417,7 +417,7 @@ interface AllocationAssignment {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
       setMsg({ ok: true, text: "Assignment removed successfully." });
-      fetchAssignments();
+      await fetchAssignments();
       onDone();
     } catch (err) {
       const error = err as { response?: { data?: { error?: string } }; message?: string };
