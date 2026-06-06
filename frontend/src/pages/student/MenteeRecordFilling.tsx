@@ -1,7 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { uploadFormMenteeUploadFormPost } from "../../client/sdk.gen";
 import { User, Users, GraduationCap, Briefcase, Trophy, ChevronLeft, ChevronRight, Lock, Trash2, Plus, FileText, CheckCircle } from "lucide-react";
-
 interface MenteeRecordFillingProps { usn: string; name: string; }
 interface RecordEntry { [key: string]: string; }
 interface MenteeSummary { cultural_activities: string; co_curricular_activities: string; hackathon: string; coding_competitions: string; other_achievements: string; [key: string]: string; }
@@ -37,22 +36,18 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
         sgpa: Array(8).fill(""), projects: [], internships: [],
         activities: [], summary: { cultural_activities: "", co_curricular_activities: "", hackathon: "", coding_competitions: "", other_achievements: "" },
     });
-
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name: n, value } = e.target;
         setFormData(prev => ({ ...prev, [n]: value }));
     };
-
     const handleArrayChange = (index: number, value: string, key: keyof MenteeFormData) => {
         const arr = [...(formData[key] as string[])];
         arr[index] = value;
         setFormData(prev => ({ ...prev, [key]: arr }));
     };
-
     const addRow = (key: "projects" | "internships" | "activities") => {
         setFormData(prev => ({ ...prev, [key]: [...prev[key], {}] }));
     };
-
     const removeRow = (key: "projects" | "internships" | "activities", index: number) => {
         setFormData(prev => ({ ...prev, [key]: prev[key].filter((_, i) => i !== index) }));
     };
@@ -62,7 +57,6 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
         arr[index] = { ...arr[index], [field]: value };
         setFormData(prev => ({ ...prev, [key]: arr }));
     };
-
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setSubmitting(true);
@@ -75,7 +69,6 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
         } catch { setMessage("Error submitting form."); }
         finally { setSubmitting(false); }
     };
-
     const next = () => setStep(s => Math.min(s + 1, STEPS.length - 1));
     const back = () => setStep(s => Math.max(s - 1, 0));
 
@@ -92,7 +85,6 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                 </div>
                 <div className="text-sm text-gray-400">Step {step + 1} of {STEPS.length}</div>
             </div>
-
             {/* Progress bar */}
             <div className="flex items-center gap-1 mb-4">
                 {STEPS.map((s, i) => {
@@ -113,11 +105,9 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                     );
                 })}
             </div>
-
             {/* Form card */}
             <form onSubmit={handleSubmit}>
                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
-
                     {/* Step 0: Personal */}
                     {step === 0 && (
                         <div className="space-y-4 animate-in fade-in duration-200">
@@ -138,7 +128,6 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                             </div>
                         </div>
                     )}
-
                     {/* Step 1: Parents */}
                     {step === 1 && (
                         <div className="space-y-4 animate-in fade-in duration-200">
@@ -161,7 +150,6 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                             </div>
                         </div>
                     )}
-
                     {/* Step 2: Academics */}
                     {step === 2 && (
                         <div className="space-y-4 animate-in fade-in duration-200">
@@ -246,14 +234,12 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                             </div>
                         </div>
                     )}
-
                     {/* Step 4: Activities & Summary */}
                     {step === 4 && (
                         <div className="space-y-5 animate-in fade-in duration-200">
                             <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
                                 <Trophy size={16} className="text-blue-500" /> Activities & Achievements
                             </h3>
-
                             {/* Activities */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
@@ -280,7 +266,6 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                                     ))}
                                 </div>
                             </div>
-
                             {/* Summary */}
                             <div>
                                 <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Summary</p>
@@ -314,7 +299,6 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                         className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-base font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
                         <ChevronLeft size={16} /> Back
                     </button>
-
                     {step < STEPS.length - 1 ? (
                         <button type="button" onClick={next}
                             className="flex items-center gap-1.5 px-6 py-2.5 rounded-lg text-base font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all active:scale-95">
@@ -327,7 +311,6 @@ export default function MenteeRecordFilling({ usn, name }: MenteeRecordFillingPr
                         </button>
                     )}
                 </div>
-
                 {message && (
                     <div className={`mt-4 text-sm font-medium text-center p-3 rounded-lg border ${message.includes("success") ? "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400"}`}>
                         {message}
@@ -358,16 +341,25 @@ function Field({ label, name, value, onChange, locked, type = "text" }: {
         </div>
     );
 }
-
-function FieldArea({ label, name, value, onChange }: {
-    label: string; name: string; value: string; onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
-}) {
+const FieldArea = ({ label, name, value, onChange }: {
+    label: string;
+    name: string;
+    value: string;
+    onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
+}) => {
     return (
         <div>
-            <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block">{label}</label>
-            <textarea name={name} value={value} onChange={onChange} rows={3}
+            <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block">
+                {label}
+            </label>
+            <textarea
+                name={name}
+                value={value}
+                onChange={onChange}
+                rows={3}
                 className="w-full text-base border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400"
             />
+            {/* resolved */}
         </div>
     );
-}
+};

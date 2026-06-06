@@ -180,7 +180,7 @@ export default function TeacherNotesUploader() {
         }
     };
 
-    const breadcrumbs = currentPath.split("/").filter(Boolean);
+    const breadcrumbSegments = currentPath.split("/").filter((p) => p !== "");
 
     return (
         <>
@@ -208,12 +208,12 @@ export default function TeacherNotesUploader() {
                             >
                                 Root
                             </button>
-                            {breadcrumbs.map((part, idx) => (
+                            {breadcrumbSegments.map((part: string, idx: number) => (
                                 <React.Fragment key={idx}>
                                     <ChevronRight size={14} className="mx-1 text-gray-300" />
                                     <button
-                                        onClick={() => setCurrentPath("/" + breadcrumbs.slice(0, idx + 1).join("/"))}
-                                        className={`hover:text-blue-500 transition-colors ${idx === breadcrumbs.length - 1 ? "text-gray-900 dark:text-white" : "text-gray-400"}`}
+                                        onClick={() => setCurrentPath("/" + breadcrumbSegments.slice(0, idx + 1).join("/"))}
+                                        className={`hover:text-blue-500 transition-colors ${idx === breadcrumbSegments.length - 1 ? "text-gray-900 dark:text-white" : "text-gray-400"}`}
                                     >
                                         {part}
                                     </button>
