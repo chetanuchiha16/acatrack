@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from models.paths import img_dir, get_logo_path
+from settings import settings
 
 # import textwrap
 # from reportlab.lib import colors
@@ -50,7 +51,7 @@ def create_subject_report(subject_result):
 
     # College Name & Logo
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(100, 750, "JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU")
+    c.drawString(100, 750, settings.college_name.upper())
     try:
         c.drawImage(get_logo_path, 50, 735, width=50, height=50)
     except Exception as e:

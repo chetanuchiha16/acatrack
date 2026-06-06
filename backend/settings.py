@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     supabase_key: Optional[str] = None
     testing: bool = False
     cors_allowed_origins: str = "*"
+    college_name: str = "AcaTrack Portal"
+    college_tagline: str = "Academic Analytics & Tracking"
+    logo_url: str = "https://hpavqkjevepfegkojisn.supabase.co/storage/v1/object/public/uploads/Inputs/Images/logo.png"
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(__file__), ".env"),

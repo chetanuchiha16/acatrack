@@ -13,6 +13,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 from models.paths import img_dir, get_logo_path
+from settings import settings
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -67,7 +68,7 @@ async def create_university_report_async(
     # Create PDF in-memory
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(100, 730, "JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU")
+    c.drawString(100, 730, settings.college_name.upper())
     try:
         c.drawImage(get_logo_path(), 50, 710, width=50, height=50)
     except Exception as e:

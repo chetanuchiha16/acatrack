@@ -42,7 +42,7 @@ const ResetPassword: React.FC = () => {
     };
 
     useEffect(() => {
-        document.body.style.backgroundImage = "url('/jss-1.jpeg')";
+        document.body.style.backgroundImage = "url('/anime-classroom.jpeg')";
         document.body.style.backgroundSize = "cover";
         document.body.style.backgroundPosition = "center";
         document.body.style.backgroundAttachment = "fixed";
