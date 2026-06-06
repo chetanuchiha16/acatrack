@@ -46,14 +46,14 @@ export default function ForgotPassword({ onClose }: ForgotPasswordProps) {
     }
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center rounded-3xl justify-center z-50 p-4">
-            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-3xl shadow-2xl p-6 sm:p-8 w-full max-w-md animate-fadeIn">
+        <div className="fixed inset-0 bg-black/70 flex items-center rounded-3xl justify-center z-50 p-4">
+            <div className="bg-gradient-to-br from-slate-900/80 via-slate-950/70 to-slate-950/90 backdrop-blur-2xl backdrop-saturate-200 border border-white/15 border-t-white/30 border-l-white/30 rounded-3xl shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.2),0_12px_40px_rgba(0,0,0,0.5)] p-6 sm:p-8 w-full max-w-md animate-fadeIn">
                 {/* Heading */}
                 <div className="flex flex-col items-center mb-4">
-                    <h2 className="text-xl sm:text-2xl font-bold text-white drop-shadow-md">
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
                         Reset Password
                     </h2>
-                    <p className="text-xs sm:text-sm md:text-base text-white/80 mt-2 text-center">
+                    <p className="text-xs sm:text-sm md:text-base text-slate-200 mt-2 text-center drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] font-medium">
                         Enter your username (USN). We’ll send a reset link to
                         your registered email.
                     </p>
@@ -75,13 +75,13 @@ export default function ForgotPassword({ onClose }: ForgotPasswordProps) {
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="relative">
-                        <FaUser className="absolute left-3 top-3 text-white/70" />
+                        <FaUser className="absolute left-3 top-3.5 text-slate-300" />
                         <input
                             type="text"
                             placeholder="USN / Username"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm sm:text-base"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-black/45 text-white placeholder-slate-400 border border-white/10 focus:border-white/30 focus:bg-black/60 focus:outline-none focus:ring-1 focus:ring-white/20 text-sm sm:text-base transition-all font-medium"
                             required
                         />
                     </div>
@@ -90,13 +90,13 @@ export default function ForgotPassword({ onClose }: ForgotPasswordProps) {
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 rounded-lg bg-gray-500/50 text-white hover:bg-gray-600/70 text-sm sm:text-base"
+                            className="px-4 py-2 rounded-lg bg-black/40 text-slate-300 hover:text-white border border-white/10 hover:bg-black/60 transition-all text-sm sm:text-base font-semibold"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white hover:from-blue-600 hover:to-blue-800 shadow-lg text-sm sm:text-base"
+                            className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 border border-white/15 text-white hover:from-blue-700 hover:to-blue-600 shadow-lg shadow-black/25 text-sm sm:text-base font-bold"
                         >
                             Send Link
                         </button>
