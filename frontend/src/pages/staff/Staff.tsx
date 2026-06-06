@@ -1,5 +1,6 @@
 import React from "react";
-import jssLogo from "../../assets/jssLogo.png";
+import { brandingConfig } from "../../config";
+import { GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import LogoutButton from "../../components/LogoutButton";
 import useProtectedPage from "../../hooks/useProtectedPage";
@@ -20,11 +21,18 @@ const Staff: React.FC = () => {
             {/* Header */}
 
             <div className="flex flex-row items-center justify-between mb-6 ">
-                <img
-                    src={jssLogo}
-                    alt="JSS Logo"
-                    className="drop-shadow-2xl w-28 sm:w-32 md:w-40"
-                />
+                {brandingConfig.collegeLogo ? (
+                    <img
+                        src={brandingConfig.collegeLogo}
+                        alt="College Logo"
+                        className="drop-shadow-2xl w-28 sm:w-32 md:w-40"
+                    />
+                ) : (
+                    <div className="flex items-center gap-2">
+                        <GraduationCap className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+                        <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white hidden sm:inline">AcaTrack</span>
+                    </div>
+                )}
                 <div className="text-2xl mt-4 sm:mt-0 sm:text-3xl sm:mr-23 md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center">
                     Staff Dashboard
                 </div>

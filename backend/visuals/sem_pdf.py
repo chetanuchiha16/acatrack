@@ -11,6 +11,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import letter
 from models.paths import get_logo_path
 import io
+from settings import settings
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -71,9 +72,7 @@ async def generate_sem_pdf_async(
         except Exception as e:
             logger.debug(f"Warning: Could not load logo image. {e}")
 
-        title = Paragraph(
-            f"<b>{'JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU'}</b>", styles["Title"]
-        )
+        title = Paragraph(f"<b>{settings.college_name.upper()}</b>", styles["Title"])
         elements.append(title)
         elements.append(Spacer(1, 20))
         elements.append(

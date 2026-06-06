@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import jssLogo from "../../assets/jssLogo.png";
+import { brandingConfig } from "../../config";
 import { useLocation, useParams } from "react-router-dom";
 import Result from "./Result";
 import Classroom from "./Classroom";
@@ -11,7 +11,7 @@ import useProtectedPage from "../../hooks/useProtectedPage";
 import MenteeRecordFilling from "./MenteeRecordFilling";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import type { Semester } from "../../types";
-import { LayoutGrid, Table, Brain } from "lucide-react";
+import { LayoutGrid, Table, Brain, GraduationCap } from "lucide-react";
 
 type StudentTab = "result" | "classroom" | "mentee" | "record";
 type ResultViewMode = "table" | "cards" | "ai";
@@ -68,11 +68,18 @@ const Student: React.FC = () => {
             <div className="max-w-6xl mx-auto w-full mb-6">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                        <img
-                            src={jssLogo}
-                            alt="JSS Logo"
-                            className="w-17 sm:w-33 md:w-37 lg:w-39 h-auto drop-shadow-lg"
-                        />
+                        {brandingConfig.collegeLogo ? (
+                            <img
+                                src={brandingConfig.collegeLogo}
+                                alt="College Logo"
+                                className="w-17 sm:w-33 md:w-37 lg:w-39 h-auto drop-shadow-lg"
+                            />
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <GraduationCap className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+                                <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white hidden sm:inline">AcaTrack</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white text-center">

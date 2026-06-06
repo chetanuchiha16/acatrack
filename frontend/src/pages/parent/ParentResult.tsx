@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { semesterOptions } from "../../config";
-import jssLogo from "../../assets/jssLogo.png";
+import { semesterOptions, brandingConfig } from "../../config";
 import useStudentStore from "../../store/useStudentStore";
 import { 
     getStudentInfoAuthStudentResultGet,
@@ -174,7 +173,14 @@ export default function ParentResult() {
                         >
                             <ArrowLeft size={18} />
                         </button>
-                        <img src={jssLogo} alt="Logo" className="h-10 w-auto object-contain" />
+                        {brandingConfig.collegeLogo ? (
+                            <img src={brandingConfig.collegeLogo} alt="Logo" className="h-10 w-auto object-contain" />
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <BookOpen className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+                                <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white hidden sm:inline">AcaTrack</span>
+                            </div>
+                        )}
                         <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden md:block" />
                         <div className="hidden md:block">
                             <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider">Reports Workspace</span>

@@ -66,3 +66,9 @@ export const subjectMapping: Partial<Record<Semester, Record<string, string>>> =
         BCSL456D: "Technical Writing using LaTeX",
     },
 };
+
+export const brandingConfig = {
+    collegeName: (import.meta.env.VITE_COLLEGE_NAME as string) || "AcaTrack Portal",
+    collegeTagline: (import.meta.env.VITE_COLLEGE_TAGLINE as string) || "Academic Analytics & Tracking",
+    collegeLogo: (import.meta.env.VITE_COLLEGE_LOGO as string) || "", // Empty indicates fallback to generic icon
+};

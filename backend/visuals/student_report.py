@@ -5,6 +5,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from models.paths import get_logo_path
 from io import BytesIO
+from settings import settings
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -21,7 +22,7 @@ def create_student_report(student):
 
     # College Name / Logo
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(150, 780, "JSS ACADEMY OF TECHNICAL EDUCATION, BENGALURU")
+    c.drawString(150, 780, settings.college_name.upper())
     try:
         c.drawImage(get_logo_path(), 50, 750, width=50, height=50)
     except Exception as e:

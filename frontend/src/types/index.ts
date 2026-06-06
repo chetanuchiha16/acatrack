@@ -91,6 +91,8 @@ export interface StudentResult {
 export interface StudentInfo {
   usn: string;
   name: string;
+  batch_year?: number;
+  section?: string;
   [key: string]: unknown;
 }
 
