@@ -129,66 +129,75 @@ const Auth: React.FC = () => {
 
                 {/* Title centered */}
                 <div className="text-center mt-10">
-                    <div className="text-4xl mt-2.5 sm:text-4xl sm:mt-2.5 md:text-5xl md:mt-5 xl:-mt-11 lg:text-5xl lg:mt-5 font-bold text-red-700 drop-shadow-md">
+                    <div className="text-4xl mt-2.5 sm:text-4xl sm:mt-2.5 md:text-5xl md:mt-5 xl:-mt-11 lg:text-5xl lg:mt-5 font-extrabold text-white tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                         {brandingConfig.collegeName}
                     </div>
-                    <p className="text-base sm:text-lg md:text-xl text-red-600">
+                    <p className="text-base sm:text-lg md:text-xl text-slate-100 font-medium drop-shadow-[0_1.5px_4px_rgba(0,0,0,0.8)]">
                         {brandingConfig.collegeTagline}
                     </p>
                 </div>
             </div>
 
-            {/* Login Card */}
-            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-3xl shadow-2xl p-6 sm:p-8 w-full max-w-md relative animate-fadeIn mt-28 sm:mt-32">
-                {/* Login Heading */}
-                <div className="flex flex-col items-center mb-6">
-                    <h2 className="text-xl sm:text-2xl font-bold text-white drop-shadow-md">
-                        Login to Acatrack
-                    </h2>
-                </div>
+            {/* Login Card Container with Backlight Glow */}
+            <div className="relative w-full max-w-md mt-28 sm:mt-32 animate-fadeIn">
+                {/* Backlight Refraction Glow */}
+                <div className="absolute -inset-4 bg-gradient-to-tr from-blue-500/25 via-indigo-500/20 to-purple-500/25 rounded-[36px] blur-3xl opacity-80 pointer-events-none" />
 
-                {/* Role Selector */}
-                <div className="flex bg-white/30 backdrop-blur-md rounded-full p-1 mb-6 border border-white/20">
-                    {["Student", "Staff", "Parent"].map((role) => (
-                        <button
-                            key={role}
-                            onClick={() => navigate(`/auth/${role}`)}
-                            className={`flex-1 py-2 rounded-full text-xs sm:text-sm font-medium transition-all mx-0.5 ${
-                                who === role
-                                    ? "!bg-blue-500 !text-white !shadow-md"
-                                    : "!text-white !hover:bg-white/20"
-                            }`}
-                        >
-                            {role}
-                        </button>
-                    ))}
-                </div>
+                {/* Main Glass Card */}
+                <div className="bg-gradient-to-br from-white/10 via-slate-950/60 to-slate-950/80 backdrop-blur-3xl backdrop-saturate-200 border border-white/10 border-t-white/30 border-l-white/30 rounded-[32px] shadow-[inset_0_2px_3px_rgba(255,255,255,0.2),0_16px_40px_rgba(0,0,0,0.6)] p-6 sm:p-8 relative overflow-hidden">
+                    {/* Glossy specular sheen reflections */}
+                    <div className="absolute -top-[40%] -left-[30%] w-[70%] h-[70%] rounded-full bg-gradient-to-br from-white/15 to-transparent blur-xl pointer-events-none transform rotate-12" />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none" />
+
+                    {/* Login Heading */}
+                    <div className="flex flex-col items-center mb-6 relative z-10">
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                            Login to Acatrack
+                        </h2>
+                    </div>
+
+                    {/* Role Selector */}
+                    <div className="flex bg-black/40 backdrop-blur-md rounded-full p-1 mb-6 border border-white/10 relative z-10">
+                        {["Student", "Staff", "Parent"].map((role) => (
+                            <button
+                                key={role}
+                                onClick={() => navigate(`/auth/${role}`)}
+                                className={`flex-1 py-2 rounded-full text-xs sm:text-sm font-bold transition-all mx-0.5 ${
+                                    who === role
+                                        ? "!bg-blue-600 !text-white !shadow-lg border border-white/15"
+                                        : "!text-slate-300 hover:!text-white hover:bg-white/5"
+                                }`}
+                            >
+                                {role}
+                            </button>
+                        ))}
+                    </div>
 
                 {/* Login Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="relative">
-                        <FaUser className="absolute left-3 top-3 text-white/70" />
+                        <FaUser className="absolute left-3 top-3.5 text-slate-300" />
                         <input
                             type="text"
                             placeholder="Username"
                             value={username}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm sm:text-base"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-black/45 text-white placeholder-slate-400 border border-white/10 focus:border-white/30 focus:bg-black/60 focus:outline-none focus:ring-1 focus:ring-white/20 text-sm sm:text-base transition-all font-medium"
                         />
                     </div>
 
                     <div className="relative">
-                        <FaLock className="absolute left-3 top-3 text-white/70" />
+                        <FaLock className="absolute left-3 top-3.5 text-slate-300" />
                         <input
                             type={showPassword ? "text" : "password"}
                             placeholder="Password"
                             value={password}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                            className="w-full pl-10 pr-10 py-2 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm sm:text-base"
+                            className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-black/45 text-white placeholder-slate-400 border border-white/10 focus:border-white/30 focus:bg-black/60 focus:outline-none focus:ring-1 focus:ring-white/20 text-sm sm:text-base transition-all font-medium"
                         />
                         <div
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 inset-y-0 flex items-center text-white/70 rounded-xl cursor-pointer"
+                            className="absolute right-3 inset-y-0 flex items-center text-slate-300 hover:text-white cursor-pointer transition-colors"
                             tabIndex={-1}
                         >
                             {showPassword ? <FaEyeSlash /> : <FaEye />}
@@ -197,17 +206,17 @@ const Auth: React.FC = () => {
 
                     <button
                         type="submit"
-                        className="w-full py-2 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-600 hover:to-blue-800 transition-all shadow-lg text-sm sm:text-base"
+                        className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 border border-white/15 text-white rounded-lg font-bold hover:from-blue-700 hover:to-blue-600 transition-all shadow-lg shadow-black/25 text-sm sm:text-base"
                     >
                         Login
                     </button>
                 </form>
 
                 {/* Links */}
-                <div className="mt-4 flex flex-col sm:flex-row sm:justify-between items-center text-xs sm:text-sm text-white/70 gap-2">
+                <div className="mt-4 flex flex-col sm:flex-row sm:justify-between items-center text-xs sm:text-sm text-slate-300 gap-2">
                     <p
                         onClick={() => setShowForgot(true)}
-                        className="text-indigo-700 hover:underline cursor-pointer font-medium"
+                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer font-bold transition-colors drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
                     >
                         Forgot password?
                     </p>
@@ -215,13 +224,14 @@ const Auth: React.FC = () => {
                     {showForgot && (
                         <ForgotPassword onClose={() => setShowForgot(false)} />
                     )}
-                    <a href="#" className="hover:text-white text-indigo-700">
+                    <a href="#" className="hover:text-white text-slate-300 transition-colors font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
                         Need help?
                     </a>
                 </div>
             </div>
         </div>
-    );
+    </div>
+);
 };
 
 export default Auth;
