@@ -43,6 +43,8 @@ async def get_student_analysis(
 
     except Exception:
         return JSONResponse(
-            content={"error": "An error occurred during performance analysis calculation."},
+            content={
+                "error": "An error occurred during performance analysis calculation."
+            },
             status_code=500,
         )
