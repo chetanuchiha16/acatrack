@@ -345,8 +345,7 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                         Performance Dashboard
                     </button>
                 </div>
-            </div>
-
+            </div> {/* End view controls */}
             {errorAI && viewMode === "ai" && <p className="text-sm text-red-600 text-center font-medium animate-pulse">{errorAI}</p>}
             {errorPerf && viewMode === "perf" && <p className="text-sm text-red-600 text-center font-medium animate-pulse">{errorPerf}</p>}
 
@@ -596,7 +595,6 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                                     <span className="text-lg font-black text-purple-600 dark:text-purple-400">{(performanceData.predicted_next_sgpa ?? 0).toFixed(2)}</span>
                                 </div>
                             </div>
-
                             {/* Main content: table left, chart + actions right */}
                             <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
                                 {/* Subjects Table */}
@@ -673,6 +671,8 @@ export default function StudentAIInsights({ usn = "", semester = "sem1" }) {
                     ) : null}
                 </div>
             )}
+            {/* End StudentAIInsights Component */}
+            {/* resolved */}
         </div>
     );
 }

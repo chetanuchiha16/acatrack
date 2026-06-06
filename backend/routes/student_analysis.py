@@ -11,30 +11,38 @@ router = APIRouter(tags=["student_analysis"])
 @router.get("/auth/Student/analysis")
 @cache(expire=3600)
 async def get_student_analysis(
-    request: Request,
-    usn: str = Query(None),
-    semester: str = Query(None),
+    req: Request,
+    student_usn: str = Query(None, alias="usn"),
+    target_sem: str = Query(None, alias="semester"),
 ):
-    batch_year = get_batch_year_from_request(request)
+    """
+    Retrieves performance analysis for a specific student and semester.
+    """
+    by = get_batch_year_from_request(req)
 
-    if not usn or not semester:
+    if not student_usn or not target_sem:
         return JSONResponse(
-            content={"error": "USN and semester are required"}, status_code=400
+            content={"error": "Both usn and semester queries must be provided."},
+            status_code=400,
         )
 
     try:
-        async with bm.session_scope(batch_year) as session:
-            analysis = await analyze_student_performance(
-                session, usn, semester, batch_year
+        async with bm.session_scope(by) as session:
+            perf_data = await analyze_student_performance(
+                session, student_usn, target_sem, by
             )
 
-        analysis.pop("study_tips", None)
+        # Sanitize output by removing raw tips and ensuring default summary exists
+        if "study_tips" in perf_data:
+            del perf_data["study_tips"]
 
-        if "study_summary" not in analysis:
-            analysis["study_summary"] = "Focus on overall improvement."
+        if not perf_data.get("study_summary"):
+            perf_data["study_summary"] = "Focus on overall improvement."
 
-        return analysis
+        return perf_data
+
     except Exception:
         return JSONResponse(
-            content={"error": "Failed to perform student analysis."}, status_code=500
+            content={"error": "An error occurred during performance analysis calculation."},
+            status_code=500,
         )

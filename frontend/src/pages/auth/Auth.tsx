@@ -34,7 +34,10 @@ const Auth: React.FC = () => {
     // check if already logged in
     useEffect(() => {
         const token = getToken();
-        if (!token) return setLoading(false);
+        if (!token) {
+            setLoading(false);
+            return;
+        }
 
         const payload = parseJwt(token);
         if (payload) {
@@ -98,7 +101,8 @@ const Auth: React.FC = () => {
                 state: { who, id, name, mentor_id },
             });
         } catch (err: unknown) {
-            alert(parseApiError(err) || "Login failed");
+            const apiErrorMsg = parseApiError(err) || "Login failed";
+            alert(apiErrorMsg);
         }
     };
 

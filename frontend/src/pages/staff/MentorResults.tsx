@@ -201,7 +201,6 @@ const MentorResults: React.FC<MentorResultsProps> = ({ mentor_id, batchYear }) =
                                     </button>
                                 </div>
                             </div>
-
                             {/* Subjects Detailed View */}
                             {expandedMentees[mentee.usn] && (
                                 <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-700/50 animate-in fade-in slide-in-from-top-4 duration-300">
@@ -248,7 +247,6 @@ const MentorResults: React.FC<MentorResultsProps> = ({ mentor_id, batchYear }) =
                     ))}
                 </div>
             )}
-
             {/* Premium Chart Modal */}
             {chartData && selectedMentee && (
                 <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">

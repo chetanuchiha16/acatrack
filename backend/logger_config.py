@@ -1,13 +1,18 @@
 import logging
 
+# Set up global logging configuration with a standard formatting output
 logging.basicConfig(
-    level=logging.DEBUG,  # Switch to INFO or WARNING in production
+    level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
 )
 
 
-def get_logger(name):
-    # Silence noisy external libraries if root level is DEBUG
+def get_logger(module_name: str) -> logging.Logger:
+    """
+    Returns a configured logger instance for a given module name.
+    Silences noisy third-party modules to keep stdout readable.
+    """
+    # Adjust third-party library log levels to prevent clutter
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
     logging.getLogger("PIL").setLevel(logging.WARNING)
     logging.getLogger("pdfminer").setLevel(logging.ERROR)
@@ -15,4 +20,5 @@ def get_logger(name):
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
     logging.getLogger("hpack").setLevel(logging.WARNING)
-    return logging.getLogger(name)
+    
+    return logging.getLogger(module_name)

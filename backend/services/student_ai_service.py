@@ -1,17 +1,11 @@
+import re
+from collections import defaultdict
 import numpy as np
 from deep_translator import GoogleTranslator
 from logger_config import get_logger
 from services.student_service import Student
-from services.ai_algorithms import (
-    _calculate_backlogs,
-    aggregate_tag_scores,
-    build_placement_and_skill_advice,
-    classify_tag_strengths,
-    get_latest_semester,
-    get_student_history,
-    predict_next_sgpa_with_confidence,
-    safe_marks,
-)
+from sklearn.linear_model import Ridge
+from rapidfuzz import fuzz
 
 logger = get_logger(__name__)
 
@@ -101,7 +95,7 @@ def get_ai_summary_data(usn: str, lng: str, batch_year: int) -> tuple[dict, int]
             "ai_profile": {},
         }, 404
 
-    latest_sem = get_latest_semester(student_data)
+    latest_sem = find_latest_active_semester(student_data)
     sem_data = student_data["semesters"][latest_sem]
 
     # Total marks
@@ -114,7 +108,7 @@ def get_ai_summary_data(usn: str, lng: str, batch_year: int) -> tuple[dict, int]
     max_total_marks = len(sem_data.get("subject_names") or []) * 100
 
     # Backlogs
-    backlogs, total_backlog_credits = _calculate_backlogs(student_data)
+    backlogs, total_backlog_credits = calculate_student_backlogs(student_data)
 
     # Total credits
     credits = sem_data.get("credits", [])
@@ -180,7 +174,7 @@ def get_ai_trend_data(usn: str, batch_year: int) -> tuple[dict, int]:
         except Exception:
             pass
 
-    history = get_student_history(student_data)
+    history = extract_sgpa_history(student_data)
     if not history:
         return {"error": "No SGPA history found"}, 404
 
@@ -226,7 +220,7 @@ def get_ai_cgpa_prediction(usn: str, batch_year: int) -> tuple[dict, int]:
             "resid_std": None,
         }
     else:
-        pred_info = predict_next_sgpa_with_confidence(history)
+        pred_info = forecast_academic_performance(history)
         if not pred_info:
             return {"error": "Prediction failed"}, 500
         _, sgpas = zip(*history)
@@ -278,10 +272,10 @@ def get_ai_profile_data(usn: str, lng: str, batch_year: int) -> tuple[dict, int]
     if not student_data["semesters"]:
         return {"error": "No data found for student"}, 404
 
-    backlogs, total_backlog_credits = _calculate_backlogs(student_data)
+    backlogs, total_backlog_credits = calculate_student_backlogs(student_data)
 
     # Trend & Prediction
-    history = get_student_history(student_data)
+    history = extract_sgpa_history(student_data)
     trend_data = {}
     cgpa_pred = {}
     if history:
@@ -293,7 +287,7 @@ def get_ai_profile_data(usn: str, lng: str, batch_year: int) -> tuple[dict, int]
                 "history": {sem: sgpa for sem, sgpa in history},
                 "avg_sgpa": round(float(np.mean(sgpas)), 2),
             }
-            pred_info = predict_next_sgpa_with_confidence(history)
+            pred_info = forecast_academic_performance(history)
             if pred_info:
                 predicted_next = pred_info["predicted_next_sgpa"]
                 predicted_final = round(
@@ -322,19 +316,19 @@ def get_ai_profile_data(usn: str, lng: str, batch_year: int) -> tuple[dict, int]
                 "resid_std": None,
             }
 
-    tag_avgs, tag_counts, subject_tags = aggregate_tag_scores(student_data)
-    strong_tags, mid_tags, weak_tags = classify_tag_strengths(tag_avgs)
+    tag_avgs, tag_counts, subject_tags = calculate_aggregate_skills(student_data)
+    strong_tags, mid_tags, weak_tags = categorize_skill_strengths(tag_avgs)
 
-    latest_sem = get_latest_semester(student_data)
+    latest_sem = find_latest_active_semester(student_data)
     latest_scores = np.array(
-        safe_marks(student_data["semesters"][latest_sem]["ia_marks"])
-    ) + np.array(safe_marks(student_data["semesters"][latest_sem]["see_marks"]))
+        get_clean_marks_list(student_data["semesters"][latest_sem]["ia_marks"])
+    ) + np.array(get_clean_marks_list(student_data["semesters"][latest_sem]["see_marks"]))
     subjects = student_data["semesters"][latest_sem]["subject_names"]
     latest_strong = [sub for sub, mark in zip(subjects, latest_scores) if mark >= 70]
     latest_mid = [sub for sub, mark in zip(subjects, latest_scores) if 40 <= mark < 70]
     latest_weak = [sub for sub, mark in zip(subjects, latest_scores) if mark < 40]
 
-    placement_advice, learning_plan = build_placement_and_skill_advice(
+    placement_advice, learning_plan = generate_career_and_learning_recommendations(
         strong_tags, mid_tags, weak_tags, trend_data, cgpa_pred, total_backlog_credits
     )
 
@@ -361,3 +355,385 @@ def get_ai_profile_data(usn: str, lng: str, batch_year: int) -> tuple[dict, int]
         "placement_advice": t_placement_advice,
         "learning_plan": t_learning_plan,
     }, 200
+
+
+# ---------------- ACADEMIC ANALYSIS ALGORITHMS ----------------
+
+# A map of keyword tags to categorize subjects
+SKILL_CATEGORIES = {
+    "programming": [
+        "programming",
+        "data structures",
+        "algorithms",
+        "dsa",
+        "software",
+        "coding",
+        "java",
+        "python",
+        "c++",
+        "c",
+    ],
+    "math": [
+        "math",
+        "mathematics",
+        "discrete",
+        "calculus",
+        "statistics",
+        "probability",
+        "linear algebra",
+    ],
+    "data": [
+        "data",
+        "database",
+        "dbms",
+        "data mining",
+        "data science",
+        "machine learning",
+        "ai",
+        "artificial intelligence",
+    ],
+    "electronics": [
+        "electronics",
+        "circuit",
+        "microcontroller",
+        "analog",
+        "digital",
+        "signal",
+        "embedded",
+    ],
+    "networking": ["network", "communication", "tcp", "udp", "routing", "networking"],
+    "management": [
+        "management",
+        "economics",
+        "accounts",
+        "business",
+        "marketing",
+        "management studies",
+    ],
+    "communication": ["english", "communication", "soft skills", "interpersonal"],
+}
+
+
+def calculate_student_backlogs(student_record: dict) -> tuple[dict, float]:
+    """
+    Evaluates student record to extract fail status subjects and count backlog credits.
+    """
+    backlogs_map = {}
+    net_credits = 0.0
+
+    for sem_key, sem_data in student_record.get("semesters", {}).items():
+        failed_list = []
+        sem_credit_total = 0.0
+
+        zipped_data = zip(
+            sem_data.get("ia_marks", []),
+            sem_data.get("see_marks", []),
+            sem_data.get("credits", []),
+            sem_data.get("subject_names", []),
+            sem_data.get("pass_fail", []),
+        )
+
+        for ia_val, see_val, credit_val, sub_name, pass_status in zipped_data:
+            if pass_status == "Fail":
+                try:
+                    val = float(credit_val) if credit_val is not None else 0.0
+                    clean_credit = val if val >= 0.0 else 0.0
+                except (ValueError, TypeError):
+                    clean_credit = 0.0
+
+                # Sanitize credit boundaries
+                if clean_credit > 10.0:
+                    clean_credit = 3.0
+
+                failed_list.append(
+                    {
+                        "subject": sub_name,
+                        "internal": ia_val,
+                        "external": see_val,
+                        "credits": clean_credit,
+                    }
+                )
+                sem_credit_total += clean_credit
+                net_credits += clean_credit
+
+        if failed_list:
+            backlogs_map[sem_key] = {
+                "failed_subjects": failed_list,
+                "semester_backlog_credits": sem_credit_total,
+            }
+
+    return backlogs_map, net_credits
+
+
+def find_latest_active_semester(student_record: dict) -> str | None:
+    """
+    Finds the key representing the student's most recent active semester.
+    """
+    sem_dict = student_record.get("semesters")
+    if sem_dict:
+        active_keys = [k for k, d in sem_dict.items() if d.get("sgpa") is not None]
+        if active_keys:
+            # Order key names numerically (e.g. sem1, sem2)
+            active_keys.sort(key=lambda s: int(re.search(r"\d+", s).group() or 0))
+            return active_keys[-1]
+
+    # Handle single-semester flat responses
+    if "sgpa" in student_record and student_record["sgpa"] is not None:
+        url = student_record.get("pdf_url", "")
+        match_sem = re.search(r"(sem\d+)", url)
+        if match_sem:
+            return match_sem.group(1)
+
+    return None
+
+
+def get_clean_marks_list(marks_data: list | None) -> list[int]:
+    """
+    Replaces null marks with zero.
+    """
+    return [int(val) if val is not None else 0 for val in (marks_data or [])]
+
+
+def extract_sgpa_history(student_record: dict) -> list[tuple[str, float]]:
+    """
+    Extracts chronological list of past semester SGPA scores.
+    """
+    semesters = student_record.get("semesters", {})
+    sorted_sems = sorted(
+        semesters.items(),
+        key=lambda x: int(re.search(r"\d+", x[0]).group() or 0)
+    )
+    return [
+        (k, float(d["sgpa"]))
+        for k, d in sorted_sems
+        if d.get("sgpa") is not None
+    ]
+
+
+def auto_assign_subject_tags(subject_name: str) -> list[str]:
+    """
+    Categorizes a subject using fuzzy string match algorithms.
+    """
+    if not subject_name:
+        return []
+
+    query = subject_name.lower()
+    matched_tags = []
+
+    for category_tag, keywords in SKILL_CATEGORIES.items():
+        for word in keywords:
+            if word in query:
+                matched_tags.append(category_tag)
+                break
+            # Fuzzy match threshold
+            similarity = fuzz.token_sort_ratio(query, word)
+            if similarity >= 70:
+                matched_tags.append(category_tag)
+                break
+
+    return list(set(matched_tags))
+
+
+def calculate_aggregate_skills(student_record: dict) -> tuple[dict, dict, dict]:
+    """
+    Aggregates subject scores based on fuzzy tags.
+    """
+    totals_map = defaultdict(float)
+    counts_map = defaultdict(int)
+    resolved_tags = {}
+
+    for sem_key, sem_data in student_record.get("semesters", {}).items():
+        ia_list = get_clean_marks_list(sem_data.get("ia_marks"))
+        see_list = get_clean_marks_list(sem_data.get("see_marks"))
+        subjects_list = sem_data.get("subject_names", [])
+
+        for name, ia_score, see_score in zip(subjects_list, ia_list, see_list):
+            combined_score = float(ia_score + see_score)
+            tags = auto_assign_subject_tags(name)
+            resolved_tags[name] = tags
+
+            if not tags:
+                totals_map["other"] += combined_score
+                counts_map["other"] += 1
+            else:
+                for tag in tags:
+                    totals_map[tag] += combined_score
+                    counts_map[tag] += 1
+
+    averages_map = {}
+    for tag_name, total_val in totals_map.items():
+        cnt = max(1, counts_map.get(tag_name, 1))
+        averages_map[tag_name] = round(total_val / cnt, 2)
+
+    return averages_map, dict(counts_map), resolved_tags
+
+
+def categorize_skill_strengths(skill_averages: dict) -> tuple[list[str], list[str], list[str]]:
+    """
+    Divides skills into strong, moderate, and needs improvement brackets.
+    """
+    strong, moderate, needs_work = [], [], []
+    for tag, avg in skill_averages.items():
+        if avg >= 70.0:
+            strong.append(tag)
+        elif avg >= 40.0:
+            moderate.append(tag)
+        else:
+            needs_work.append(tag)
+    return strong, moderate, needs_work
+
+
+def forecast_academic_performance(sgpa_history: list[tuple[str, float]]) -> dict | None:
+    """
+    Applies linear Ridge regression to predict subsequent semester SGPA.
+    """
+    if not sgpa_history or len(sgpa_history) < 2:
+        return None
+
+    _, sgpa_scores = zip(*sgpa_history)
+    x_matrix = np.arange(1, len(sgpa_scores) + 1).reshape(-1, 1)
+    y_vector = np.array(sgpa_scores, dtype=float)
+
+    predictor = Ridge(alpha=1.0)
+    predictor.fit(x_matrix, y_vector)
+
+    future_index = np.array([[len(sgpa_scores) + 1]])
+    predicted_val = float(predictor.predict(future_index)[0])
+
+    # Residuals standard deviation
+    residuals = y_vector - predictor.predict(x_matrix)
+    if len(residuals) > 1:
+        dev = float(residuals.std(ddof=1))
+    else:
+        dev = max(0.25, abs(y_vector[0] - predicted_val))
+
+    margin = 1.96 * dev
+    lower_bound = max(0.0, predicted_val - margin)
+    upper_bound = min(10.0, predicted_val + margin)
+
+    return {
+        "predicted_next_sgpa": round(predicted_val, 2),
+        "ci_low": round(lower_bound, 2),
+        "ci_high": round(upper_bound, 2),
+        "model": "ridge",
+        "resid_std": round(dev, 3),
+    }
+
+
+def generate_career_and_learning_recommendations(
+    strong_areas: list[str],
+    moderate_areas: list[str],
+    needs_work_areas: list[str],
+    trend_analysis: dict,
+    prediction_analysis: dict,
+    total_backlog_credits: float,
+) -> tuple[list[str], list[str]]:
+    """
+    Formulates custom placement/career path suggestions and target learning actions.
+    """
+    career_tips = []
+    study_recommendations = []
+
+    # Software Engineering Tag Recommendations
+    if "programming" in strong_areas:
+        career_tips.append(
+            "Strong in programming → Good fit for software/coding internships. Focus on DSA, system design basics, and personal projects."
+        )
+        study_recommendations.append(
+            "Practice on coding platforms (DSA), contribute to small projects, build 2-3 demonstrable projects."
+        )
+    elif "programming" in moderate_areas:
+        career_tips.append(
+            "Programming is moderate → strengthen algorithms & projects to target coding roles."
+        )
+        study_recommendations.append(
+            "Daily DSA practice (1–2 problems), small project focusing on implementation and debugging."
+        )
+    elif "programming" in needs_work_areas:
+        career_tips.append(
+            "Programming is weak → start with fundamentals (syntax, basic algorithms) and small exercises."
+        )
+        study_recommendations.append(
+            "Beginner tutorials + practice problems, pair-programming, small guided projects."
+        )
+
+    # Data Roles Recommendations
+    if "data" in strong_areas:
+        career_tips.append(
+            "Good data-oriented skills → consider analytics/data science roles; learn SQL, pandas, and basic ML pipelines."
+        )
+        study_recommendations.append(
+            "Work on data cleaning, SQL queries, mini-ML projects and Kaggle beginner challenges."
+        )
+
+    # Math Focus
+    if "math" in strong_areas:
+        career_tips.append(
+            "Strong mathematical foundation → suitable for analytics, research or systems roles requiring quantitative reasoning."
+        )
+        study_recommendations.append(
+            "Practice probability/statistics & linear algebra applied to ML/algorithms."
+        )
+
+    # Backlog warnings
+    if total_backlog_credits > 0.0:
+        career_tips.append(
+            "Clear backlogs soon — many recruiters shortlist based on clear academic records."
+        )
+        study_recommendations.append(
+            "Prioritise backlog clearance and short-term revision plans for failed subjects."
+        )
+
+    # Trend adjustments
+    if trend_analysis:
+        if trend_analysis.get("trend") == "Declining":
+            career_tips.append(
+                "SGPA trend is Declining — identify root causes (attendance, exam prep, fundamentals)."
+            )
+            study_recommendations.append(
+                "Strengthen fundamentals for weak topics, structured weekly study plan, and seek mentoring or extra classes."
+            )
+        else:
+            career_tips.append(
+                "SGPA trend is Improving — maintain study routine and strengthen project-based learning."
+            )
+
+    # CGPA thresholds
+    if prediction_analysis:
+        est_cgpa = prediction_analysis.get("predicted_final_cgpa")
+        if isinstance(est_cgpa, (int, float)):
+            if est_cgpa >= 7.5:
+                career_tips.append(
+                    "Predicted CGPA is competitive for campus placements at mid-large companies; focus on interview prep & projects."
+                )
+            elif est_cgpa >= 6.0:
+                career_tips.append(
+                    "Predicted CGPA is decent — target internships, niche roles and strengthen practical skills & projects."
+                )
+            else:
+                career_tips.append(
+                    "Predicted CGPA is low — aim for internships, upskilling courses, and consider certification-based skill proof."
+                )
+
+    # General skill gaps
+    for tag in needs_work_areas:
+        if tag == "communication":
+            study_recommendations.append(
+                "Work on communication: mock interviews, presentation practice, and resume polish."
+            )
+        else:
+            study_recommendations.append(
+                f"Review fundamentals for {tag}, use guided courses and hands-on mini-projects."
+            )
+
+    # Deduplicate keeping order
+    def clean_uniques(lst):
+        seen = set()
+        unique_list = []
+        for item in lst:
+            if item not in seen:
+                seen.add(item)
+                unique_list.append(item)
+        return unique_list
+
+    return clean_uniques(career_tips), clean_uniques(study_recommendations)
