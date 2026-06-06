@@ -13,8 +13,6 @@ import {
     generateAccountsAdminGenerateAccountsPost,
     uploadEmailsAdminUploadEmailsPost,
     uploadMentorsAdminUploadMentorsPost,
-    createBatchAdminCreateBatchPost,
-    refreshBatchAdminRefreshBatchPost,
     uploadArchivePdftoexcelUploadPost,
     getStatusPdftoexcelStatusJobIdGet,
     listStaffAdminListStaffGet,
@@ -32,7 +30,7 @@ function getErrMsg(err: unknown): string {
 
 const AdminPanel = () => {
     const navigate = useNavigate();
-    const [secret, setSecret] = useState<string>(localStorage.getItem("admin_secret") || "");
+    const [secret] = useState<string>(localStorage.getItem("admin_secret") || "");
     const [mode, setMode] = useState<string>("missing");
     const [status, setStatus] = useState<string>("");
 
@@ -57,13 +55,9 @@ const AdminPanel = () => {
 
     const [emailFile, setEmailFile] = useState<File | null>(null);
     const [mentorFile, setMentorFile] = useState<File | null>(null);
-    const [newBatchYear, setNewBatchYear] = useState<string>("");
 
     // Payload upload states
     const [pdfZipFile, setPdfZipFile] = useState<File | null>(null);
-    const [pdfExcelFilename, setPdfExcelFilename] = useState<string>(
-        "result_list_YEAR.xlsx"
-    );
 
     const [staffList, setStaffList] = useState<Array<{username: string, name: string, email: string}>>([]);
     const [newStaffName, setNewStaffName] = useState<string>("");
@@ -116,18 +110,12 @@ const AdminPanel = () => {
 
     useEffect(() => {
         if (activeConfigTab === "registry") {
-            fetchStaff();
+            void fetchStaff();
         }
     }, [activeConfigTab, fetchStaff]);
 
 
-    const handleSecretSubmit = () => {
-        if (!secret) return alert("Enter admin secret");
-        setStatus(
-            "✅ Secret saved. You can now generate accounts or upload files."
-        );
-        fetchBatches();
-    };
+
 
     const generateAccounts = async () => {
         if (!secret) return alert("Admin secret missing");
@@ -226,7 +214,7 @@ const AdminPanel = () => {
             setStatus(`✅ Registered ${newStaffName}. Username: ${data.username} | Password: ${data.plain_password}`);
             setNewStaffName("");
             setNewStaffEmail("");
-            fetchStaff();
+            await fetchStaff();
         } catch (err) {
             setStatus("❌ " + getErrMsg(err));
         }
@@ -247,60 +235,13 @@ const AdminPanel = () => {
             const data = res.data as { registered?: unknown[] };
             const count = data.registered?.length || 0;
             setStatus(`✅ Bulk upload successful! Registered ${count} new staff members. All passwords follow the 'staff_username' pattern.`);
-            fetchStaff();
+            await fetchStaff();
         } catch (err) {
             setStatus("❌ " + getErrMsg(err));
         }
     };
 
-    const createBatch = async () => {
-        if (!newBatchYear)
-            return setStatus("Enter a new batch year to create.");
-        if (!secret) return alert("Admin secret missing");
 
-        const logId = logAction(`Creating new academic batch ${newBatchYear}...`, 'loading');
-        setStatus(`Creating batch ${newBatchYear}...`);
-        try {
-            const res = await createBatchAdminCreateBatchPost({
-                headers: { "X-Admin-Secret": secret },
-                body: { batch_year: parseInt(newBatchYear, 10) }
-            });
-            if (res.error) {
-                const errMsg = (res.error as { error?: string }).error || "Unknown error";
-                throw new Error(errMsg);
-            }
-            updateLog(logId, 'success', `Batch ${newBatchYear} created successfully.`);
-            setStatus(`✅ Batch ${newBatchYear} created.`);
-            setNewBatchYear("");
-            fetchBatches();
-        } catch (err: unknown) {
-            updateLog(logId, 'error', `Batch creation failed: ${getErrMsg(err)}`);
-            setStatus("❌ Error: " + getErrMsg(err));
-        }
-    };
-
-    const refreshBatch = async () => {
-        if (!batchYear) return setStatus("Select batch year to refresh.");
-        if (!secret) return alert("Admin secret missing");
-
-        const logId = logAction(`Refreshing all records for batch ${batchYear}...`, 'loading');
-        setStatus(`Refreshing batch ${batchYear}...`);
-        try {
-            const res = await refreshBatchAdminRefreshBatchPost({
-                headers: { "X-Admin-Secret": secret },
-                body: { batch_year: batchYear }
-            });
-            if (res.error) {
-                const errMsg = (res.error as { error?: string }).error || "Unknown error";
-                throw new Error(errMsg);
-            }
-            updateLog(logId, 'success', `Batch ${batchYear} records refreshed.`);
-            setStatus(`✅ Batch ${batchYear} refreshed.`);
-        } catch (err: unknown) {
-            updateLog(logId, 'error', `Batch refresh failed: ${getErrMsg(err)}`);
-            setStatus("❌ Error: " + getErrMsg(err));
-        }
-    };
 
 
     const uploadPdfZip = async () => {
@@ -442,7 +383,7 @@ const AdminPanel = () => {
                     <button
                         onClick={() => {
                             clearToken();
-                            navigate("/admin");
+                            void navigate("/admin");
                         }}
                         className="w-full flex items-center gap-4 px-6 py-4 rounded-[1.25rem] text-sm font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10 transition-all active:scale-95"
                     >
