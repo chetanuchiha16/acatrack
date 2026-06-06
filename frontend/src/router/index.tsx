@@ -5,6 +5,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import App from "../App";
 import ErrorPage from "../components/Error";
 import API_BASE from "../config";
+import Auth from "../pages/auth/Auth";
 
 const StudentLayout = React.lazy(() => import("../layouts/StudentLayout"));
 const StudentOverview = React.lazy(() => import("../pages/student/StudentOverview"));
@@ -26,7 +27,6 @@ const AdminPanel = React.lazy(() => import("../pages/admin/AdminPanel"));
 const ParentDashboard = React.lazy(() => import("../pages/parent/ParentDashboard"));
 const ParentResult = React.lazy(() => import("../pages/parent/ParentResult"));
 
-const Auth = React.lazy(() => import("../pages/auth/Auth"));
 const ResetPassword = React.lazy(() => import("../pages/auth/ResetPassword"));
 
 const MenteeEmailsWrapper = React.lazy(() => import("./StudentRouteWrappers").then(m => ({ default: m.MenteeEmailsWrapper })));

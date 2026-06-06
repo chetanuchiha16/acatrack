@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { getStudentInfoAuthStudentResultGet } from "../client/sdk.gen";
 import type { StudentResult, Semester } from "../types";
-import { subjectMapping } from "../config";
 import { parseApiError } from "../utils/errorHandler";
+
 
 interface ResultCardViewProps {
     usn: string;
