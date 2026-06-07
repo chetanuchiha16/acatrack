@@ -138,7 +138,7 @@ async def verify_teacher_section_access(
             SubjectAssignment.batch_year == batch_year,
         )
         assign_res = await db.execute(assign_stmt)
-        has_assignment = assign_res.scalar_one_or_none() is not None
+        has_assignment = assign_res.scalars().first() is not None
 
         if not has_assignment:
             raise HTTPException(
@@ -206,7 +206,7 @@ async def verify_teacher_student_access(
                 SubjectAssignment.batch_year == batch_year,
             )
             assign_res = await db.execute(assign_stmt)
-            has_assignment = assign_res.scalar_one_or_none() is not None
+            has_assignment = assign_res.scalars().first() is not None
             if has_assignment:
                 return  # Authorized as Subject Teacher!
 

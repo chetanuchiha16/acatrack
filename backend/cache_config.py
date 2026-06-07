@@ -80,7 +80,26 @@ def cache(expire: int = 3600) -> Callable:
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
 
-            if not _cache_enabled or not _redis_client:
+            # Find Request object in args or kwargs to check for demo session
+            request = None
+            for a in args:
+                if hasattr(a, "headers") and hasattr(a, "url"):
+                    request = a
+                    break
+            if not request:
+                for v in kwargs.values():
+                    if hasattr(v, "headers") and hasattr(v, "url"):
+                        request = v
+                        break
+
+            is_demo = False
+            if request:
+                is_demo = bool(
+                    request.headers.get("x-demo-session-id")
+                    or request.headers.get("X-Demo-Session-ID")
+                )
+
+            if not _cache_enabled or not _redis_client or is_demo:
                 return await func(*args, **kwargs)
 
             key = _make_key(func.__name__, args, kwargs)
