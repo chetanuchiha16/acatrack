@@ -27,13 +27,22 @@ def _get_encryption_cipher():
 def _get_sync_session_maker():
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
+    from database import demo_session_var
 
-    _raw_url = settings.database_url
-    if _raw_url.startswith("postgresql+asyncpg://"):
-        sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+    session_id = demo_session_var.get()
+    if session_id:
+        sync_url = f"sqlite:////tmp/acatrack_demos/demo_{session_id}.db"
     else:
-        sync_url = _raw_url
-    sync_engine = create_engine(sync_url)
+        _raw_url = settings.database_url
+        if _raw_url.startswith("postgresql+asyncpg://"):
+            sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+        else:
+            sync_url = _raw_url
+
+    if sync_url.startswith("sqlite"):
+        sync_engine = create_engine(sync_url)
+    else:
+        sync_engine = create_engine(sync_url, pool_size=10, max_overflow=10)
     return sessionmaker(bind=sync_engine), sync_engine
 
 
@@ -140,13 +149,19 @@ def process_mentor_upload_file(
     from sqlalchemy.orm import sessionmaker
 
     # Create a sync engine from the URL
-    _raw_url = settings.database_url
-    if _raw_url.startswith("postgresql+asyncpg://"):
-        sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
-    elif _raw_url.startswith("postgres://"):
-        sync_url = _raw_url
+    from database import demo_session_var
+
+    session_id = demo_session_var.get()
+    if session_id:
+        sync_url = f"sqlite:////tmp/acatrack_demos/demo_{session_id}.db"
     else:
-        sync_url = _raw_url
+        _raw_url = settings.database_url
+        if _raw_url.startswith("postgresql+asyncpg://"):
+            sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+        elif _raw_url.startswith("postgres://"):
+            sync_url = _raw_url
+        else:
+            sync_url = _raw_url
 
     sync_engine = create_engine(sync_url)
     SyncSession = sessionmaker(bind=sync_engine)
@@ -263,13 +278,19 @@ def process_email_upload_file(
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy import select as sa_select
 
-    _raw_url = settings.database_url
-    if _raw_url.startswith("postgresql+asyncpg://"):
-        sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
-    elif _raw_url.startswith("postgres://"):
-        sync_url = _raw_url
+    from database import demo_session_var
+
+    session_id = demo_session_var.get()
+    if session_id:
+        sync_url = f"sqlite:////tmp/acatrack_demos/demo_{session_id}.db"
     else:
-        sync_url = _raw_url
+        _raw_url = settings.database_url
+        if _raw_url.startswith("postgresql+asyncpg://"):
+            sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+        elif _raw_url.startswith("postgres://"):
+            sync_url = _raw_url
+        else:
+            sync_url = _raw_url
 
     sync_engine = create_engine(sync_url)
     SyncSession = sessionmaker(bind=sync_engine)
@@ -437,13 +458,19 @@ def _fetch_source_rows(batch_year: int) -> list[tuple[str, str]]:
     from sqlalchemy import select as sa_select
     from models.schema import StudentAuth as SA
 
-    _raw_url = settings.database_url
-    if _raw_url.startswith("postgresql+asyncpg://"):
-        sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
-    elif _raw_url.startswith("postgres://"):
-        sync_url = _raw_url
+    from database import demo_session_var
+
+    session_id = demo_session_var.get()
+    if session_id:
+        sync_url = f"sqlite:////tmp/acatrack_demos/demo_{session_id}.db"
     else:
-        sync_url = _raw_url
+        _raw_url = settings.database_url
+        if _raw_url.startswith("postgresql+asyncpg://"):
+            sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+        elif _raw_url.startswith("postgres://"):
+            sync_url = _raw_url
+        else:
+            sync_url = _raw_url
 
     sync_engine = create_engine(sync_url)
     SyncSession = sessionmaker(bind=sync_engine)
@@ -468,13 +495,19 @@ def generate_accounts_csv(mode: str, batch_year: int) -> tuple[io.BytesIO, str]:
     from sqlalchemy import select as sa_select
     from models.schema import StudentAuth as SA
 
-    _raw_url = settings.database_url
-    if _raw_url.startswith("postgresql+asyncpg://"):
-        sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
-    elif _raw_url.startswith("postgres://"):
-        sync_url = _raw_url
+    from database import demo_session_var
+
+    session_id = demo_session_var.get()
+    if session_id:
+        sync_url = f"sqlite:////tmp/acatrack_demos/demo_{session_id}.db"
     else:
-        sync_url = _raw_url
+        _raw_url = settings.database_url
+        if _raw_url.startswith("postgresql+asyncpg://"):
+            sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+        elif _raw_url.startswith("postgres://"):
+            sync_url = _raw_url
+        else:
+            sync_url = _raw_url
 
     sync_engine = create_engine(sync_url)
     SyncSession = sessionmaker(bind=sync_engine)

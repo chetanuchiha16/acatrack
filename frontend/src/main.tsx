@@ -12,11 +12,24 @@ client.setConfig({
   baseURL: API_BASE,
 });
 
-// ─── Request interceptor: attach JWT ─────────────────────────────────────────
+const initialDemoSessionId = sessionStorage.getItem("X-Demo-Session-ID");
+if (initialDemoSessionId) {
+    client.setConfig({
+        headers: {
+            "X-Demo-Session-ID": initialDemoSessionId,
+        }
+    });
+}
+
+// ─── Request interceptor: attach JWT & Demo Session Header ───────────────────
 client.instance.interceptors.request.use((config) => {
     const token = getToken();
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+    }
+    const demoSessionId = sessionStorage.getItem("X-Demo-Session-ID");
+    if (demoSessionId) {
+        config.headers.set("X-Demo-Session-ID", demoSessionId);
     }
     return config;
 });

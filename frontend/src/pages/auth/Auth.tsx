@@ -8,7 +8,9 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import { parseJwt } from "../../utils/auth";
 import { getToken, setToken, clearToken } from "../../utils/storage";
 import { authAuthPost, saveFcmTokenStudentUsnFcmTokenPost } from "../../client/sdk.gen";
+import { client } from "../../client/client.gen";
 import { parseApiError } from "../../utils/errorHandler";
+import useAuthStore from "../../store/useAuthStore";
 
 const Auth: React.FC = () => {
     let { who } = useParams<{ who?: string }>();
@@ -105,6 +107,83 @@ const Auth: React.FC = () => {
             alert(apiErrorMsg);
         }
     };
+
+    const handleQuickLogin = async (role: string) => {
+        const getUUID = () => {
+            if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+                return crypto.randomUUID();
+            }
+            return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        };
+
+        // Always issue a fresh sandbox ID on quick-login to avoid serving stale DB data
+        const freshSessionId = `demo-${getUUID()}`;
+        sessionStorage.setItem("X-Demo-Session-ID", freshSessionId);
+        client.setConfig({
+            headers: {
+                "X-Demo-Session-ID": freshSessionId,
+            }
+        });
+
+        try {
+            if (role === "admin") {
+                localStorage.setItem("admin_secret", "supersecretkey");
+                void navigate("/admin/panel");
+                return;
+            }
+
+            let loginUsername = "";
+            let loginWho = "";
+            if (role === "teacher") {
+                loginUsername = "demo_teacher";
+                loginWho = "Staff";
+            } else {
+                loginUsername = "1XX23CS001";
+                loginWho = "Student";
+            }
+
+            const { data: authData } = await authAuthPost({
+                body: {
+                    who: loginWho,
+                    username: loginUsername,
+                    password: "password123",
+                    batch_year: 2023,
+                }
+            });
+
+            const token = authData?.token;
+            if (!token) {
+                alert("Demo Login failed: No token received");
+                return;
+            }
+
+            setToken(token);
+
+            const payload = parseJwt(token);
+            if (!payload) {
+                clearToken();
+                return;
+            }
+
+            // Invalidate the Zustand auth cache so the next page re-fetches
+            // with the new token instead of showing the previous user's identity.
+            useAuthStore.getState().clearAuth();
+
+            const id = payload.id as string;
+            void navigate(`/auth/${loginWho}/${id}`, {
+                state: {
+                    who: loginWho,
+                    id,
+                    name: payload.name as string,
+                    mentor_id: payload.mentor_id as string,
+                },
+            });
+        } catch (err: unknown) {
+            const apiErrorMsg = parseApiError(err) || "Demo Login failed";
+            alert(apiErrorMsg);
+        }
+    };
+
 
     if (loading) {
         return <LoadingSpinner message="Checking authentication status..." fullScreen={true} />;
@@ -227,6 +306,34 @@ const Auth: React.FC = () => {
                     <a href="#" className="hover:text-white text-slate-300 transition-colors font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
                         Need help?
                     </a>
+                </div>
+
+                {/* Quick-Start Sandbox Login */}
+                <div className="mt-8 pt-6 border-t border-white/10 relative z-10">
+                    <h4 className="text-xs font-black text-slate-200 mb-4 uppercase tracking-widest text-center drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                        ⚡ Quick-Start Live Demo
+                    </h4>
+                    <div className="grid grid-cols-3 gap-3">
+                        {[
+                            { id: "admin", label: "Admin", desc: "Full Setup" },
+                            { id: "teacher", label: "Teacher", desc: "Grade & CSV" },
+                            { id: "student", label: "Student", desc: "Track GPA" },
+                        ].map((card) => (
+                            <button
+                                key={card.id}
+                                type="button"
+                                onClick={() => handleQuickLogin(card.id)}
+                                className="flex flex-col items-center justify-center p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/50 rounded-2xl shadow-sm hover:shadow-lg transition-all active:scale-95 text-center cursor-pointer group"
+                            >
+                                <span className="text-xs font-black text-slate-200 mb-0.5 group-hover:text-blue-400 transition-colors">
+                                    {card.label}
+                                </span>
+                                <span className="text-[8px] font-bold text-slate-400 leading-tight">
+                                    {card.desc}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>

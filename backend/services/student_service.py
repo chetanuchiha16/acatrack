@@ -23,18 +23,26 @@ def _get_sync_session():
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from settings import settings
+    from database import demo_session_var
 
-    _raw_url = settings.database_url
-    if _raw_url.startswith("postgresql+asyncpg://"):
-        sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+    session_id = demo_session_var.get()
+    if session_id:
+        sync_url = f"sqlite:////tmp/acatrack_demos/demo_{session_id}.db"
     else:
-        sync_url = _raw_url
+        _raw_url = settings.database_url
+        if _raw_url.startswith("postgresql+asyncpg://"):
+            sync_url = _raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+        else:
+            sync_url = _raw_url
 
     if sync_url not in _sync_engine_cache:
         # FAANG-level: Use a pooled engine instead of disposing it every time
-        _sync_engine_cache[sync_url] = create_engine(
-            sync_url, pool_size=10, max_overflow=10
-        )
+        if sync_url.startswith("sqlite"):
+            _sync_engine_cache[sync_url] = create_engine(sync_url)
+        else:
+            _sync_engine_cache[sync_url] = create_engine(
+                sync_url, pool_size=10, max_overflow=10
+            )
 
     sync_engine = _sync_engine_cache[sync_url]
     return sessionmaker(bind=sync_engine), sync_engine
