@@ -300,7 +300,7 @@ async def seed_mock_infra_and_subjects_async(session: AsyncSession) -> None:
     # 5. Add Demo Teacher
     demo_teacher = Teacher(
         username="demo_teacher",
-        name="Dr. Hina Uchiha",
+        name="Dr. Elara Voss",
         password=hashed_pw,
         email="demo_teacher@acatrack.edu",
         phone="9999911111",
@@ -324,7 +324,7 @@ async def seed_mock_infra_and_subjects_async(session: AsyncSession) -> None:
         "Steve Rogers",
         "Wanda Maximoff",
         "Barry Allen",
-        "Hinata Hyuga",
+        "Rin Tohsaka",
         "Rock Lee",
         "Shikamaru Nara",
     ]
