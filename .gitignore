@@ -1,25 +1,70 @@
-# Ignore all PDFs and PNGs inside any Outputs folder (recursively)
-**/Outputs/*.pdf
-**/Outputs/*.png
+# ─── Secrets & Environment ────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
 
-# Python compiled files
+# Firebase service account keys
+firebase-service-account.json
+*-firebase-adminsdk-*.json
+
+# ─── Python ───────────────────────────────────────────────────────────────────
 *.pyc
-
-# Python cache folders
+*.pyo
+*.pyd
 __pycache__/
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
-# Database files
+# Virtual environments
+.venv/
+venv/
+env/
+
+# ─── Database files ───────────────────────────────────────────────────────────
 *.db
+*.sqlite
+*.sqlite3
 
-# Ignore project Postgres DB
+# Postgres data directories
 ProjectDBData/
 ExcelInputs/
-.env
+
+# ─── Excel / Data files (contain real PII) ────────────────────────────────────
 *.xlsx
+*.xls
+*.csv
 
-# Firebase configurations
-firebase-service-account.json
-student-6b67d-firebase-adminsdk-fbsvc-d709714bcb.json
+# ─── Generated output directories ────────────────────────────────────────────
+# backend/Outputs contains PDFs, images, and Excel exports — not source
+backend/Outputs/
 
+# Note: test_outputs/ is intentionally tracked (benchmark & load test reports)
+
+# ─── Frontend ─────────────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ─── OS / Editor noise ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.iml
+
+# ─── Docs / Resume (local only) ───────────────────────────────────────────────
 /docs
 /resume
