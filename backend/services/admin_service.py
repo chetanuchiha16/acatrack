@@ -585,8 +585,11 @@ def generate_accounts_csv(mode: str, batch_year: int) -> tuple[io.BytesIO, str]:
         excel_filename = f"mentors_{batch_year}.xlsx"
         mentor_excel_path = None
         try:
+            from database import demo_session_var
+
+            session_id = demo_session_var.get()
             mentor_excel_path = download_excel_from_supabase(
-                excel_filename, excel_folder
+                excel_filename, excel_folder, session_id
             )
         except Exception as e:
             logger.debug(

@@ -23,9 +23,12 @@ async def excel(request: Request, file: UploadFile = File(...)):
             folder = f"{batch_year}"
             excel_name = f"result_list_{batch_year}.xlsx"
             import asyncio
+            from database import demo_session_var
+
+            session_id = demo_session_var.get()
 
             cloud_url = await asyncio.get_event_loop().run_in_executor(
-                None, upload_excel_to_supabase, tmp.name, excel_name, folder
+                None, upload_excel_to_supabase, tmp.name, excel_name, folder, session_id
             )
             message = "File uploaded successfully"
         except Exception:
@@ -48,9 +51,12 @@ async def get_template(request: Request):
     folder = f"{batch_year}"
     try:
         import asyncio
+        from database import demo_session_var
+
+        session_id = demo_session_var.get()
 
         local_path = await asyncio.get_event_loop().run_in_executor(
-            None, download_excel_from_supabase, excel_name, folder
+            None, download_excel_from_supabase, excel_name, folder, session_id
         )
         from fastapi.responses import FileResponse
 

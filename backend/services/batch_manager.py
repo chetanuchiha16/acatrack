@@ -34,12 +34,15 @@ class BatchManager:
             logger.debug(f"[BatchManager] Creating tables for batch {batch_year}")
 
             from services.data_prep import prepare_data as prep_data
+            from database import demo_session_var
+
+            session_id = demo_session_var.get()
 
             # data_prep is synchronous — run it in the default executor
             import asyncio
 
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, prep_data, batch_year)
+            await loop.run_in_executor(None, prep_data, batch_year, session_id)
 
             logger.debug(f"[BatchManager] ✅ Batch {batch_year} processed in Postgres")
         except Exception as e:
@@ -53,10 +56,13 @@ class BatchManager:
         """Re-import Excel sheets to update Postgres tables."""
         try:
             from services.data_prep import prepare_data as prep_data
+            from database import demo_session_var
+
+            session_id = demo_session_var.get()
             import asyncio
 
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, prep_data, batch_year)
+            await loop.run_in_executor(None, prep_data, batch_year, session_id)
             logger.debug(f"[BatchManager] ✅ Batch {batch_year} refreshed")
         except Exception as e:
             logger.error(f"[BatchManager] ❌ Failed to refresh batch {batch_year}: {e}")

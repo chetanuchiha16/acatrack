@@ -98,6 +98,9 @@ async def process_archive(job_id: str, archive_path: str, batch_year: int):
 
         # Check if existing Excel exists in Supabase to perform incremental updates
         from utils.cloud import excel_exists_in_supabase, download_excel_from_supabase
+        from database import demo_session_var
+
+        session_id = demo_session_var.get()
 
         local_temp_path = Path(tempfile.gettempdir()) / excel_filename
 
@@ -114,7 +117,7 @@ async def process_archive(job_id: str, archive_path: str, batch_year: int):
                     "Existing consolidated Excel found in Supabase. Downloading for incremental update..."
                 )
                 downloaded_path = download_excel_from_supabase(
-                    excel_filename, supabase_folder
+                    excel_filename, supabase_folder, session_id
                 )
                 shutil.move(downloaded_path, local_temp_path)
         except Exception as e:
