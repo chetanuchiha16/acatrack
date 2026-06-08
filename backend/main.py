@@ -146,6 +146,9 @@ async def demo_sandbox_middleware(request: Request, call_next):
     session_id = request.headers.get("x-demo-session-id") or request.headers.get(
         "X-Demo-Session-ID"
     )
+    logger.info(
+        f"[demo_sandbox_middleware] Path: {request.url.path} | X-Demo-Session-ID: {session_id} | Headers: {dict(request.headers)}"
+    )
     if session_id:
         token = demo_session_var.set(session_id)
         db_path = f"/tmp/acatrack_demos/demo_{session_id}.db"

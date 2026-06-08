@@ -242,18 +242,27 @@ def convert_excel_to_postgres(excel_path: str, batch_year: int):
 
 
 # Usage
-def prepare_data(batch_year: int):
+def prepare_data(batch_year: int, session_id: str | None = None):
     excel_supabase_folder = f"{batch_year}"
     excel_filename = f"result_list_{batch_year}.xlsx"
     logger.debug(
         f"Downloading Excel from Supabase: {excel_supabase_folder}/{excel_filename}"
     )
     local_excel_path = download_excel_from_supabase(
-        excel_filename, excel_supabase_folder
+        excel_filename, excel_supabase_folder, session_id
     )
 
     # Notice we no longer need the raw postgres_url, SQLAlchemy handles the connection!
-    convert_excel_to_postgres(local_excel_path, batch_year)
+    from database import demo_session_var
+
+    if session_id:
+        token = demo_session_var.set(session_id)
+        try:
+            convert_excel_to_postgres(local_excel_path, batch_year)
+        finally:
+            demo_session_var.reset(token)
+    else:
+        convert_excel_to_postgres(local_excel_path, batch_year)
 
 
 def convert_in_memory_rows_to_postgres(rows: list[dict], batch_year: int):

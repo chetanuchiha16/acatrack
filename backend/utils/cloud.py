@@ -80,11 +80,30 @@ def upload_to_supabase(
     file_name: str,
     folder: str = "",
     content_type: str = "application/pdf",
+    session_id: str | None = None,
 ) -> str:
     """
     Uploads a file to Supabase Storage via direct HTTP POST to set proper content type.
     Returns public URL.
     """
+    from database import demo_session_var
+
+    if not session_id:
+        session_id = demo_session_var.get()
+
+    if session_id:
+        token = demo_session_var.set(session_id)
+        try:
+            demo_dir = f"/tmp/acatrack_demos/{session_id}"
+            os.makedirs(demo_dir, exist_ok=True)
+            sanitized_file_name = secure_filename(file_name)
+            dest_path = f"{demo_dir}/{sanitized_file_name}"
+            with open(dest_path, "wb") as f:
+                f.write(file_bytes)
+            return "/api/excel/template.xlsx"
+        finally:
+            demo_session_var.reset(token)
+
     if not (SUPABASE_URL and SUPABASE_KEY):
         raise RuntimeError("Supabase credentials not loaded.")
 
@@ -183,8 +202,204 @@ def save_plot(fig: Figure, filename: str, folder: str = "plots") -> str:
         return str(save_path)
 
 
-def download_excel_from_supabase(excel_filename: str, folder: str) -> str:
+def download_excel_from_supabase(
+    excel_filename: str, folder: str, session_id: str | None = None
+) -> str:
     """Downloads an Excel file from Supabase to a local temp path. Returns local path."""
+    from database import demo_session_var
+
+    if not session_id:
+        session_id = demo_session_var.get()
+
+    def _download_excel_from_supabase_sandbox(
+        excel_filename: str, folder: str, session_id: str
+    ) -> str:
+        demo_dir = f"/tmp/acatrack_demos/{session_id}"
+        os.makedirs(demo_dir, exist_ok=True)
+        sanitized_file_name = secure_filename(excel_filename)
+        dest_path = f"{demo_dir}/{sanitized_file_name}"
+        if os.path.exists(dest_path):
+            # Verify if it contains the demo student USN
+            try:
+                import openpyxl
+
+                wb = openpyxl.load_workbook(dest_path, read_only=True)
+                has_demo = False
+                for sheet_name in wb.sheetnames:
+                    sheet = wb[sheet_name]
+                    # Check first column (typically USN) in first 30 rows
+                    for r in range(1, 31):
+                        val1 = sheet.cell(row=r, column=1).value
+                        val2 = sheet.cell(row=r, column=2).value
+                        if (val1 and "1XX23CS" in str(val1)) or (
+                            val2 and "1XX23CS" in str(val2)
+                        ):
+                            has_demo = True
+                            break
+                    if has_demo:
+                        break
+                wb.close()
+                if has_demo:
+                    return dest_path
+            except Exception:
+                pass
+
+        import shutil
+
+        scratch_dir = os.path.join(BASE_DIR, "scratch")
+
+        # 1. Dynamic Results Excel Generation
+        if "result_list" in excel_filename.lower():
+            try:
+                from services.student_service import _get_sync_session
+                from sqlalchemy import text
+                import pandas as pd
+
+                SessionMaker, engine = _get_sync_session()
+                with SessionMaker() as session:
+                    # Query all subjects
+                    subj_rows = session.execute(
+                        text(
+                            "SELECT subject_code, subject_name, credits, semester FROM subjects"
+                        )
+                    ).fetchall()
+                    # Query all students
+                    stud_rows = session.execute(
+                        text(
+                            "SELECT id, usn, name FROM students WHERE batch_year = :by"
+                        ),
+                        {"by": int(folder) if folder.isdigit() else 2023},
+                    ).fetchall()
+                    # Query all academic results
+                    res_rows = session.execute(
+                        text(
+                            "SELECT student_id, subject_code, ia_marks, see_marks FROM academic_results"
+                        )
+                    ).fetchall()
+
+                # Group subjects by semester
+                sem_subjects = {}
+                for row in subj_rows:
+                    sem = row[3]  # semester
+                    if sem not in sem_subjects:
+                        sem_subjects[sem] = []
+                    sem_subjects[sem].append(row)
+
+                # Index results by (student_id, subject_code)
+                res_map = {}
+                for r_row in res_rows:
+                    res_map[(r_row[0], r_row[1])] = (
+                        r_row[2],
+                        r_row[3],
+                    )  # (ia_marks, see_marks)
+
+                with pd.ExcelWriter(dest_path, engine="openpyxl") as writer:
+                    # Generate a sheet for each semester
+                    for sem_name, subjs in sem_subjects.items():
+                        # Sort subjects by code to keep it deterministic
+                        subjs = sorted(subjs, key=lambda x: x[0])
+
+                        # Build columns list
+                        cols = ["student_usn", "student_name"]
+                        for sub in subjs:
+                            code = sub[0]
+                            cols.extend(
+                                [
+                                    f"{code}_INTERNALS",
+                                    f"{code}_EXTERNALS",
+                                    f"{code}_TOTAL",
+                                    f"{code}_CREDITS",
+                                ]
+                            )
+
+                        # Build row data
+                        sheet_rows = []
+                        for stud in stud_rows:
+                            stud_id, usn, name = stud
+                            row_dict = {"student_usn": usn, "student_name": name}
+                            for sub in subjs:
+                                code, _, creds, _ = sub
+                                ia, see = res_map.get((stud_id, code), (0, 0))
+                                row_dict[f"{code}_INTERNALS"] = ia
+                                row_dict[f"{code}_EXTERNALS"] = see
+                                row_dict[f"{code}_TOTAL"] = ia + see
+                                row_dict[f"{code}_CREDITS"] = creds
+                            sheet_rows.append(row_dict)
+
+                        df = pd.DataFrame(sheet_rows, columns=cols)
+                        df.to_excel(writer, sheet_name=sem_name, index=False)
+
+                return dest_path
+            except Exception as e:
+                logger.error(
+                    f"Error dynamically generating demo results excel: {e}",
+                    exc_info=True,
+                )
+
+        # 2. Dynamic Student Enrollment Excel Generation
+        elif "student" in excel_filename.lower() and "enroll" in excel_filename.lower():
+            try:
+                from services.student_service import _get_sync_session
+                from sqlalchemy import text
+                import pandas as pd
+
+                SessionMaker, engine = _get_sync_session()
+                with SessionMaker() as session:
+                    # Query all students
+                    stud_rows = session.execute(
+                        text(
+                            "SELECT usn, name, student_email, student_phno FROM students WHERE batch_year = :by"
+                        ),
+                        {"by": int(folder) if folder.isdigit() else 2023},
+                    ).fetchall()
+
+                sheet_rows = []
+                for usn, name, email, phone in stud_rows:
+                    sheet_rows.append(
+                        {
+                            "usn": usn,
+                            "name": name,
+                            "email": email or "",
+                            "phone": phone or "",
+                        }
+                    )
+
+                df = pd.DataFrame(sheet_rows, columns=["usn", "name", "email", "phone"])
+                df.to_excel(dest_path, index=False)
+                return dest_path
+            except Exception as e:
+                logger.error(
+                    f"Error dynamically generating student enrollment excel: {e}",
+                    exc_info=True,
+                )
+
+        # 3. Static templates fallbacks
+        fallback_file = os.path.join(scratch_dir, "students_enrollment_2023.xlsx")
+
+        if "subject" in excel_filename.lower():
+            fallback_file = os.path.join(scratch_dir, "subjects.xlsx")
+        elif "staff" in excel_filename.lower():
+            fallback_file = os.path.join(scratch_dir, "staff.xlsx")
+        elif "mentor" in excel_filename.lower():
+            fallback_file = os.path.join(scratch_dir, "mentor_mapping_2023.xlsx")
+
+        if os.path.exists(fallback_file):
+            shutil.copy(fallback_file, dest_path)
+            return dest_path
+
+        fd, temp_path = tempfile.mkstemp(suffix=".xlsx")
+        os.close(fd)
+        return temp_path
+
+    if session_id:
+        token = demo_session_var.set(session_id)
+        try:
+            return _download_excel_from_supabase_sandbox(
+                excel_filename, folder, session_id
+            )
+        finally:
+            demo_session_var.reset(token)
+
     if not (SUPABASE_URL and SUPABASE_KEY):
         raise RuntimeError("Supabase credentials not loaded.")
 
@@ -226,6 +441,11 @@ def download_excel_from_supabase(excel_filename: str, folder: str) -> str:
 
 def excel_exists_in_supabase(excel_filename: str, folder: str) -> bool:
     """Checks if Excel file exists in Supabase Storage."""
+    from database import demo_session_var
+
+    if demo_session_var.get():
+        return True
+
     if not supabase:
         return False
     # sanitized_folder = sanitize_folder(folder)
@@ -248,7 +468,12 @@ def upload_pdf_to_supabase(local_pdf_path: str, usn: str, folder: str):
         )
 
 
-def upload_excel_to_supabase(local_excel_path: str, excel_filename: str, folder: str):
+def upload_excel_to_supabase(
+    local_excel_path: str,
+    excel_filename: str,
+    folder: str,
+    session_id: str | None = None,
+):
     """Uploads a local Excel file to Supabase Storage and returns the public URL."""
     with open(local_excel_path, "rb") as f:
         return upload_to_supabase(
@@ -256,6 +481,7 @@ def upload_excel_to_supabase(local_excel_path: str, excel_filename: str, folder:
             excel_filename,
             folder,
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            session_id=session_id,
         )
 
 
