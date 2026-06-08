@@ -640,6 +640,16 @@ export type SendStudentEmailRequest = {
 };
 
 /**
+ * StaffAvailableSemestersResponse
+ */
+export type StaffAvailableSemestersResponse = {
+    /**
+     * Available Semesters
+     */
+    available_semesters: Array<string>;
+};
+
+/**
  * StudentResultResponse
  */
 export type StudentResultResponse = {
@@ -687,6 +697,10 @@ export type StudentResultResponse = {
      * Semester
      */
     semester?: string | null;
+    /**
+     * Available Semesters
+     */
+    available_semesters?: Array<string> | null;
 };
 
 /**
@@ -2785,6 +2799,36 @@ export type DeleteMessageMessagesMsgIdDeleteResponses = {
      */
     200: unknown;
 };
+
+export type GetStaffAvailableSemestersAuthStaffAvailableSemestersGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Batch Year
+         */
+        batch_year?: number | null;
+    };
+    url: '/auth/Staff/available_semesters';
+};
+
+export type GetStaffAvailableSemestersAuthStaffAvailableSemestersGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetStaffAvailableSemestersAuthStaffAvailableSemestersGetError = GetStaffAvailableSemestersAuthStaffAvailableSemestersGetErrors[keyof GetStaffAvailableSemestersAuthStaffAvailableSemestersGetErrors];
+
+export type GetStaffAvailableSemestersAuthStaffAvailableSemestersGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: StaffAvailableSemestersResponse;
+};
+
+export type GetStaffAvailableSemestersAuthStaffAvailableSemestersGetResponse = GetStaffAvailableSemestersAuthStaffAvailableSemestersGetResponses[keyof GetStaffAvailableSemestersAuthStaffAvailableSemestersGetResponses];
 
 export type GetSemesterResultsAuthStaffSemResGetData = {
     body?: never;

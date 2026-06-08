@@ -27,6 +27,13 @@ const Student: React.FC = () => {
     const [view, setView] = useState<ResultViewMode>("cards");
     const [selectedTab, setSelectedTab] = useState<StudentTab>("result");
     const [currentSem, setCurrentSem] = useState<StudentSemester>("sem1");
+    const [availableSems, setAvailableSems] = useState<Semester[]>(["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"]);
+
+    useEffect(() => {
+        if (availableSems.length > 0 && !availableSems.includes(currentSem as Semester)) {
+            setCurrentSem(availableSems[availableSems.length - 1]);
+        }
+    }, [availableSems, currentSem]);
     
     const { user, loading } = useProtectedPage("Student");
     useEffect(() => {
@@ -185,7 +192,7 @@ const Student: React.FC = () => {
                                         <option value="">
                                             Select Semester
                                         </option>
-                                        {sems.map((sem) => (
+                                        {availableSems.map((sem) => (
                                             <option key={sem} value={sem}>
                                                 {sem}
                                             </option>
@@ -238,6 +245,7 @@ const Student: React.FC = () => {
                                 usn={finalUsn}
                                 semester={currentSem}
                                 view={view}
+                                onDataLoaded={setAvailableSems}
                             />
                         )}
                         {selectedTab === "classroom" && <Classroom />}

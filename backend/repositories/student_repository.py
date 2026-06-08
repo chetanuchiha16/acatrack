@@ -249,6 +249,20 @@ class StudentRepository:
         except ValueError:
             return sorted(sems)
 
+    async def get_all_semesters_with_results(self) -> list[str]:
+        from sqlalchemy import distinct
+
+        result = await self.db.execute(
+            select(distinct(Subject.semester)).join(
+                AcademicResult, Subject.subject_code == AcademicResult.subject_code
+            )
+        )
+        sems = [row[0] for row in result.all()]
+        try:
+            return sorted(sems, key=lambda s: int(s.replace("sem", "")))
+        except ValueError:
+            return sorted(sems)
+
     def get_semesters_with_results_sync(self, student_id: int) -> list[str]:
         from sqlalchemy import distinct
 

@@ -5,6 +5,7 @@ from services.university_service import University
 from utils.helpers import get_batch_year_from_request
 from visuals import generate_sem_pdf_async
 from logger_config import get_logger
+from schemas import StaffAvailableSemestersResponse
 from database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
@@ -12,6 +13,29 @@ from fastapi import Depends
 logger = get_logger(__name__)
 
 router = APIRouter(tags=["semester_results"])
+
+
+@router.get(
+    "/auth/Staff/available_semesters", response_model=StaffAvailableSemestersResponse
+)
+async def get_staff_available_semesters(
+    request: Request,
+    batch_year: int | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        from repositories.student_repository import StudentRepository
+
+        repo = StudentRepository(db)
+        sems = await repo.get_all_semesters_with_results()
+        if not sems:
+            sems = ["sem1"]
+        return {"available_semesters": sems}
+    except Exception:
+        logger.exception("Error in get_staff_available_semesters")
+        return JSONResponse(
+            content={"error": "Failed to fetch available semesters"}, status_code=500
+        )
 
 
 @router.get("/auth/Staff/sem_res")

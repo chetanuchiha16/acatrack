@@ -141,3 +141,7 @@ class MenteeUploadFormRequest(BaseModel):
     internships: List[MenteeProjectInternship] = []
     activities: List[MenteeActivity] = []
     summary: MenteeSummary = MenteeSummary()
+
+
+class StaffAvailableSemestersResponse(BaseModel):
+    available_semesters: List[str]
