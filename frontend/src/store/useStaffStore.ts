@@ -59,10 +59,10 @@ const useStaffStore = create<StaffState>()(
                     });
                     const sems = res.data?.available_semesters || [];
                     if (sems.length > 0) {
-                        set({ availableSems: sems });
-                        if (!sems.includes(get().semester)) {
-                            set({ semester: sems[sems.length - 1] });
-                        }
+                        set({ 
+                            availableSems: sems,
+                            semester: sems[sems.length - 1]
+                        });
                     }
                 } catch (err) {
                     console.error("Failed to fetch available semesters", err);
