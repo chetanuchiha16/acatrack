@@ -37,10 +37,10 @@ export default function useProtectedPage(_role: string | null = null): Protected
     }
   }, [authLoading, user, navigate]);
 
-  // Fetch student data only for Parent
+  // Fetch student data for Parent and Student
   useEffect(() => {
     if (!authLoading && user && !studentData) {
-      if (user.who === "Parent") {
+      if (user.who === "Parent" || user.who === "Student") {
         void fetchStudentData();
       }
     }

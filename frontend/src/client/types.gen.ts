@@ -2965,6 +2965,20 @@ export type DownloadReportAuthStudentReportFilenameGetResponses = {
     200: unknown;
 };
 
+export type GetStudentProfileAuthStudentDetailsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/Student/details';
+};
+
+export type GetStudentProfileAuthStudentDetailsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type GetSubjectResultsAuthStaffSubResGetData = {
     body?: never;
     path?: never;

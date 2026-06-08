@@ -81,3 +81,54 @@ async def download_report(filename: str):
     if not os.path.exists(filepath):
         return JSONResponse(content={"error": "File not found"}, status_code=404)
     return FileResponse(filepath, filename=safe_filename, media_type="application/pdf")
+
+
+@router.get("/auth/Student/details")
+async def get_student_profile(request: Request):
+    from utils.helpers import get_jwt_payload_from_request
+
+    payload = get_jwt_payload_from_request(request)
+    batch_year = get_batch_year_from_request(request)
+    if not payload or payload.get("who") != "Student":
+        return JSONResponse(content={"error": "Unauthorized"}, status_code=403)
+
+    usn = payload.get("id")
+    try:
+        async with bm.session_scope(batch_year) as session:
+            from repositories.student_repository import StudentRepository
+            from repositories.mentor_repository import MentorRepository
+
+            repo = StudentRepository(session)
+            student_rec = await repo.get_auth_by_usn(usn)
+            if not student_rec:
+                return JSONResponse(
+                    content={"error": "Student not found"}, status_code=404
+                )
+
+            mentor = student_rec.mentor
+            teacher = None
+            if mentor:
+                mentor_repo = MentorRepository(session)
+                teacher = await mentor_repo.get_teacher_by_mentor_id(mentor.id)
+
+            return {
+                "student": {
+                    "usn": student_rec.usn,
+                    "name": student_rec.name,
+                    "email": student_rec.student_email,
+                    "phone": student_rec.student_phno,
+                },
+                "mentor": {
+                    "id": mentor.id,
+                    "name": teacher.name if teacher else mentor.name,
+                    "email": teacher.email if teacher else None,
+                    "phone": teacher.phone if teacher else None,
+                }
+                if mentor
+                else None,
+            }
+    except Exception:
+        logger.exception("Error in get_student_profile")
+        return JSONResponse(
+            content={"error": "Failed to fetch student profile"}, status_code=500
+        )
