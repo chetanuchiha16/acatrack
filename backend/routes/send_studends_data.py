@@ -32,9 +32,25 @@ async def get_student_info(
             student = await Student.create_async(
                 session, usn=usn, semester=semester, batch_year=batch_year
             )
+            if student and getattr(student, "found", True):
+                from repositories.student_repository import StudentRepository
+
+                repo = StudentRepository(session)
+                student_rec = await repo.get_auth_by_usn(usn)
+                if student_rec:
+                    available_sems = await repo.get_semesters_with_results(
+                        student_rec.id
+                    )
+                else:
+                    available_sems = [semester] if semester else ["sem1"]
+            else:
+                available_sems = [semester] if semester else ["sem1"]
 
         if not getattr(student, "found", True):
             return JSONResponse(content={"error": "Student not found"}, status_code=404)
+
+        if not available_sems:
+            available_sems = [semester] if semester else ["sem1"]
 
         pdf_bytes = await asyncio.get_event_loop().run_in_executor(
             None, create_student_report, student
@@ -44,6 +60,7 @@ async def get_student_info(
 
         response_data = student.to_dict()
         response_data["pdf_url"] = pdf_url
+        response_data["available_semesters"] = available_sems
 
         return response_data
 

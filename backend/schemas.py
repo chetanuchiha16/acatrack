@@ -24,6 +24,7 @@ class StudentResultResponse(BaseModel):
     subjects: List[SubjectResult]
     pdf_url: Optional[str] = None
     semester: Optional[str] = None
+    available_semesters: Optional[List[str]] = None
 
 
 class AuthStatusResponse(BaseModel):

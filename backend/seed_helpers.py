@@ -94,6 +94,117 @@ async def seed_mock_infra_and_subjects_async(session: AsyncSession) -> None:
             credits=1,
             semester="sem1",
         ),
+        # ── Semester 2 ──────────────────────────────────────────────────────
+        Subject(
+            subject_code="BMATS201",
+            subject_name="Mathematics-II for CSE Stream",
+            credits=4,
+            semester="sem2",
+        ),
+        Subject(
+            subject_code="BPHYS202",
+            subject_name="Applied Physics for CSE Stream",
+            credits=4,
+            semester="sem2",
+        ),
+        Subject(
+            subject_code="BPOPS203",
+            subject_name="Principles of Programming Using C",
+            credits=3,
+            semester="sem2",
+        ),
+        Subject(
+            subject_code="BPWSK206",
+            subject_name="Professional Writing Skills in English",
+            credits=1,
+            semester="sem2",
+        ),
+        Subject(
+            subject_code="BKSKK207",
+            subject_name="Samskrutika Kannada",
+            credits=1,
+            semester="sem2",
+        ),
+        Subject(
+            subject_code="BSFHK258",
+            subject_name="Scientific Foundations of Health",
+            credits=1,
+            semester="sem2",
+        ),
+        # ── Semester 3 ──────────────────────────────────────────────────────
+        Subject(
+            subject_code="BCS301",
+            subject_name="Mathematics for Computer Science",
+            credits=4,
+            semester="sem3",
+        ),
+        Subject(
+            subject_code="BCS302",
+            subject_name="Digital Design & Computer Organization",
+            credits=4,
+            semester="sem3",
+        ),
+        Subject(
+            subject_code="BCS303",
+            subject_name="Operating Systems",
+            credits=3,
+            semester="sem3",
+        ),
+        Subject(
+            subject_code="BCS304",
+            subject_name="Data Structures and Applications",
+            credits=3,
+            semester="sem3",
+        ),
+        Subject(
+            subject_code="BCSL305",
+            subject_name="Data Structures Lab",
+            credits=1,
+            semester="sem3",
+        ),
+        Subject(
+            subject_code="BSCK307",
+            subject_name="Social Connect and Responsibility",
+            credits=1,
+            semester="sem3",
+        ),
+        # ── Semester 4 ──────────────────────────────────────────────────────
+        Subject(
+            subject_code="BCS401",
+            subject_name="Analysis & Design of Algorithms",
+            credits=4,
+            semester="sem4",
+        ),
+        Subject(
+            subject_code="BCS402",
+            subject_name="Microcontrollers",
+            credits=4,
+            semester="sem4",
+        ),
+        Subject(
+            subject_code="BCS403",
+            subject_name="Database Management Systems",
+            credits=3,
+            semester="sem4",
+        ),
+        Subject(
+            subject_code="BCSL404",
+            subject_name="Analysis & Design of Algorithms Lab",
+            credits=1,
+            semester="sem4",
+        ),
+        Subject(
+            subject_code="BBOC407",
+            subject_name="Biology for Computer Engineers",
+            credits=1,
+            semester="sem4",
+        ),
+        Subject(
+            subject_code="BUHK408",
+            subject_name="Universal Human Values",
+            credits=1,
+            semester="sem4",
+        ),
         # ── Semester 5 ──────────────────────────────────────────────────────
         Subject(
             subject_code="BCS501",
@@ -136,6 +247,51 @@ async def seed_mock_infra_and_subjects_async(session: AsyncSession) -> None:
             subject_name="Research Methodology & IPR",
             credits=2,
             semester="sem5",
+        ),
+        # ── Semester 6 ──────────────────────────────────────────────────────
+        Subject(
+            subject_code="BCS601",
+            subject_name="Software Engineering",
+            credits=4,
+            semester="sem6",
+        ),
+        Subject(
+            subject_code="BCS602",
+            subject_name="Compiler Design",
+            credits=4,
+            semester="sem6",
+        ),
+        Subject(
+            subject_code="BCS603",
+            subject_name="Computer Graphics",
+            credits=3,
+            semester="sem6",
+        ),
+        # ── Semester 7 ──────────────────────────────────────────────────────
+        Subject(
+            subject_code="BCS701",
+            subject_name="Machine Learning",
+            credits=4,
+            semester="sem7",
+        ),
+        Subject(
+            subject_code="BCS702",
+            subject_name="Cloud Computing",
+            credits=4,
+            semester="sem7",
+        ),
+        # ── Semester 8 ──────────────────────────────────────────────────────
+        Subject(
+            subject_code="BCS801",
+            subject_name="Project Work",
+            credits=6,
+            semester="sem8",
+        ),
+        Subject(
+            subject_code="BCS802",
+            subject_name="Seminar",
+            credits=2,
+            semester="sem8",
         ),
     ]
     session.add_all(subjects)
@@ -188,6 +344,36 @@ async def seed_mock_infra_and_subjects_async(session: AsyncSession) -> None:
         ("BICOK107", 1),
         ("BIDTK158", 1),
     ]
+    sem2_theory = [
+        ("BMATS201", 4),
+        ("BPHYS202", 4),
+        ("BPOPS203", 3),
+    ]
+    sem2_light = [
+        ("BPWSK206", 1),
+        ("BKSKK207", 1),
+        ("BSFHK258", 1),
+    ]
+    sem3_theory = [
+        ("BCS301", 4),
+        ("BCS302", 4),
+        ("BCS303", 3),
+        ("BCS304", 3),
+    ]
+    sem3_light = [
+        ("BCSL305", 1),
+        ("BSCK307", 1),
+    ]
+    sem4_theory = [
+        ("BCS401", 4),
+        ("BCS402", 4),
+        ("BCS403", 3),
+    ]
+    sem4_light = [
+        ("BCSL404", 1),
+        ("BBOC407", 1),
+        ("BUHK408", 1),
+    ]
     sem5_theory = [
         ("BCS501", 4),
         ("BCS502", 4),
@@ -237,6 +423,96 @@ async def seed_mock_infra_and_subjects_async(session: AsyncSession) -> None:
         for code, _ in sem1_light:
             ia = 18 + (i + ord(code[-1])) % 8  # 18–25
             see = 35 + (i * 5 + ord(code[-1])) % 16  # 35–50
+            marks_objs.append(
+                AcademicResult(
+                    student_id=student.id,
+                    subject_code=code,
+                    batch_year=batch_year,
+                    ia_marks=ia,
+                    see_marks=see,
+                    total_marks=ia + see,
+                )
+            )
+
+        # sem2 theory: IA 20-30, SEE 42-70
+        for code, _ in sem2_theory:
+            ia = 20 + (i * 3 + ord(code[-1])) % 11
+            see = 42 + (i * 7 + ord(code[-1])) % 29
+            marks_objs.append(
+                AcademicResult(
+                    student_id=student.id,
+                    subject_code=code,
+                    batch_year=batch_year,
+                    ia_marks=ia,
+                    see_marks=see,
+                    total_marks=ia + see,
+                )
+            )
+
+        # sem2 light: IA 18-25, SEE 35-50
+        for code, _ in sem2_light:
+            ia = 18 + (i + ord(code[-1])) % 8
+            see = 35 + (i * 5 + ord(code[-1])) % 16
+            marks_objs.append(
+                AcademicResult(
+                    student_id=student.id,
+                    subject_code=code,
+                    batch_year=batch_year,
+                    ia_marks=ia,
+                    see_marks=see,
+                    total_marks=ia + see,
+                )
+            )
+
+        # sem3 theory: IA 20-30, SEE 40-70
+        for code, _ in sem3_theory:
+            ia = 20 + (i * 2 + ord(code[-1])) % 11
+            see = 40 + (i * 6 + ord(code[-1])) % 31
+            marks_objs.append(
+                AcademicResult(
+                    student_id=student.id,
+                    subject_code=code,
+                    batch_year=batch_year,
+                    ia_marks=ia,
+                    see_marks=see,
+                    total_marks=ia + see,
+                )
+            )
+
+        # sem3 light: IA 18-25, SEE 35-50
+        for code, _ in sem3_light:
+            ia = 18 + (i + ord(code[-1])) % 8
+            see = 35 + (i * 4 + ord(code[-1])) % 16
+            marks_objs.append(
+                AcademicResult(
+                    student_id=student.id,
+                    subject_code=code,
+                    batch_year=batch_year,
+                    ia_marks=ia,
+                    see_marks=see,
+                    total_marks=ia + see,
+                )
+            )
+
+        # sem4 theory: IA 21-30, SEE 41-70
+        for code, _ in sem4_theory:
+            ia = 21 + (i * 2 + ord(code[-1])) % 10
+            see = 41 + (i * 6 + ord(code[-1])) % 30
+            marks_objs.append(
+                AcademicResult(
+                    student_id=student.id,
+                    subject_code=code,
+                    batch_year=batch_year,
+                    ia_marks=ia,
+                    see_marks=see,
+                    total_marks=ia + see,
+                )
+            )
+
+        # sem4 light: IA 18-25, SEE 35-50
+        for code, _ in sem4_light:
+            ia = 18 + (i + ord(code[-1])) % 8
+            see = 35 + (i * 4 + ord(code[-1])) % 16
             marks_objs.append(
                 AcademicResult(
                     student_id=student.id,
@@ -304,7 +580,7 @@ async def seed_mock_infra_and_subjects_async(session: AsyncSession) -> None:
         batch_year=batch_year,
         status=BatchStatus.ACTIVE,
         section_count=4,
-        subject_count=14,
+        subject_count=39,
         student_count=15,
         assignment_count=2,
     )

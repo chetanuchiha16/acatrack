@@ -15,6 +15,7 @@ const StudentResultWrapper: React.FC = () => {
     const { user, loading } = useProtectedPage("Student");
     const [view, setView] = useState<ResultViewMode>("cards");
     const [currentSem, setCurrentSem] = useState<StudentSemester>("sem1");
+    const [availableSems, setAvailableSems] = useState<Semester[]>(["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"]);
 
     if (loading) return <LoadingSpinner message="Authenticating Dashboard..." fullScreen={true} />;
     if (!user) return null;
@@ -43,7 +44,7 @@ const StudentResultWrapper: React.FC = () => {
                             className="appearance-none w-40 px-3 py-2 rounded-md bg-white dark:bg-[#0f1720] text-sm text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="">Select Semester</option>
-                            {sems.map(s => (
+                            {availableSems.map(s => (
                                 <option key={s} value={s}>{s}</option>
                             ))}
                         </select>
@@ -86,7 +87,7 @@ const StudentResultWrapper: React.FC = () => {
             {/* ── Content ──────────────────────────────────────────────────── */}
             <section>
                 {currentSem !== "" ? (
-                    <Result usn={finalUsn} semester={currentSem} view={view} />
+                    <Result usn={finalUsn} semester={currentSem} view={view} onDataLoaded={setAvailableSems} />
                 ) : (
                     <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                         <p className="text-gray-500 dark:text-gray-400">Please select a semester above to view your results.</p>
