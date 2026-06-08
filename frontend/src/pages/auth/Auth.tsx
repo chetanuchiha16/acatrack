@@ -57,6 +57,12 @@ const Auth: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
+        // Clear demo session ID for real account logins
+        sessionStorage.removeItem("X-Demo-Session-ID");
+        client.setConfig({
+            headers: {}
+        });
+
         try {
             const { data: authData } = await authAuthPost({
                 body: {

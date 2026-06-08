@@ -32,6 +32,7 @@ export function setToken(token: string): void {
 export function clearToken(): void {
   try {
     sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem("X-Demo-Session-ID");
   } catch {
     // no-op
   }
