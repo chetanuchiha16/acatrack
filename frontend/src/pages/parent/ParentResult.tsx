@@ -43,6 +43,7 @@ export default function ParentResult() {
     const [sem, setSem] = useState<string>("");
     const [semData, setSemData] = useState<StudentResult | null>(null);
     const [_semLoading, setSemLoading] = useState<boolean>(false);
+    const [availableSems, setAvailableSems] = useState<string[]>([]);
 
     const [aiData, setAiData] = useState<AiData | null>(null);
     const [aiLoading, setAiLoading] = useState<boolean>(false);
@@ -55,12 +56,10 @@ export default function ParentResult() {
 
     // Set default semester and fetch AI insights when data arrives
     useEffect(() => {
-        if (studentData?.student?.usn && semesterOptions.length > 0) {
-            const defaultSem = semesterOptions[semesterOptions.length - 1];
-            setSem(defaultSem);
-            void fetchAIData(studentData.student.usn, defaultSem, i18n.language);
+        if (studentData?.student?.usn) {
+            setSem("sem1");
         }
-    }, [studentData, i18n.language]);
+    }, [studentData]);
 
     // Re-fetch AI and Semester Data if semester or language changes
     useEffect(() => {
@@ -76,7 +75,16 @@ export default function ParentResult() {
             const res = await getStudentInfoAuthStudentResultGet({
                 query: { usn, semester }
             });
-            if (res.data) setSemData(res.data as unknown as StudentResult);
+            if (res.data) {
+                setSemData(res.data as unknown as StudentResult);
+                const avSems = (res.data as { available_semesters?: string[] }).available_semesters;
+                if (avSems && avSems.length > 0) {
+                    setAvailableSems(avSems);
+                    if (semester === "sem1" && avSems.includes(avSems[avSems.length - 1]) && avSems[avSems.length - 1] !== "sem1") {
+                        setSem(avSems[avSems.length - 1]);
+                    }
+                }
+            }
         } catch (err: unknown) {
             console.error(err);
         } finally {
@@ -243,7 +251,7 @@ export default function ParentResult() {
                             onChange={(e) => setSem(e.target.value)}
                             className="w-full sm:w-40 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
                         >
-                            {semesterOptions.map((s) => (
+                            {(availableSems.length > 0 ? availableSems : semesterOptions).map((s) => (
                                 <option key={s} value={s}>{s}</option>
                             ))}
                         </select>

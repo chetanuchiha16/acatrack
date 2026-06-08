@@ -6,6 +6,7 @@ import {
 } from "../../client/sdk.gen";
 import type { StudentResultResponse as MenteeResult } from "../../client/types.gen";
 import { parseApiError } from "../../utils/errorHandler";
+import useStaffStore from "../../store/useStaffStore";
 
 interface MentorResultsProps {
     mentor_id?: string;
@@ -13,7 +14,20 @@ interface MentorResultsProps {
 }
 
 const MentorResults: React.FC<MentorResultsProps> = ({ mentor_id, batchYear }) => {
+    const { availableSems, fetchAvailableSemesters } = useStaffStore();
     const [semester, setSemester] = useState<string>("sem1");
+
+    useEffect(() => {
+        if (batchYear) {
+            void fetchAvailableSemesters(batchYear);
+        }
+    }, [batchYear, fetchAvailableSemesters]);
+
+    useEffect(() => {
+        if (availableSems.length > 0 && !availableSems.includes(semester)) {
+            setSemester(availableSems[availableSems.length - 1]);
+        }
+    }, [availableSems, semester]);
     const [mentees, setMentees] = useState<MenteeResult[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [selectedMentee, setSelectedMentee] = useState<string | null>(null);
@@ -101,10 +115,7 @@ const MentorResults: React.FC<MentorResultsProps> = ({ mentor_id, batchYear }) =
                             onChange={(e) => setSemester(e.target.value)}
                             className="pl-4 pr-10 py-2.5 bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/50 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 outline-none appearance-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer shadow-sm min-w-[140px]"
                         >
-                            {[
-                                "sem1", "sem2", "sem3", "sem4",
-                                "sem5", "sem6", "sem7", "sem8",
-                            ].map((sem) => (
+                            {availableSems.map((sem) => (
                                 <option key={sem} value={sem}>{sem.toUpperCase()}</option>
                             ))}
                         </select>

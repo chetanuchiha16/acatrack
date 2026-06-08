@@ -3,7 +3,7 @@ import { Calendar, Layers, Hash, ChevronDown } from 'lucide-react';
 import useStaffStore from '../store/useStaffStore';
 
 const AcademicContextSelector: React.FC = () => {
-    const { batchYear, semester, section, setSemester, setSection, assignments } = useStaffStore();
+    const { batchYear, semester, section, setSemester, setSection, assignments, availableSems } = useStaffStore();
     
     const [isSemOpen, setIsSemOpen] = useState(false);
     const [isSecOpen, setIsSecOpen] = useState(false);
@@ -11,7 +11,7 @@ const AcademicContextSelector: React.FC = () => {
     const semRef = useRef<HTMLDivElement>(null);
     const secRef = useRef<HTMLDivElement>(null);
 
-    const semesters = ['sem1', 'sem2', 'sem3', 'sem4', 'sem5', 'sem6', 'sem7', 'sem8'];
+    const semesters = availableSems;
     
     // Filter sections based on teacher's assignments for the active semester
     const sections = React.useMemo(() => {

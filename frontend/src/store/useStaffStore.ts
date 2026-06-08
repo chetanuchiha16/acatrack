@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { listBatchesBatchesGet } from "../client/sdk.gen";
+import { 
+    listBatchesBatchesGet,
+    getStaffAvailableSemestersAuthStaffAvailableSemestersGet
+} from "../client/sdk.gen";
 
 export interface StaffAssignment {
     teacher_username?: string;
@@ -19,11 +22,13 @@ interface StaffState {
     section: string;
     assignments: StaffAssignment[];
     loadingBatches: boolean;
+    availableSems: string[];
     setBatchYear: (year: string) => void;
     setSemester: (sem: string) => void;
     setSection: (sec: string) => void;
     setAssignments: (assignments: StaffAssignment[]) => void;
     fetchBatches: () => Promise<void>;
+    fetchAvailableSemesters: (batchYear?: string) => Promise<void>;
 }
 
 const useStaffStore = create<StaffState>()(
@@ -35,14 +40,40 @@ const useStaffStore = create<StaffState>()(
             section: "ALL",
             assignments: [],
             loadingBatches: false,
+            availableSems: ["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"],
 
-            setBatchYear: (year: string) => set({ batchYear: year }),
+            setBatchYear: (year: string) => {
+                set({ batchYear: year });
+                void get().fetchAvailableSemesters(year);
+            },
             setSemester: (sem: string) => set({ semester: sem }),
             setSection: (sec: string) => set({ section: sec }),
             setAssignments: (assignments: StaffAssignment[]) => set({ assignments }),
 
+            fetchAvailableSemesters: async (by?: string) => {
+                const year = by || get().batchYear;
+                if (!year) return;
+                try {
+                    const res = await getStaffAvailableSemestersAuthStaffAvailableSemestersGet({
+                        query: { batch_year: Number(year) }
+                    });
+                    const sems = res.data?.available_semesters || [];
+                    if (sems.length > 0) {
+                        set({ availableSems: sems });
+                        if (!sems.includes(get().semester)) {
+                            set({ semester: sems[sems.length - 1] });
+                        }
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch available semesters", err);
+                }
+            },
+
             fetchBatches: async () => {
-                if (get().availableBatches.length > 0 && get().batchYear) return;
+                if (get().availableBatches.length > 0 && get().batchYear) {
+                    void get().fetchAvailableSemesters();
+                    return;
+                }
 
                 set({ loadingBatches: true });
                 try {
@@ -56,7 +87,11 @@ const useStaffStore = create<StaffState>()(
                     
                     // Set default batch year if none selected
                     if (fetchedBatches.length > 0 && !get().batchYear) {
-                        set({ batchYear: fetchedBatches[fetchedBatches.length - 1] });
+                        const defaultYear = fetchedBatches[fetchedBatches.length - 1];
+                        set({ batchYear: defaultYear });
+                        void get().fetchAvailableSemesters(defaultYear);
+                    } else if (get().batchYear) {
+                        void get().fetchAvailableSemesters();
                     }
                 } catch (err) {
                     console.error("Failed to fetch batches", err);
@@ -76,4 +111,3 @@ const useStaffStore = create<StaffState>()(
 );
 
 export default useStaffStore;
-
