@@ -37,7 +37,7 @@ const Student: React.FC = () => {
         }
     }, [availableSems, hasDefaulted]);
     
-    const { user, loading } = useProtectedPage("Student");
+    const { user, studentData, loading } = useProtectedPage("Student");
     useEffect(() => {
         if (!user) return; // wait for auth
         const unsubscribe = onMessage(messaging, (payload) => {
@@ -135,6 +135,27 @@ const Student: React.FC = () => {
                             </p>
                         </div>
                     </div>
+
+                    {studentData?.mentor && (
+                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
+                            <div>
+                                <span className="font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider text-xs mr-2">Mentor</span>
+                                <span className="font-semibold text-gray-900 dark:text-white">{studentData.mentor.name}</span>
+                            </div>
+                            {studentData.mentor.email && (
+                                <div>
+                                    <span className="font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider text-xs mr-2">Email</span>
+                                    <span className="font-semibold text-gray-900 dark:text-white">{studentData.mentor.email}</span>
+                                </div>
+                            )}
+                            {studentData.mentor.phone && (
+                                <div>
+                                    <span className="font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider text-xs mr-2">Phone</span>
+                                    <span className="font-semibold text-gray-900 dark:text-white">{studentData.mentor.phone}</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
                         Choose a tab below to access results, classroom, or

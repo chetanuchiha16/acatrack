@@ -1,7 +1,11 @@
 // useStudentStore.ts
 import { create } from "zustand";
-import { getStudentDetailsParentStudentDetailsGet } from "../client/sdk.gen";
+import { 
+    getStudentDetailsParentStudentDetailsGet,
+    getStudentProfileAuthStudentDetailsGet 
+} from "../client/sdk.gen";
 import type { StudentInfo, MentorInfo, StudentData } from "../types";
+import useAuthStore from "./useAuthStore";
 
 // Re-export for consumers that previously imported from this file
 export type { StudentInfo, MentorInfo, StudentData } from "../types";
@@ -22,7 +26,13 @@ const useStudentStore = create<StudentState>((set) => ({
     fetchStudentData: async () => {
         set({ loading: true, error: null });
         try {
-            const res = await getStudentDetailsParentStudentDetailsGet();
+            const role = useAuthStore.getState().user?.who;
+            let res;
+            if (role === "Student") {
+                res = await getStudentProfileAuthStudentDetailsGet();
+            } else {
+                res = await getStudentDetailsParentStudentDetailsGet();
+            }
             if (res.data) set({ studentData: res.data as StudentData, loading: false });
         } catch (err: unknown) {
             console.error(err);

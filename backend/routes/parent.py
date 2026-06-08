@@ -46,7 +46,7 @@ async def get_student_details(request: Request):
             },
             "mentor": {
                 "id": mentor.id,
-                "name": mentor.name,
+                "name": teacher.name if teacher else mentor.name,
                 "email": teacher.email if teacher else None,
                 "phone": teacher.phone if teacher else None,
             }

@@ -8,6 +8,8 @@ import {
   Mail,
   FileText,
   ChevronRight,
+  Phone,
+  Users,
 } from "lucide-react";
 
 interface LocationState {
@@ -15,7 +17,7 @@ interface LocationState {
 }
 
 const StudentOverview: React.FC = () => {
-    const { user, loading } = useProtectedPage("Student");
+    const { user, studentData, loading } = useProtectedPage("Student");
     const location = useLocation();
     const params = useParams<{ id: string, branch?: string }>();
     const navigate = useNavigate();
@@ -34,19 +36,85 @@ const StudentOverview: React.FC = () => {
 
     return (
         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
-            {/* Welcome Banner */}
-            <section className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 sm:p-8 shadow-lg text-white relative overflow-hidden">
-                <div className="relative z-10">
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-2">
-                        Welcome back, {finalName.split(" ")[0]}! 👋
-                    </h1>
-                    <p className="text-blue-100 max-w-xl text-sm sm:text-base">
-                        Here's an overview of your academic progress, classroom updates, and mentorship status.
-                    </p>
-                </div>
-                {/* Decorative background element */}
-                <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-            </section>
+            {/* Top Grid: Welcome Banner & Mentor Info */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Welcome Banner */}
+                <section className="lg:col-span-2 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 sm:p-8 shadow-lg text-white relative overflow-hidden flex flex-col justify-center min-h-[160px]">
+                    <div className="relative z-10">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-2">
+                            Welcome back, {finalName.split(" ")[0]}! 👋
+                        </h1>
+                        <p className="text-blue-100 max-w-xl text-sm sm:text-base">
+                            Here's an overview of your academic progress, classroom updates, and mentorship status.
+                        </p>
+                    </div>
+                    {/* Decorative background element */}
+                    <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                </section>
+
+                {/* Academic Mentor Card */}
+                <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm flex flex-col justify-between relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-[40px] -mr-16 -mt-16" />
+                    <div>
+                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-gray-700/50">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg flex items-center justify-center">
+                                    <Users size={16} />
+                                </div>
+                                <h2 className="text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
+                                    Academic Mentor
+                                </h2>
+                            </div>
+                            <span className="px-2.5 py-0.5 bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 rounded-full text-[10px] font-black uppercase tracking-wider">
+                                Advisor
+                            </span>
+                        </div>
+
+                        {studentData?.mentor ? (
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-sm shadow-sm">
+                                        {studentData.mentor.name.slice(0, 2).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <h4 className="font-extrabold text-gray-900 dark:text-white leading-snug">
+                                            {studentData.mentor.name}
+                                        </h4>
+                                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-550 uppercase tracking-widest">Department Advisor</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2 pt-1 text-xs">
+                                    {studentData.mentor.email && (
+                                        <a
+                                            href={`mailto:${studentData.mentor.email}`}
+                                            className="flex items-center gap-2.5 p-2 rounded-xl bg-gray-50/50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-900/50 transition-all duration-300"
+                                        >
+                                            <Mail size={14} className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                                            <span className="truncate flex-1">{studentData.mentor.email}</span>
+                                        </a>
+                                    )}
+                                    {studentData.mentor.phone && (
+                                        <a
+                                            href={`tel:${studentData.mentor.phone}`}
+                                            className="flex items-center gap-2.5 p-2 rounded-xl bg-gray-50/50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-900/50 transition-all duration-300"
+                                        >
+                                            <Phone size={14} className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                                            <span className="truncate flex-1">{studentData.mentor.phone}</span>
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-center py-4">
+                                <p className="text-gray-500 dark:text-gray-400 font-bold italic text-xs">
+                                    No academic mentor assigned yet.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </section>
+            </div>
 
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

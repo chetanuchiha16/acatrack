@@ -16,12 +16,18 @@ class StudentRepository:
 
     async def get_auth_by_usn(self, usn: str) -> StudentAuth | None:
         result = await self.db.execute(
-            select(StudentAuth).where(StudentAuth.usn == usn)
+            select(StudentAuth)
+            .options(selectinload(StudentAuth.mentor))
+            .where(StudentAuth.usn == usn)
         )
         return result.scalars().first()
 
     def get_auth_by_usn_sync(self, usn: str) -> StudentAuth | None:
-        result = self.db.execute(select(StudentAuth).where(StudentAuth.usn == usn))
+        result = self.db.execute(
+            select(StudentAuth)
+            .options(selectinload(StudentAuth.mentor))
+            .where(StudentAuth.usn == usn)
+        )
         return result.scalars().first()
 
     async def get_auths_by_usns(self, usns: list[str]) -> list[StudentAuth]:
