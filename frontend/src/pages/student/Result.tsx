@@ -11,9 +11,14 @@ interface ResultProps {
     usn: string;
     semester: Semester;
     view: "table" | "cards" | "ai";
+    onDataLoaded?: (availableSemesters: Semester[]) => void;
 }
 
-export default function Result({ usn, semester, view }: ResultProps) {
+interface ExtendedStudentResult extends StudentResult {
+    available_semesters?: Semester[];
+}
+
+export default function Result({ usn, semester, view, onDataLoaded }: ResultProps) {
     const [data, setData] = useState<StudentResult | null>(null);
     const [error, setError] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
@@ -24,14 +29,21 @@ export default function Result({ usn, semester, view }: ResultProps) {
         setError("");
         try {
             const { data: resultData } = await getStudentInfoAuthStudentResultGet({ query: { usn, semester } });
-            if (resultData) { setData(resultData as StudentResult); setError(""); }
+            if (resultData) {
+                setData(resultData as StudentResult);
+                setError("");
+                const avSems = (resultData as ExtendedStudentResult).available_semesters;
+                if (onDataLoaded && avSems) {
+                    onDataLoaded(avSems);
+                }
+            }
         } catch (err: unknown) {
             setError(parseApiError(err));
             setData(null);
         } finally {
             setLoading(false);
         }
-    }, [usn, semester]);
+    }, [usn, semester, onDataLoaded]);
 
     useEffect(() => { void fetchStudent(); }, [fetchStudent]);
 

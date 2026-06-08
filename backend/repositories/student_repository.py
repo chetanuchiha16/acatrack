@@ -235,6 +235,34 @@ class StudentRepository:
         )
         return [row[0] for row in result.all()]
 
+    async def get_semesters_with_results(self, student_id: int) -> list[str]:
+        from sqlalchemy import distinct
+
+        result = await self.db.execute(
+            select(distinct(Subject.semester))
+            .join(AcademicResult, Subject.subject_code == AcademicResult.subject_code)
+            .where(AcademicResult.student_id == student_id)
+        )
+        sems = [row[0] for row in result.all()]
+        try:
+            return sorted(sems, key=lambda s: int(s.replace("sem", "")))
+        except ValueError:
+            return sorted(sems)
+
+    def get_semesters_with_results_sync(self, student_id: int) -> list[str]:
+        from sqlalchemy import distinct
+
+        result = self.db.execute(
+            select(distinct(Subject.semester))
+            .join(AcademicResult, Subject.subject_code == AcademicResult.subject_code)
+            .where(AcademicResult.student_id == student_id)
+        )
+        sems = [row[0] for row in result.all()]
+        try:
+            return sorted(sems, key=lambda s: int(s.replace("sem", "")))
+        except ValueError:
+            return sorted(sems)
+
     def get_results_by_student_ids_and_subjects_sync(
         self, student_ids: list[int], subject_codes: list[str]
     ) -> list:
