@@ -16,18 +16,21 @@ interface MentorResultsProps {
 const MentorResults: React.FC<MentorResultsProps> = ({ mentor_id, batchYear }) => {
     const { availableSems, fetchAvailableSemesters } = useStaffStore();
     const [semester, setSemester] = useState<string>("sem1");
+    const [hasDefaulted, setHasDefaulted] = useState<boolean>(false);
 
     useEffect(() => {
         if (batchYear) {
+            setHasDefaulted(false);
             void fetchAvailableSemesters(batchYear);
         }
     }, [batchYear, fetchAvailableSemesters]);
 
     useEffect(() => {
-        if (availableSems.length > 0 && !availableSems.includes(semester)) {
+        if (availableSems.length > 0 && !hasDefaulted) {
             setSemester(availableSems[availableSems.length - 1]);
+            setHasDefaulted(true);
         }
-    }, [availableSems, semester]);
+    }, [availableSems, hasDefaulted]);
     const [mentees, setMentees] = useState<MenteeResult[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [selectedMentee, setSelectedMentee] = useState<string | null>(null);

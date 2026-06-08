@@ -15,7 +15,15 @@ const StudentResultWrapper: React.FC = () => {
     const { user, loading } = useProtectedPage("Student");
     const [view, setView] = useState<ResultViewMode>("cards");
     const [currentSem, setCurrentSem] = useState<StudentSemester>("sem1");
-    const [availableSems, setAvailableSems] = useState<Semester[]>(["sem1", "sem2", "sem3", "sem4", "sem5", "sem6", "sem7", "sem8"]);
+    const [availableSems, setAvailableSems] = useState<Semester[]>([]);
+    const [hasDefaulted, setHasDefaulted] = useState<boolean>(false);
+
+    React.useEffect(() => {
+        if (availableSems.length > 0 && !hasDefaulted) {
+            setCurrentSem(availableSems[availableSems.length - 1]);
+            setHasDefaulted(true);
+        }
+    }, [availableSems, hasDefaulted]);
 
     if (loading) return <LoadingSpinner message="Authenticating Dashboard..." fullScreen={true} />;
     if (!user) return null;
@@ -44,7 +52,7 @@ const StudentResultWrapper: React.FC = () => {
                             className="appearance-none w-40 px-3 py-2 rounded-md bg-white dark:bg-[#0f1720] text-sm text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="">Select Semester</option>
-                            {availableSems.map(s => (
+                            {(availableSems.length > 0 ? availableSems : sems).map(s => (
                                 <option key={s} value={s}>{s}</option>
                             ))}
                         </select>

@@ -80,7 +80,7 @@ export default function ParentResult() {
                 const avSems = (res.data as { available_semesters?: string[] }).available_semesters;
                 if (avSems && avSems.length > 0) {
                     setAvailableSems(avSems);
-                    if (semester === "sem1" && avSems.includes(avSems[avSems.length - 1]) && avSems[avSems.length - 1] !== "sem1") {
+                    if (semester === "sem1" && avSems.length > 0 && avSems[avSems.length - 1] !== "sem1") {
                         setSem(avSems[avSems.length - 1]);
                     }
                 }
