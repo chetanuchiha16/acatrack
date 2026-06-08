@@ -11,7 +11,6 @@ class SubjectResult:
     ):
         self.subject_name = sem_subjects[semester].get(subject_code, "Unknown subject")
         self.subject_code = subject_code
-        logger.debug(self.subject_code)
         self.semester = semester
         self.university = university
         self.students = (

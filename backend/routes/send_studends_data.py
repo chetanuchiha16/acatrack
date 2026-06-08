@@ -22,8 +22,7 @@ async def get_student_info(
     request: Request, usn: str = Query(None), semester: str = Query(None)
 ):
     batch_year = get_batch_year_from_request(request)
-    logger.debug(f"batch year from student {batch_year}")
-    logger.debug(f"Received USN: {usn}, Semester: {semester}, Batch: {batch_year}")
+
 
     try:
         import asyncio
