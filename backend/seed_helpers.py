@@ -406,14 +406,13 @@ async def seed_mock_infra_and_subjects_async(session: AsyncSession) -> None:
         # Create corresponding Parent shell
         parent = ParentAuth(
             username=f"{usn}_parent",
-            password=hashed_pw, # use pre-hashed password
+            password=hashed_pw,  # use pre-hashed password
             name=f"Parent of {name}",
             email=f"{usn.lower()}_parent@example.com",
             phone=f"9999911{str(i).zfill(3)}",
             student_id=student.id,
         )
         session.add(parent)
-
 
         marks_objs = []
 
