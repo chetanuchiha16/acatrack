@@ -1,15 +1,12 @@
 # 🎓 AcaTrack: Academic Performance Tracking & Analytics System
 
-AcaTrack is a comprehensive, full-stack academic management platform designed to provide real-time insights into student performance. Originally developed as a collaborative student management system, it has evolved into a professional-grade analytics engine featuring AI-driven insights, automated data ingestion, and multi-role dashboards.
+AcaTrack is an academic performance tracking and analytics platform. It features an asynchronous API, real-time analytics, multi-tenant role-based access control, and modular database architectures.
 
 > [!NOTE]
-> This repository serves as the **active solo continuation** and architectural refactor of the original project. It focuses on performance, scalability, and modern engineering practices.
+> This repository is the official home of AcaTrack, built with a focus on performance, scalability, and modern software engineering practices.
 
 > [!IMPORTANT]
 > **Scraper Decoupling**: The legacy server-side Selenium-based scraper has been deprecated and completely migrated to our standalone, high-performance desktop application: **[VTU Result Scraper](https://github.com/chetanuchiha16/result-scraper)**. This eliminates CAPTCHA, browser rendering, and server-side CPU bottlenecks.
-
-> [!TIP]
-> **Academic Validation**: The foundational architecture of this platform was presented under the title **"JSSTrack360: Student Performance at your fingertips"** at the **IEEE 1st International Conference on Intelligent Computing and Communication Systems (CICCS-25)** in September 2025.
 
 ---
 
@@ -56,20 +53,17 @@ graph TD
 
 ### 🛠️ Project Evolution
 
-AcaTrack has undergone a significant architectural transformation to reach its current state:
+AcaTrack has undergone a comprehensive engineering evolution to optimize performance and reliability:
 
-*   **Phase 1 (Collaborative)**: Full-stack academic management system built with the original team — [Group-Projects](https://github.com/chetanuchiha16/Group-Projects)
-    *   **IEEE Conference Presentation**: Presented the foundational architecture under the title **"JSSTrack360: Student Performance at your fingertips"** at the *1st International Conference on Intelligent Computing and Communication Systems (CICCS-25)*.
-*   **Phase 2 (Solo Refactor)**: Active evolution focused on professional-grade integrity:
-    *   **FastAPI Migration**: Replaced the legacy Flask core with **FastAPI** for asynchronous performance and automatic OpenAPI documentation.
-    *   **Database Normalization**: Decoupling `students`, `subjects`, and `results` from fixed semester tables for dynamic, multi-year scalability.
-    *   **SDK-Driven Frontend**: Implemented automated client SDK generation via **HeyAPI**, ensuring 100% type safety between backend and frontend.
-    *   **Strict Type Safety**: Migrated the entire frontend to **TypeScript** with strict null checks and centralized interface definitions.
-    *   **State-Driven Authentication**: Refactored staff login to utilize a dynamic batch filter in the dashboard, replacing static legacy selections.
-    *   **Performance Engineering**: Integrated **Redis caching**, resolved N+1 query issues, and switched to **uv** for lightning-fast package resolution.
-    *   **High-Performance Standalone Rust Core**: Extracted, modularized, and published our native parallel **Rust PDF parsing engine ([acatrack-pdf-parser-rs](https://github.com/chetanuchiha16/acatrack-pdf-parser-rs))** directly to **PyPI**, delivering a **38.4x** ingestion speedup (from 21.78 min down to 34.06 seconds for 1,300+ documents) with zero local compiler toolchain dependencies.
-    *   **UI/UX Modernization**: Transitioned to a **Bento-box dashboard layout**, implemented **code-splitting** (React.lazy), and redesigned result views with Lucide icons.
-    *   **Containerization**: Implemented **Docker** and **Docker Compose** for standardized deployment across all environments.
+*   **FastAPI Core Migration**: Replaced the legacy prototype Flask-based API layer with **FastAPI** for native asynchronous operations, automatic validation, and standardized OpenAPI documentation.
+*   **Database Normalization**: Restructured legacy flat schemas by decoupling `students`, `subjects`, and `results` into distinct database tables, facilitating dynamic multi-year academic scalability.
+*   **SDK-Driven Client Architecture**: Integrated automated client SDK generation via **HeyAPI**, ensuring complete type safety between python models and the typescript frontend.
+*   **Strict Type-Safe UI**: Ported the user portal codebase to **TypeScript** with strict compiler guidelines and static interfaces.
+*   **State-Driven Dashboards**: Replaced static access layers with dynamic, state-driven role selectors and filters powered by Zustand.
+*   **Performance Optimization**: Integrated **Redis caching** for hot database paths and resolved nested database N+1 query patterns.
+*   **High-Performance Standalone Rust Core**: Extracted and modularized parallel VTU PDF parsing into a standalone **Rust parsing engine ([acatrack-pdf-parser-rs](https://github.com/chetanuchiha16/acatrack-pdf-parser-rs))** compiled via PyO3 & Rayon, achieving a **38.4x** parsing throughput speedup.
+*   **UI/UX Modernization**: Redesigned front-facing modules using a modern Bento-box grid, integrated lazy-loaded code-splitting, and adopted a premium liquid glassmorphic design system.
+*   **Containerized Environments**: Packaged the entire multi-service workspace using **Docker** and **Docker Compose** for seamless environment setup.
 
 ---
 
@@ -101,8 +95,8 @@ AcaTrack integrates advanced AI capabilities to move beyond simple data storage:
 
 The system features robust tools for handling complex academic data:
 
-*   **Standalone Desktop Scraping**: Leverage our dedicated, native Go + Wails cross-platform **[VTU Result Scraper](https://github.com/chetanuchiha16/result-scraper)** for high-volume local scraping, effortless CAPTCHA resolution, and local PDF packaging.
-*   **PDF to Data Conversion**: Blazing-fast parallel extraction using our custom compiled, standalone **Rust engine ([acatrack-pdf-parser-rs](https://github.com/chetanuchiha16/acatrack-pdf-parser-rs) via PyO3 & Rayon)**, published directly to **PyPI** for zero-dependency high-speed ingestion.
+*   **Standalone Desktop Scraping**: Leverage our dedicated, native Go + Wails cross-platform **[VTU Result Scraper](https://github.com/chetanuchiha16/result-scraper)** for local scraping, CAPTCHA resolution, and local PDF packaging.
+*   **PDF to Data Conversion**: Parallel extraction using our custom compiled, standalone **Rust engine ([acatrack-pdf-parser-rs](https://github.com/chetanuchiha16/acatrack-pdf-parser-rs) via PyO3 & Rayon)**, published directly to **PyPI** for zero-dependency high-speed ingestion.
 *   **Excel Ingestion**: Bulk upload capabilities for student records, staff lists, and subject mappings with automated validation.
 
 ---
@@ -111,15 +105,15 @@ The system features robust tools for handling complex academic data:
 
 #### **Frontend**
 *   **Framework**: `React` (with TypeScript)
-*   **Build Tool**: `Vite` — Blazing fast HMR and optimized builds.
+*   **Build Tool**: `Vite` — Fast HMR and optimized builds.
 *   **Styling**: `Tailwind CSS v4` — Utility-first styling with modern CSS features.
-*   **State Management**: `Zustand` — Minimalistic and scalable state handling.
+*   **State Management**: `Zustand` — Minimalistic state handling.
 *   **Networking**: `Axios` with generated SDK via `HeyAPI`.
 
 #### **Backend**
 *   **Framework**: `FastAPI` — High-performance Python web framework.
-*   **High-Performance Core**: `Rust` bridged via `PyO3` & `Rayon` for multi-threaded parallel PDF parsing.
-*   **Package Manager**: `uv` — Ultra-fast Python package installer and resolver.
+*   **Core Parser**: `Rust` bridged via `PyO3` & `Rayon` for multi-threaded parallel PDF parsing.
+*   **Package Manager**: `uv` — Fast Python package installer and resolver.
 *   **Server**: `Uvicorn` with `uvloop` and `httptools`.
 *   **ORM**: `SQLAlchemy 2.0` with `Alembic` for migrations.
 *   **Caching**: `Redis` for optimized API response times.
@@ -192,33 +186,33 @@ The project uses a `Makefile` to standardize common operations across the stack.
 
 ### ⚡ Performance & Reliability
 
-AcaTrack is engineered for high performance and reliability, with a focus on low latency and high concurrency.
+AcaTrack includes optimizations focused on request latency and concurrency.
 
 #### **Benchmarking: Legacy (Flask) vs. Modern (FastAPI)**
 The following metrics were captured using **k6** across comparable high-concurrency scenarios (120+ requests):
 
 | Metric | Legacy (v1) | **AcaTrack (v2)** | **Improvement** |
 | :--- | :--- | :--- | :--- |
-| **Throughput (RPS)** | 1.84 | **59.62** | **~32x Increase** |
-| **Avg. Response Time** | 2,840 ms | **158.79 ms** | **~18x Faster** |
-| **Success Rate** | 96.77% | **100.00%** | **Perfect Reliability** |
-| **Avg. DB Connections** | 42 | **5** | **8.4x More Efficient** |
+| **Throughput (RPS)** | 1.84 | **59.62** | **32.4x higher** |
+| **Avg. Response Time** | 2,840 ms | **158.79 ms** | **17.9x faster** |
+| **Success Rate** | 96.77% | **100.00%** | **0% error rate** |
+| **Avg. DB Connections** | 42 | **5** | **8.4x fewer connections** |
 
 #### **Benchmarking: Sequential Python Parser vs. Parallel Rust Core**
 The following metrics show the dramatic performance boost after migrating the CPU-bound VTU result PDF scraping pipeline to a parallel Rust core bridged via PyO3 (benchmarked over 1,308 PDFs across 4 ZIP upload requests):
 
 | Metric | Sequential Python (pdfplumber) | **Parallel Rust Core (PyO3 + Rayon)** | **Improvement** |
 | :--- | :--- | :--- | :--- |
-| **Total Parsing Duration** | 21.78 minutes | **34.06 seconds (~0.57 min)** | **38.4x Faster** 🚀 |
-| **Speed per PDF** | 0.9992 seconds | **0.0260 seconds** | **38.4x Faster** 🚀 |
-| **Upload p(95) Latency** | 10,598 ms | **5,534 ms** | **1.91x Faster** ⚡ |
-| **Net RAM Impact** | +268.48 MB | **+76.43 MB** | **71.5% Lower Memory** 📉 |
+| **Total Parsing Duration** | 21.78 minutes | **34.06 seconds (~0.57 min)** | **38.4x speedup** |
+| **Speed per PDF** | 0.9992 seconds | **0.0260 seconds** | **38.4x speedup** |
+| **Upload p(95) Latency** | 10,598 ms | **5,534 ms** | **1.91x speedup** |
+| **Net RAM Impact** | +268.48 MB | **+76.43 MB** | **71.5% reduction** |
 
 *   **Optimized Execution**: Migrated to **FastAPI** with **Uvloop** and **Httptools**, delivering significantly higher throughput compared to the legacy Flask implementation.
 *   **Advanced Caching**: Implemented **Redis-based caching** for expensive academic result computations and university data fetching.
 *   **Database Efficiency**: Resolved critical **N+1 query bottlenecks** using SQLAlchemy joined-loading and optimized database indexing.
 *   **Load Tested**: Verified to handle high-concurrency scenarios via **k6** load testing, ensuring stability during peak result periods.
-*   **Automated Benchmarking**: Continuous monitoring via `benchmarkv2.py` to ensure query latency remains within professional standards (metrics tracked for database and API response times).
+*   **Automated Benchmarking**: Continuous monitoring via `benchmarkv2.py` to track database and API response times.
 
 ---
 
@@ -237,11 +231,4 @@ The following metrics show the dramatic performance boost after migrating the CP
 
 ---
 
-### 👥 Contributors (Legacy)
-*   **Lead Maintainer**: Chetan Kishor C G
-*   **Collaborators**: Abhishek R, Dhanush Singh G, Adithya V
-
----
-
-### 🤍 Evolution
-This project began as a student group assignment and have been refactoring into a modern, production-ready system. It represents a journey from learning full-stack basics to implementing advanced patterns like RBAC, AI integration, and high-performance caching.
+*   **Author & Owner**: Chetan Kishor C G
