@@ -85,10 +85,11 @@ async def lifespan(app: FastAPI):
     # Firebase
     cred_path = settings.firebase_cred_path
     if not cred_path:
-        # Fallback: Search current directory for a firebase-adminsdk credentials JSON file
-        for f in os.listdir("."):
+        # Fallback: Search the absolute directory containing main.py for a firebase-adminsdk credentials JSON file
+        backend_dir = os.path.dirname(os.path.abspath(__file__))
+        for f in os.listdir(backend_dir):
             if f.endswith(".json") and "firebase-adminsdk" in f:
-                cred_path = f
+                cred_path = os.path.join(backend_dir, f)
                 break
                 
     if not cred_path and not settings.testing:
