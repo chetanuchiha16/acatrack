@@ -7,7 +7,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from database import AsyncSessionLocal
-from models.schema import Section, StudentAuth, Subject, Teacher, SubjectAssignment
+from models.schema import Section, StudentAuth, Subject, Teacher, SubjectAssignment, ParentAuth
 from services.academic_service import BatchLifecycleService
 from sqlalchemy import select
 
@@ -88,11 +88,32 @@ async def main():
             )
             session.add(student)
             await session.commit()
+            await session.refresh(student)
             print(
                 f"✅ Enrolled Student: {student.name} ({student.usn}) in Section {section_name}"
             )
         else:
             print(f"ℹ️ Student already exists: {student.name} ({student.usn})")
+
+        # 4b. Check or create a demo parent linked to the student
+        parent_username = "1JS23CS999_parent"
+        stmt = select(ParentAuth).where(ParentAuth.username == parent_username)
+        parent = (await session.execute(stmt)).scalar_one_or_none()
+        if not parent:
+            from security import hash_password
+            parent = ParentAuth(
+                username=parent_username,
+                password=hash_password("password123"),
+                name="Bob Parent (Alice)",
+                email="bob.parent@example.com",
+                phone="9999911999",
+                student_id=student.id,
+            )
+            session.add(parent)
+            await session.commit()
+            print(f"✅ Created Parent: {parent.name} (@{parent.username})")
+        else:
+            print(f"ℹ️ Parent already exists: {parent.name} (@{parent.username})")
 
         # 5. Create active SubjectAssignment for demostaff -> CS101 -> Section D
         stmt = select(SubjectAssignment).where(
