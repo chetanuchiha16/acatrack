@@ -8,7 +8,7 @@ PostgreSQL database (acatrack).
 Run from the backend/ directory:
     uv run python scripts/restore_from_excel.py
 """
-import asyncio
+
 import sys
 import os
 import re
@@ -16,12 +16,12 @@ import re
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pandas as pd
-from sqlalchemy import create_engine, select as sa_select, text
+from sqlalchemy import create_engine, select as sa_select
 from sqlalchemy.orm import sessionmaker
 
 from settings import settings
 from security import hash_password
-from models.schema import StudentAuth, Teacher, Mentor, Section, ParentAuth, Subject, SubjectAssignment
+from models.schema import StudentAuth, Teacher, Mentor, Section, ParentAuth
 
 
 # ─── Build a synchronous DB URL from whatever is in .env ───────────────────────
@@ -35,8 +35,18 @@ def _sync_url():
 SCRATCH = os.path.join(os.path.dirname(__file__), "..", "scratch")
 
 BATCH_CONFIGS = [
-    {"year": 2023, "enrollment": "students_enrollment_2023.xlsx", "mentor_map": "mentor_mapping_2023.xlsx", "sections": ["A", "B", "C"]},
-    {"year": 2022, "enrollment": "students_enrollment_2022.xlsx", "mentor_map": "mentor_mapping_2022.xlsx", "sections": ["A", "B", "C", "D", "E", "F"]},
+    {
+        "year": 2023,
+        "enrollment": "students_enrollment_2023.xlsx",
+        "mentor_map": "mentor_mapping_2023.xlsx",
+        "sections": ["A", "B", "C"],
+    },
+    {
+        "year": 2022,
+        "enrollment": "students_enrollment_2022.xlsx",
+        "mentor_map": "mentor_mapping_2022.xlsx",
+        "sections": ["A", "B", "C", "D", "E", "F"],
+    },
 ]
 
 SUBJECT_FILES = {
@@ -60,7 +70,11 @@ def _unique_username(session, base: str) -> str:
     """Guarantee unique teacher usernames by appending a counter if needed."""
     candidate = base
     counter = 1
-    while session.execute(sa_select(Teacher).where(Teacher.username == candidate)).scalars().first():
+    while (
+        session.execute(sa_select(Teacher).where(Teacher.username == candidate))
+        .scalars()
+        .first()
+    ):
         candidate = f"{base}{counter}"
         counter += 1
     return candidate
@@ -84,9 +98,18 @@ def main():
             email = str(row.get("Email", "")).strip()
             if not name:
                 continue
-            username = _unique_username(session, email.split("@")[0] if "@" in email else name.lower().replace(" ", "_")[:12])
+            username = _unique_username(
+                session,
+                email.split("@")[0]
+                if "@" in email
+                else name.lower().replace(" ", "_")[:12],
+            )
             plain_pw = f"staff_{username}"
-            existing = session.execute(sa_select(Teacher).where(Teacher.username == username)).scalars().first()
+            existing = (
+                session.execute(sa_select(Teacher).where(Teacher.username == username))
+                .scalars()
+                .first()
+            )
             if existing:
                 print(f"  ⤷ Staff '{username}' already exists — skipped")
                 continue
@@ -123,9 +146,15 @@ def main():
             # Create sections
             section_map = {}
             for sec_name in cfg["sections"]:
-                existing_sec = session.execute(
-                    sa_select(Section).where(Section.name == sec_name, Section.batch_year == year)
-                ).scalars().first()
+                existing_sec = (
+                    session.execute(
+                        sa_select(Section).where(
+                            Section.name == sec_name, Section.batch_year == year
+                        )
+                    )
+                    .scalars()
+                    .first()
+                )
                 if existing_sec:
                     section_map[sec_name] = existing_sec
                 else:
@@ -147,7 +176,13 @@ def main():
                 phone = str(row.get("phone", "")).strip()
                 if not usn or not name or usn == "NAN":
                     continue
-                existing = session.execute(sa_select(StudentAuth).where(StudentAuth.usn == usn)).scalars().first()
+                existing = (
+                    session.execute(
+                        sa_select(StudentAuth).where(StudentAuth.usn == usn)
+                    )
+                    .scalars()
+                    .first()
+                )
                 if existing:
                     continue
                 plain_pw = f"{_safe_seed(name)}{usn[-3:]}"
@@ -184,15 +219,25 @@ def main():
                 if not mentor_username or not student_usn:
                     continue
 
-                teacher = session.execute(
-                    sa_select(Teacher).where(Teacher.username == mentor_username)
-                ).scalars().first()
-                student = session.execute(
-                    sa_select(StudentAuth).where(StudentAuth.usn == student_usn)
-                ).scalars().first()
+                teacher = (
+                    session.execute(
+                        sa_select(Teacher).where(Teacher.username == mentor_username)
+                    )
+                    .scalars()
+                    .first()
+                )
+                student = (
+                    session.execute(
+                        sa_select(StudentAuth).where(StudentAuth.usn == student_usn)
+                    )
+                    .scalars()
+                    .first()
+                )
 
                 if not teacher:
-                    print(f"  ⚠ Teacher '{mentor_username}' not found, skipping {student_usn}")
+                    print(
+                        f"  ⚠ Teacher '{mentor_username}' not found, skipping {student_usn}"
+                    )
                     continue
                 if not student:
                     print(f"  ⚠ Student '{student_usn}' not found, skipping")
@@ -209,9 +254,13 @@ def main():
         all_students = session.execute(sa_select(StudentAuth)).scalars().all()
         parent_count = 0
         for student in all_students:
-            existing_parent = session.execute(
-                sa_select(ParentAuth).where(ParentAuth.student_id == student.id)
-            ).scalars().first()
+            existing_parent = (
+                session.execute(
+                    sa_select(ParentAuth).where(ParentAuth.student_id == student.id)
+                )
+                .scalars()
+                .first()
+            )
             if existing_parent:
                 continue
             parent_username = f"p_{student.usn.lower()}"
@@ -242,10 +291,14 @@ def main():
         print(f"   Parents  : {len(total_parents)}")
         print("=" * 60)
         print("\nLogin credentials format:")
-        print("  Student : USN as username, password = first4LettersOfName + last3ofUSN")
+        print(
+            "  Student : USN as username, password = first4LettersOfName + last3ofUSN"
+        )
         print("            e.g.  1XX23CS001  →  john001")
         print("  Staff   : email-prefix as username, password = staff_<username>")
-        print("  Parent  : p_<usn_lowercase> as username, password = parent<last3ofUSN>")
+        print(
+            "  Parent  : p_<usn_lowercase> as username, password = parent<last3ofUSN>"
+        )
         print("            e.g.  p_1xx23cs001  →  parent001")
 
     engine.dispose()

@@ -1,0 +1,46 @@
+name: Sync to Hugging Face Hub
+
+on:
+  push:
+    branches: [main]
+
+  # Allow manual run
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Re-initialize git and track binaries with LFS
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Clean git history in the runner to avoid historical binary issues
+          rm -rf .git
+          git init -b main
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          
+          # Install LFS and track all binary formats
+          git lfs install
+          git lfs track "*.png"
+          git lfs track "*.webp"
+          git lfs track "*.pdf"
+          git lfs track "*.jpg"
+          git lfs track "*.jpeg"
+          git lfs track "*.ico"
+          
+          # Add and commit the current state
+          git add .
+          git commit -m "Deploy to Hugging Face Spaces"
+          
+          # Force push the clean single commit to Hugging Face
+          git remote add hf https://chetanuchiha16:$HF_TOKEN@huggingface.co/spaces/chetanuchiha16/acatrack
+          git push --force hf main
+

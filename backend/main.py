@@ -82,17 +82,42 @@ async def cleanup_old_sandboxes() -> None:
 async def lifespan(app: FastAPI):
     """Startup / shutdown logic."""
     # ---- Startup ----
-    # Firebase
-    cred_path = settings.firebase_cred_path
-    if not cred_path and not settings.testing:
-        raise RuntimeError("FIREBASE_CRED_PATH not set!")
+    # 1. Try to load from environmental JSON secret (safe for public hosting/repositories)
+    cred_json_str = os.environ.get("FIREBASE_CRED_JSON")
+    cred = None
 
-    if cred_path:
-        from firebase_admin import credentials
+    if cred_json_str:
+        try:
+            import json
+            from firebase_admin import credentials
+            cred_dict = json.loads(cred_json_str)
+            cred = credentials.Certificate(cred_dict)
+            logger.info("Firebase configured via FIREBASE_CRED_JSON secret")
+        except Exception as e:
+            logger.error(f"Failed to load Firebase credentials from FIREBASE_CRED_JSON: {e}")
 
-        cred = credentials.Certificate(cred_path)
+    # 2. Fallback to file path
+    if not cred:
+        cred_path = settings.firebase_cred_path
+        if not cred_path:
+            # Fallback: Search the absolute directory containing main.py for a credentials file
+            backend_dir = os.path.dirname(os.path.abspath(__file__))
+            for f in os.listdir(backend_dir):
+                if f.endswith(".json") and "firebase-adminsdk" in f:
+                    cred_path = os.path.join(backend_dir, f)
+                    break
+        
+        if cred_path and os.path.exists(cred_path):
+            from firebase_admin import credentials
+            cred = credentials.Certificate(cred_path)
+            logger.info(f"Firebase configured via credentials file: {cred_path}")
+
+    # 3. Raise error if missing in non-testing environment
+    if not cred and not settings.testing:
+        raise RuntimeError("Firebase credentials not found! Set FIREBASE_CRED_JSON env variable or provide a credentials file.")
+
+    if cred:
         firebase_admin.initialize_app(cred)
-    logger.info("Firebase initialised")
 
     # Database tables
     await create_tables()
@@ -205,3 +230,36 @@ include_routers(app)
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+# ----- Static Frontend Files -----
+import os
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+# Serve index.html for root path
+@app.get("/")
+async def serve_root():
+    dist_path = "frontend/dist/index.html"
+    if os.path.exists(dist_path):
+        return FileResponse(dist_path)
+    return {"message": "AcaTrack API is running (frontend build not found)"}
+
+# Mount assets and handle catch-all client-side routing if frontend build is present
+if os.path.exists("frontend/dist"):
+    if os.path.exists("frontend/dist/assets"):
+        app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="static-assets")
+
+    @app.get("/{file_name:path}")
+    async def serve_static_or_spa(file_name: str):
+        # Prevent accessing backend source files
+        if file_name.startswith(("main.py", "settings.py", "database.py", "seed_helpers.py", ".env")):
+            return {"detail": "Not Found"}
+        
+        file_path = os.path.join("frontend/dist", file_name)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return FileResponse(file_path)
+            
+        # Fallback to index.html for React SPA client-side routing
+        return FileResponse("frontend/dist/index.html")
+
