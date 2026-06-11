@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     default_number: str = ""
     c_email: str = ""
     secret_key: str = "dev-secret-key"
-    admin_secret: str = "dev-admin-secret"
+    admin_secret: str = "supersecretkey"
     database_url: str = "sqlite+aiosqlite:///dev.db"
     redis_url: str = "redis://localhost:6379/0"
     render: str = "false"
