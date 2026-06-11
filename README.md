@@ -9,6 +9,8 @@ pinned: false
 
 # 🎓 AcaTrack: Academic Performance Tracking & Analytics System
 
+[![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/chetanuchiha16/acatrack)
+
 AcaTrack is an academic performance tracking and analytics platform. It features an asynchronous API, real-time analytics, multi-tenant role-based access control, and modular database architectures.
 
 > [!NOTE]
