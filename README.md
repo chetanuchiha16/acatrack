@@ -1,3 +1,12 @@
+---
+title: AcaTrack
+emoji: 🎓
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # 🎓 AcaTrack: Academic Performance Tracking & Analytics System
 
 AcaTrack is an academic performance tracking and analytics platform. It features an asynchronous API, real-time analytics, multi-tenant role-based access control, and modular database architectures.

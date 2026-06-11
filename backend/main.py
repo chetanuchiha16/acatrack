@@ -205,3 +205,36 @@ include_routers(app)
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+# ----- Static Frontend Files -----
+import os
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+# Serve index.html for root path
+@app.get("/")
+async def serve_root():
+    dist_path = "frontend/dist/index.html"
+    if os.path.exists(dist_path):
+        return FileResponse(dist_path)
+    return {"message": "AcaTrack API is running (frontend build not found)"}
+
+# Mount assets and handle catch-all client-side routing if frontend build is present
+if os.path.exists("frontend/dist"):
+    if os.path.exists("frontend/dist/assets"):
+        app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="static-assets")
+
+    @app.get("/{file_name:path}")
+    async def serve_static_or_spa(file_name: str):
+        # Prevent accessing backend source files
+        if file_name.startswith(("main.py", "settings.py", "database.py", "seed_helpers.py", ".env")):
+            return {"detail": "Not Found"}
+        
+        file_path = os.path.join("frontend/dist", file_name)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return FileResponse(file_path)
+            
+        # Fallback to index.html for React SPA client-side routing
+        return FileResponse("frontend/dist/index.html")
+
