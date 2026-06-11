@@ -23,7 +23,6 @@ async def get_student_info(
 ):
     batch_year = get_batch_year_from_request(request)
 
-
     try:
         import asyncio
 

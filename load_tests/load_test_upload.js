@@ -8,8 +8,9 @@ const BASE_URL = __ENV.BASE_URL || 'http://localhost:5000';
 const BATCH_YEAR = __ENV.BATCH_YEAR || '2023';
 const ADMIN_SECRET = __ENV.ADMIN_SECRET || 'supersecretkey';
 
-// Load the ZIP file in binary mode
-const zipFileBin = open('/home/chetan/Documents/Projects/dep/2023_SEM5.zip', 'b');
+// Read ZIP path from environment or fall back to default
+const ZIP_PATH = __ENV.ZIP_PATH || '/home/chetan/Documents/Projects/dep/2023_SEM5.zip';
+const zipFileBin = open(ZIP_PATH, 'b');
 
 export const options = {
   vus: 1,

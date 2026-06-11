@@ -88,6 +88,11 @@ load-test:
 	@echo "Running load test..."
 	k6 run load_tests/load_testv2.js
 
+# Run sandbox load test
+load-test-sandbox:
+	@echo "Running sandbox load test..."
+	k6 run load_tests/load_test_sandbox.js
+
 # Clean up
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
