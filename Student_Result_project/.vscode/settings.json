@@ -1,0 +1,10 @@
+{
+    "python.defaultInterpreterPath": "/home/chetan/Documents/Projects/Group-Projects/Student_Result_project/backend/.venv/bin/python",
+    "ruff.path": [
+        "/home/chetan/Documents/Projects/Group-Projects/Student_Result_project/backend/.venv/bin/ruff"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/chetan/Documents/Projects/Group-Projects/Student_Result_project/backend",
+        "/home/chetan/Documents/Projects/Group-Projects/Student_Result_project/backend/.venv/lib/python3.14/site-packages"
+    ]
+}
