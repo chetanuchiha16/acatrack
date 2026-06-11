@@ -84,6 +84,13 @@ async def lifespan(app: FastAPI):
     # ---- Startup ----
     # Firebase
     cred_path = settings.firebase_cred_path
+    if not cred_path:
+        # Fallback: Search current directory for a firebase-adminsdk credentials JSON file
+        for f in os.listdir("."):
+            if f.endswith(".json") and "firebase-adminsdk" in f:
+                cred_path = f
+                break
+                
     if not cred_path and not settings.testing:
         raise RuntimeError("FIREBASE_CRED_PATH not set!")
 
