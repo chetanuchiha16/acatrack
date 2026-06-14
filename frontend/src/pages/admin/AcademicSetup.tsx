@@ -221,7 +221,7 @@ const InfrastructureStep: React.FC<{ secret: string; onDone: () => void; onBatch
         />
       )}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Batch Year">
           <input type="number" value={batch} onChange={e => setBatch(e.target.value)} placeholder="e.g. 2023" className={inputCls("indigo")} />
         </Field>
@@ -462,7 +462,7 @@ interface AllocationAssignment {
             {staff.map(s => <option key={s.username} value={s.username}>{s.name} ({s.username})</option>)}
           </select>
         </Field>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Semester">
             <select value={semester} onChange={e => setSemester(e.target.value)} className={inputCls("purple")}>
               {Array.from({ length: 8 }, (_, i) => <option key={i} value={`sem${i + 1}`}>Sem {i + 1}</option>)}

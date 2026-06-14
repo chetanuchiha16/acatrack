@@ -4,7 +4,8 @@ import {
     Download, Upload, FileArchive, Globe, 
     History, Users, Mail, GraduationCap,
     CheckCircle, AlertCircle, Loader2,
-    Database, FileText, ChevronRight, Search
+    Database, FileText, ChevronRight, Search,
+    Menu, X
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { clearToken } from "../../utils/storage";
@@ -30,6 +31,7 @@ function getErrMsg(err: unknown): string {
 
 const AdminPanel = () => {
     const navigate = useNavigate();
+    const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
     const [secret] = useState<string>(localStorage.getItem("admin_secret") || "");
     const [mode, setMode] = useState<string>("missing");
     const [status, setStatus] = useState<string>("");
@@ -319,9 +321,26 @@ const AdminPanel = () => {
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-400 rounded-full blur-[120px] animate-pulse delay-700" />
             </div>
 
+            {/* Mobile Sidebar Backdrop */}
+            {sidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <div className="w-80 bg-white/70 dark:bg-[#111827]/70 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col shadow-2xl z-30 transition-all duration-500">
-                <div className="p-10 border-b border-slate-100 dark:border-slate-800/50">
+            <div className={`fixed inset-y-0 left-0 w-80 bg-white/95 dark:bg-[#111827]/95 lg:bg-white/70 lg:dark:bg-[#111827]/70 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col shadow-2xl z-50 lg:z-30 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+                sidebarOpen ? "translate-x-0" : "-translate-x-full"
+            }`}>
+                <div className="p-10 border-b border-slate-100 dark:border-slate-800/50 relative">
+                    <button
+                        onClick={() => setSidebarOpen(false)}
+                        className="lg:hidden absolute top-10 right-8 p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                        aria-label="Close sidebar"
+                    >
+                        <X size={20} />
+                    </button>
                     <div className="flex items-center gap-4 mb-3">
                         <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/30 transform hover:rotate-6 transition-transform">
                             <GraduationCap size={28} />
@@ -395,10 +414,19 @@ const AdminPanel = () => {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
-                <header className="h-20 bg-white/40 dark:bg-[#0b0f19]/40 backdrop-blur-2xl border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-12 transition-all">
-                    <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
-                        {activeView === "results" ? "Command Center" : "Academic Engine"}
-                    </h2>
+                <header className="h-20 bg-white/40 dark:bg-[#0b0f19]/40 backdrop-blur-2xl border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-6 sm:px-12 transition-all gap-4">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setSidebarOpen(true)}
+                            className="lg:hidden p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+                            aria-label="Open sidebar"
+                        >
+                            <Menu size={20} />
+                        </button>
+                        <h2 className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white tracking-tight whitespace-nowrap">
+                            {activeView === "results" ? "Command Center" : "Academic Engine"}
+                        </h2>
+                    </div>
                     <div className="flex items-center gap-3">
                         {batchYear && (
                             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
@@ -642,8 +670,8 @@ const AdminPanel = () => {
 
                                                     {/* Staff List Table */}
                                                     <div className="bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-                                                        <div className="max-h-64 overflow-y-auto">
-                                                            <table className="w-full text-left">
+                                                        <div className="max-h-64 overflow-y-auto overflow-x-auto">
+                                                            <table className="w-full text-left min-w-[300px]">
                                                                 <thead className="bg-slate-50 dark:bg-slate-800/50 sticky top-0">
                                                                     <tr>
                                                                         <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400">Username</th>

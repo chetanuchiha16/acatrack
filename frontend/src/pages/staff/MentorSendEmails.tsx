@@ -254,9 +254,9 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
             </div>
 
             {viewMode === "individual" ? (
-                <div className="flex-1 flex gap-6 overflow-hidden">
+                <div className="flex-1 flex flex-col lg:flex-row gap-6 lg:overflow-hidden">
                     {/* Sidebar: Student List */}
-                    <div className="w-80 flex flex-col gap-4 overflow-hidden">
+                    <div className="w-full lg:w-80 flex flex-col gap-4 h-[300px] lg:h-auto overflow-hidden">
                         <div className="relative group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
@@ -297,7 +297,7 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
                     </div>
 
                     {/* Chat Area */}
-                    <div className="flex-1 flex flex-col bg-white dark:bg-gray-800/50 rounded-3xl border border-gray-200 dark:border-gray-700/50 shadow-sm overflow-hidden">
+                    <div className="flex-1 flex flex-col bg-white dark:bg-gray-800/50 rounded-3xl border border-gray-200 dark:border-gray-700/50 shadow-sm h-[500px] lg:h-auto overflow-hidden">
                         {activeStudent ? (
                             <>
                                 {/* Chat Header */}
@@ -421,7 +421,7 @@ export default function MentorSendEmails({ mentorId, batchYear }: MentorSendEmai
                     </div>
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+                <div className="flex-1 flex flex-col gap-6 lg:overflow-hidden">
                     {/* Broadcast View */}
                     <div className="max-w-4xl mx-auto w-full flex flex-col gap-6 overflow-hidden">
                         <div className="bg-white dark:bg-gray-800/50 rounded-3xl border border-gray-200 dark:border-gray-700/50 shadow-sm overflow-hidden">

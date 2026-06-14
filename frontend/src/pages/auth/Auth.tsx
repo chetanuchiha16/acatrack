@@ -196,11 +196,11 @@ const Auth: React.FC = () => {
     }
 
     return (
-        <div className="w-full min-h-screen relative bg-opacity-30 backdrop-blur-sm px-4 sm:px-6 md:px-8 flex items-center justify-center">
+        <div className="w-full min-h-screen relative bg-opacity-30 backdrop-blur-sm px-4 sm:px-6 md:px-8 py-10 flex flex-col items-center justify-center">
             {/* Top Section with Logo & Title */}
-            <div className="absolute top-4 sm:top-6 w-full flex flex-col items-center">
-                {/* Logo pinned left */}
-                <div className="absolute left-1/2 xl:left-25 transform -translate-x-1/2">
+            <div className="w-full flex flex-col items-center mb-8 relative z-10">
+                {/* Logo */}
+                <div className="mb-4">
                     {brandingConfig.collegeLogo ? (
                         <img
                             src={brandingConfig.collegeLogo}
@@ -212,19 +212,21 @@ const Auth: React.FC = () => {
                     )}
                 </div>
 
-                {/* Title centered */}
-                <div className="text-center mt-10">
-                    <div className="text-4xl mt-2.5 sm:text-4xl sm:mt-2.5 md:text-5xl md:mt-5 xl:-mt-11 lg:text-5xl lg:mt-5 font-extrabold text-white tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                {/* Title */}
+                <div className="text-center px-2">
+                    <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-white tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] leading-tight">
                         {brandingConfig.collegeName}
                     </div>
-                    <p className="text-base sm:text-lg md:text-xl text-slate-100 font-medium drop-shadow-[0_1.5px_4px_rgba(0,0,0,0.8)]">
-                        {brandingConfig.collegeTagline}
-                    </p>
+                    {brandingConfig.collegeTagline && (
+                        <p className="text-xs sm:text-sm md:text-base text-slate-200 font-medium mt-2 drop-shadow-[0_1.5px_4px_rgba(0,0,0,0.8)] max-w-xl mx-auto">
+                            {brandingConfig.collegeTagline}
+                        </p>
+                    )}
                 </div>
             </div>
 
             {/* Login Card Container with Backlight Glow */}
-            <div className="relative w-full max-w-md mt-28 sm:mt-32 animate-fadeIn">
+            <div className="relative w-full max-w-md animate-fadeIn">
                 {/* Backlight Refraction Glow */}
                 <div className="absolute -inset-4 bg-gradient-to-tr from-blue-500/25 via-indigo-500/20 to-purple-500/25 rounded-[36px] blur-3xl opacity-80 pointer-events-none" />
 
