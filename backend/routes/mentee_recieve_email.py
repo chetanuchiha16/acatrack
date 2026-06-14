@@ -2,11 +2,9 @@ from datetime import timezone
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from services.batch_manager import bm
-from models.schema import MentorMessage, StudentMessageStatus
 from repositories.student_repository import StudentRepository
 from repositories.mentor_repository import MentorRepository
 from utils.helpers import get_batch_year_from_request
-from sqlalchemy import select
 
 router = APIRouter(tags=["student_email"])
 
@@ -38,15 +36,7 @@ async def get_student_messages(usn: str, request: Request):
         if not student:
             return JSONResponse(content={"error": "Student not found"}, status_code=404)
 
-        result = await session.execute(
-            select(MentorMessage)
-            .where(
-                (MentorMessage.student_id == student.id)
-                | (MentorMessage.student_id.is_(None))
-            )
-            .order_by(MentorMessage.id.desc())
-        )
-        msgs = result.scalars().all()
+        msgs = await mentor_repo.get_messages_for_student(student.id)
 
         if not msgs:
             return []
@@ -54,13 +44,7 @@ async def get_student_messages(usn: str, request: Request):
         msg_ids = [m.id for m in msgs]
         mentor_ids = list(set(m.mentor_id for m in msgs if m.mentor_id is not None))
 
-        status_result = await session.execute(
-            select(StudentMessageStatus).where(
-                StudentMessageStatus.student_id == student.id,
-                StudentMessageStatus.msg_id.in_(msg_ids),
-            )
-        )
-        statuses = status_result.scalars().all()
+        statuses = await mentor_repo.get_message_statuses(student.id, msg_ids)
         status_map = {s.msg_id: s for s in statuses}
 
         mentors = await mentor_repo.get_mentors_by_ids(mentor_ids) if mentor_ids else []
@@ -96,13 +80,7 @@ async def get_student_message_detail(usn: str, msg_id: int, request: Request):
             )
 
         mentor = await mentor_repo.get_by_id(msg.mentor_id) if msg.mentor_id else None
-        status_result = await session.execute(
-            select(StudentMessageStatus).where(
-                StudentMessageStatus.student_id == student.id,
-                StudentMessageStatus.msg_id == msg_id,
-            )
-        )
-        status = status_result.scalars().first()
+        status = await mentor_repo.get_message_status(student.id, msg_id)
 
         return serialize_message(msg, student, status, mentor)
 
@@ -128,19 +106,10 @@ async def mark_message_read(usn: str, msg_id: int, request: Request):
                 status_code=403,
             )
 
-        status_result = await session.execute(
-            select(StudentMessageStatus).where(
-                StudentMessageStatus.student_id == student.id,
-                StudentMessageStatus.msg_id == msg_id,
-            )
-        )
-        status = status_result.scalars().first()
+        status = await mentor_repo.get_message_status(student.id, msg_id)
 
         if not status:
-            status = StudentMessageStatus(
-                student_id=student.id, msg_id=msg_id, read=True
-            )
-            session.add(status)
+            await mentor_repo.create_message_status(student.id, msg_id, read=True)
         else:
             status.read = True
 

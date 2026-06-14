@@ -12,10 +12,9 @@ from fastapi.responses import JSONResponse
 from logger_config import get_logger
 from services.batch_manager import bm
 from utils.helpers import get_batch_year_from_request
-from models.schema import Message
+from repositories.message_repository import MessageRepository
 from repositories.student_repository import StudentRepository
 from settings import settings
-from sqlalchemy import select
 from validators.email_validators import (
     SaveMessageRequest,
     SendAllEmailRequest,
@@ -125,13 +124,13 @@ async def send_email_to_student(body: SendStudentEmailRequest, request: Request)
 async def save_message(body: SaveMessageRequest, request: Request):
     batch_year = get_batch_year_from_request(request)
     async with bm.session_scope(batch_year) as session:
-        new_msg = Message(
+        msg_repo = MessageRepository(session)
+        new_msg = await msg_repo.create_message(
             usn=body.usn,
             recipient_type=body.recipientType,
             subject=body.subject,
             message=body.message,
         )
-        session.add(new_msg)
         await session.commit()
         await session.refresh(new_msg)
         return new_msg.to_dict()
@@ -142,10 +141,8 @@ async def get_messages(request: Request):
     batch_year = get_batch_year_from_request(request)
     logger.debug(f"{batch_year} from get_messages")
     async with bm.session_scope(batch_year) as session:
-        result = await session.execute(
-            select(Message).order_by(Message.created_at.desc())
-        )
-        messages = result.scalars().all()
+        msg_repo = MessageRepository(session)
+        messages = await msg_repo.get_all_by_newest()
         return [m.to_dict() for m in messages]
 
 
@@ -153,9 +150,10 @@ async def get_messages(request: Request):
 async def delete_message(msg_id: int, request: Request):
     batch_year = get_batch_year_from_request(request)
     async with bm.session_scope(batch_year) as session:
-        msg = await session.get(Message, msg_id)
+        msg_repo = MessageRepository(session)
+        msg = await msg_repo.get_by_id(msg_id)
         if not msg:
             return JSONResponse(content={"error": "Message not found"}, status_code=404)
-        await session.delete(msg)
+        await msg_repo.delete_message(msg)
         await session.commit()
         return {"message": "Message deleted"}

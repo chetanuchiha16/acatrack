@@ -2,10 +2,9 @@ import uuid
 from fastapi import APIRouter, Request, UploadFile, File, BackgroundTasks
 from fastapi.responses import JSONResponse
 from services.batch_manager import bm
-from models.schema import Job
+from repositories.job_repository import JobRepository
 from utils.helpers import get_batch_year_from_request
 from logger_config import get_logger
-from sqlalchemy import select
 import tempfile
 
 logger = get_logger(__name__)
@@ -47,8 +46,8 @@ async def upload_archive(
     job_id = str(uuid.uuid4())
 
     async with bm.session_scope(batch_year) as session:
-        job = Job(id=job_id, status="queued", progress=0)
-        session.add(job)
+        job_repo = JobRepository(session)
+        await job_repo.create_job(job_id=job_id, status="queued", progress=0)
         await session.commit()
 
     from services.pdf_service import process_archive
@@ -66,8 +65,8 @@ async def get_status(job_id: str, request: Request, batch_year: int | None = Non
         batch_year = 2023
 
     async with bm.session_scope(batch_year) as session:
-        result = await session.execute(select(Job).where(Job.id == job_id))
-        job = result.scalars().first()
+        job_repo = JobRepository(session)
+        job = await job_repo.get_by_id(job_id)
 
         if not job:
             return JSONResponse(content={"error": "Job not found"}, status_code=404)

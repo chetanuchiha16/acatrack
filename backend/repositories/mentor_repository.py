@@ -104,3 +104,60 @@ class MentorRepository:
             select(MentorMessage).where(MentorMessage.id == msg_id)
         )
         return result.scalars().first()
+
+    async def create_meeting(
+        self, mentor_id: int, title: str, venue: str | None, agenda: str | None, date
+    ) -> Meeting:
+        meeting = Meeting(
+            mentor_id=mentor_id,
+            title=title,
+            venue=venue,
+            agenda=agenda,
+            date=date,
+        )
+        self.db.add(meeting)
+        await self.db.flush()
+        return meeting
+
+    async def delete_meeting(self, meeting: Meeting) -> None:
+        await self.db.delete(meeting)
+
+    async def get_messages_for_student(self, student_id: int) -> list[MentorMessage]:
+        result = await self.db.execute(
+            select(MentorMessage)
+            .where(
+                (MentorMessage.student_id == student_id)
+                | (MentorMessage.student_id.is_(None))
+            )
+            .order_by(MentorMessage.id.desc())
+        )
+        return list(result.scalars().all())
+
+    async def get_message_statuses(
+        self, student_id: int, msg_ids: list[int]
+    ) -> list[StudentMessageStatus]:
+        result = await self.db.execute(
+            select(StudentMessageStatus).where(
+                StudentMessageStatus.student_id == student_id,
+                StudentMessageStatus.msg_id.in_(msg_ids),
+            )
+        )
+        return list(result.scalars().all())
+
+    async def get_message_status(
+        self, student_id: int, msg_id: int
+    ) -> StudentMessageStatus | None:
+        result = await self.db.execute(
+            select(StudentMessageStatus).where(
+                StudentMessageStatus.student_id == student_id,
+                StudentMessageStatus.msg_id == msg_id,
+            )
+        )
+        return result.scalars().first()
+
+    async def create_message_status(
+        self, student_id: int, msg_id: int, read: bool = True
+    ) -> StudentMessageStatus:
+        status = StudentMessageStatus(student_id=student_id, msg_id=msg_id, read=read)
+        self.db.add(status)
+        return status
