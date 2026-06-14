@@ -6,10 +6,9 @@ import tempfile
 import asyncio
 from pathlib import Path
 from services.batch_manager import bm
-from models.schema import Job
+from repositories.job_repository import JobRepository
 from services.pdf_parser import process_pdfs
 from logger_config import get_logger
-from sqlalchemy import select
 
 logger = get_logger(__name__)
 
@@ -24,8 +23,8 @@ async def process_archive(job_id: str, archive_path: str, batch_year: int):
 
     # 1. Update status to processing
     async with bm.session_scope(batch_year) as session:
-        result = await session.execute(select(Job).where(Job.id == job_id))
-        job = result.scalars().first()
+        job_repo = JobRepository(session)
+        job = await job_repo.get_by_id(job_id)
         if job:
             job.status = "processing"
             job.progress = 0
@@ -86,8 +85,8 @@ async def process_archive(job_id: str, archive_path: str, batch_year: int):
         # Update job progress and total list of files
         file_names = [os.path.basename(p) for p in pdf_paths]
         async with bm.session_scope(batch_year) as session:
-            result = await session.execute(select(Job).where(Job.id == job_id))
-            job = result.scalars().first()
+            job_repo = JobRepository(session)
+            job = await job_repo.get_by_id(job_id)
             if job:
                 job.processed_files = file_names
                 await session.commit()
@@ -133,10 +132,8 @@ async def process_archive(job_id: str, archive_path: str, batch_year: int):
             async def update_db():
                 try:
                     async with bm.session_scope(batch_year) as session:
-                        result = await session.execute(
-                            select(Job).where(Job.id == job_id)
-                        )
-                        job = result.scalars().first()
+                        job_repo = JobRepository(session)
+                        job = await job_repo.get_by_id(job_id)
                         if job:
                             job.progress = current
                             await session.commit()
@@ -197,8 +194,8 @@ async def process_archive(job_id: str, archive_path: str, batch_year: int):
 
         # 5. Success - mark Job as done in Postgres immediately so student gets their grades instantly!
         async with bm.session_scope(batch_year) as session:
-            result_job = await session.execute(select(Job).where(Job.id == job_id))
-            job = result_job.scalars().first()
+            job_repo = JobRepository(session)
+            job = await job_repo.get_by_id(job_id)
             if job:
                 job.status = "done"
                 job.progress = 100
@@ -230,8 +227,8 @@ async def process_archive(job_id: str, archive_path: str, batch_year: int):
     except Exception as e:
         logger.error(f"Error processing archive for job {job_id}: {e}", exc_info=True)
         async with bm.session_scope(batch_year) as session:
-            result = await session.execute(select(Job).where(Job.id == job_id))
-            job = result.scalars().first()
+            job_repo = JobRepository(session)
+            job = await job_repo.get_by_id(job_id)
             if job:
                 job.status = "failed"
                 job.error = str(e)
@@ -275,8 +272,8 @@ async def build_excel_and_upload_async(
         # Save excel_url to the completed job record
         if excel_url:
             async with bm.session_scope(batch_year) as session:
-                result_job = await session.execute(select(Job).where(Job.id == job_id))
-                job = result_job.scalars().first()
+                job_repo = JobRepository(session)
+                job = await job_repo.get_by_id(job_id)
                 if job:
                     job.excel_url = excel_url
                     await session.commit()

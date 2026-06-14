@@ -2,7 +2,6 @@ from datetime import datetime
 
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import JSONResponse
-from models import Meeting
 from services.batch_manager import bm
 from utils.helpers import get_batch_year_from_request
 from pydantic import BaseModel, Field, field_validator
@@ -60,19 +59,17 @@ async def add_meeting(
     by = batch_year or get_batch_year_from_request(request)
 
     async with bm.session_scope(by) as session:
-        meeting = Meeting(
+        mentor_repo = MentorRepository(session)
+        meeting = await mentor_repo.create_meeting(
             mentor_id=mentor_id,
             title=body.title,
             venue=body.venue,
             agenda=body.agenda,
             date=meeting_date,
         )
-        session.add(meeting)
-        await session.flush()
         meeting_id = meeting.id
 
         # Send email to all students
-        mentor_repo = MentorRepository(session)
         mentor = await mentor_repo.get_by_id(mentor_id)
         if mentor:
             subject = f"New Meeting Scheduled: {body.title}"
@@ -117,6 +114,6 @@ async def delete_meeting(
         if not meeting:
             return JSONResponse(content={"error": "Meeting not found"}, status_code=404)
 
-        await session.delete(meeting)
+        await mentor_repo.delete_meeting(meeting)
         await session.commit()
         return {"message": "Meeting deleted successfully"}
