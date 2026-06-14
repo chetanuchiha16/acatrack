@@ -5,12 +5,13 @@ import useStudentStore from "../../store/useStudentStore";
 import { 
     getStudentInfoAuthStudentResultGet,
     aiSummaryAiSummaryGet,
-    aiProfileAiProfileGet
+    aiProfileAiProfileGet,
+    getStudentReportPdfAuthStudentResultReportGet
 } from "../../client/sdk.gen";
 import ResultGlossary from "../student/ResultGlossary";
 import type { StudentResult } from "../../types";
 import { 
-    ArrowLeft, Calendar, Award, Sparkles, Download, 
+    ArrowLeft, Calendar, Award, Sparkles, Download, Loader2,
     TrendingUp, Target, BookOpen, BookOpenCheck, Languages, 
     ChevronRight, CheckCircle2, AlertCircle
 } from "lucide-react";
@@ -44,6 +45,38 @@ export default function ParentResult() {
     const [semData, setSemData] = useState<StudentResult | null>(null);
     const [_semLoading, setSemLoading] = useState<boolean>(false);
     const [availableSems, setAvailableSems] = useState<string[]>([]);
+    const [downloading, setDownloading] = useState<boolean>(false);
+
+    const downloadPDF = async () => {
+        const usn = studentData?.student?.usn;
+        if (!usn || !sem) return;
+        setDownloading(true);
+        try {
+            const res = await getStudentReportPdfAuthStudentResultReportGet({
+                query: { usn, semester: sem }
+            });
+            if (res.error) {
+                throw new Error("Failed to fetch PDF");
+            }
+            const blob = res.data as unknown as Blob;
+            const url = window.URL.createObjectURL(
+                new Blob([blob], { type: "application/pdf" })
+            );
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", `${usn}_${sem}_result.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            if (link.parentNode) {
+                link.parentNode.removeChild(link);
+            }
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Error downloading PDF:", error);
+        } finally {
+            setDownloading(false);
+        }
+    };
 
     const [aiData, setAiData] = useState<AiData | null>(null);
     const [aiLoading, setAiLoading] = useState<boolean>(false);
@@ -469,16 +502,20 @@ export default function ParentResult() {
                 )}
 
                 {/* --- DOWNLOAD BUTTON --- */}
-                {semData?.pdf_url && (
+                {semData && (
                     <div className="flex justify-center pt-8 pb-12">
-                         <a
-                            href={semData.pdf_url}
-                            download
-                            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-black text-sm sm:text-base shadow-xl shadow-indigo-500/30 hover:scale-[1.03] active:scale-[0.97] transition-all transform duration-300"
+                         <button
+                            onClick={() => void downloadPDF()}
+                            disabled={downloading}
+                            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 disabled:opacity-50 text-white font-black text-sm sm:text-base shadow-xl shadow-indigo-500/30 hover:scale-[1.03] active:scale-[0.97] transition-all transform duration-300 cursor-pointer disabled:cursor-not-allowed"
                         >
-                            <Download size={18} />
+                            {downloading ? (
+                                <Loader2 size={18} className="animate-spin" />
+                            ) : (
+                                <Download size={18} />
+                            )}
                             {t("downloadReport", "Download Official PDF Transcript")}
-                        </a>
+                        </button>
                     </div>
                 )}
 

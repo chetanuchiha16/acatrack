@@ -2937,6 +2937,38 @@ export type GetStudentInfoAuthStudentResultGetResponses = {
 
 export type GetStudentInfoAuthStudentResultGetResponse = GetStudentInfoAuthStudentResultGetResponses[keyof GetStudentInfoAuthStudentResultGetResponses];
 
+export type GetStudentReportPdfAuthStudentResultReportGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Usn
+         */
+        usn?: string;
+        /**
+         * Semester
+         */
+        semester?: string;
+    };
+    url: '/auth/Student/result/report';
+};
+
+export type GetStudentReportPdfAuthStudentResultReportGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetStudentReportPdfAuthStudentResultReportGetError = GetStudentReportPdfAuthStudentResultReportGetErrors[keyof GetStudentReportPdfAuthStudentResultReportGetErrors];
+
+export type GetStudentReportPdfAuthStudentResultReportGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type DownloadReportAuthStudentReportFilenameGetData = {
     body?: never;
     path: {
@@ -3415,6 +3447,20 @@ export type HealthHealthGetData = {
 };
 
 export type HealthHealthGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ServeRootGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/';
+};
+
+export type ServeRootGetResponses = {
     /**
      * Successful Response
      */
