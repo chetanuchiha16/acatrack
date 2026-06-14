@@ -52,23 +52,34 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
 
     useEffect(() => {
         if (semester && batchYear) {
-            void fetchResults(semester);
+            const semAssignments = assignments.filter(
+                a => a.semester === semester && a.section_name
+            );
+            const assignedSections = Array.from(
+                new Set(semAssignments.map(a => a.section_name as string))
+            );
+
+            if (assignedSections.length > 0 && assignedSections.includes(section)) {
+                void fetchResults(semester, section);
+            } else {
+                setData(null);
+            }
         } else {
             setData(null);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [semester, section, batchYear]);
+    }, [semester, section, batchYear, assignments]);
 
-    async function fetchResults(selected: string): Promise<void> {
+    async function fetchResults(selectedSem: string, selectedSec: string): Promise<void> {
         setLoading(true);
         setError("");
         setData(null);
         try {
             const res = await getSemesterResultsAuthStaffSemResGet({
                 query: { 
-                    semester: selected, 
+                    semester: selectedSem, 
                     batch_year: parseInt(batchYear, 10),
-                    section: section || undefined
+                    section: selectedSec
                 }
             });
             if (res.error) {
@@ -86,13 +97,13 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
     }
 
     const downloadPDF = async (): Promise<void> => {
-        if (!semester) return;
+        if (!semester || !section || section === "ALL") return;
         try {
             const res = await downloadSemesterReportAuthStaffSemResReportSemesterGet({
                 path: { semester },
                 query: { 
                     batch_year: parseInt(batchYear, 10),
-                    section: section || undefined
+                    section: section
                 }
             });
             if (res.error) {
@@ -189,8 +200,12 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
                     )}
 
                     {!data && !loading && !error && (
-                        <div className="rounded-lg border border-slate-100 p-4 sm:p-6 text-slate-500 text-sm">
-                            No data loaded. Choose a semester to begin.
+                        <div className="rounded-lg border border-slate-100 p-4 sm:p-6 text-slate-500 text-sm text-center">
+                            {assignments.length > 0 && assignments.filter(a => a.semester === semester).length === 0 ? (
+                                <span>You are not assigned to teach any classes/sections in this semester.</span>
+                            ) : (
+                                <span>No data loaded. Choose a semester to begin.</span>
+                            )}
                         </div>
                     )}
                 </div>

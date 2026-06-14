@@ -18,13 +18,9 @@ const AcademicContextSelector: React.FC = () => {
         const semAssignments = assignments.filter(
             a => a.semester === semester && a.section_name
         );
-        const assignedSections = Array.from(
+        return Array.from(
             new Set(semAssignments.map(a => a.section_name as string))
         ).sort();
-
-        return assignedSections.length > 0
-            ? assignedSections
-            : ['ALL', 'A', 'B', 'C', 'D'];
     }, [assignments, semester]);
 
     // Self-healing: auto-select the first allowed section if the current one is not allowed
@@ -99,31 +95,37 @@ const AcademicContextSelector: React.FC = () => {
                 <div className="flex flex-col pr-1">
                     <span className="text-[8px] font-black uppercase text-gray-400 tracking-widest leading-none mb-0.5">Section</span>
                     <span className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight">
-                        {section}
+                        {sections.length === 0 ? "NONE" : section}
                     </span>
                 </div>
                 <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-300 ${isSecOpen ? 'rotate-180 text-emerald-500' : ''}`} />
 
                 {isSecOpen && (
                     <div className="absolute top-full left-0 mt-2 w-44 bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-xl z-[100] py-1.5 animate-fadeIn backdrop-blur-md">
-                        {sections.map(s => (
-                            <button
-                                key={s}
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSection(s);
-                                    setIsSecOpen(false);
-                                }}
-                                className={`w-full px-4 py-2 text-left text-xs font-bold transition-all duration-200 first:rounded-t-lg last:rounded-b-lg
-                                    ${section === s 
-                                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-l-2 border-emerald-500 pl-3' 
-                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-2 border-transparent'
-                                    }`}
-                            >
-                                {s}
-                            </button>
-                        ))}
+                        {sections.length === 0 ? (
+                            <div className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 italic">
+                                No assigned sections
+                            </div>
+                        ) : (
+                            sections.map(s => (
+                                <button
+                                    key={s}
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSection(s);
+                                        setIsSecOpen(false);
+                                    }}
+                                    className={`w-full px-4 py-2 text-left text-xs font-bold transition-all duration-200 first:rounded-t-lg last:rounded-b-lg
+                                        ${section === s 
+                                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-l-2 border-emerald-500 pl-3' 
+                                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-2 border-transparent'
+                                        }`}
+                                >
+                                    {s}
+                                </button>
+                            ))
+                        )}
                     </div>
                 )}
             </div>
