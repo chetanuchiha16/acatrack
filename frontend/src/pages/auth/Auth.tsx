@@ -143,6 +143,9 @@ const Auth: React.FC = () => {
             if (role === "teacher") {
                 loginUsername = "demo_teacher";
                 loginWho = "Staff";
+            } else if (role === "parent") {
+                loginUsername = "1XX23CS001_parent";
+                loginWho = "Parent";
             } else {
                 loginUsername = "1XX23CS001";
                 loginWho = "Student";
@@ -321,17 +324,18 @@ const Auth: React.FC = () => {
                     <h4 className="text-xs font-black text-slate-200 mb-4 uppercase tracking-widest text-center drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                         ⚡ Quick-Start Live Demo
                     </h4>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-4 gap-2 sm:gap-3">
                         {[
                             { id: "admin", label: "Admin", desc: "Full Setup" },
                             { id: "teacher", label: "Teacher", desc: "Grade & CSV" },
                             { id: "student", label: "Student", desc: "Track GPA" },
+                            { id: "parent", label: "Parent", desc: "View Marks" },
                         ].map((card) => (
                             <button
                                 key={card.id}
                                 type="button"
                                 onClick={() => handleQuickLogin(card.id)}
-                                className="flex flex-col items-center justify-center p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/50 rounded-2xl shadow-sm hover:shadow-lg transition-all active:scale-95 text-center cursor-pointer group"
+                                className="flex flex-col items-center justify-center p-2 sm:p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/50 rounded-2xl shadow-sm hover:shadow-lg transition-all active:scale-95 text-center cursor-pointer group"
                             >
                                 <span className="text-xs font-black text-slate-200 mb-0.5 group-hover:text-blue-400 transition-colors">
                                     {card.label}
