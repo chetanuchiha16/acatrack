@@ -24,7 +24,7 @@ interface StudentResult {
 import useStaffStore from "../../store/useStaffStore";
 
 const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
-    const { semester, section } = useStaffStore();
+    const { semester, section, assignments } = useStaffStore();
     const [view, setView] = useState<string>("normal");
     const [data, setData] = useState<StudentResult[]>([]);
     const [search, setSearch] = useState<string>("");
@@ -34,20 +34,30 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
 
     useEffect(() => {
         if (semester && batchYear) {
-            void fetchData();
+            const semAssignments = assignments.filter(
+                a => a.semester === semester && a.section_name
+            );
+            const assignedSections = Array.from(
+                new Set(semAssignments.map(a => a.section_name as string))
+            );
+
+            if (assignedSections.length > 0 && assignedSections.includes(section)) {
+                void fetchData(semester, section);
+            } else {
+                setData([]);
+            }
         } else {
             setData([]);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [batchYear, semester, section, view]);
+    }, [batchYear, semester, section, view, assignments]);
 
-    const fetchData = async () => {
-        if (!semester || !batchYear) return;
+    const fetchData = async (selectedSem: string, selectedSec: string) => {
         try {
             const res = await getAcademicPerformanceAuthStaffOverallResGet({
                 query: { 
-                    semester, 
-                    section,
+                    semester: selectedSem, 
+                    section: selectedSec,
                     batch_year: parseInt(batchYear, 10),
                     show_toppers: view === "toppers" ? true : undefined,
                     show_failed: view === "failed" ? true : undefined
@@ -65,7 +75,7 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
     };
 
     const downloadPDF = async () => {
-        if (!semester) return;
+        if (!semester || !section || section === "ALL") return;
         try {
             let res;
             if (view === "toppers") {
@@ -218,7 +228,11 @@ const OverallResults: React.FC<OverallResultsProps> = ({ batchYear }) => {
                             {filteredData.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="text-center py-20 text-gray-500 font-medium">
-                                        No academic records found for this selection.
+                                        {assignments.length > 0 && assignments.filter(a => a.semester === semester).length === 0 ? (
+                                            "You do not have any assigned classes/sections in this semester."
+                                        ) : (
+                                            "No academic records found for this selection."
+                                        )}
                                     </td>
                                 </tr>
                             ) : (
