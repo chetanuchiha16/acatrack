@@ -39,7 +39,7 @@ const StudentResultWrapper: React.FC = () => {
                     <p className="text-sm text-gray-500 dark:text-gray-400">Select a semester to view your academic performance.</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-end w-full sm:w-auto">
                     {/* Semester picker */}
                     <div className="relative">
                         <select

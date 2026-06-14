@@ -164,7 +164,7 @@ export default function SendEmails() {
                 )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1 overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1 lg:overflow-hidden">
                 {/* Left: Compose Form (5 cols) */}
                 <div className="lg:col-span-5 flex flex-col gap-6">
                     <div className="bg-white dark:bg-gray-800/50 rounded-3xl border border-gray-200 dark:border-gray-700/50 shadow-sm overflow-hidden">
@@ -253,7 +253,7 @@ export default function SendEmails() {
                 </div>
 
                 {/* Right: Message History (7 cols) */}
-                <div className="lg:col-span-7 flex flex-col gap-6 overflow-hidden">
+                <div className="lg:col-span-7 flex flex-col gap-6 h-[500px] lg:h-auto overflow-hidden">
                     <div className="flex-1 bg-white dark:bg-gray-800/50 rounded-3xl border border-gray-200 dark:border-gray-700/50 shadow-sm overflow-hidden flex flex-col">
                         <div className="p-4 border-b border-gray-100 dark:border-gray-700/50 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/20">
                             <div className="flex items-center gap-2">

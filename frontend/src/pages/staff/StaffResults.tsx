@@ -46,7 +46,8 @@ const StaffResults: React.FC = () => {
         <AcademicContextSelector />
         
         {/* Modern Segmented Control for Tabs */}
-        <div className="inline-flex bg-gray-100 dark:bg-gray-800/80 p-1 rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-inner">
+        <div className="w-full md:w-auto overflow-x-auto">
+          <div className="inline-flex bg-gray-100 dark:bg-gray-800/80 p-1 rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-inner whitespace-nowrap min-w-max">
           {tabs.map((tab) => {
             const isTabActive = activeTab === tab.id;
             return (
@@ -63,6 +64,7 @@ const StaffResults: React.FC = () => {
               </button>
             );
           })}
+          </div>
         </div>
       </div>
       {/* Main Content Area */}

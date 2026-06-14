@@ -38,8 +38,8 @@ const MentorDashboard: React.FC = () => {
 
     return (
         <div className="w-full h-full flex flex-col">
-            <div className="flex justify-center mb-6 flex-shrink-0">
-                <div className="inline-flex bg-gray-100 dark:bg-gray-800/80 p-1 rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-inner">
+            <div className="flex justify-center mb-6 flex-shrink-0 w-full overflow-x-auto">
+                <div className="inline-flex bg-gray-100 dark:bg-gray-800/80 p-1 rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-inner whitespace-nowrap min-w-max">
                     {navigationTabs.map((item) => (
                         <button
                             key={item.key}

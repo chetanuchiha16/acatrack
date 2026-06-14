@@ -140,7 +140,7 @@ const SemesterResults: React.FC<SemesterResultsProps> = ({ batchYear }) => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-end w-full sm:w-auto">
                     <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
                         <button
                             onClick={() => setView("cards")}

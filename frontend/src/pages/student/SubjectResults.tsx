@@ -115,7 +115,7 @@ const SubjectResults: React.FC<SubjectResultsProps> = ({ batchYear }) => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-center sm:justify-end">
 
                     <div className="relative">
                         <select
