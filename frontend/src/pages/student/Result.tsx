@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { getStudentInfoAuthStudentResultGet } from "../../client/sdk.gen";
+import { getStudentInfoAuthStudentResultGet, getStudentReportPdfAuthStudentResultReportGet } from "../../client/sdk.gen";
 import type { StudentResultResponse as StudentResult } from "../../client/types.gen";
 import type { Semester } from "../../types";
 import StudentAIInsights from "./StudentAIInsights";
@@ -22,6 +22,7 @@ export default function Result({ usn, semester, view, onDataLoaded }: ResultProp
     const [data, setData] = useState<StudentResult | null>(null);
     const [error, setError] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
+    const [downloading, setDownloading] = useState<boolean>(false);
 
     const fetchStudent = useCallback(async () => {
         if (!usn || !semester) return;
@@ -44,6 +45,36 @@ export default function Result({ usn, semester, view, onDataLoaded }: ResultProp
             setLoading(false);
         }
     }, [usn, semester, onDataLoaded]);
+
+    const downloadPDF = useCallback(async () => {
+        if (!usn || !semester) return;
+        setDownloading(true);
+        try {
+            const res = await getStudentReportPdfAuthStudentResultReportGet({
+                query: { usn, semester }
+            });
+            if (res.error) {
+                throw new Error("Failed to fetch PDF");
+            }
+            const blob = res.data as unknown as Blob;
+            const url = window.URL.createObjectURL(
+                new Blob([blob], { type: "application/pdf" })
+            );
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", `${usn}_${semester}_result.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            if (link.parentNode) {
+                link.parentNode.removeChild(link);
+            }
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Error downloading PDF:", error);
+        } finally {
+            setDownloading(false);
+        }
+    }, [usn, semester]);
 
     useEffect(() => { void fetchStudent(); }, [fetchStudent]);
 
@@ -71,15 +102,19 @@ export default function Result({ usn, semester, view, onDataLoaded }: ResultProp
 
                 <div className="flex items-center gap-3">
                     <ResultGlossary />
-                    {data?.pdf_url && (
-                        <a
-                            href={data.pdf_url}
-                            download
-                            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-base font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                    {data && (
+                        <button
+                            onClick={() => void downloadPDF()}
+                            disabled={downloading}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-xl text-base font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer disabled:cursor-not-allowed"
                         >
-                            <Download size={18} />
+                            {downloading ? (
+                                <Loader2 size={18} className="animate-spin" />
+                            ) : (
+                                <Download size={18} />
+                            )}
                             Report
-                        </a>
+                        </button>
                     )}
                 </div>
             </div>

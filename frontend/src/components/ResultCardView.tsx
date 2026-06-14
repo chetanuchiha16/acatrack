@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
-import { getStudentInfoAuthStudentResultGet } from "../client/sdk.gen";
+import { getStudentInfoAuthStudentResultGet, getStudentReportPdfAuthStudentResultReportGet } from "../client/sdk.gen";
 import type { StudentResult, Semester } from "../types";
 import { parseApiError } from "../utils/errorHandler";
+import { Loader2 } from "lucide-react";
 
 
 interface ResultCardViewProps {
@@ -12,6 +13,37 @@ interface ResultCardViewProps {
 export default function ResultCardView({ usn, semester }: ResultCardViewProps) {
     const [data, setData] = useState<StudentResult | null>(null);
     const [error, setError] = useState<string>("");
+    const [downloading, setDownloading] = useState<boolean>(false);
+
+    const downloadPDF = useCallback(async () => {
+        if (!usn || !semester) return;
+        setDownloading(true);
+        try {
+            const res = await getStudentReportPdfAuthStudentResultReportGet({
+                query: { usn, semester }
+            });
+            if (res.error) {
+                throw new Error("Failed to fetch PDF");
+            }
+            const blob = res.data as unknown as Blob;
+            const url = window.URL.createObjectURL(
+                new Blob([blob], { type: "application/pdf" })
+            );
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", `${usn}_${semester}_result.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            if (link.parentNode) {
+                link.parentNode.removeChild(link);
+            }
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Error downloading PDF:", error);
+        } finally {
+            setDownloading(false);
+        }
+    }, [usn, semester]);
 
     const fetchStudent = useCallback(async () => {
         try {
@@ -127,17 +159,18 @@ export default function ResultCardView({ usn, semester }: ResultCardViewProps) {
 
                     {/* Download Button */}
                     <div className="text-center">
-                        {data.pdf_url ? (
-                            <a
-                                href={data.pdf_url}
-                                download
-                                className="inline-block px-4 sm:px-6 py-2 rounded-full bg-blue-600 !text-white font-bold text-sm sm:text-base hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all"
-                            >
-                                📄 Download Report
-                            </a>
-                        ) : (
-                            <span className="text-sm text-gray-500 dark:text-gray-400">No downloadable report available</span>
-                        )}
+                        <button
+                            onClick={() => void downloadPDF()}
+                            disabled={downloading}
+                            className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 rounded-full bg-blue-600 disabled:opacity-50 !text-white font-bold text-sm sm:text-base hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all cursor-pointer disabled:cursor-not-allowed"
+                        >
+                            {downloading ? (
+                                <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                                "📄"
+                            )}
+                            Download Report
+                        </button>
                     </div>
                 </div>
             )}
