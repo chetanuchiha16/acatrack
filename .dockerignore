@@ -1,0 +1,13 @@
+.git
+.github
+.gitignore
+.pytest_cache
+__pycache__
+**/.venv
+**/node_modules
+**/dist
+**/*.db
+**/*.db-journal
+backend/Outputs/
+backend/Inputs/ExcelSheet/
+**/.env

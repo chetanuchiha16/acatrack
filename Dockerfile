@@ -15,6 +15,10 @@ RUN npm run build
 
 # --- Stage 2: Serve Backend & Frontend via FastAPI ---
 FROM python:3.12-slim
+
+# Create a non-root user with UID 1000
+RUN useradd -m -u 1000 user
+
 WORKDIR /app
 
 # Install system dependencies
@@ -27,16 +31,35 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install uv for fast dependency management
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Copy python dependencies list
-COPY backend/pyproject.toml backend/uv.lock ./backend/
+# Set environment variables for unbuffered output
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=7860
+
+# Set ownership of /app to the user
+RUN chown user:user /app
+
+# Switch to the non-root user
+USER user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
+
 WORKDIR /app/backend
+
+# Copy backend dependency list with user ownership
+COPY --chown=user:user backend/pyproject.toml backend/uv.lock ./
+
+# Install dependencies using uv
 RUN uv sync --frozen --no-install-project
 
-# Copy backend application files
-COPY backend/ /app/backend/
+# Copy backend application files with user ownership
+COPY --chown=user:user backend/ /app/backend/
 
-# Copy built frontend assets from Stage 1 into the backend/frontend/dist directory
-COPY --from=frontend-builder /app/frontend/dist /app/backend/frontend/dist
+# Copy built frontend assets from Stage 1 into the backend/frontend/dist directory with user ownership
+COPY --chown=user:user --from=frontend-builder /app/frontend/dist /app/backend/frontend/dist
+
+# Create necessary directories and ensure user permissions
+RUN mkdir -p /app/backend/Outputs/PDFs /app/backend/Outputs/Images /app/backend/Outputs/NOTES /app/backend/Inputs/ExcelSheet
 
 # Expose Hugging Face Space default port
 EXPOSE 7860

@@ -116,10 +116,11 @@ async def lifespan(app: FastAPI):
             cred = credentials.Certificate(cred_path)
             logger.info(f"Firebase configured via credentials file: {cred_path}")
 
-    # 3. Raise error if missing in non-testing environment
+    # 3. Warn if missing in non-testing environment instead of crashing
     if not cred and not settings.testing:
-        raise RuntimeError(
-            "Firebase credentials not found! Set FIREBASE_CRED_JSON env variable or provide a credentials file."
+        logger.warning(
+            "Firebase credentials not found! FCM notifications will be disabled. "
+            "To enable notifications, set the FIREBASE_CRED_JSON environment variable or configure a credentials file."
         )
 
     if cred:
